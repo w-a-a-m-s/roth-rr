@@ -1,0 +1,31 @@
+---
+description: Waiting UI - LabsLoading beside buttons, never inside them
+globs: src/**/*.tsx
+---
+
+# Loading / waiting UI
+
+Whenever the UI is waiting on an async action (save, restore, send, fetch,
+auth, etc.), show `LabsLoading` from `@/lib/common/client`.
+
+**Never put `LabsLoading` inside a button.** Keep the button as text only:
+change the label to the action name plus three dots (`Restoring...`,
+`Sending...`, `Saving...`). Render `LabsLoading` separately beside or above
+the button.
+
+```tsx
+// BAD - loading component inside the button
+<button disabled={busy}>
+  {busy ? <LabsLoading size="sm" label="Restoring" /> : "Restore"}
+</button>
+
+// GOOD - text on the button, LabsLoading separately
+{busy ? <LabsLoading size="sm" /> : null}
+<button disabled={busy}>{busy ? "Restoring..." : "Restore"}</button>
+```
+
+Sizes: `sm` next to buttons / compact controls, `md` for inline panels /
+lists, `lg` for full-page or centered empty states. Omit `label` on
+`LabsLoading` when it sits beside a busy button (the button already names
+the action). Full-page / list waits may omit a fixed label so the rotating
+words show.

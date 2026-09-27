@@ -1,0 +1,93 @@
+{
+  "name": "Sourceless withdrawal income is ignored (no drawsFromAccountId)",
+  "strategy": "manual",
+  "note": "Regression for phantom withdrawal income: a retirementDraw with no drawsFromAccountId must contribute neither taxable income nor cash flow, and must not deplete any account. The retirement account here grows untouched while the orphan draw is dropped. Linked withdrawals are covered by account-withdrawals.json.",
+  "household": {
+    "filingStatus": "single",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 4000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Quinn",
+        "birthYear": 1960,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ret",
+        "label": "Traditional IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 500000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      }
+    ],
+    "incomes": [
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2500,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "orphan-draw",
+        "label": "Retirement withdrawal (no source)",
+        "ownerId": "p1",
+        "kind": "retirementDraw",
+        "monthlyAmount": 1000,
+        "growthRate": 0,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        50000,
+        50000,
+        50000,
+        50000,
+        50000
+      ]
+    }
+  },
+  "commit": "b89271c",
+  "commitDate": "2026-08-06T11:41:28+03:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 80948.74,
+      "medicareTotal": 48696,
+      "afterTaxAssetsAtRmd": 537279.99,
+      "inheritanceFinal": 531125.79
+    },
+    "roth": {
+      "taxesTotal": 85204.58,
+      "medicareTotal": 48696,
+      "afterTaxAssetsAtRmd": 750799.24,
+      "inheritanceFinal": 1246693.15
+    },
+    "deltas": {
+      "taxesTotal": 4255.84,
+      "medicareTotal": 0,
+      "afterTaxAssetsAtRmd": 213519.25,
+      "inheritanceFinal": 715567.36
+    }
+  }
+}

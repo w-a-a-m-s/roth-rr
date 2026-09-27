@@ -1,0 +1,2353 @@
+{
+  "year": 2026,
+  "reviewedAt": "2026-07-09",
+  "sourceUrl": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+  "states": {
+    "AL": {
+      "name": "Alabama",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.02
+          },
+          {
+            "floor": 500,
+            "rate": 0.04
+          },
+          {
+            "floor": 3000,
+            "rate": 0.05
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.02
+          },
+          {
+            "floor": 1000,
+            "rate": 0.04
+          },
+          {
+            "floor": 6000,
+            "rate": 0.05
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 3000,
+        "mfj": 8500
+      },
+      "personalExemption": {
+        "single": 1500,
+        "mfj": 3000
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "AK": {
+      "name": "Alaska",
+      "hasIncomeTax": false,
+      "brackets": {
+        "single": [],
+        "mfj": []
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "AZ": {
+      "name": "Arizona",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.025
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.025
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8350,
+        "mfj": 16700
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary",
+      "notes": "Personal exemption is a credit (not modeled as deduction)"
+    },
+    "AR": {
+      "name": "Arkansas",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.02
+          },
+          {
+            "floor": 4600,
+            "rate": 0.039
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.02
+          },
+          {
+            "floor": 4600,
+            "rate": 0.039
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 2470,
+        "mfj": 4940
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary",
+      "notes": "Personal exemption is a credit (not modeled as deduction). Lower-income alternate table not modeled"
+    },
+    "CA": {
+      "name": "California",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.01
+          },
+          {
+            "floor": 11079,
+            "rate": 0.02
+          },
+          {
+            "floor": 26264,
+            "rate": 0.04
+          },
+          {
+            "floor": 41452,
+            "rate": 0.06
+          },
+          {
+            "floor": 57542,
+            "rate": 0.08
+          },
+          {
+            "floor": 72724,
+            "rate": 0.093
+          },
+          {
+            "floor": 371479,
+            "rate": 0.103
+          },
+          {
+            "floor": 445771,
+            "rate": 0.113
+          },
+          {
+            "floor": 742953,
+            "rate": 0.123
+          },
+          {
+            "floor": 1000000,
+            "rate": 0.133
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.01
+          },
+          {
+            "floor": 22158,
+            "rate": 0.02
+          },
+          {
+            "floor": 52528,
+            "rate": 0.04
+          },
+          {
+            "floor": 82904,
+            "rate": 0.06
+          },
+          {
+            "floor": 115084,
+            "rate": 0.08
+          },
+          {
+            "floor": 145448,
+            "rate": 0.093
+          },
+          {
+            "floor": 742958,
+            "rate": 0.103
+          },
+          {
+            "floor": 891542,
+            "rate": 0.113
+          },
+          {
+            "floor": 1000000,
+            "rate": 0.123
+          },
+          {
+            "floor": 1485906,
+            "rate": 0.133
+          }
+        ],
+        "hoh": [
+          { "floor": 0, "rate": 0.01 },
+          { "floor": 22173, "rate": 0.02 },
+          { "floor": 52530, "rate": 0.04 },
+          { "floor": 67716, "rate": 0.06 },
+          { "floor": 83805, "rate": 0.08 },
+          { "floor": 98990, "rate": 0.093 },
+          { "floor": 505208, "rate": 0.103 },
+          { "floor": 606251, "rate": 0.113 },
+          { "floor": 1000000, "rate": 0.123 },
+          { "floor": 1010417, "rate": 0.133 }
+        ]
+      },
+      "standardDeduction": {
+        "single": 5540,
+        "mfj": 11080,
+        "hoh": 11080
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0,
+        "hoh": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary",
+      "notes": "Personal exemption is a credit (not modeled as deduction). Rates include mental health services tax above $1M. HOH brackets from FTB 2025 Schedule Z."
+    },
+    "CO": {
+      "name": "Colorado",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.044
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.044
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "mfj": 32200
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "CT": {
+      "name": "Connecticut",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.02
+          },
+          {
+            "floor": 10000,
+            "rate": 0.045
+          },
+          {
+            "floor": 50000,
+            "rate": 0.055
+          },
+          {
+            "floor": 100000,
+            "rate": 0.06
+          },
+          {
+            "floor": 200000,
+            "rate": 0.065
+          },
+          {
+            "floor": 250000,
+            "rate": 0.069
+          },
+          {
+            "floor": 500000,
+            "rate": 0.0699
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.02
+          },
+          {
+            "floor": 20000,
+            "rate": 0.045
+          },
+          {
+            "floor": 100000,
+            "rate": 0.055
+          },
+          {
+            "floor": 200000,
+            "rate": 0.06
+          },
+          {
+            "floor": 400000,
+            "rate": 0.065
+          },
+          {
+            "floor": 500000,
+            "rate": 0.069
+          },
+          {
+            "floor": 1000000,
+            "rate": 0.0699
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 15000,
+        "mfj": 24000
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Tax benefit recapture for high earners not modeled. Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "DE": {
+      "name": "Delaware",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 2000,
+            "rate": 0.022
+          },
+          {
+            "floor": 5000,
+            "rate": 0.039
+          },
+          {
+            "floor": 10000,
+            "rate": 0.048
+          },
+          {
+            "floor": 20000,
+            "rate": 0.052
+          },
+          {
+            "floor": 25000,
+            "rate": 0.0555
+          },
+          {
+            "floor": 60000,
+            "rate": 0.066
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 2000,
+            "rate": 0.022
+          },
+          {
+            "floor": 5000,
+            "rate": 0.039
+          },
+          {
+            "floor": 10000,
+            "rate": 0.048
+          },
+          {
+            "floor": 20000,
+            "rate": 0.052
+          },
+          {
+            "floor": 25000,
+            "rate": 0.0555
+          },
+          {
+            "floor": 60000,
+            "rate": 0.066
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 3250,
+        "mfj": 6500
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary",
+      "notes": "Personal exemption is a credit (not modeled as deduction)"
+    },
+    "FL": {
+      "name": "Florida",
+      "hasIncomeTax": false,
+      "brackets": {
+        "single": [],
+        "mfj": []
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "GA": {
+      "name": "Georgia",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0519
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0519
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 12000,
+        "mfj": 24000
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "HI": {
+      "name": "Hawaii",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.014
+          },
+          {
+            "floor": 9600,
+            "rate": 0.032
+          },
+          {
+            "floor": 14400,
+            "rate": 0.055
+          },
+          {
+            "floor": 19200,
+            "rate": 0.064
+          },
+          {
+            "floor": 24000,
+            "rate": 0.068
+          },
+          {
+            "floor": 36000,
+            "rate": 0.072
+          },
+          {
+            "floor": 48000,
+            "rate": 0.076
+          },
+          {
+            "floor": 125000,
+            "rate": 0.079
+          },
+          {
+            "floor": 175000,
+            "rate": 0.0825
+          },
+          {
+            "floor": 225000,
+            "rate": 0.09
+          },
+          {
+            "floor": 275000,
+            "rate": 0.1
+          },
+          {
+            "floor": 325000,
+            "rate": 0.11
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.014
+          },
+          {
+            "floor": 19200,
+            "rate": 0.032
+          },
+          {
+            "floor": 28800,
+            "rate": 0.055
+          },
+          {
+            "floor": 38400,
+            "rate": 0.064
+          },
+          {
+            "floor": 48000,
+            "rate": 0.068
+          },
+          {
+            "floor": 72000,
+            "rate": 0.072
+          },
+          {
+            "floor": 96000,
+            "rate": 0.076
+          },
+          {
+            "floor": 250000,
+            "rate": 0.079
+          },
+          {
+            "floor": 350000,
+            "rate": 0.0825
+          },
+          {
+            "floor": 450000,
+            "rate": 0.09
+          },
+          {
+            "floor": 550000,
+            "rate": 0.1
+          },
+          {
+            "floor": 650000,
+            "rate": 0.11
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 4400,
+        "mfj": 8800
+      },
+      "personalExemption": {
+        "single": 1144,
+        "mfj": 2288
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "ID": {
+      "name": "Idaho",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 4811,
+            "rate": 0.053
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 9622,
+            "rate": 0.053
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "mfj": 32200
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "IL": {
+      "name": "Illinois",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0495
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0495
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 2925,
+        "mfj": 5850
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "IN": {
+      "name": "Indiana",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0295
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0295
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 1000,
+        "mfj": 2000
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "IA": {
+      "name": "Iowa",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.038
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.038
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "mfj": 32200
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary",
+      "notes": "Personal exemption is a credit (not modeled as deduction)"
+    },
+    "KS": {
+      "name": "Kansas",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.052
+          },
+          {
+            "floor": 23000,
+            "rate": 0.0558
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.052
+          },
+          {
+            "floor": 46000,
+            "rate": 0.0558
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 3605,
+        "mfj": 8240
+      },
+      "personalExemption": {
+        "single": 9160,
+        "mfj": 18320
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "KY": {
+      "name": "Kentucky",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.035
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.035
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 3360,
+        "mfj": 3360
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary",
+      "notes": "Standard deduction is not doubled for MFJ"
+    },
+    "LA": {
+      "name": "Louisiana",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.03
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.03
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 12875,
+        "mfj": 25750
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "ME": {
+      "name": "Maine",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.058
+          },
+          {
+            "floor": 27399,
+            "rate": 0.0675
+          },
+          {
+            "floor": 64849,
+            "rate": 0.0715
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.058
+          },
+          {
+            "floor": 54849,
+            "rate": 0.0675
+          },
+          {
+            "floor": 129749,
+            "rate": 0.0715
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8350,
+        "mfj": 16700
+      },
+      "personalExemption": {
+        "single": 5300,
+        "mfj": 10600
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "MD": {
+      "name": "Maryland",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.02
+          },
+          {
+            "floor": 1000,
+            "rate": 0.03
+          },
+          {
+            "floor": 2000,
+            "rate": 0.04
+          },
+          {
+            "floor": 3000,
+            "rate": 0.0475
+          },
+          {
+            "floor": 100000,
+            "rate": 0.05
+          },
+          {
+            "floor": 125000,
+            "rate": 0.0525
+          },
+          {
+            "floor": 150000,
+            "rate": 0.055
+          },
+          {
+            "floor": 250000,
+            "rate": 0.0575
+          },
+          {
+            "floor": 500000,
+            "rate": 0.0625
+          },
+          {
+            "floor": 1000000,
+            "rate": 0.065
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.02
+          },
+          {
+            "floor": 1000,
+            "rate": 0.03
+          },
+          {
+            "floor": 2000,
+            "rate": 0.04
+          },
+          {
+            "floor": 3000,
+            "rate": 0.0475
+          },
+          {
+            "floor": 150000,
+            "rate": 0.05
+          },
+          {
+            "floor": 175000,
+            "rate": 0.0525
+          },
+          {
+            "floor": 225000,
+            "rate": 0.055
+          },
+          {
+            "floor": 300000,
+            "rate": 0.0575
+          },
+          {
+            "floor": 600000,
+            "rate": 0.0625
+          },
+          {
+            "floor": 1200000,
+            "rate": 0.065
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 3350,
+        "mfj": 6700
+      },
+      "personalExemption": {
+        "single": 3200,
+        "mfj": 6400
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "MA": {
+      "name": "Massachusetts",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.05
+          },
+          {
+            "floor": 1083150,
+            "rate": 0.09
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.05
+          },
+          {
+            "floor": 1083150,
+            "rate": 0.09
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 4400,
+        "mfj": 8800
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "MI": {
+      "name": "Michigan",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0425
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0425
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 5900,
+        "mfj": 11800
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "MN": {
+      "name": "Minnesota",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0535
+          },
+          {
+            "floor": 33310,
+            "rate": 0.068
+          },
+          {
+            "floor": 109430,
+            "rate": 0.0785
+          },
+          {
+            "floor": 203150,
+            "rate": 0.0985
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0535
+          },
+          {
+            "floor": 48700,
+            "rate": 0.068
+          },
+          {
+            "floor": 193480,
+            "rate": 0.0785
+          },
+          {
+            "floor": 337930,
+            "rate": 0.0985
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 15300,
+        "mfj": 30600
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "MS": {
+      "name": "Mississippi",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 10000,
+            "rate": 0.04
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 10000,
+            "rate": 0.04
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 2300,
+        "mfj": 4600
+      },
+      "personalExemption": {
+        "single": 6000,
+        "mfj": 12000
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "MO": {
+      "name": "Missouri",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 1348,
+            "rate": 0.02
+          },
+          {
+            "floor": 2696,
+            "rate": 0.025
+          },
+          {
+            "floor": 4044,
+            "rate": 0.03
+          },
+          {
+            "floor": 5392,
+            "rate": 0.035
+          },
+          {
+            "floor": 6740,
+            "rate": 0.04
+          },
+          {
+            "floor": 8088,
+            "rate": 0.045
+          },
+          {
+            "floor": 9436,
+            "rate": 0.047
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 1348,
+            "rate": 0.02
+          },
+          {
+            "floor": 2696,
+            "rate": 0.025
+          },
+          {
+            "floor": 4044,
+            "rate": 0.03
+          },
+          {
+            "floor": 5392,
+            "rate": 0.035
+          },
+          {
+            "floor": 6740,
+            "rate": 0.04
+          },
+          {
+            "floor": 8088,
+            "rate": 0.045
+          },
+          {
+            "floor": 9436,
+            "rate": 0.047
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "mfj": 32200
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "exempt",
+      "notes": "Capital gains exempt from state income tax. Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "MT": {
+      "name": "Montana",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.047
+          },
+          {
+            "floor": 47500,
+            "rate": 0.0565
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.047
+          },
+          {
+            "floor": 95000,
+            "rate": 0.0565
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "mfj": 32200
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "NE": {
+      "name": "Nebraska",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0246
+          },
+          {
+            "floor": 4130,
+            "rate": 0.0351
+          },
+          {
+            "floor": 24760,
+            "rate": 0.0455
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0246
+          },
+          {
+            "floor": 8250,
+            "rate": 0.0351
+          },
+          {
+            "floor": 49530,
+            "rate": 0.0455
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8850,
+        "mfj": 17700
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Personal exemption is a credit (not modeled as deduction). Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "NV": {
+      "name": "Nevada",
+      "hasIncomeTax": false,
+      "brackets": {
+        "single": [],
+        "mfj": []
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "NH": {
+      "name": "New Hampshire",
+      "hasIncomeTax": false,
+      "brackets": {
+        "single": [],
+        "mfj": []
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "NJ": {
+      "name": "New Jersey",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.014
+          },
+          {
+            "floor": 20000,
+            "rate": 0.0175
+          },
+          {
+            "floor": 35000,
+            "rate": 0.035
+          },
+          {
+            "floor": 40000,
+            "rate": 0.0553
+          },
+          {
+            "floor": 75000,
+            "rate": 0.0637
+          },
+          {
+            "floor": 500000,
+            "rate": 0.0897
+          },
+          {
+            "floor": 1000000,
+            "rate": 0.1075
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.014
+          },
+          {
+            "floor": 20000,
+            "rate": 0.0175
+          },
+          {
+            "floor": 50000,
+            "rate": 0.0245
+          },
+          {
+            "floor": 70000,
+            "rate": 0.035
+          },
+          {
+            "floor": 80000,
+            "rate": 0.0553
+          },
+          {
+            "floor": 150000,
+            "rate": 0.0637
+          },
+          {
+            "floor": 500000,
+            "rate": 0.0897
+          },
+          {
+            "floor": 1000000,
+            "rate": 0.1075
+          }
+        ],
+        "hoh": [
+          { "floor": 0, "rate": 0.014 },
+          { "floor": 20000, "rate": 0.0175 },
+          { "floor": 50000, "rate": 0.0245 },
+          { "floor": 70000, "rate": 0.035 },
+          { "floor": 80000, "rate": 0.0553 },
+          { "floor": 150000, "rate": 0.0637 },
+          { "floor": 500000, "rate": 0.0897 },
+          { "floor": 1000000, "rate": 0.1075 }
+        ]
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0,
+        "hoh": 0
+      },
+      "personalExemption": {
+        "single": 1000,
+        "mfj": 2000,
+        "hoh": 1000
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "NM": {
+      "name": "New Mexico",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.015
+          },
+          {
+            "floor": 5500,
+            "rate": 0.032
+          },
+          {
+            "floor": 16500,
+            "rate": 0.043
+          },
+          {
+            "floor": 33500,
+            "rate": 0.047
+          },
+          {
+            "floor": 66500,
+            "rate": 0.049
+          },
+          {
+            "floor": 210000,
+            "rate": 0.059
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.015
+          },
+          {
+            "floor": 8000,
+            "rate": 0.032
+          },
+          {
+            "floor": 25000,
+            "rate": 0.043
+          },
+          {
+            "floor": 50000,
+            "rate": 0.047
+          },
+          {
+            "floor": 100000,
+            "rate": 0.049
+          },
+          {
+            "floor": 315000,
+            "rate": 0.059
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "mfj": 32200
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "NY": {
+      "name": "New York",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.039
+          },
+          {
+            "floor": 8500,
+            "rate": 0.044
+          },
+          {
+            "floor": 11700,
+            "rate": 0.0515
+          },
+          {
+            "floor": 13900,
+            "rate": 0.054
+          },
+          {
+            "floor": 80650,
+            "rate": 0.059
+          },
+          {
+            "floor": 215400,
+            "rate": 0.0685
+          },
+          {
+            "floor": 1077550,
+            "rate": 0.0965
+          },
+          {
+            "floor": 5000000,
+            "rate": 0.103
+          },
+          {
+            "floor": 25000000,
+            "rate": 0.109
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.039
+          },
+          {
+            "floor": 17150,
+            "rate": 0.044
+          },
+          {
+            "floor": 23600,
+            "rate": 0.0515
+          },
+          {
+            "floor": 27900,
+            "rate": 0.054
+          },
+          {
+            "floor": 161550,
+            "rate": 0.059
+          },
+          {
+            "floor": 323200,
+            "rate": 0.0685
+          },
+          {
+            "floor": 2155350,
+            "rate": 0.0965
+          },
+          {
+            "floor": 5000000,
+            "rate": 0.103
+          },
+          {
+            "floor": 25000000,
+            "rate": 0.109
+          }
+        ],
+        "hoh": [
+          { "floor": 0, "rate": 0.039 },
+          { "floor": 12800, "rate": 0.044 },
+          { "floor": 17650, "rate": 0.0515 },
+          { "floor": 20900, "rate": 0.054 },
+          { "floor": 107650, "rate": 0.059 },
+          { "floor": 269300, "rate": 0.0685 },
+          { "floor": 1616450, "rate": 0.0965 },
+          { "floor": 5000000, "rate": 0.103 },
+          { "floor": 25000000, "rate": 0.109 }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8000,
+        "mfj": 16050,
+        "hoh": 11200
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0,
+        "hoh": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary",
+      "notes": "Tax benefit recapture for high earners not modeled"
+    },
+    "NC": {
+      "name": "North Carolina",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0399
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0399
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 12750,
+        "mfj": 25500
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "ND": {
+      "name": "North Dakota",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 48475,
+            "rate": 0.0195
+          },
+          {
+            "floor": 244825,
+            "rate": 0.025
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 80975,
+            "rate": 0.0195
+          },
+          {
+            "floor": 298075,
+            "rate": 0.025
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "mfj": 32200
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "OH": {
+      "name": "Ohio",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 26050,
+            "rate": 0.0275
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 26050,
+            "rate": 0.0275
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 2400,
+        "mfj": 4800
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "OK": {
+      "name": "Oklahoma",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 3750,
+            "rate": 0.025
+          },
+          {
+            "floor": 4900,
+            "rate": 0.035
+          },
+          {
+            "floor": 7200,
+            "rate": 0.045
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 7500,
+            "rate": 0.025
+          },
+          {
+            "floor": 9800,
+            "rate": 0.035
+          },
+          {
+            "floor": 14400,
+            "rate": 0.045
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 6350,
+        "mfj": 12700
+      },
+      "personalExemption": {
+        "single": 1000,
+        "mfj": 2000
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "OR": {
+      "name": "Oregon",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0475
+          },
+          {
+            "floor": 4550,
+            "rate": 0.0675
+          },
+          {
+            "floor": 11400,
+            "rate": 0.0875
+          },
+          {
+            "floor": 125000,
+            "rate": 0.099
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0475
+          },
+          {
+            "floor": 9100,
+            "rate": 0.0675
+          },
+          {
+            "floor": 22800,
+            "rate": 0.0875
+          },
+          {
+            "floor": 250000,
+            "rate": 0.099
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 2910,
+        "mfj": 5820
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary",
+      "notes": "Personal exemption is a credit (not modeled as deduction)"
+    },
+    "PA": {
+      "name": "Pennsylvania",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0307
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0307
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "RI": {
+      "name": "Rhode Island",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0375
+          },
+          {
+            "floor": 82050,
+            "rate": 0.0475
+          },
+          {
+            "floor": 186450,
+            "rate": 0.0599
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0375
+          },
+          {
+            "floor": 82050,
+            "rate": 0.0475
+          },
+          {
+            "floor": 186450,
+            "rate": 0.0599
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 11200,
+        "mfj": 22400
+      },
+      "personalExemption": {
+        "single": 5250,
+        "mfj": 10500
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "SC": {
+      "name": "South Carolina",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 3640,
+            "rate": 0.03
+          },
+          {
+            "floor": 18230,
+            "rate": 0.06
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 3640,
+            "rate": 0.03
+          },
+          {
+            "floor": 18230,
+            "rate": 0.06
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8350,
+        "mfj": 16700
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "SD": {
+      "name": "South Dakota",
+      "hasIncomeTax": false,
+      "brackets": {
+        "single": [],
+        "mfj": []
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "TN": {
+      "name": "Tennessee",
+      "hasIncomeTax": false,
+      "brackets": {
+        "single": [],
+        "mfj": []
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "TX": {
+      "name": "Texas",
+      "hasIncomeTax": false,
+      "brackets": {
+        "single": [],
+        "mfj": []
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "UT": {
+      "name": "Utah",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.045
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.045
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Standard deduction is a credit (not modeled as deduction). Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "VT": {
+      "name": "Vermont",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0335
+          },
+          {
+            "floor": 49400,
+            "rate": 0.066
+          },
+          {
+            "floor": 119700,
+            "rate": 0.076
+          },
+          {
+            "floor": 249700,
+            "rate": 0.0875
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0335
+          },
+          {
+            "floor": 82500,
+            "rate": 0.066
+          },
+          {
+            "floor": 199450,
+            "rate": 0.076
+          },
+          {
+            "floor": 304000,
+            "rate": 0.0875
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 7650,
+        "mfj": 15300
+      },
+      "personalExemption": {
+        "single": 5300,
+        "mfj": 10600
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "VA": {
+      "name": "Virginia",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.02
+          },
+          {
+            "floor": 3000,
+            "rate": 0.03
+          },
+          {
+            "floor": 5000,
+            "rate": 0.05
+          },
+          {
+            "floor": 17000,
+            "rate": 0.0575
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.02
+          },
+          {
+            "floor": 3000,
+            "rate": 0.03
+          },
+          {
+            "floor": 5000,
+            "rate": 0.05
+          },
+          {
+            "floor": 17000,
+            "rate": 0.0575
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 8750,
+        "mfj": 17500
+      },
+      "personalExemption": {
+        "single": 930,
+        "mfj": 1860
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "WA": {
+      "name": "Washington",
+      "hasIncomeTax": false,
+      "capitalGainsOnly": true,
+      "brackets": {
+        "single": [],
+        "mfj": []
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "preferential",
+      "capitalGainsBrackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 278000,
+            "rate": 0.07
+          },
+          {
+            "floor": 1000000,
+            "rate": 0.09
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0
+          },
+          {
+            "floor": 278000,
+            "rate": 0.07
+          },
+          {
+            "floor": 1000000,
+            "rate": 0.09
+          }
+        ]
+      },
+      "notes": "Capital gains tax only (7%/9% above exclusion)"
+    },
+    "WV": {
+      "name": "West Virginia",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.0222
+          },
+          {
+            "floor": 10000,
+            "rate": 0.0296
+          },
+          {
+            "floor": 25000,
+            "rate": 0.0333
+          },
+          {
+            "floor": 40000,
+            "rate": 0.0444
+          },
+          {
+            "floor": 60000,
+            "rate": 0.0482
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.0222
+          },
+          {
+            "floor": 10000,
+            "rate": 0.0296
+          },
+          {
+            "floor": 25000,
+            "rate": 0.0333
+          },
+          {
+            "floor": 40000,
+            "rate": 0.0444
+          },
+          {
+            "floor": 60000,
+            "rate": 0.0482
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 2000,
+        "mfj": 4000
+      },
+      "socialSecurityTaxablePct": 0.85,
+      "capitalGains": "ordinary",
+      "notes": "Social Security taxed substantially (modeled at 85% like federal)"
+    },
+    "WI": {
+      "name": "Wisconsin",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.035
+          },
+          {
+            "floor": 15110,
+            "rate": 0.044
+          },
+          {
+            "floor": 51950,
+            "rate": 0.053
+          },
+          {
+            "floor": 332720,
+            "rate": 0.0765
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.035
+          },
+          {
+            "floor": 20150,
+            "rate": 0.044
+          },
+          {
+            "floor": 69260,
+            "rate": 0.053
+          },
+          {
+            "floor": 443630,
+            "rate": 0.0765
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 13960,
+        "mfj": 25840
+      },
+      "personalExemption": {
+        "single": 700,
+        "mfj": 1400
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "WY": {
+      "name": "Wyoming",
+      "hasIncomeTax": false,
+      "brackets": {
+        "single": [],
+        "mfj": []
+      },
+      "standardDeduction": {
+        "single": 0,
+        "mfj": 0
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    },
+    "DC": {
+      "name": "District of Columbia",
+      "hasIncomeTax": true,
+      "brackets": {
+        "single": [
+          {
+            "floor": 0,
+            "rate": 0.04
+          },
+          {
+            "floor": 10000,
+            "rate": 0.06
+          },
+          {
+            "floor": 40000,
+            "rate": 0.065
+          },
+          {
+            "floor": 60000,
+            "rate": 0.085
+          },
+          {
+            "floor": 250000,
+            "rate": 0.0925
+          },
+          {
+            "floor": 500000,
+            "rate": 0.0975
+          },
+          {
+            "floor": 1000000,
+            "rate": 0.1075
+          }
+        ],
+        "mfj": [
+          {
+            "floor": 0,
+            "rate": 0.04
+          },
+          {
+            "floor": 10000,
+            "rate": 0.06
+          },
+          {
+            "floor": 40000,
+            "rate": 0.065
+          },
+          {
+            "floor": 60000,
+            "rate": 0.085
+          },
+          {
+            "floor": 250000,
+            "rate": 0.0925
+          },
+          {
+            "floor": 500000,
+            "rate": 0.0975
+          },
+          {
+            "floor": 1000000,
+            "rate": 0.1075
+          }
+        ]
+      },
+      "standardDeduction": {
+        "single": 16100,
+        "mfj": 32200
+      },
+      "personalExemption": {
+        "single": 0,
+        "mfj": 0
+      },
+      "socialSecurityTaxablePct": 0,
+      "capitalGains": "ordinary"
+    }
+  }
+}

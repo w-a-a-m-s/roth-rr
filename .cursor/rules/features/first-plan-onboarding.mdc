@@ -1,0 +1,143 @@
+---
+description: First-plan onboarding (forced name modal + plan wizard)
+globs: src/app/CalculatorHome.tsx,src/store/useUI.ts,src/components/plan/PlanModal.tsx,src/components/plan/PlanNameModal.tsx,src/components/plan/PlanSummary.tsx,src/components/plan/steps.ts,src/lib/domain/household.ts,src/components/wizard/steps/**,src/components/onboarding/**,src/lib/onboarding/**
+alwaysApply: false
+---
+
+# First-plan onboarding
+
+Important onboarding path: when a user has an empty (untouched) non-sample plan,
+force them through naming, then the multi-step plan editor, until the plan is
+created. Same shell as later "new plan" / "edit plan", with dismiss locked.
+
+## Flow
+
+```
+CalculatorHome gates
+  -> useUI.openFirstRun()          # nameModal mode "firstRun"
+  -> PlanNameModal (forced)
+  -> confirmPlanName               # renames active blank plan
+  -> PlanModal mode "new", draftId null   # forced wizard
+  -> finishPlanModal / commitActive
+       authenticated -> close
+       anonymous invite guest -> createAccount (or register fallback)
+       other anonymous -> login
+  -> strategyPanel tour (left sidebar, once modals are closed)
+```
+
+`openNewPlan` can also enter `firstRun` when the active plan is already an
+untouched blank (avoids stacking another empty draft).
+
+## Files
+
+| File | Role |
+| ---- | ---- |
+| `src/app/CalculatorHome.tsx` | Auto-starts `openFirstRun` when gates pass |
+| `src/store/useUI.ts` | `openFirstRun`, name/plan confirm/cancel, forced dismiss rules |
+| `src/components/plan/PlanNameModal.tsx` | Name step; `firstRun` cannot dismiss |
+| `src/components/plan/PlanModal.tsx` | Wizard; `forced = mode === "new" && !draftId` |
+| `src/components/plan/steps.ts` | Step list + `isComplete` gates for "new" |
+| `src/lib/domain/household.ts` | `isUntouchedHousehold` trigger predicate |
+| `src/components/wizard/steps/*` | Step bodies inside the modal |
+| `src/components/plan/PlanSummary.tsx` | Left sidebar; hosts the post-create strategy panel tour |
+| `src/components/onboarding/StepTour.tsx` | Mandatory spotlight tour UI |
+| `src/lib/onboarding/*` | Tour copy, storage, target helpers |
+
+## Step walkthrough tours
+
+Each wizard stage shows a **mandatory** spotlight tour the first time the user
+sees that stage on desktop (`lg+`). Below `lg` the tour never runs: the only
+viewport gate is `shouldRunStepTour` in `StepTour`. Browser `localStorage` key
+`roth:step-tour-seen`. No Skip: the user must click through to Got it. Escape
+is swallowed while the tour is active. PlanModal itself is not modified;
+Household targets local refs, and the footer Next button is resolved via
+`findPlanModalPrimaryAction`.
+
+| Stage | Tour id | Status |
+| ---- | ---- | ---- |
+| Household | `household` | Implemented (filing + state beside field; people; Next) |
+| Accounts | `accounts` | Implemented (one tip; spotlights all 3 add buttons) |
+| Income | `income` | Implemented (Add income source) |
+| Real estate | `realEstate` | Implemented (Add property) |
+| Expenses | `expenses` | Implemented (Add expense) |
+| Conversion | `conversion` | Empty-state notice; 6-tip year-editor tour only when convertible > 0 |
+| After first plan | `strategyPanel` | Left-sidebar Conversion strategy menu; waits until plan / name / auth modals are closed |
+
+## Start gates (`CalculatorHome`)
+
+All must hold before `openFirstRun`:
+
+- mounted, not impersonating, not waiting on profile name
+- scenario `loaded`
+- active plan is **not** a sample (`!isDefaultPlanId`)
+- household is untouched (`isUntouchedHousehold`)
+- neither name nor plan modal already open
+- auth is `authenticated`, **or** `anonymous` with invite-guest session
+  (leftover admin invite link; plan-share invites skip this and open
+  create-account)
+- After hydrate, a new account with no saved plans gets a blank seed plan,
+  which opens first-run.
+
+## Forced vs dismissible
+
+| Signal | Meaning |
+| ---- | ---- |
+| `nameModal.mode === "firstRun"` | Name modal: no cancel, no backdrop/X close |
+| `planModal.mode === "new" && !draftId` | First-plan wizard: no Cancel, no backdrop/X |
+| `planModal.mode === "new" && draftId` | Ordinary create: Cancel deletes draft, restores `prevActiveId` |
+| `planModal.mode === "edit"` | Edit existing: tabs unlocked, Close commits |
+
+Do not weaken these: first-run must finish (or auth after finish), not escape to
+an unnamed blank calculator.
+
+## Wizard behavior (new / first-plan)
+
+- Steps unlock forward only (`unlocked`); edit mode unlocks all tabs.
+- Household and Accounts require `isComplete` in new mode; conversion must not
+  be empty to finish. Leaving a step (Next / Back / tab) bumps a visit key so
+  open entity-card edits remount closed when you return. Enter in a text or
+  number field on an open card is the same as Done (selects keep native Enter).
+- Last step primary CTA is "Create plan" → `finishPlanModal`.
+- `forceCloseModals` clears leftover wizard/auth UI once auth flips to
+  authenticated (see `CalculatorHome`).
+
+## Gotchas
+
+- First-run **renames** the existing blank plan; it does not call `newConfig`.
+  Ordinary "new" creates a draft id used for cancel/restore.
+- `isUntouchedHousehold` is stricter than "no accounts": any filled person
+  name / birth / retirement year, or any accounts/income/RE/expenses, skips
+  auto first-run. Finished plans that omit accounts must not re-trigger.
+- Invite guests can complete the wizard before auth; `finishPlanModal` prefers
+  invite-code → create-account over a bare login prompt. Plan-share invite
+  links skip the guest wizard and open create-account so the share attaches
+  to the new account.
+- Profile-name modal takes priority over first-run; do not open the wizard
+  underneath it.
+- StepTour spotlights must stay in CSS/`position: fixed` space (box-shadow for
+  one target; clip-path only for multi-hole tips), not an SVG mask: SVG user
+  units drift from `getBoundingClientRect` when browser zoom is not Cmd+0 /
+  100%. Remeasure on `visualViewport` resize/scroll as well as window
+  resize/scroll.
+- First open at a non-default browser zoom looked wrong, but zooming *while*
+  the tip was open looked fine: the plan modal enter animation
+  (`transform: scale`) skews `getBoundingClientRect`, and body-portaled fixed
+  overlays used those mid-animation coords. Remeasure after `MODAL_ENTER_MS`,
+  on `animationend`, and via `ResizeObserver` on the targets.
+- Household filing/state tips use `right-center` (flip under when the viewport
+  is too narrow). `bottom-left` on those small fields looks fine at 100% zoom
+  but reads as a floating card over People when the plan modal is tall
+  (zoomed out / `min-h-[55vh]`).
+- The Roth layout locks zoom in the viewport meta (`maximumScale: 1`,
+  `userScalable: false`) so the tool does not pinch-zoom. Form controls are
+  still 16px on touch devices so iOS does not auto-zoom a focused field.
+- PlanModal is `align="top"` with `min-h` / `max-h` on the dialog. `90vh` plus
+  overlay padding is taller than iOS Safari's visible viewport (toolbar is
+  inside `vh`, not `dvh`), so Back / Next sit under the browser chrome.
+  The overlay is `100dvh` with padding; the dialog is `max-h-full` so the
+  footer stays above that gap. Do not put `max-h-[90vh]` back on the dialog.
+- `strategyPanel` lives on the calculator sidebar, not in the wizard. Gate on
+  closed plan / name / auth modals, a finished non-sample plan with a visible
+  strategy menu, and `household` already marked seen (they started first-plan).
+  Do not show it on every existing account. Like every other tour, it is
+  skipped below `lg` by `shouldRunStepTour`.

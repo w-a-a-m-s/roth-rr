@@ -1,0 +1,42 @@
+---
+description: Joint after-tax accounts (Both owner on MFJ plans)
+globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/components/wizard/steps/AccountsStep.tsx,src/store/useScenario.ts,src/lib/planDiff.ts
+alwaysApply: false
+---
+
+# Joint after-tax accounts
+
+Married plans can mark an after-tax account (`investment`, `annuity`, `cd`,
+`savings`) as owned by both people. IRAs and Roths stay single-owner: they
+cannot legally be joint, and `ownerId` drives RMDs and conversion eligibility.
+
+## Model
+
+`Account.joint` is optional. `ownerId` stays required as a fallback for
+filing-status cleanup and deposit defaults. Joint is valid only when
+`filingStatus === "mfj"` and the kind is after-tax (`canAccountBeJoint`).
+
+The engine does not read `joint` or after-tax `ownerId`. Taxes, growth,
+withdrawals, Medicare, and inheritance are unchanged.
+
+## UI
+
+On an MFJ after-tax card, Owner includes a **Both** option
+(`JOINT_OWNER_VALUE`). Read view uses `accountOwnerLabel` ("Both" or the
+person's name). Retirement and Roth cards stay person-only.
+
+New deposits default `endYear` via `accountDepositEndYear`: the owner's
+retirement year, or the later of the two when joint.
+
+## Filing status and hydrate
+
+`applyFilingStatus` to Single keeps joint after-tax accounts, clears `joint`,
+and reassigns `ownerId` if it pointed at the removed spouse. Non-joint accounts
+owned by the removed person are still dropped.
+
+`migrateHousehold` / `healAccountJoint` strip `joint` from single-filer plans
+and from non-after-tax accounts (including deleted accounts). Existing plans
+without the flag are unchanged.
+
+Revision history folds `joint` into Owner so a change reads as "Alex" → "Both",
+not a separate Joint flag.

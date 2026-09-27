@@ -1,0 +1,60 @@
+{
+  "year": 2026,
+  "standardDeduction": {
+    "mfj": 32200,
+    "single": 16100,
+    "hoh": 24150
+  },
+  "brackets": {
+    "mfj": [
+      { "floor": 0, "rate": 0.1 },
+      { "floor": 24800, "rate": 0.12 },
+      { "floor": 100800, "rate": 0.22 },
+      { "floor": 211400, "rate": 0.24 },
+      { "floor": 403550, "rate": 0.32 },
+      { "floor": 512450, "rate": 0.35 },
+      { "floor": 768700, "rate": 0.37 }
+    ],
+    "single": [
+      { "floor": 0, "rate": 0.1 },
+      { "floor": 12400, "rate": 0.12 },
+      { "floor": 50400, "rate": 0.22 },
+      { "floor": 105700, "rate": 0.24 },
+      { "floor": 201775, "rate": 0.32 },
+      { "floor": 256225, "rate": 0.35 },
+      { "floor": 640600, "rate": 0.37 }
+    ],
+    "hoh": [
+      { "floor": 0, "rate": 0.1 },
+      { "floor": 17700, "rate": 0.12 },
+      { "floor": 67450, "rate": 0.22 },
+      { "floor": 105700, "rate": 0.24 },
+      { "floor": 201775, "rate": 0.32 },
+      { "floor": 256200, "rate": 0.35 },
+      { "floor": 640600, "rate": 0.37 }
+    ]
+  },
+  "seniorDeductionPerPerson": 6000,
+  "seniorDeductionPhaseOut": {
+    "mfj": 150000,
+    "single": 75000,
+    "hoh": 75000
+  },
+  "longTermCapitalGains": {
+    "mfj": [
+      { "floor": 0, "rate": 0 },
+      { "floor": 98900, "rate": 0.15 },
+      { "floor": 613700, "rate": 0.2 }
+    ],
+    "single": [
+      { "floor": 0, "rate": 0 },
+      { "floor": 49450, "rate": 0.15 },
+      { "floor": 545500, "rate": 0.2 }
+    ],
+    "hoh": [
+      { "floor": 0, "rate": 0 },
+      { "floor": 66200, "rate": 0.15 },
+      { "floor": 579600, "rate": 0.2 }
+    ]
+  }
+}

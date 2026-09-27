@@ -1,0 +1,37 @@
+---
+description: Itemized household expenses with optional start/end years
+globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/lib/engine/project.ts,src/components/wizard/steps/ExpensesStep.tsx,src/components/plan/PlanDetails.tsx,src/store/useScenario.ts
+alwaysApply: false
+---
+
+# Expenses
+
+Household spending is a list of `Expense` items (name, amount, monthly/yearly,
+growth). Each item can optionally set inclusive `startYear` / `endYear`. Omit
+both and the expense runs for the whole projection, which is how every saved
+plan behaved before this field existed.
+
+## Amount vs growth
+
+The entered amount is what you spend **in the start year**. Growth compounds
+only after that. If `startYear` is omitted, the first projection year is the
+start (same as the old year-index growth). Income uses the same rule.
+
+`expenseMonthlyForYear` in `household.ts` is the single source. `project.ts`
+must call it; don't re-derive monthly/grown amounts in the loop.
+
+## UI
+
+Wizard fields: optional Start / End `YearSelect`s under Active years, on the
+same desktop row as name / amount / frequency / growth (`lg:grid-cols-6`,
+Active years `lg:col-span-2`). Below `lg` they still stack. Closed cards and
+the plan sidebar show the window only when a bound is set
+(`expenseYearsLabel`: "2028 to 2032", "2028 onward", "through 2032"). The
+step total is year-1 spend, so an expense that starts later does not count
+there.
+
+## Migration
+
+Additive. `migrateHousehold` leaves missing years alone (open-ended) and strips
+non-finite `startYear` / `endYear` on live and deleted expenses. Existing
+golden cases must not move.

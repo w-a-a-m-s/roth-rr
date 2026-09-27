@@ -1,0 +1,22 @@
+{
+  "year": 2026,
+  "standardMonthlyPremium": 202.9,
+  "tiers": {
+    "single": [
+      { "magiFloor": 0, "monthlyPremium": 202.9 },
+      { "magiFloor": 109000, "monthlyPremium": 284.1 },
+      { "magiFloor": 137000, "monthlyPremium": 405.8 },
+      { "magiFloor": 171000, "monthlyPremium": 527.5 },
+      { "magiFloor": 205000, "monthlyPremium": 649.2 },
+      { "magiFloor": 500000, "monthlyPremium": 689.9 }
+    ],
+    "mfj": [
+      { "magiFloor": 0, "monthlyPremium": 202.9 },
+      { "magiFloor": 218000, "monthlyPremium": 284.1 },
+      { "magiFloor": 274000, "monthlyPremium": 405.8 },
+      { "magiFloor": 342000, "monthlyPremium": 527.5 },
+      { "magiFloor": 410000, "monthlyPremium": 649.2 },
+      { "magiFloor": 750000, "monthlyPremium": 689.9 }
+    ]
+  }
+}

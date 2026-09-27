@@ -1,0 +1,22 @@
+---
+description: Shared Roth form controls (Field, inputs, Select / YearSelect)
+globs: src/components/ui/inputs.tsx,src/components/ui/SelectMenu.tsx,src/components/ui/selectMenu.ts,src/components/ui/Field.tsx,src/components/ui/comboOptions.ts,src/components/ui/yearInput.ts
+alwaysApply: false
+---
+
+# Form controls
+
+`Select` is a custom listbox (`SelectMenu`), not a native `<select>`. Chrome's
+option popup ignores page and modal scale. The menu portals to `document.body`
+so modal `overflow` does not clip it. Items use `text-base` and 44px taps
+below `lg` (`text-sm` on desktop).
+
+`YearSelect` is a typed year field (`inputMode="numeric"`), not a listbox.
+Non-digits are stripped as you type (max four digits). The committed year
+must fall in `[from, to]`, the same range the old dropdown listed; out of
+range (or a required empty) shows `Enter a year between {min} and {max}`
+and does not write. Clearing an `allowEmpty` field yields `undefined`.
+Parse / strip helpers live in `yearInput.ts`.
+
+`ComboInput` stays a text field with in-flow suggestions. Enter on a
+highlighted suggestion is still ignored by `submitEditOnEnter` (preventDefault).

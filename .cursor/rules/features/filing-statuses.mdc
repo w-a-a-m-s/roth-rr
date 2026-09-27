@@ -1,0 +1,36 @@
+---
+description: Filing statuses (single, MFJ, HOH) and tax-table resolution
+globs: src/lib/domain/types.ts,src/lib/config/filingStatus.ts,src/lib/config/federalTax.ts,src/lib/config/medicare.ts,src/lib/config/stateTax.ts,src/lib/config/data/federalTax.json,src/lib/config/data/medicare.json,src/lib/config/data/stateIncomeTax.json,src/lib/externalData/validate.ts,src/lib/engine/project.ts,src/lib/engine/runScenario.ts,src/components/wizard/steps/HouseholdStep.tsx
+alwaysApply: false
+---
+
+# Filing statuses
+
+`FilingStatus` is `"single" | "mfj" | "hoh"`. It is stored on the household,
+not inferred from people count. MFJ holds two people; single and HOH hold one
+(`maxPeople`). Dependents are not modeled: HOH is a user assertion.
+
+## Resolution layer
+
+Never index a tax table with `table[filingStatus]` directly. Use `forFiling`
+from `src/lib/config/filingStatus.ts`.
+
+- Federal tables require an explicit `hoh` key (real IRS numbers).
+- Medicare IRMAA has no HOH schedule: `tiers` is a `FilingTable` and HOH
+  aliases to `single`.
+- State tables are **partial by design**. `single` and `mfj` are required;
+  `hoh` is optional. Today CA, NY, and NJ carry distinct HOH brackets /
+  deductions. Every other state aliases to `single`.
+
+`TABLE_FALLBACK` is `hoh → single`. If neither the status nor its base key
+exists, `forFiling` throws and names the dataset.
+
+## UI
+
+Filing-status options come from `FILING_STATUS_ORDER` / `FILING_STATUS_LABELS`,
+not hardcoded literals. HOH shows a help note: the status is static for the
+whole projection (it often ends mid-horizon in real life), and most states
+approximate HOH as single.
+
+`migrateHousehold` heals an unrecognized `filingStatus` to `"single"` and
+leaves a stored `"hoh"` alone. Older clients cannot read `hoh` plans.

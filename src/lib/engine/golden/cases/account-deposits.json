@@ -1,0 +1,150 @@
+{
+  "name": "Account deposits (pre-plan contributions, monthly / yearly / one-time)",
+  "strategy": "manual",
+  "note": "Exercises deposits into accounts across the plan-start boundary. The 401(k) contribution starts in 2027, three years before the 2030 retirement, so those years compound into the opening balance while 2030-2031 run through the projection as pre-tax dollars (excluded from ordinary gross). The Roth deposit is post-tax, the brokerage deposits add cost basis (yearly plus a one-time lump), and every in-projection deposit comes out of surplus. Social Security starts in 2035 at the entered amount (growth only after that). Defaults to FL (no state income tax).",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 6000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Avery",
+        "birthYear": 1968,
+        "retirementYear": 2030
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ret",
+        "label": "401(k)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 500000,
+        "growthRate": 0.05,
+        "deposits": [
+          {
+            "id": "dep-401k",
+            "label": "401(k) contribution",
+            "amount": 2000,
+            "frequency": "monthly",
+            "startYear": 2027,
+            "endYear": 2031
+          }
+        ],
+        "retirementType": "401k"
+      },
+      {
+        "id": "roth",
+        "label": "Roth IRA",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 80000,
+        "growthRate": 0.06,
+        "deposits": [
+          {
+            "id": "dep-roth",
+            "label": "Roth contribution",
+            "amount": 7000,
+            "frequency": "yearly",
+            "startYear": 2030,
+            "endYear": 2033
+          }
+        ]
+      },
+      {
+        "id": "brk",
+        "label": "Brokerage",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 150000,
+        "costBasis": 100000,
+        "growthRate": 0.05,
+        "deposits": [
+          {
+            "id": "dep-brk",
+            "label": "Monthly savings",
+            "amount": 500,
+            "frequency": "monthly",
+            "startYear": 2028,
+            "endYear": 2032
+          },
+          {
+            "id": "dep-inherit",
+            "label": "Inheritance",
+            "amount": 75000,
+            "frequency": "oneTime",
+            "startYear": 2034
+          }
+        ]
+      }
+    ],
+    "incomes": [
+      {
+        "id": "salary",
+        "label": "Consulting",
+        "ownerId": "p1",
+        "kind": "business",
+        "monthlyAmount": 6000,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "endYear": 2033
+      },
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2800,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2035
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        40000,
+        40000,
+        40000,
+        40000,
+        40000
+      ]
+    }
+  },
+  "commit": "5c499d0",
+  "commitDate": "2026-08-25T11:10:22+03:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 167507.36,
+      "medicareTotal": 51130.8,
+      "afterTaxAssetsAtRmd": 1288562.15,
+      "inheritanceFinal": 1761302.44
+    },
+    "roth": {
+      "taxesTotal": 155962.52,
+      "medicareTotal": 53079.6,
+      "afterTaxAssetsAtRmd": 1461859.04,
+      "inheritanceFinal": 2238463.68
+    },
+    "deltas": {
+      "taxesTotal": -11544.85,
+      "medicareTotal": 1948.8,
+      "afterTaxAssetsAtRmd": 173296.89,
+      "inheritanceFinal": 477161.23
+    }
+  }
+}

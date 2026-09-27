@@ -1,0 +1,76 @@
+---
+description: Roth project map, invariants, and feature index
+globs: src/**,scripts/**,next.config.ts
+alwaysApply: false
+---
+
+# Roth Project Guide (Tier 2)
+
+Roth conversion calculator, and the Auth.js host (`/api/auth`). Plans, users,
+sessions, and invites live in one MongoDB (`MONGODB_DB`). Deep architecture
+and engine rules live in
+[`AGENTS.md`](../../AGENTS.md). Prefer that file for math and engine work.
+Use this guide for UI, product features, and the index below.
+
+## Layout
+
+| Area | Path | Notes |
+| ---- | ---- | ----- |
+| App shell | `src/app/` | Served at `/`. `CalculatorHome` hosts calculator + modals. Auth.js at `src/app/api/auth`, branded errors at `src/app/auth/error` |
+| Auth | `src/lib/auth/` | Auth.js config, mail, invites, auth UI. Route re-exports `handlers` |
+| Shared UI, legal, email | `src/lib/common/` | Footer, legal docs, site URLs, Mailgun send |
+| Plan UI | `src/components/plan/` | Name modal, multi-step plan modal, summary |
+| Wizard steps | `src/components/wizard/steps/` | Steps rendered inside `PlanModal` |
+| UI store | `src/store/useUI.ts` | Modals, first-run, drafts |
+| Scenario store | `src/store/useScenario.ts` | Plans hydrate/save, household edits |
+| Domain | `src/lib/domain/` | Pure household rules (e.g. untouched check) |
+
+## Project invariants
+
+- Invite and auth constants live in `src/lib/auth/shared`. Import them. Do not
+  re-declare them.
+- Friendly UI copy: no em dashes, and no hyphen used as a sentence separator.
+- Plans, Auth.js collections (users, sessions, accounts, invites), and
+  external data all live in `MONGODB_DB` (project `.env`). Required:
+  missing throws. Restart `next dev` after changing DB env.
+  `src/lib/db/connection.ts` stays free of `server-only` because
+  `scripts/invalidate-sessions.ts` loads it through `users.ts` outside
+  Next.js. App code imports `@/lib/db/mongo`.
+- `EXTERNAL_DATA_API_URL` is the app origin (`http://localhost:3000`). A path
+  on that URL is ignored. A stale port makes seed/check miss the app and the
+  browser GET 404s until Mongo is seeded.
+- Never list a server-only key in `nextConfig.env`. Those keys are compiled
+  into the bundles as string literals.
+- The app is the whole site: calculator, Auth.js (`/api/auth`), and
+  `/api/dev/login`. Plan URLs are `/{publicId}`. App origin is `AUTH_URL`.
+  Auth.js also needs `AUTH_SECRET` and `AUTH_TRUST_HOST`. Invite and share
+  links use that origin in development and the canonical domain in production.
+- Magic-link send does not create an Auth.js user. `createUser` runs only
+  after they click the link. Login / register screen switches must not reset
+  the email step.
+
+## Feature index
+
+| Feature | Guide | When to read |
+| ---- | ---- | ---- |
+| Local IDE login | [features/dev-login.mdc](features/dev-login.mdc) | Dev-only `/api/dev/login` session mint for the Cursor browser |
+| Signup attempts | [features/signup-attempts.mdc](features/signup-attempts.mdc) | Magic-link requested before the user clicks |
+| First-plan onboarding | [features/first-plan-onboarding.mdc](features/first-plan-onboarding.mdc) | Forced name + plan wizard, per-stage walkthrough tours |
+| Account deposits | [features/account-deposits.mdc](features/account-deposits.mdc) | Contributions into accounts, pre-plan vs in-projection years, deposit tax treatment |
+| Expenses | [features/expenses.mdc](features/expenses.mdc) | Itemized spending, optional start/end years, growth from the start year |
+| Income date range | [features/income-date-range.mdc](features/income-date-range.mdc) | Optional start/end years; amount is start-year dollars, growth after that |
+| Retirement account types | [features/retirement-account-types.mdc](features/retirement-account-types.mdc) | 401(k) / 403(b) / 457(b) / IRA / TSP / DROP picker; DROP growth starts the year after the owner retires |
+| Joint after-tax accounts | [features/joint-accounts.mdc](features/joint-accounts.mdc) | Both-owner option on brokerage / savings / CD / annuity; filing-status cleanup |
+| Filing statuses | [features/filing-statuses.mdc](features/filing-statuses.mdc) | Single / MFJ / HOH, `forFiling` resolution, partial state HOH tables |
+| Rental passive loss | [features/rental-passive-loss.mdc](features/rental-passive-loss.mdc) | Per-property PAL, $25k allowance / MAGI phase-out, RE-pro exception, carryforward in the year-by-year table |
+| Conversion strategies | [features/conversion-strategies.mdc](features/conversion-strategies.mdc) | Live even / immediate / fill-bracket / IRMAA / empty-by-RMD schedules and the Total impact menu |
+| Mobile shell | [features/mobile-shell.mdc](features/mobile-shell.mdc) | Compact header, sticky Configure / Details / Actions below `lg` |
+| Projection charts | [features/projection-charts.mdc](features/projection-charts.mdc) | Assets / cash-flow Recharts; desktop idle last-year tooltip |
+| Form controls | [features/form-controls.mdc](features/form-controls.mdc) | Shared Field / inputs; Select is a custom listbox; YearSelect is a typed year field |
+
+## Reading protocol
+
+1. Read this Project Guide when the task touches the app.
+2. From the feature index, read only the Feature Guide(s) you are touching.
+3. After a meaningful change, update that Feature Guide (and this index if you
+   add or remove a feature).

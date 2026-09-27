@@ -1,0 +1,24 @@
+{
+	"editor.formatOnSave": true,
+	"prettier.singleQuote": true,
+	"prettier.printWidth": 170,
+	"prettier.useTabs": true,
+	"prettier.singleAttributePerLine": false,
+	"prettier.semi": true,
+	"prettier.bracketSpacing": true,
+	"prettier.bracketSameLine": false,
+	"prettier.arrowParens": "avoid",
+	"prettier.trailingComma": "none",
+	"prettier.jsxSingleQuote": false,
+	"prettier.tabWidth": 4,
+	"[javascript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[yaml]": {
+		"editor.defaultFormatter": null,
+		"editor.formatOnSave": true
+	},
+	"editor.stickyScroll.enabled": false,
+	"editor.stickyScroll.scrollWithEditor": false,
+	"editor.scrollBeyondLastLine": false
+}

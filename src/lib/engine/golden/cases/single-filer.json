@@ -1,0 +1,127 @@
+{
+  "name": "Single filer (single Medicare/IRMAA tiers, no real estate)",
+  "strategy": "manual",
+  "note": "Exercises the single filing status and single Medicare/IRMAA thresholds.",
+  "household": {
+    "filingStatus": "single",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 6000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Jordan",
+        "birthYear": 1968,
+        "retirementYear": 2033
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ira",
+        "label": "Traditional IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 800000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      },
+      {
+        "id": "k401",
+        "label": "401(k)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 400000,
+        "growthRate": 0.05,
+        "retirementType": "401k"
+      },
+      {
+        "id": "roth",
+        "label": "Roth IRA",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 50000,
+        "growthRate": 0.08
+      },
+      {
+        "id": "brk",
+        "label": "Brokerage",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 250000,
+        "costBasis": 150000,
+        "growthRate": 0.05
+      },
+      {
+        "id": "sav",
+        "label": "Savings",
+        "ownerId": "p1",
+        "kind": "savings",
+        "balance": 80000,
+        "growthRate": 0.03
+      }
+    ],
+    "incomes": [
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2800,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 2000,
+        "growthRate": 0.02,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        80000,
+        80000,
+        80000,
+        80000,
+        80000
+      ]
+    }
+  },
+  "commit": "b89271c",
+  "commitDate": "2026-08-06T11:41:28+03:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 368074.12,
+      "medicareTotal": 77425.2,
+      "afterTaxAssetsAtRmd": 1791906.09,
+      "inheritanceFinal": 2218497.91
+    },
+    "roth": {
+      "taxesTotal": 378655.36,
+      "medicareTotal": 74023.2,
+      "afterTaxAssetsAtRmd": 2177913.63,
+      "inheritanceFinal": 3472108.12
+    },
+    "deltas": {
+      "taxesTotal": 10581.24,
+      "medicareTotal": -3402,
+      "afterTaxAssetsAtRmd": 386007.54,
+      "inheritanceFinal": 1253610.21
+    }
+  }
+}

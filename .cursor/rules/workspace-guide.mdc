@@ -1,0 +1,89 @@
+---
+alwaysApply: true
+---
+
+# Workspace Guide (Tier 1)
+
+One Next.js app: the Roth conversion calculator. It also hosts Auth.js.
+This is the only always-on guide. Everything else loads conditionally, so
+keep this file short.
+
+## How the guide system works
+
+Three tiers of `.cursor/rules/*.mdc`, loaded by scope:
+
+- **Tier 1, this file** (`alwaysApply: true`): standards and the protocol
+  below. Always in context.
+- **Tier 2, the Project Guide** (`.cursor/rules/project-guide.mdc`): stack,
+  layout, invariants, and a feature index.
+- **Tier 3, Feature Guides** (`.cursor/rules/features/<feature>.mdc`, narrow
+  `globs`): the files a feature spans plus its invariants and gotchas. Loads
+  only when you touch those files.
+
+Keep exactly one `alwaysApply: true` file (this one). Everything else is
+glob-scoped so it stays out of context until relevant.
+
+## Global standards
+
+**Next.js / TypeScript pinning.** Next is `16.2.7`, React 19, TypeScript 5.
+This is not the Next.js in your training data: APIs, conventions, and file
+structure differ. Read the relevant guide in `node_modules/next/dist/docs/`
+before writing Next code, and heed deprecation notices.
+
+**One app, one source for each constant.** Auth, invites, email, legal, and
+shared UI live under `src/lib/auth` and `src/lib/common`. Import them. Do not
+re-declare invite status or cookie names (`src/lib/auth/shared/inviteConstants.ts`).
+Inside the app, use the `@/` path alias.
+
+**Environment.** One `.env` at the project root (Auth.js, Mongo, Google,
+email, `MONGODB_DB`, external-data). Next loads it. `.env.local`
+overrides. See `.env.example`. Never put server-only keys (`MONGODB_*`,
+`EXTERNAL_DATA_*`) in `nextConfig.env`. Do not set `turbopack.root` to a
+parent folder: that makes the compiler watch `node_modules` and `.next` and
+can freeze the machine.
+
+**Local app / IDE login.** The app is `http://localhost:3000`. The Cursor
+browser is a separate cookie jar: do not try Google OAuth, a magic-link email,
+or CDP cookie injection. To see signed-in UI, navigate to
+`http://localhost:3000/api/dev/login?email=...`. The email is required and must
+match `DEV_LOGIN_EMAIL` in `.env`. After landing, open `/{planId}` if you have
+an id. If that account is a superAdmin, **View as user…** is the second hop
+for another person's plan. Writes are live. Do not invent a new login path.
+Gates: [`docs/dev-login.md`](../../docs/dev-login.md).
+
+**Email.** Never call the Mailgun API directly. Send through `sendEmail`
+(`@/lib/common/server/email`), `sendMail`, or `sendSupportMail`
+(`@/lib/auth/server`). Every message to users sets Reply-To to the support
+inbox. Only support-inbox forwards use `sendSupportMail`.
+
+**Legal documents.** When you change Terms or Privacy content in
+`src/lib/common/client`, you MUST in the same change bump `TERMS_VERSION` /
+`PRIVACY_VERSION` (and the matching `*_EFFECTIVE_DATE`) and run
+`npm run invalidate-sessions`. Never edit legal copy without bumping version
+and effective date.
+
+**Deploy / social previews.** Absolute `og:image` URLs always point at the
+canonical domain `https://thewealthlab.ai` (see `@/lib/common/site`), never a
+`*.vercel.app` host.
+
+**Writing.** UI copy, comments, and docs are friendly and informal: warm,
+conversational, human. Contractions are fine (`we're`, `you'll`, `don't`).
+Never use a long dash (em dash). Never use a hyphen as a sentence separator
+(prefer a colon, comma, or rephrase). Hyphens inside words or compound
+adjectives are fine (`year-by-year`).
+
+## Reading and update protocol
+
+Follow this on every task. It is what keeps context lean and the guides
+trustworthy.
+
+1. This Workspace Guide is always in effect.
+2. Read the Project Guide when the task touches the app.
+3. From the Project Guide's feature index, read ONLY the Feature Guide(s) for
+   the feature you're touching.
+4. After a meaningful change, UPDATE the relevant guide (and the feature index
+   when you add or remove a feature).
+5. If you spent significant effort figuring something out (a gotcha, a hidden
+   contract, a debugging insight), write it down at the narrowest relevant tier.
+6. Keep every guide short and high-signal. Long guides defeat conditional
+   loading.

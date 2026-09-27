@@ -1,0 +1,86 @@
+{
+  "name": "Withdrawal schedule cannot overdraw or invent phantom income",
+  "strategy": "manual",
+  "note": "Regression for empty-account draws: a retirementDraw scheduled above the source balance must take only what is left (floor at $0), contribute only that amount as taxable income, and contribute $0 in later years while the schedule is still active. Without this clamp, production overdrew into negative balances and invented negative RMD income.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 2000,
+        "frequency": "monthly",
+        "growthRate": 0
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Pat",
+        "birthYear": 1965,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ret",
+        "label": "Traditional IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 10000,
+        "growthRate": 0,
+        "retirementType": "ira"
+      }
+    ],
+    "incomes": [
+      {
+        "id": "draw",
+        "label": "Retirement withdrawal",
+        "ownerId": "p1",
+        "kind": "retirementDraw",
+        "monthlyAmount": 5000,
+        "growthRate": 0,
+        "taxability": "full",
+        "drawsFromAccountId": "ret"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0,
+      "finalAge": 70
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "commit": "2bb79e1",
+  "commitDate": "2026-06-27T22:37:08+03:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 0,
+      "medicareTotal": 14608.8,
+      "afterTaxAssetsAtRmd": 0,
+      "inheritanceFinal": 0
+    },
+    "roth": {
+      "taxesTotal": 0,
+      "medicareTotal": 14608.8,
+      "afterTaxAssetsAtRmd": 0,
+      "inheritanceFinal": 0
+    },
+    "deltas": {
+      "taxesTotal": 0,
+      "medicareTotal": 0,
+      "afterTaxAssetsAtRmd": 0,
+      "inheritanceFinal": 0
+    }
+  }
+}

@@ -1,0 +1,38 @@
+---
+description: Taxable retirement account subtypes and DROP growth delay
+globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/components/wizard/steps/AccountsStep.tsx,src/store/useScenario.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/engine/deposits.ts,src/lib/planDiff.ts
+alwaysApply: false
+---
+
+# Retirement account types
+
+Tax-deferred accounts stay `kind: "retirementTaxable"` (RMDs, conversions, and
+ordinary-income tax are unchanged). The picker is `Account.retirementType`:
+
+`401k` | `403b` | `457b` | `ira` | `tsp` | `drop`
+
+Labels live in `RETIREMENT_ACCOUNT_TYPE_LABELS` / `RETIREMENT_ACCOUNT_TYPES`
+(`household.ts`). Do not re-declare them in the UI or `planDiff`.
+
+## Migration
+
+Older plans have no subtype. `migrateHousehold` / `healRetirementType` set
+missing or unknown values to `"drop"` on live accounts and `deletedAccounts`.
+New cards default to DROP too. Strip `retirementType` from any other kind.
+
+## DROP growth
+
+Only `retirementType === "drop"` delays compounding. First growth is the
+calendar year **after the owner's `retirementYear`**. If that year is missing,
+fall back to the household start year (`accountGrowsInYear`).
+
+Example: plan starts 2030 (David), Batsheva retires 2032. Her DROP is flat in
+2030, 2031, and 2032. First 5% is 2033. Her IRA still grows in 2030.
+
+`projectScenario` and `convertibleTotal` both call `accountGrowsInYear`. Keep
+them in sync. Pre-start DROP deposits add principal only
+(`preStartDepositValue` uses rate 0): growth never starts before the plan
+does, and in-loop deposits still land after the grow step, so a DROP deposit
+in the retirement year first compounds the following year.
+
+Everyone else (401(k), IRA, TSP, …) still gets a full year of growth in year 0.

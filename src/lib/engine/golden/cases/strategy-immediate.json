@@ -1,0 +1,78 @@
+{
+  "name": "Immediate conversion strategy on a small IRA",
+  "strategy": "immediate",
+  "note": "Pins calculate() for converting the target in year 1.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "people": [
+      {
+        "id": "p1",
+        "name": "Pat",
+        "birthYear": 1960,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ret",
+        "label": "IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 200000,
+        "growthRate": 0.04,
+        "retirementType": "ira"
+      },
+      {
+        "id": "roth",
+        "label": "Roth",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 0,
+        "growthRate": 0.04
+      }
+    ],
+    "incomes": [
+      {
+        "id": "pen",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 2500,
+        "growthRate": 0,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "expenses": [],
+    "assumptions": {
+      "expenseGrowth": 0,
+      "finalAge": 76
+    },
+    "optimizer": {
+      "strategy": "immediate"
+    }
+  },
+  "commit": "61d3e5a",
+  "commitDate": "2026-08-18T14:56:20+03:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 11338.99,
+      "medicareTotal": 26782.8,
+      "afterTaxAssetsAtRmd": 216140.94,
+      "inheritanceFinal": 215735.23
+    },
+    "roth": {
+      "taxesTotal": 55364,
+      "medicareTotal": 42849.6,
+      "afterTaxAssetsAtRmd": 296048.86,
+      "inheritanceFinal": 307890.81
+    },
+    "deltas": {
+      "taxesTotal": 44025.01,
+      "medicareTotal": 16066.8,
+      "afterTaxAssetsAtRmd": 79907.92,
+      "inheritanceFinal": 92155.58
+    }
+  }
+}

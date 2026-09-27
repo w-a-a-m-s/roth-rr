@@ -1,0 +1,47 @@
+---
+description: Federal rental passive-loss limits, $25k allowance, and carryforward
+globs: src/lib/engine/project.ts,src/lib/engine/types.ts,src/lib/domain/types.ts,src/lib/config/federalTax.ts,src/components/wizard/steps/RealEstateStep.tsx,src/components/results/ProjectionTable.tsx
+alwaysApply: false
+---
+
+# Rental passive-loss limits
+
+Rental depreciation is not an uncapped household deduction. `applyRentalPassiveLoss`
+in `project.ts` applies federal passive-activity treatment, then
+`deductions.depreciation` is only the amount that actually reduced income.
+
+## Rules
+
+Per rental (rent this year > 0): activity result = rent − opex − mortgage
+interest − current-year straight-line depreciation − prior-year suspended loss.
+
+- Gains on one property first offset losses on others.
+- Leftover loss offsets other income only if `Household.realEstateProfessional`
+  is true, or via the $25,000 active-participation allowance
+  (`RealEstate.activeParticipation`, default true).
+- The allowance phases out $0.50 per $1 of MAGI from $100k to $150k
+  (`RENTAL_LOSS_*` in `federalTax.ts`). Constants are not inflation-adjusted.
+- Disallowed loss carries forward on that same property
+  (`rentalLossCarryforward` / `rentalLossCarryforwardById` on each row).
+- No rent this year: no depreciation and no new loss. Prior carryforward stays
+  parked on the property.
+
+## MAGI proxy
+
+The engine has no full Form 1040. MAGI is non-rental federal ordinary (after
+pre-tax deposits) + capital gains + leftover rental *gain* after netting.
+Rental *losses* are excluded. Roth conversions stay in ordinary, so they can
+phase out the $25k allowance.
+
+## What we do not model
+
+Property sales (suspended losses are not released), married filing separately,
+hour-based material participation, or grouping elections.
+
+## UI
+
+- Per-property "I actively participate" on the real-estate step (default on).
+- Household "Real estate professional" on the real-estate step (default off).
+- Year-by-year table: "Real-estate depreciation" is the allowed amount;
+  "Real-estate loss carryforward" is the year-end suspended total (per-property
+  children when there is more than one property).

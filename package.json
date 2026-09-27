@@ -1,0 +1,47 @@
+{
+  "name": "roth",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "invalidate-sessions": "JITI_TSCONFIG_PATHS=true jiti scripts/invalidate-sessions.ts",
+    "external-data:apply": "jiti scripts/external-data/apply.ts",
+    "external-data:check": "jiti scripts/external-data/check.ts",
+    "external-data:seed": "jiti scripts/external-data/seed.ts"
+  },
+  "dependencies": {
+    "@auth/mongodb-adapter": "^3.11.2",
+    "mongodb": "^6.21.0",
+    "next": "16.2.7",
+    "next-auth": "^5.0.0-beta.31",
+    "nodemailer": "^7.0.13",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.9.2",
+    "server-only": "^0.0.1",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.2",
+    "dotenv": "^16.4.7",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.7",
+    "jiti": "^2.7.0",
+    "jsdom": "^29.1.1",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^4.1.8"
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "name": "After-tax withdrawal grows then draws; gains taxed as LTCG",
+  "strategy": "manual",
+  "note": "A $2M brokerage at 8.8% taking $175k/year should stay about flat (growth first, including year 0). Cost basis $1M, so only the embedded gain is taxable, at long-term capital gains rates stacked on ordinary income, not as ordinary income. FL, so no state tax.",
+  "household": {
+    "filingStatus": "mfj",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 15000,
+        "frequency": "monthly",
+        "growthRate": 0
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Pat",
+        "birthYear": 1966,
+        "retirementYear": 2028
+      },
+      {
+        "id": "p2",
+        "name": "Sam",
+        "birthYear": 1965,
+        "retirementYear": 2028
+      }
+    ],
+    "accounts": [
+      {
+        "id": "brk",
+        "label": "After tax investments",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 2000000,
+        "costBasis": 1000000,
+        "growthRate": 0.088
+      }
+    ],
+    "incomes": [
+      {
+        "id": "wd",
+        "label": "Income from after tax account",
+        "ownerId": "p1",
+        "kind": "afterTaxWithdrawal",
+        "monthlyAmount": 14583.333333333334,
+        "growthRate": 0,
+        "taxability": "taxFree",
+        "drawsFromAccountId": "brk"
+      },
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 10000,
+        "growthRate": 0,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0,
+      "finalAge": 75
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "commit": "b89271c",
+  "commitDate": "2026-08-06T11:41:28+03:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 344136.64,
+      "medicareTotal": 77437.2,
+      "afterTaxAssetsAtRmd": 1025646.6,
+      "inheritanceFinal": 1025646.6
+    },
+    "roth": {
+      "taxesTotal": 344136.64,
+      "medicareTotal": 77437.2,
+      "afterTaxAssetsAtRmd": 1025646.6,
+      "inheritanceFinal": 1025646.6
+    },
+    "deltas": {
+      "taxesTotal": 0,
+      "medicareTotal": 0,
+      "afterTaxAssetsAtRmd": 0,
+      "inheritanceFinal": 0
+    }
+  }
+}

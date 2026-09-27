@@ -1,0 +1,57 @@
+---
+description: Live Roth conversion strategies and the Total impact menu
+globs: src/lib/optimizer/**,src/components/plan/ConversionStrategyMenu.tsx,src/components/plan/StrategyPanel.tsx,src/components/plan/useStrategyScores.ts,src/components/wizard/steps/ConversionStep.tsx,src/components/plan/PlanSummary.tsx,src/lib/domain/types.ts,src/lib/calculate.ts
+alwaysApply: false
+---
+
+# Conversion strategies
+
+Every strategy is only a per-year dollar list. The engine still draws from
+tax-deferred accounts, taxes the conversion, and deposits Roth. Strategies
+do not change income, expenses, withdrawals, or RMD rules.
+
+## Strategies
+
+| Value | What it schedules |
+| ---- | ---- |
+| `even` | Convertible total (or `convertAmount`) spread across the pre-RMD window. |
+| `immediate` | Same target in year 1. Engine caps at that year's live pre-RMD balance. |
+| `fillBracket` | Each year, room to the top of `targetBracketRate` (12% / 22% / 24%; default 22%) from one no-conversion projection. |
+| `irmaa` | Each year, room just under the next IRMAA MAGI floor above baseline MAGI. Top tier: no MAGI cap. |
+| `depleteByRmd` | Walk balances (grow, withdraw, convert `remaining / yearsLeft`, then deposits) so tax-deferred empties by RMD. |
+| `manual` | User-edited `manualSchedule`. Default for new plans. Shown first as Manual. Editing a year in the Conversion wizard (or on even/immediate) switches here. |
+
+`buildConversionSchedule(household, refs)` is the switch. Fill-bracket and
+IRMAA need live federal / Medicare tables via `refs`.
+
+## Menu
+
+`ConversionStrategyMenu` sits above the plan Timeline on desktop, and in the
+mobile Plan details modal (not in the Conversion wizard step). Manual is first. Each row shows **Total impact**
+from `scoreConversionStrategies`: one shared no-conversion baseline, then one
+Roth run per option. Formula lives in `totalImpact()` (same as the results
+header): inheritance + tax savings + Medicare Part B. After-tax assets at
+RMD are excluded (same estate snapshot as inheritance, just earlier).
+Choosing Manual with no saved years copies the current live schedule
+so the year grid has numbers to edit. Each row has a "?" tooltip
+(`STRATEGY_HELP` in `labels.ts`).
+
+Fill-bracket is one row that reads Fill {12% / 22% / 24%} bracket. The dollar
+is the selected rate; all three rates are precomputed.
+
+## Persistence
+
+- Missing optimizer or unknown strategy → `manual`.
+- `manual` with no schedule stays `manual` (engine spreads convertible evenly).
+- Explicit `manualSchedule` stays `manual`.
+- Missing `targetBracketRate` on `fillBracket` → `0.22`.
+
+## Gotchas
+
+- Fill-bracket / IRMAA use baseline income only (one pass). Later-year
+  balances may be lower; the engine caps.
+- Brackets and IRMAA floors are not inflation-adjusted in the projection.
+- `allowOverConvertible` and `convertAmount` apply to even / immediate /
+  manual, not to the computed strategies.
+- Editing a year in the Conversion wizard copies the live schedule into
+  `manual` and does not keep a computed strategy live.

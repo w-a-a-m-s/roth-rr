@@ -1,0 +1,136 @@
+{
+  "name": "Barasch (single, DROP + pension, 15-year $100k manual conversion)",
+  "strategy": "manual",
+  "note": "Single filer with large tax-deferred (DROP/Nationwide/Sick Days) balances, an FRS pension and later Social Security, converting $100k/yr for 15 years before RMD age. Social Security starts in 2033 at the entered amount (growth only after that). Exercises a long single-person horizon with no real estate.",
+  "household": {
+    "filingStatus": "single",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 7000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p-cygcxcn",
+        "name": "SB",
+        "birthYear": 1971,
+        "retirementYear": 2029
+      }
+    ],
+    "accounts": [
+      {
+        "id": "acc-hcytuit",
+        "label": "DROP",
+        "ownerId": "p-cygcxcn",
+        "kind": "retirementTaxable",
+        "balance": 1254531,
+        "growthRate": 0.05,
+        "retirementType": "drop"
+      },
+      {
+        "id": "acc-ykz6g3x",
+        "label": "Nationwide",
+        "ownerId": "p-cygcxcn",
+        "kind": "retirementTaxable",
+        "balance": 386288,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      },
+      {
+        "id": "acc-7iph50m",
+        "label": "Sick Days",
+        "ownerId": "p-cygcxcn",
+        "kind": "retirementTaxable",
+        "balance": 130500,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      }
+    ],
+    "incomes": [
+      {
+        "id": "inc-y9wxiiu",
+        "label": "FRS",
+        "ownerId": "p-cygcxcn",
+        "kind": "pension",
+        "monthlyAmount": 11561,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2029
+      },
+      {
+        "id": "inc-qhtslfs",
+        "label": "Social",
+        "ownerId": "p-cygcxcn",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2600,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2033
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "commit": "5c499d0",
+  "commitDate": "2026-08-25T11:10:22+03:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 1911904.96,
+      "medicareTotal": 153375.6,
+      "afterTaxAssetsAtRmd": 2538621.99,
+      "inheritanceFinal": 2507496.74
+    },
+    "roth": {
+      "taxesTotal": 1885797.23,
+      "medicareTotal": 163598.4,
+      "afterTaxAssetsAtRmd": 4446200.18,
+      "inheritanceFinal": 8397919.4
+    },
+    "deltas": {
+      "taxesTotal": -26107.73,
+      "medicareTotal": 10222.8,
+      "afterTaxAssetsAtRmd": 1907578.19,
+      "inheritanceFinal": 5890422.66
+    }
+  }
+}

@@ -1,0 +1,393 @@
+@import "tailwindcss";
+@source "../lib/common/client";
+@source "../lib/auth/client";
+
+:root {
+  --background: #f7f6f3;
+  --foreground: #1a1915;
+  --page: #f7f6f3;
+  --canvas: #edebe5;
+  --muted: #76716a;
+  --muted-2: #54504a;
+  --muted-3: #9b968c;
+  --card: #fbfaf7;
+  --surface: #ffffff;
+  --surface-muted: #fdfcfa;
+  --border: #e7e4dd;
+  --border-2: #e0dcd3;
+  --border-subtle: #f0ede6;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #eff6ff;
+  --success: #1c8a5b;
+  --success-bg: #eaf3ec;
+  --danger: #c0492f;
+  --danger-bg: #fcf3f0;
+  --danger-border: #f0c9be;
+  --warning: #9a7b3c;
+  --warning-bg: #faf3e2;
+  --warning-border: #ebd9ae;
+  --warning-rmd: #fae7be;
+  --warning-rmd-text: #8a6d1f;
+  --done-bg: #f6efdd;
+  --done-text: #8a6a1f;
+  --segment: #f2f0ea;
+  --overlay: rgba(26, 25, 21, 0.22);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-page: var(--page);
+  --color-canvas: var(--canvas);
+  --color-muted: var(--muted);
+  --color-muted-2: var(--muted-2);
+  --color-muted-3: var(--muted-3);
+  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-border-2: var(--border-2);
+  --color-border-subtle: var(--border-subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-border: var(--danger-border);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-warning-rmd: var(--warning-rmd);
+  --color-warning-rmd-text: var(--warning-rmd-text);
+  --color-done-bg: var(--done-bg);
+  --color-done-text: var(--done-text);
+  --color-segment: var(--segment);
+  --font-sans: var(--font-hanken);
+  --font-serif: var(--font-newsreader);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-hanken), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Clickable controls: Tailwind preflight leaves buttons on the default cursor. */
+@layer base {
+  button:not(:disabled),
+  [type="button"]:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="reset"]:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  summary,
+  select:not(:disabled),
+  label[for],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="file"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Hide number input spinners for a cleaner look. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* iOS Safari zooms the layout when a focused field is under 16px, and often
+   keeps that scale after the field blurs (plan name → wizard tour). Touch
+   devices stay at 16px so the page scale never changes. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="file"]
+    ):not([type="hidden"]):not([type="button"]):not([type="submit"]):not(
+      [type="reset"]
+    ),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+@keyframes feedback-breathe {
+  0%,
+  92%,
+  100% {
+    transform: scale(1);
+  }
+  94% {
+    transform: scale(1.1);
+  }
+  96% {
+    transform: scale(1);
+  }
+  98% {
+    transform: scale(1.06);
+  }
+}
+
+/* Invite → registration: briefly flash the row green, then settle into a
+   soft success tint so admins can spot new sign-ups at a glance. */
+@keyframes invite-registered-flash {
+  0% {
+    background-color: color-mix(in srgb, var(--success) 45%, transparent);
+  }
+  60% {
+    background-color: color-mix(in srgb, var(--success) 22%, transparent);
+  }
+  100% {
+    background-color: var(--success-bg);
+  }
+}
+
+.invite-registered-flash > td {
+  animation: invite-registered-flash 1.8s ease-out both;
+}
+
+/* LabsLoading cycle: fill (~2.2s) → hold full (2s) → reset → repeat. */
+.labs-liquid {
+  animation: labs-liquid-fill 4.5s linear infinite;
+}
+
+.labs-liquid-sway {
+  animation: labs-liquid-sway 1.4s ease-in-out infinite;
+}
+
+.labs-word-in {
+  animation: labs-word-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.labs-word-out {
+  animation: labs-word-out 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.labs-dots {
+  display: inline;
+}
+
+.labs-dots > span {
+  animation: labs-dot 1.2s ease-in-out infinite;
+  opacity: 0.25;
+}
+
+.labs-dots > span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.labs-dots > span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes labs-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* 0–49%: fill · 49–93%: stay full (~2s) · 93–100%: reset
+   Surface sits near the rim at 0; empty sits below the flask base. */
+@keyframes labs-liquid-fill {
+  0% {
+    transform: translateY(46px);
+  }
+  49% {
+    transform: translateY(0);
+  }
+  93% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(46px);
+  }
+}
+
+/* Side-to-side wave of the liquid surface. */
+@keyframes labs-liquid-sway {
+  0%,
+  100% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes labs-word-in {
+  from {
+    transform: translateY(110%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes labs-word-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-110%);
+    opacity: 0;
+  }
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toast-enter-down {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast-enter {
+  animation: toast-enter-down 220ms ease-out;
+}
+
+@media (min-width: 1024px) {
+  .toast-enter {
+    animation: toast-enter 220ms ease-out;
+  }
+}
+
+@keyframes modal-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-dialog-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modal-backdrop-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-dialog-exit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+}
+
+.modal-backdrop-enter {
+  animation: modal-backdrop-enter 180ms ease-out;
+}
+
+.modal-dialog-enter {
+  animation: modal-dialog-enter 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.modal-backdrop-exit {
+  animation: modal-backdrop-exit 160ms ease-in forwards;
+}
+
+.modal-dialog-exit {
+  animation: modal-dialog-exit 160ms ease-in forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop-enter,
+  .modal-dialog-enter,
+  .modal-backdrop-exit,
+  .modal-dialog-exit {
+    animation: none;
+  }
+}
+
+/* Projection table: keep the horizontal scrollbar visible at all times.
+   Sizing ::-webkit-scrollbar opts out of macOS overlay scrollbars, which
+   otherwise only appear while actively scrolling. Chrome 121+ ignores those
+   pseudo-elements whenever scrollbar-width/scrollbar-color are set to
+   anything but auto, so the standard properties are gated behind @supports
+   and only reach browsers without the pseudo-elements (Firefox). */
+@supports not selector(::-webkit-scrollbar) {
+  .scrollbar-visible {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-2) transparent;
+  }
+}
+
+.scrollbar-visible::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 9999px;
+  border: 2px solid var(--surface);
+}
+
+.scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-3);
+}
+
+/* Recharts SVGs take focus on click; hide the browser focus ring. */
+.recharts-wrapper:focus,
+.recharts-wrapper:focus-visible,
+.recharts-surface:focus {
+  outline: none;
+}

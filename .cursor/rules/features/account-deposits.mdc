@@ -1,0 +1,81 @@
+---
+description: Deposits into accounts (monthly / yearly / one-time contributions)
+globs: src/lib/engine/deposits.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/engine/runScenario.ts,src/lib/depositSummary.ts,src/components/wizard/steps/AccountsStep.tsx
+alwaysApply: false
+---
+
+# Account deposits
+
+`Account.deposits` is a list of contributions into that account: monthly,
+yearly, or one-time, with a required `startYear` and an optional `endYear`. The
+amount is **flat** for the life of the deposit: there is deliberately no
+escalation rate (an earlier version had one and it was removed, so don't
+reintroduce it without being asked).
+
+## The pre-plan rule (the thing to get right)
+
+The projection starts at the earliest retirement year, and `account.balance` is
+January 1 of that year. Most deposits are contributions made while still
+working, so they are dated **before** the plan starts: those years are never
+projected, so they cannot touch cash flow, taxes, or surplus.
+
+- Before the start year: compounded into the opening balance by
+  `preStartDepositValue` (DROP adds principal only: it does not grow until
+  the year after the owner retires), and (for after-tax accounts) added to
+  the opening cost basis by `preStartDepositPrincipal`.
+- From the start year on: credited inside the projection loop, and subtracted
+  from `surplus` like an expense.
+
+Inside the loop, deposits land **after** growth and withdrawals (step 3b in
+`project.ts`, right after conversions), so a deposit starts compounding the
+following year. Extending that backwards is what fixes the pre-start
+compounding exponent: a deposit in year `Y` lands on January 1 of `Y + 1`, so it
+grows for `start - Y - 1` years. Keep those two in sync or the boundary year
+double-counts (or loses) a year of growth.
+
+## Tax treatment follows the account kind
+
+| Account kind | Deposit effect |
+| ---- | ---- |
+| `retirementTaxable` | Pre-tax: subtracted from federal and state ordinary gross (floored at 0) before deductions, and reported as `row.preTaxDeposits` |
+| `rothTaxFree` | Post-tax: balance only |
+| after-tax (`investment`, `annuity`, `cd`, `savings`) | Adds cost basis, both the running `basisRemaining` (so withdrawals realize less gain) and `afterTaxCostBasis` in `runScenario.ts` (so the estate isn't taxed on returned basis) |
+
+## Three places mirror the same math
+
+`deposits.ts` is the single source. If you change deposit timing, update all
+three callers together:
+
+1. `project.ts`: opening balance, opening basis, per-year credit.
+2. `convertible.ts`: the conversion cap estimate re-runs growth and withdrawals,
+   so it needs the deposits too or the cap is understated.
+3. `runScenario.ts`: `afterTaxCostBasis(household, throughYear)` is year-aware
+   because basis grows as deposits are paid in.
+
+## Row fields and UI
+
+`ProjectionRow` gained `monthlyDeposits`, `depositMonthly` (per deposit id), and
+`preTaxDeposits`; `surplus` is now
+`netMonthlyIncome - monthlyExpenses - monthlyDeposits`. Plans without deposits
+produce identical numbers to before, which is why no existing golden case moved.
+
+Editing is inline on the account card (`AccountsStep.tsx`), never a separate
+step: a deposit always belongs to one account. Below `lg`, account and deposit
+edit fields and closed deposit rows stack one per row (desktop stays a
+wrapping row). See first-plan-onboarding for the wizard-wide mobile stack. Deposits are hard-deleted, with
+no soft-delete trash of their own. Enter in a deposit field is Done; it must
+stop bubbling so the parent account card stays open. The projection table
+shows a "Deposits into accounts" section and the cash-flow chart a deposits
+series, both hidden when every year is zero.
+
+## Gotchas
+
+- `migrateHousehold` defaults `deposits` to `[]`, drops entries with a
+  non-finite `amount` or `startYear` (the engine assumes a placeable deposit),
+  and strips the legacy per-deposit `growthRate`.
+- A one-time deposit ignores `endYear` and only ever pays in `startYear`.
+- Open-ended deposits (no `endYear`) are bounded by the caller's `throughYear`
+  in `deposits.ts`, so nothing loops forever.
+- New deposits default `endYear` to the account owner's retirement year. On a
+  joint after-tax account that is the later of the two people (see
+  `accountDepositEndYear`). Existing deposits keep the year the user set.

@@ -1,0 +1,127 @@
+{
+  "name": "Head of household (HOH federal brackets and single IRMAA alias)",
+  "strategy": "manual",
+  "note": "Same plan as single-filer.json but filing as head of household. Pins HOH federal tax and the IRMAA alias to the individual schedule.",
+  "household": {
+    "filingStatus": "hoh",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 6000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Jordan",
+        "birthYear": 1968,
+        "retirementYear": 2033
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ira",
+        "label": "Traditional IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 800000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      },
+      {
+        "id": "k401",
+        "label": "401(k)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 400000,
+        "growthRate": 0.05,
+        "retirementType": "401k"
+      },
+      {
+        "id": "roth",
+        "label": "Roth IRA",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 50000,
+        "growthRate": 0.08
+      },
+      {
+        "id": "brk",
+        "label": "Brokerage",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 250000,
+        "costBasis": 150000,
+        "growthRate": 0.05
+      },
+      {
+        "id": "sav",
+        "label": "Savings",
+        "ownerId": "p1",
+        "kind": "savings",
+        "balance": 80000,
+        "growthRate": 0.03
+      }
+    ],
+    "incomes": [
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2800,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 2000,
+        "growthRate": 0.02,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        80000,
+        80000,
+        80000,
+        80000,
+        80000
+      ]
+    }
+  },
+  "commit": "6737b1c",
+  "commitDate": "2026-08-17T19:20:12+03:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 316181.12,
+      "medicareTotal": 77425.2,
+      "afterTaxAssetsAtRmd": 1793716.34,
+      "inheritanceFinal": 2220308.16
+    },
+    "roth": {
+      "taxesTotal": 313702.44,
+      "medicareTotal": 74023.2,
+      "afterTaxAssetsAtRmd": 2179723.88,
+      "inheritanceFinal": 3473918.37
+    },
+    "deltas": {
+      "taxesTotal": -2478.68,
+      "medicareTotal": -3402,
+      "afterTaxAssetsAtRmd": 386007.54,
+      "inheritanceFinal": 1253610.21
+    }
+  }
+}

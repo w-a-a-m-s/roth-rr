@@ -1,0 +1,90 @@
+---
+description: Mobile calculator chrome below the lg breakpoint
+globs: src/app/layout.tsx,src/app/CalculatorHome.tsx,src/components/TopBar.tsx,src/components/DeviceNotice.tsx,src/components/FeedbackFab.tsx,src/components/plan/MobileActionBar.tsx,src/components/plan/MobileResultsChrome.tsx,src/components/plan/PlanDetailsAccordion.tsx,src/components/plan/PlanPicker.tsx,src/components/plan/PlanActions.tsx,src/components/plan/PlanDetails.tsx,src/components/plan/PlanStatus.tsx,src/components/plan/StrategyPanel.tsx,src/components/results/ProjectionTable.tsx,src/components/ui/ToastHost.tsx,src/lib/useLgUp.ts
+alwaysApply: false
+---
+
+# Mobile calculator shell
+
+Below Tailwind `lg` (1024px) the calculator uses a single-column chrome from
+the v2 mobile mockup. Desktop (`lg+`) stays the two-column sidebar + results
+layout. Same route: `useLgUp()` picks one tree after the first client measure
+so the desktop sidebar is not a `display: none` node on phones. The root
+`viewport` export locks scale (`maximum-scale=1`, `user-scalable=no`) so the
+tool does not pinch-zoom.
+
+## Layout (below `lg`)
+
+```
+TopBar (compact: logo, Roth Calculator, hamburger)
+DeviceNotice (one-time fullscreen modal; localStorage
+  rothCalcBestViewedModalSeen)
+main (overflow-y scroller for pin-to-top)
+  MobileResultsChrome (plan name + switch button, status; Plan details modal)
+  ResultsView (unchanged)
+MobileActionBar (Configure, Details, Actions. Details opens the plan modal)
+```
+
+The chrome Footer is omitted below `lg` so it does not sit under the sticky
+bar. It stays **outside** `<main>` on desktop (pin-to-top contract). Do not
+move Footer into the results scroller.
+
+## Shared pieces (do not duplicate)
+
+| Piece | Used by |
+| ---- | ---- |
+| `PlanPicker` | Desktop TopBar, mobile Plan details modal. Names ascending, with a search field |
+| `PlanActions` | Sidebar header, `MobileActionBar` (bar: Configure / Details / Actions) |
+| `PlanDetails` | Sidebar, mobile Plan details modal |
+| `PlanStatus` | Sidebar card, mobile page banner |
+| `StrategyPanel` | Sidebar, mobile Plan details modal |
+| `usePlanAccess` | Permissions for the above |
+
+`ConversionStrategyMenu` is not in the mockup. On mobile it lives in the Plan
+details modal, under the plan picker (same modal as the timeline/summary).
+The page title is the plan name plus a circular switch-plan button; tap
+either to open Plan details (same as the sticky Details button). Do not
+auto-open Plan details.
+Switching plan, New plan, changing strategy, or Edit closes the modal via
+`closePlanDetails` in `useUI`. Do not put the plan picker in a second
+sticky header bar.
+
+## Gotchas
+
+- Wait for `useLgUp().ready` before painting the calculator, or mobile flashes
+  the desktop sidebar for a frame. `lgUp` is false during SSR/hydrate so the
+  desktop Footer is not in the HTML (it would otherwise appear, then vanish
+  on the phone).
+- A Next.js hydration warning that only mentions `data-cursor-ref` is the
+  Cursor browser tagging the DOM before React hydrates, not an app mismatch.
+- Projection table pin-to-top still needs `<main>` as the nearest
+  `overflow-y` parent. Pad `<main>` so the sticky bar does not cover content;
+  do not wrap the table in a max-height card. Keep `min-w-0` / `w-full` on
+  the results column so the wide table does not stretch metric cards past
+  the viewport. Below `lg`, each metric card is one full-width column.
+  The year-by-year sticky label column is `w-36` with wrapping `text-sm`
+  below `lg` (desktop stays `15rem` nowrap) so long names do not eat the
+  year columns. Section titles stay one line (`nowrap`); only data-row
+  names wrap. Section titles are one `colSpan` cell with full-width
+  `bg-accent-soft` so a stuck title covers the previous one. The title
+  text uses `left-2` / `lg:left-3` (not `left-0`) so it keeps the same
+  inset when it sticks. Year cells stay `z-20` so they slide under the
+  left corner (`z-30`) and clip at the label column. Section bars are
+  `z-10` under the years. `top` is the measured year-header height minus
+  3px, plus a 3px white strip (`box-shadow`, because collapsed table
+  borders do not paint).
+- Wizard, charts, and table behavior are out of scope for this shell.
+- `DeviceNotice` is a one-time fullscreen overlay (not a banner). It only
+  mounts on the mobile tree and writes `rothCalcBestViewedModalSeen`. Clear
+  that key to see it again.
+- The Feedback FAB is desktop only (`lg+`). Below `lg` it is hidden; signed-in
+  users open the same form from Feedback in the hamburger menu.
+- Signed-in account menus (hamburger below `lg`, name/email menu on `lg+`)
+  share one order: user + email, divider, Feedback, divider, View as user
+  (superAdmin only), Sign out. View as user and Sign out have icons.
+- Plan Actions includes **Download JSON** for the real superAdmin only
+  (`session.user.superAdmin` or `session.impersonation.active`: the flag is
+  stripped while viewing as another user). It downloads the in-memory plan
+  (`exportConfig`), including unsaved edits and a revision preview.
+- Save toasts (`ToastHost`) sit top-center below `lg`
+  (`top-[calc(0.75rem+env(safe-area-inset-top))]`). Desktop stays top-right.

@@ -1,0 +1,12 @@
+---
+description: Local IDE login-as (dev-only session mint on the Roth app)
+globs: src/app/api/dev/login/**,src/lib/auth/server/devLogin.ts,src/lib/auth/server/devLoginGates.ts
+alwaysApply: false
+---
+
+# Local IDE login
+
+GET `http://localhost:3000/api/dev/login?email=` mints an Auth.js session.
+`email` is required and must match `DEV_LOGIN_EMAIL`. Fail closed (404)
+unless `next dev` on localhost. Implementation notes:
+[docs/dev-login.md](../../../docs/dev-login.md).

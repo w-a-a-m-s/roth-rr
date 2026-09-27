@@ -1,0 +1,19 @@
+---
+description: Record magic-link signup attempts before the user clicks
+globs: src/lib/auth/server/signupAttempts.ts,src/lib/auth/server/mail.ts,src/lib/auth/server/auth.ts
+alwaysApply: false
+---
+
+# Signup attempts
+
+Auth.js does not create a user until they click the magic link. When
+Nodemailer sends a link for an email with no existing user:
+
+1. Upsert `signupAttempts` in the Roth database (email, attempt count, tool, surface).
+2. Log `[auth] signup attempt`.
+3. Email `REGISTRATION_NOTIFY_EMAIL` (`notifySignupAttempt`). Comma-separated
+   list is fine. Unset: skip mail.
+
+Existing users (login magic links) are ignored. `createUser` sets
+`completedAt` and still sends `notifyNewRegistration`. Failures never
+block the magic-link send.

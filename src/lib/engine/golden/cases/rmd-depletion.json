@@ -1,0 +1,78 @@
+{
+  "name": "RMDs deplete tax-deferred balances after RMD age",
+  "strategy": "manual",
+  "note": "Regression for RMD balance depletion: once the owner hits rmdAge, each year's RMD must reduce the retirement account (not only book taxable income). Without this, balances froze from the RMD year onward while still counting phantom RMD income forever.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 1000,
+        "frequency": "monthly",
+        "growthRate": 0
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Pat",
+        "birthYear": 1953,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ret",
+        "label": "Traditional IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 100000,
+        "growthRate": 0,
+        "retirementType": "ira"
+      }
+    ],
+    "incomes": [],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0,
+      "finalAge": 80
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "commit": "94957b3",
+  "commitDate": "2026-07-25T14:56:40+03:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 0,
+      "medicareTotal": 19478.4,
+      "afterTaxAssetsAtRmd": 80344.6,
+      "inheritanceFinal": 60057.39
+    },
+    "roth": {
+      "taxesTotal": 0,
+      "medicareTotal": 19478.4,
+      "afterTaxAssetsAtRmd": 80344.6,
+      "inheritanceFinal": 60057.39
+    },
+    "deltas": {
+      "taxesTotal": 0,
+      "medicareTotal": 0,
+      "afterTaxAssetsAtRmd": 0,
+      "inheritanceFinal": 0
+    }
+  }
+}

@@ -1,0 +1,25 @@
+---
+description: Income start/end years and growth from the start year
+globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/optimizer/strategies/depleteByRmd.ts,src/components/wizard/steps/IncomeStep.tsx
+alwaysApply: false
+---
+
+# Income date range
+
+Each `IncomeSource` can optionally set inclusive `startYear` / `endYear`. Omit
+both and the source runs for the whole projection.
+
+## Amount vs growth
+
+The entered monthly amount is what you receive **in the start year**. Growth
+compounds only after that. If `startYear` is omitted, the first projection year
+is the start. `growthDelayYears` (spreadsheet quirk) is extra flat years after
+that start, not after year 0 of the plan.
+
+This used to grow from year 0 even while the source was inactive, so a Social
+Security line that started later was already inflated when it kicked in. Don't
+put that back.
+
+`incomeMonthlyForYear` in `household.ts` is the single source. `project.ts`,
+`convertible.ts`, and `depleteByRmd.ts` must call it; don't re-derive grown
+amounts from `yearIndex`.

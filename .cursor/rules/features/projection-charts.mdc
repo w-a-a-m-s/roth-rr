@@ -1,0 +1,17 @@
+---
+description: Assets and cash-flow projection charts
+globs: src/components/results/AssetsChart.tsx,src/components/results/CashflowChart.tsx,src/components/results/chartUtils.ts,src/components/results/useIdleChartTooltip.ts
+alwaysApply: false
+---
+
+# Projection charts
+
+Assets and cash-flow charts keep their Recharts structure, modes, and series
+toggles. Redesigns may remap series colors and chrome only.
+
+## Idle last-point tooltip
+
+On `lg+`, the tooltip stays on the final year when the pointer is outside
+the chart (`defaultIndex` + remount on mouse leave). Below `lg` there is no
+hover, so do not auto-open that last point: the tooltip covers the plot.
+It still opens when the user taps a year.

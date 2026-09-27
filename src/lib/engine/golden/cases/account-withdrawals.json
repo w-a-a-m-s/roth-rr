@@ -1,0 +1,140 @@
+{
+  "name": "Account withdrawals (retirement / Roth / after-tax draws from chosen accounts)",
+  "strategy": "manual",
+  "note": "Exercises the three account-withdrawal income kinds: retirementDraw (taxable, continues past RMD age alongside RMDs), rothWithdrawal (tax-free) and afterTaxWithdrawal (basis return + taxable gains), each depleting its selected source account. Defaults to FL (no state income tax).",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 7000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Riley",
+        "birthYear": 1960,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ret",
+        "label": "Traditional IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 600000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      },
+      {
+        "id": "roth",
+        "label": "Roth IRA",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 200000,
+        "growthRate": 0.08
+      },
+      {
+        "id": "brk",
+        "label": "Brokerage",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 300000,
+        "costBasis": 200000,
+        "growthRate": 0.05
+      },
+      {
+        "id": "sav",
+        "label": "Savings",
+        "ownerId": "p1",
+        "kind": "savings",
+        "balance": 100000,
+        "growthRate": 0.03
+      }
+    ],
+    "incomes": [
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2500,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "retdraw",
+        "label": "Retirement withdrawal",
+        "ownerId": "p1",
+        "kind": "retirementDraw",
+        "monthlyAmount": 1000,
+        "growthRate": 0,
+        "taxability": "full",
+        "drawsFromAccountId": "ret"
+      },
+      {
+        "id": "rothdraw",
+        "label": "Roth withdrawal",
+        "ownerId": "p1",
+        "kind": "rothWithdrawal",
+        "monthlyAmount": 1500,
+        "growthRate": 0,
+        "taxability": "taxFree",
+        "drawsFromAccountId": "roth"
+      },
+      {
+        "id": "atdraw",
+        "label": "After-tax withdrawal",
+        "ownerId": "p1",
+        "kind": "afterTaxWithdrawal",
+        "monthlyAmount": 1000,
+        "growthRate": 0,
+        "taxability": "taxFree",
+        "drawsFromAccountId": "brk"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        60000,
+        60000,
+        60000,
+        60000,
+        60000
+      ]
+    }
+  },
+  "commit": "b89271c",
+  "commitDate": "2026-08-06T11:41:28+03:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 133494.67,
+      "medicareTotal": 48696,
+      "afterTaxAssetsAtRmd": 987379.41,
+      "inheritanceFinal": 952477.42
+    },
+    "roth": {
+      "taxesTotal": 128775.2,
+      "medicareTotal": 48696,
+      "afterTaxAssetsAtRmd": 1243253.8,
+      "inheritanceFinal": 1808503.18
+    },
+    "deltas": {
+      "taxesTotal": -4719.47,
+      "medicareTotal": 0,
+      "afterTaxAssetsAtRmd": 255874.39,
+      "inheritanceFinal": 856025.77
+    }
+  }
+}
