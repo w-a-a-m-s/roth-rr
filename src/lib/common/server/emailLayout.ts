@@ -1,7 +1,7 @@
 import { CANONICAL_SITE_URL, siteOgImage } from "../site";
 
 const LOGO_URL = siteOgImage("/logo.png");
-const SITE_LABEL = "roth-rr.waams.com";
+const SITE_LABEL = "roth-rr.vercel.app";
 
 /**
  * Wrap customer-facing HTML in Roth RR branding: logo header and a

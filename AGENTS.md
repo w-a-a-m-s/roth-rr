@@ -13,6 +13,13 @@ Read the Workspace Guide first:
 It holds the global standards and which feature guide to open. The rest of
 this file is the calculator: what it does, and how the engine is shaped.
 
+## Shipping to main
+
+Pushes on `claude/**` merge into `main` after 120 seconds of quiet. Each new
+push on that branch cancels the in-progress wait and the 120 seconds start
+over. The workflow then runs tests and merges that commit into `main`. See
+`.github/workflows/auto-merge-claude.yml`.
+
 # What this system does
 
 This is a **Roth conversion planner**. A US retiree (or married couple) holds

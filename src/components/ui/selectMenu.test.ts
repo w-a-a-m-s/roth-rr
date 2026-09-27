@@ -4,7 +4,7 @@ import {
   matchTypeahead,
   nextTypeaheadQuery,
   placeSelectMenu,
-} from "./selectMenu";
+} from "./selectMenuList";
 
 describe("flattenSelectList", () => {
   it("maps a flat option list", () => {
