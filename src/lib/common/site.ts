@@ -1,5 +1,5 @@
 /** Public marketing / app origin used for Open Graph absolute URLs. */
-export const CANONICAL_SITE_URL = "https://roth-rr.waams.com";
+export const CANONICAL_SITE_URL = "https://roth-rr.vercel.app";
 
 /**
  * Resolve the public site origin for metadataBase / og:url.

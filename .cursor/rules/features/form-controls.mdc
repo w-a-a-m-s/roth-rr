@@ -1,10 +1,12 @@
 ---
 description: Shared Roth form controls (Field, inputs, Select / YearSelect)
-globs: src/components/ui/inputs.tsx,src/components/ui/SelectMenu.tsx,src/components/ui/selectMenu.ts,src/components/ui/Field.tsx,src/components/ui/comboOptions.ts,src/components/ui/yearInput.ts
+globs: src/components/ui/inputs.tsx,src/components/ui/SelectMenu.tsx,src/components/ui/selectMenuList.ts,src/components/ui/Field.tsx,src/components/ui/comboOptions.ts,src/components/ui/yearInput.ts
 alwaysApply: false
 ---
 
 # Form controls
+
+List helpers live in `selectMenuList.ts`. Do not name that file `selectMenu.ts`: on a case-insensitive disk it shadows `SelectMenu.tsx` and the build type check cannot see the component.
 
 `Select` is a custom listbox (`SelectMenu`), not a native `<select>`. Chrome's
 option popup ignores page and modal scale. The menu portals to `document.body`
