@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { legalHref } from "../site";
 import { FooterContent } from "./FooterContent";
 import { LegalDocModal } from "./LegalDocModal";
 import { FOOTER_MODALS, type FooterModalId } from "./footerData";
@@ -31,14 +32,26 @@ export function Footer({
       >
         <nav className="flex flex-wrap justify-center gap-x-[18px] gap-y-2">
           {FOOTER_MODALS.map((modal) => (
-            <button
+            <a
               key={modal.id}
-              type="button"
-              onClick={() => setOpenId(modal.id)}
-              className="cursor-pointer rounded-sm border-0 bg-transparent p-0 text-[12.5px] font-semibold text-[color:var(--muted,#76716a)] transition-colors hover:text-[color:var(--accent,#2563eb)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent,#2563eb)]/30"
+              href={legalHref(modal.id)}
+              onClick={(event) => {
+                if (
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey ||
+                  event.button !== 0
+                ) {
+                  return;
+                }
+                event.preventDefault();
+                setOpenId(modal.id);
+              }}
+              className="cursor-pointer rounded-sm text-[12.5px] font-semibold text-[color:var(--muted,#76716a)] transition-colors hover:text-[color:var(--accent,#2563eb)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent,#2563eb)]/30"
             >
               {modal.label}
-            </button>
+            </a>
           ))}
         </nav>
         <div>© {year} Roth RR</div>

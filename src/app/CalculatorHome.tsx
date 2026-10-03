@@ -28,7 +28,7 @@ import { isDefaultPlanId } from "@/lib/config/defaultPlans";
 import { isUntouchedHousehold } from "@/lib/domain/household";
 import { readPlanIdFromWindow } from "@/lib/planUrl";
 import { useUI } from "@/store/useUI";
-import { LabsLoading } from "@/lib/common/client";
+import { LabsLoading, LegalQueryModal } from "@/lib/common/client";
 
 /** Shared calculator shell for `/` and `/[publicId]`. */
 export default function CalculatorHome() {
@@ -113,6 +113,7 @@ export default function CalculatorHome() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-page">
       <InviteCodeCapture />
+      <LegalQueryModal />
       <AuthSync />
       <PlanDocumentTitle />
       <PlanUrlSync />

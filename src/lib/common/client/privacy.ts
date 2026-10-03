@@ -1,4 +1,4 @@
-export const PRIVACY_VERSION = "2026-09-27b";
+export const PRIVACY_VERSION = "2026-09-27c";
 export const PRIVACY_EFFECTIVE_DATE = "September 27, 2026";
 
 export const PRIVACY_SECTIONS = [
@@ -68,10 +68,10 @@ export const PRIVACY_SECTIONS = [
   },
   {
     title: "Your choices and rights",
-    body: "Depending on your jurisdiction, you may have rights to request access to, correction of, deletion of, or a portable copy of certain personal information, or to object to or restrict certain processing, or to opt out of targeted advertising or the \"sale\" or \"sharing\" of personal information as those terms are defined under applicable law (for example under California or other U.S. state privacy laws). To exercise available rights, contact us at support@thewealthlab.com. We may verify your identity before responding and may deny requests as permitted by law (for example where an exception applies). You may also: unsubscribe from marketing emails via the email link; control cookies via browser settings; and use advertising-platform and industry opt-out tools. We are not responsible for third-party opt-out tools failing to work. Some processing is necessary to operate the Software; if you delete required data or withdraw necessary consent, you may lose access to certain features.",
+    body: "Depending on your jurisdiction, you may have rights to request access to, correction of, deletion of, or a portable copy of certain personal information, or to object to or restrict certain processing, or to opt out of targeted advertising or the \"sale\" or \"sharing\" of personal information as those terms are defined under applicable law (for example under California or other U.S. state privacy laws). To exercise available rights, contact us at support@thewealthlab.ai. We may verify your identity before responding and may deny requests as permitted by law (for example where an exception applies). You may also: unsubscribe from marketing emails via the email link; control cookies via browser settings; and use advertising-platform and industry opt-out tools. We are not responsible for third-party opt-out tools failing to work. Some processing is necessary to operate the Software; if you delete required data or withdraw necessary consent, you may lose access to certain features.",
     link: {
-      href: "mailto:support@thewealthlab.com",
-      label: "support@thewealthlab.com",
+      href: "mailto:support@thewealthlab.ai",
+      label: "support@thewealthlab.ai",
     },
   },
   {
@@ -100,10 +100,10 @@ export const PRIVACY_SECTIONS = [
   },
   {
     title: "Contact us",
-    body: "If you have questions about this Privacy Policy or our data practices, or wish to submit a privacy request, contact us at support@thewealthlab.com.",
+    body: "If you have questions about this Privacy Policy or our data practices, or wish to submit a privacy request, contact us at support@thewealthlab.ai.",
     link: {
-      href: "mailto:support@thewealthlab.com",
-      label: "support@thewealthlab.com",
+      href: "mailto:support@thewealthlab.ai",
+      label: "support@thewealthlab.ai",
     },
   },
 ] as const;

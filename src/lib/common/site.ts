@@ -52,8 +52,25 @@ export function homeOgImage() {
 
 /** Homepage query that opens a legal modal: `/?legal=privacy` or `/?legal=terms`. */
 export const LEGAL_QUERY_KEY = "legal";
-export const PRIVACY_HREF = `/?${LEGAL_QUERY_KEY}=privacy`;
-export const TERMS_HREF = `/?${LEGAL_QUERY_KEY}=terms`;
+
+export const LEGAL_DOC_IDS = ["terms", "privacy", "disclaimer"] as const;
+export type LegalDocId = (typeof LEGAL_DOC_IDS)[number];
+
+/** `/?legal=terms` (also works on a plan path, e.g. `/{planId}?legal=terms`). */
+export function legalHref(id: LegalDocId): string {
+  return `/?${LEGAL_QUERY_KEY}=${id}`;
+}
+
+export function legalDocFromQuery(value: string | null): LegalDocId | null {
+  if (value === "terms" || value === "privacy" || value === "disclaimer") {
+    return value;
+  }
+  return null;
+}
+
+export const PRIVACY_HREF = legalHref("privacy");
+export const TERMS_HREF = legalHref("terms");
+export const DISCLAIMER_HREF = legalHref("disclaimer");
 
 /** Public app origin for invite and share links (no trailing slash). */
 export function getCalculatorUrl(): string {

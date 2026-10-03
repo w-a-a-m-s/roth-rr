@@ -41,6 +41,10 @@ Use this guide for UI, product features, and the index below.
   browser GET 404s until Mongo is seeded.
 - Never list a server-only key in `nextConfig.env`. Those keys are compiled
   into the bundles as string literals.
+- Terms, Privacy, and Disclaimer open in the footer popup. Direct links
+  are `/?legal=terms`, `/?legal=privacy`, and `/?legal=disclaimer` (same
+  query on a plan path). Copy lives in `src/lib/common/client/terms.ts`
+  and `privacy.ts`.
 - The app is the whole site: calculator, Auth.js (`/api/auth`), and
   `/api/dev/login`. Plan URLs are `/{publicId}`. App origin is `AUTH_URL`.
   Auth.js also needs `AUTH_SECRET` and `AUTH_TRUST_HOST`. Invite and share

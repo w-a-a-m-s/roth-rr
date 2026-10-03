@@ -1,4 +1,4 @@
-export const TERMS_VERSION = "2026-09-27b";
+export const TERMS_VERSION = "2026-09-27c";
 export const TERMS_EFFECTIVE_DATE = "September 27, 2026";
 
 export const TERMS_SECTIONS = [
@@ -32,10 +32,10 @@ export const TERMS_SECTIONS = [
   },
   {
     title: "Accounts, credentials, and user data",
-    body: "If you create an account or otherwise submit information, you agree to provide true, accurate, and complete information and to keep it updated. You are solely responsible for safeguarding credentials, magic links, devices, and access methods, and for all activity occurring under your account or from your devices, whether or not authorized by you. You must notify us promptly at support@thewealthlab.com if you suspect unauthorized access. We may refuse registration, or suspend, restrict, or terminate accounts, at any time, with or without notice, for any reason or no reason, including suspected misuse, security risk, inactivity, or violation of these Terms. You are solely responsible for exporting or backing up any plans or data you wish to retain. We have no liability for loss of plans, inputs, Outputs, or other data.",
+    body: "If you create an account or otherwise submit information, you agree to provide true, accurate, and complete information and to keep it updated. You are solely responsible for safeguarding credentials, magic links, devices, and access methods, and for all activity occurring under your account or from your devices, whether or not authorized by you. You must notify us promptly at support@thewealthlab.ai if you suspect unauthorized access. We may refuse registration, or suspend, restrict, or terminate accounts, at any time, with or without notice, for any reason or no reason, including suspected misuse, security risk, inactivity, or violation of these Terms. You are solely responsible for exporting or backing up any plans or data you wish to retain. We have no liability for loss of plans, inputs, Outputs, or other data.",
     link: {
-      href: "mailto:support@thewealthlab.com",
-      label: "support@thewealthlab.com",
+      href: "mailto:support@thewealthlab.ai",
+      label: "support@thewealthlab.ai",
     },
   },
   {
@@ -100,10 +100,10 @@ export const TERMS_SECTIONS = [
   },
   {
     title: "Contact",
-    body: "Questions about these Terms may be sent to support@thewealthlab.com.",
+    body: "Questions about these Terms may be sent to support@thewealthlab.ai.",
     link: {
-      href: "mailto:support@thewealthlab.com",
-      label: "support@thewealthlab.com",
+      href: "mailto:support@thewealthlab.ai",
+      label: "support@thewealthlab.ai",
     },
   },
 ] as const;

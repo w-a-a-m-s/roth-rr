@@ -2,6 +2,7 @@ export { Footer } from "./Footer";
 export { FooterContent } from "./FooterContent";
 export { LabsLoading } from "./LabsLoading";
 export { LegalDocModal } from "./LegalDocModal";
+export { LegalQueryModal } from "./LegalQueryModal";
 export {
   MODAL_ENTER_MS,
   MODAL_EXIT_MS,

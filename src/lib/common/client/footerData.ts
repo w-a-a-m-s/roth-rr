@@ -1,3 +1,7 @@
+import { DISCLAIMER_CLOSING, DISCLAIMER_SECTIONS } from "./disclaimer";
+import { PRIVACY_EFFECTIVE_DATE, PRIVACY_SECTIONS } from "./privacy";
+import { TERMS_EFFECTIVE_DATE, TERMS_SECTIONS } from "./terms";
+
 export type FooterModalId = "terms" | "privacy" | "disclaimer";
 
 export type FooterSection = {
@@ -16,24 +20,40 @@ export type FooterModalContent = {
   sections: FooterSection[];
 };
 
+function datedSections(
+  effectiveDate: string,
+  sections: readonly FooterSection[],
+): FooterSection[] {
+  return [
+    {
+      title: "Effective date",
+      body: `Effective ${effectiveDate}.`,
+    },
+    ...sections,
+  ];
+}
+
 export const FOOTER_MODALS: FooterModalContent[] = [
   {
     id: "terms",
     label: "Terms of use",
     title: "Terms of use",
-    sections: [],
+    sections: datedSections(TERMS_EFFECTIVE_DATE, TERMS_SECTIONS),
   },
   {
     id: "privacy",
     label: "Privacy policy",
     title: "Privacy policy",
-    sections: [],
+    sections: datedSections(PRIVACY_EFFECTIVE_DATE, PRIVACY_SECTIONS),
   },
   {
     id: "disclaimer",
     label: "Disclaimer",
     title: "Disclaimer",
-    sections: [],
+    sections: [
+      ...DISCLAIMER_SECTIONS,
+      ...DISCLAIMER_CLOSING.map((body) => ({ body })),
+    ],
   },
 ];
 
