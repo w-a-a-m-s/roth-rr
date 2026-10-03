@@ -20,6 +20,22 @@ push on that branch cancels the in-progress wait and the 120 seconds start
 over. The workflow then runs tests and merges that commit into `main`. See
 `.github/workflows/auto-merge-claude.yml`.
 
+## Tell the user when a push is live
+
+Main deploys to production on Vercel (`https://roth-rr.vercel.app`). A push
+isn't done until it's live there, so after every push, follow it through and
+tell the user:
+
+1. Find the "Auto-merge Claude branches" run for the pushed commit and wait
+   for it to finish. If it fails, say so with the failing step and stop.
+2. Read the new head of `main`. That's the commit Vercel builds.
+3. Poll `https://roth-rr.vercel.app/api/version` (every 15 seconds or so, for
+   up to 10 minutes) until its `buildId` equals that commit's sha. Run the
+   poll as one background command so the session is woken when it ends.
+4. Tell the user in one line that the change is live, with the short sha. If
+   the poll times out, or the host can't be reached, say exactly that rather
+   than guessing it deployed.
+
 # What this system does
 
 This is a **Roth conversion planner**. A US retiree (or married couple) holds
