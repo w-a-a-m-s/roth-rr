@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState } from "react";
+import { accountsInDisplayOrder } from "@/lib/domain/household";
 import { personRmdAge } from "@/lib/domain/rmd";
 import type { Household } from "@/lib/domain/types";
 import type { ScenarioResult } from "@/lib/engine/types";
@@ -259,13 +260,12 @@ function buildAssetLines(
   const hasReEquity = scenario.rows.some((r) => r.realEstateValue !== 0);
   const hasAfterTax = scenario.rows.some((r) => r.afterTaxTotal !== 0);
 
-  const retirementAccounts = household.accounts.filter(
+  const accounts = accountsInDisplayOrder(household.accounts);
+  const retirementAccounts = accounts.filter(
     (a) => a.kind === "retirementTaxable"
   );
-  const rothAccounts = household.accounts.filter(
-    (a) => a.kind === "rothTaxFree"
-  );
-  const afterTaxAccounts = household.accounts.filter((a) =>
+  const rothAccounts = accounts.filter((a) => a.kind === "rothTaxFree");
+  const afterTaxAccounts = accounts.filter((a) =>
     AFTER_TAX_KINDS.has(a.kind)
   );
 

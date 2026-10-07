@@ -70,6 +70,33 @@ export function isDropRetirementAccount(
 }
 
 /**
+ * A sick-leave payout account, recognized by its label: "Sick Days", or
+ * "Bencor" (the plan administrator it is often named after).
+ */
+function isSickDaysAccount(account: Pick<Account, "label">): boolean {
+  return /\b(sick|bencor)\b/i.test(account.label ?? "");
+}
+
+/**
+ * Accounts in the order the results list them: DROP first, sick-leave
+ * accounts last, everything else in plan order between them. Display only:
+ * the engine keeps plan order, which is also the conversion cascade order.
+ */
+export function accountsInDisplayOrder<
+  T extends Pick<Account, "kind" | "retirementType" | "label">,
+>(accounts: T[]): T[] {
+  const rank = (acc: T) => {
+    if (isDropRetirementAccount(acc)) return 0;
+    if (isSickDaysAccount(acc)) return 2;
+    return 1;
+  };
+  return accounts
+    .map((acc, index) => ({ acc, index }))
+    .sort((a, b) => rank(a.acc) - rank(b.acc) || a.index - b.index)
+    .map(({ acc }) => acc);
+}
+
+/**
  * Share of the first projection year still ahead of `asOfDate` (an ISO
  * `YYYY-MM-DD`, normally today). Balances entered today have already earned
  * the months behind them, so year 0 grows only for the rest of the year: on

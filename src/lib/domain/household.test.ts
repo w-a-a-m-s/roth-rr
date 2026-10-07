@@ -3,6 +3,7 @@ import { createBlankHousehold } from "@/lib/config/sampleData";
 import {
   accountDepositEndYear,
   accountGrowsInYear,
+  accountsInDisplayOrder,
   firstYearGrowthFraction,
   accountOwnerLabel,
   applyFilingStatus,
@@ -233,6 +234,37 @@ describe("applyFilingStatus: joint after-tax accounts", () => {
     };
     const single = applyFilingStatus(withAccount, "single");
     expect(single.accounts).toHaveLength(0);
+  });
+});
+
+describe("accountsInDisplayOrder", () => {
+  const acc = (label: string, retirementType?: "drop" | "403b" | "ira") => ({
+    label,
+    kind: "retirementTaxable" as const,
+    retirementType,
+  });
+
+  it("puts DROP first and sick-days / Bencor accounts last, keeping plan order otherwise", () => {
+    const accounts = [
+      acc("Sick Days", "403b"),
+      acc("Nationwide", "403b"),
+      acc("Bencor", "403b"),
+      acc("DROP", "drop"),
+      acc("IRA", "ira"),
+    ];
+    expect(accountsInDisplayOrder(accounts).map((a) => a.label)).toEqual([
+      "DROP",
+      "Nationwide",
+      "IRA",
+      "Sick Days",
+      "Bencor",
+    ]);
+  });
+
+  it("leaves the input array untouched", () => {
+    const accounts = [acc("Sick Days (Bencor)", "403b"), acc("DROP", "drop")];
+    accountsInDisplayOrder(accounts);
+    expect(accounts[0].label).toBe("Sick Days (Bencor)");
   });
 });
 
