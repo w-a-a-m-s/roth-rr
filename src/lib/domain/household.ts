@@ -70,6 +70,30 @@ export function isDropRetirementAccount(
 }
 
 /**
+ * Share of the first projection year still ahead of `asOfDate` (an ISO
+ * `YYYY-MM-DD`, normally today). Balances entered today have already earned
+ * the months behind them, so year 0 grows only for the rest of the year: on
+ * October 7 that is 86 of 365 days. With no date, or a date outside the start
+ * year, balances are taken as January 1 of the start year and year 0 gets a
+ * full year (1).
+ */
+export function firstYearGrowthFraction(
+  startYear: number,
+  asOfDate?: string,
+): number {
+  if (!asOfDate) return 1;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(asOfDate);
+  if (!match) return 1;
+  const year = Number(match[1]);
+  if (year !== startYear) return 1;
+  const asOf = Date.UTC(year, Number(match[2]) - 1, Number(match[3]));
+  const yearStart = Date.UTC(year, 0, 1);
+  const nextYearStart = Date.UTC(year + 1, 0, 1);
+  if (!Number.isFinite(asOf)) return 1;
+  return Math.min(1, Math.max(0, (nextYearStart - asOf) / (nextYearStart - yearStart)));
+}
+
+/**
  * Whether this account compounds in `calendarYear`. DROP waits until the year
  * after the owner's retirement. If that year is missing, fall back to the
  * household start year (first growth is start + 1). Everyone else grows every

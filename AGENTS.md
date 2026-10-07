@@ -84,6 +84,14 @@ account types feature guide). Skipping year-0 growth on other accounts made an
 after-tax account that earns about as much as it distributes look like it was
 shrinking.
 
+In the app, balances are entered as of **today**, not January 1. The external
+data store stamps today's date on the refs (`refs.asOfDate`), and when that date
+falls inside year 0, `projectScenario` compounds year 0 only for what is left of
+the year (`firstYearGrowthFraction`: on October 7, 86 of 365 days). Later years
+get a full year. With no `asOfDate` (tests, golden cases) year 0 is a full year.
+Only the projection's growth step is prorated: the conversion strategies,
+including `depleteByRmd`, and `convertibleTotal` still use a full first year.
+
 Plans used to carry a flat `assumptions.rmdRate` (default 5%) applied to the
 live balance. That overstated RMDs in the early years and understated them in
 the late ones, since the table's implied rate crosses 5% around age 80 and keeps

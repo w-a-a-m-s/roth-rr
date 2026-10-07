@@ -35,4 +35,6 @@ them in sync. Pre-start DROP deposits add principal only
 does, and in-loop deposits still land after the grow step, so a DROP deposit
 in the retirement year first compounds the following year.
 
-Everyone else (401(k), IRA, TSP, …) still gets a full year of growth in year 0.
+Everyone else (401(k), IRA, TSP, …) still grows in year 0: a full year, or
+only the rest of the year when `refs.asOfDate` (today, in the app) falls in
+year 0. See "RMDs are set by law" in `AGENTS.md`.

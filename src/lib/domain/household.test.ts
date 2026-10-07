@@ -3,6 +3,7 @@ import { createBlankHousehold } from "@/lib/config/sampleData";
 import {
   accountDepositEndYear,
   accountGrowsInYear,
+  firstYearGrowthFraction,
   accountOwnerLabel,
   applyFilingStatus,
   canAccountBeJoint,
@@ -232,6 +233,22 @@ describe("applyFilingStatus: joint after-tax accounts", () => {
     };
     const single = applyFilingStatus(withAccount, "single");
     expect(single.accounts).toHaveLength(0);
+  });
+});
+
+describe("firstYearGrowthFraction", () => {
+  it("is the share of the start year left after the as-of date", () => {
+    expect(firstYearGrowthFraction(2026, "2026-01-01")).toBe(1);
+    expect(firstYearGrowthFraction(2026, "2026-10-07")).toBeCloseTo(86 / 365, 10);
+    expect(firstYearGrowthFraction(2026, "2026-12-31")).toBeCloseTo(1 / 365, 10);
+    expect(firstYearGrowthFraction(2028, "2028-07-01")).toBeCloseTo(184 / 366, 10);
+  });
+
+  it("is a full year with no date, a bad date, or a date outside the start year", () => {
+    expect(firstYearGrowthFraction(2026)).toBe(1);
+    expect(firstYearGrowthFraction(2026, "soon")).toBe(1);
+    expect(firstYearGrowthFraction(2027, "2026-10-07")).toBe(1);
+    expect(firstYearGrowthFraction(2025, "2026-10-07")).toBe(1);
   });
 });
 

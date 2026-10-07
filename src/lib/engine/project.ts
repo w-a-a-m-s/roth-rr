@@ -5,6 +5,7 @@ import type {
 } from "@/lib/domain/types";
 import {
   accountGrowsInYear,
+  firstYearGrowthFraction,
   expenseMonthlyForYear,
   incomeMonthlyForYear,
   isIncomeActive,
@@ -545,6 +546,7 @@ export function projectScenario(
   // they are also Dec 31 of the year before). Growth during year 0 does not
   // change that year's RMD.
   let priorYearEndBalances: Record<string, number> = { ...balances };
+  const firstYearGrowth = firstYearGrowthFraction(start, refs.asOfDate);
 
   const rows: ProjectionRow[] = [];
 
@@ -556,14 +558,17 @@ export function projectScenario(
 
     // 1) Grow balances. Starting balances are January 1 of the first projection
     //    year, so year 0 gets a full year of returns before withdrawals, except
-    //    DROP: those wait until the year after the owner's retirement. All
+    //    DROP: those wait until the year after the owner's retirement. When the
+    //    balances are as of a date inside year 0 (`refs.asOfDate`, today in
+    //    the app), year 0 compounds only for the rest of that year. All
     //    accounts keep compounding for life, including tax-deferred ones past
     //    the RMD age: the money stays invested while RMDs are taken.
+    const yearFraction = i === 0 ? firstYearGrowth : 1;
     for (const acc of accounts) {
       if (!accountGrowsInYear(acc, household.people, calendarYear, start)) {
         continue;
       }
-      balances[acc.id] *= 1 + growthRate(acc);
+      balances[acc.id] *= Math.pow(1 + growthRate(acc), yearFraction);
     }
 
     // 2) Account withdrawals reduce their source account and continue for as

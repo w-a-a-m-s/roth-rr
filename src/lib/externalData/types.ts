@@ -34,6 +34,13 @@ export interface ReferenceData {
   federalTax: FederalTaxYear;
   medicare: MedicarePartBYear;
   stateIncomeTax: StateIncomeTaxYear;
+  /**
+   * Date the plan's starting balances are as of (ISO `YYYY-MM-DD`). The app
+   * stamps today's date so the first projection year only grows for the rest
+   * of that year. Omitted (tests, golden cases) means January 1 of the start
+   * year, a full first year of growth.
+   */
+  asOfDate?: string;
 }
 
 export const EXTERNAL_DATA_KEYS: ExternalDataKey[] = [

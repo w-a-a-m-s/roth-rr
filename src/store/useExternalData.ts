@@ -111,6 +111,22 @@ async function fetchRefs(): Promise<ReferenceData | null> {
   };
 }
 
+/** Today's local date as `YYYY-MM-DD`. */
+function todayIso(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/**
+ * Stamp today's date on the refs: plan balances are entered as of today, so
+ * the engine grows the first projection year only for what is left of it.
+ */
+function asOfToday(refs: ReferenceData): ReferenceData {
+  return { ...refs, asOfDate: todayIso() };
+}
+
 let hydratePromise: Promise<void> | null = null;
 
 export const useExternalData = create<ExternalDataState>((set, get) => ({
@@ -130,11 +146,11 @@ export const useExternalData = create<ExternalDataState>((set, get) => ({
       if (cached && Date.now() - cached.fetchedAt < TTL_MS) {
         set({
           status: "ready",
-          refs: {
+          refs: asOfToday({
             federalTax: cached.federalTax,
             medicare: cached.medicare,
             stateIncomeTax: cached.stateIncomeTax,
-          },
+          }),
           usedFallback: false,
           error: null,
         });
@@ -147,7 +163,7 @@ export const useExternalData = create<ExternalDataState>((set, get) => ({
           writeCache(refs);
           set({
             status: "ready",
-            refs,
+            refs: asOfToday(refs),
             usedFallback: false,
             error: null,
           });
@@ -155,14 +171,14 @@ export const useExternalData = create<ExternalDataState>((set, get) => ({
         }
         set({
           status: "ready",
-          refs: FALLBACK_REFERENCE_DATA,
+          refs: asOfToday(FALLBACK_REFERENCE_DATA),
           usedFallback: true,
           error: "External data unavailable; using committed fallback.",
         });
       } catch (err) {
         set({
           status: "ready",
-          refs: FALLBACK_REFERENCE_DATA,
+          refs: asOfToday(FALLBACK_REFERENCE_DATA),
           usedFallback: true,
           error:
             err instanceof Error

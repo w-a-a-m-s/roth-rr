@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import { SAMPLE_HOUSEHOLD } from "@/lib/config/sampleData";
 import { primaryRmdAge } from "@/lib/domain/rmd";
 import {
@@ -1585,6 +1586,25 @@ describe("DROP growth delay", () => {
       expect(rows[0].balances.ret).toBeCloseTo(105_000, 2);
       expect(rows[1].balances.ret).toBeCloseTo(110_250, 2);
     }
+  });
+
+  it("grows year 0 only for the rest of the year when balances are as of a date in it", () => {
+    const h = household({ retirementType: "ira", retirementYear: 2026 });
+    const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: "2026-10-07" };
+    const rows = projectScenario(h, zeros(projectionYears(h)), refs);
+    // October 7 leaves 86 of 365 days, so year 0 compounds 5% for 86/365.
+    const year0 = 100_000 * Math.pow(1.05, 86 / 365);
+    expect(rows[0].balances.ret).toBeCloseTo(year0, 2);
+    // Later years get a full year.
+    expect(rows[1].balances.ret).toBeCloseTo(year0 * 1.05, 2);
+  });
+
+  it("keeps a full year-0 year when the as-of date is outside the start year", () => {
+    const h = household({ retirementType: "ira", retirementYear: 2027 });
+    const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: "2026-10-07" };
+    const rows = projectScenario(h, zeros(projectionYears(h)), refs);
+    expect(rows[0].calendarYear).toBe(2027);
+    expect(rows[0].balances.ret).toBeCloseTo(105_000, 2);
   });
 
   it("applies year-0 growth when the same account is switched from DROP to IRA", () => {
