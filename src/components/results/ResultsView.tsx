@@ -21,7 +21,7 @@ export function ResultsView() {
 	const refs = useExternalData(s => s.refs);
 	const refsReady = refsStatus === 'ready';
 	const comparison = useMemo(() => (ready && refsReady ? calculate(household, refs) : null), [household, ready, refsReady, refs]);
-	const [tab, setTab] = useState<'baseline' | 'roth'>('roth');
+	const [tab, setTab] = useState<'baseline' | 'roth'>('baseline');
 	const primaryId = primaryPersonId(household);
 
 	if (!refsReady) {
