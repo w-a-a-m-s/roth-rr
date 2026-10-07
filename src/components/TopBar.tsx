@@ -187,7 +187,7 @@ export function TopBar() {
         </span>
         <span className="whitespace-nowrap text-sm font-bold tracking-[-0.01em] text-foreground lg:text-[14.5px]">
           <span className="lg:hidden">Roth Calculator</span>
-          <span className="hidden lg:inline">{"RR's Private Roth Calculator"}</span>
+          <span className="hidden lg:inline">sample text</span>
         </span>
       </div>
 
