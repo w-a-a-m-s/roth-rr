@@ -8,6 +8,7 @@ import { US_STATE_LABELS } from "@/lib/config/stateTax";
 import {
   DEFAULT_RETIREMENT_ACCOUNT_TYPE,
   RETIREMENT_ACCOUNT_TYPE_LABELS,
+  accountsInDisplayOrder,
   expenseYearsLabel,
 } from "@/lib/domain/household";
 import { primaryRmdAge } from "@/lib/domain/rmd";
@@ -233,7 +234,7 @@ export function PlanDetails() {
         {household.accounts.length === 0 ? (
           <Empty>No accounts added</Empty>
         ) : (
-          household.accounts.map((acc) => (
+          accountsInDisplayOrder(household.accounts).map((acc) => (
             <Fragment key={acc.id}>
               <Row
                 label={

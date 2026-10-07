@@ -35,6 +35,7 @@ import {
   RETIREMENT_ACCOUNT_TYPE_LABELS,
   accountDepositEndYear,
   accountOwnerLabel,
+  accountsInDisplayOrder,
   canAccountBeJoint,
 } from "@/lib/domain/household";
 import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
@@ -493,7 +494,9 @@ function Group({
 }) {
   const household = useHousehold();
   const { addAccount, restoreAccount, discardDeletedAccount } = useScenario();
-  const accounts = household.accounts.filter((a) => kinds.includes(a.kind));
+  const accounts = accountsInDisplayOrder(
+    household.accounts.filter((a) => kinds.includes(a.kind)),
+  );
   const firstOwner = household.people[0]?.id ?? "";
   const deleted = (household.deletedAccounts ?? []).filter((entry) =>
     kinds.includes(entry.item.kind),
