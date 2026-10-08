@@ -19,7 +19,7 @@ do not change income, expenses, withdrawals, or RMD rules.
 | `fillBracket` | Each year, room to the top of `targetBracketRate` (12% / 22% / 24%; default 22%) from one no-conversion projection. |
 | `irmaa` | Each year, room just under the next IRMAA MAGI floor above baseline MAGI. Top tier: no MAGI cap. |
 | `depleteByRmd` | Walk balances (grow, withdraw, convert `remaining / yearsLeft`, then deposits) so tax-deferred empties by RMD. |
-| `minTax` | Lowest lifetime income tax: federal + state over the plan plus `deferredTaxOwed` on tax-deferred money left at the end. Starts from the best of no conversion and every other strategy, then nudges each conversion year up or down (step halves to $500) keeping changes that lower that total. Ignores Medicare and inheritance size. |
+| `minTax` | Lowest lifetime income tax: federal + state paid over the plan, the same `taxesTotal` the results show as Lifetime taxes. Tax on tax-deferred money left at the end is not counted. Starts from the best of no conversion and every other strategy, then nudges each conversion year up or down (step halves to $500) keeping changes that lower that total. Ignores Medicare and inheritance size. |
 | `manual` | User-edited `manualSchedule`. Default for new plans. Shown first as Manual. Editing a year in the Conversion wizard (or on even/immediate) switches here. |
 
 `buildConversionSchedule(household, refs)` is the switch. Fill-bracket and
@@ -53,9 +53,10 @@ is the selected rate; all three rates are precomputed.
   keeps a one-entry cache keyed on the household minus `optimizer`, so the
   menu and the results share one search. Its schedule ignores every
   `optimizer` field, including `convertAmount`.
-- `minTax` usually shows **higher** "lifetime taxes" in the results than no
-  conversion: the results metric only counts tax paid during the plan, while
-  `minTax` also counts the tax still owed on the leftover tax-deferred balance.
+- `minTax` targets the results' Lifetime taxes number, so it never shows more
+  lifetime tax than no conversion or any other strategy. It does not count the
+  tax heirs will owe on a leftover tax-deferred balance, so on a plan with
+  steady income and a short RMD window it may convert little or nothing.
 
 - Fill-bracket / IRMAA use baseline income only (one pass). Later-year
   balances may be lower; the engine caps.

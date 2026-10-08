@@ -1,7 +1,7 @@
 import type { ConversionStrategy, Household } from "@/lib/domain/types";
 import { FILL_BRACKET_RATES } from "@/lib/domain/types";
 import { conversionYears, convertibleTotal } from "@/lib/engine/convertible";
-import { deferredTaxOwed, runScenario } from "@/lib/engine/runScenario";
+import { runScenario } from "@/lib/engine/runScenario";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import type { ReferenceData } from "@/lib/externalData/types";
 import { depleteByRmdSchedule } from "@/lib/optimizer/strategies/depleteByRmd";
@@ -19,27 +19,23 @@ const MAX_PASSES = 3;
 const MIN_GAIN = 1;
 
 /**
- * Lifetime federal + state income tax for a conversion schedule, plus the tax
- * still owed on whatever is left in tax-deferred accounts at the end of the
- * plan. Without that last part, never converting would look cheapest just
- * because the tax on the leftover balance falls after the plan ends.
+ * Lifetime federal + state income tax for a conversion schedule: the same
+ * total the results show as Lifetime taxes.
  */
 export function lifetimeTaxes(
   household: Household,
   schedule: number[],
   refs: ReferenceData,
 ): number {
-  const result = runScenario(household, schedule, "Minimum taxes", refs);
-  const last = result.rows[result.rows.length - 1];
-  const owed = last ? deferredTaxOwed(household, last, refs) : 0;
-  return result.totals.taxesTotal + owed;
+  return runScenario(household, schedule, "Minimum taxes", refs).totals
+    .taxesTotal;
 }
 
 /**
  * The conversion schedule with the lowest lifetime income tax (federal +
- * state through the end of the plan, plus the tax still owed on tax-deferred
- * money left at the end). Medicare premiums and the size of the inheritance
- * are not part of the target: this is purely "pay the least tax".
+ * state through the end of the plan). Tax on tax-deferred money still left
+ * at the end, Medicare premiums, and the size of the inheritance are not part
+ * of the target: this is purely "pay the least tax while you're alive".
  *
  * It starts from the best of no conversion and every other strategy, then
  * walks the conversion years one at a time, nudging each year's amount up or
