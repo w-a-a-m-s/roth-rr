@@ -7,9 +7,7 @@ import { Select } from "@/components/ui/inputs";
 import { formatCurrency } from "@/lib/format";
 import { DualScroll } from "@/components/results/DualScroll";
 import {
-  SNAPSHOT_YEARS,
   buildSnapshotTable,
-  snapshotRows,
   type SnapshotSection,
   type SnapshotTone,
 } from "@/components/results/snapshotTable";
@@ -33,10 +31,14 @@ const TONE_CLASS: Record<SnapshotTone, string> = {
 };
 
 const CELL = "border border-[#D5DCE5] px-2 py-1.5";
+/** Row labels stay put while the years scroll; the row's color shows through. */
+const STICKY = "sticky left-0 z-10 bg-inherit";
+const LABEL_COL = 230;
+const YEAR_COL = 118;
 
 /**
- * Slide-ready "Assets, Income & Taxes" tables for both scenarios over a
- * six-year window, styled like the planning deck so they can be dropped
+ * Slide-ready "Assets, Income & Taxes" tables for both scenarios, every year
+ * of the plan with about six in view, styled like the planning deck so they can be dropped
  * straight into a presentation.
  */
 export function ScenarioSnapshot({
@@ -52,9 +54,7 @@ export function ScenarioSnapshot({
   const [startYear, setStartYear] = useState<number>(allYears[0] ?? 0);
 
   if (allYears.length === 0) return null;
-  const startOptions = allYears
-    .slice(0, Math.max(1, allYears.length - SNAPSHOT_YEARS + 1))
-    .map((y) => ({ value: String(y), label: String(y) }));
+  const startOptions = allYears.map((y) => ({ value: String(y), label: String(y) }));
 
   return (
     <div className="flex flex-col gap-3">
@@ -63,7 +63,7 @@ export function ScenarioSnapshot({
           Assets, income &amp; taxes
         </h3>
         <div className="flex items-center gap-2 text-[12.5px] font-semibold text-muted-2">
-          <label htmlFor="snapshot-start">Starting in</label>
+          <label htmlFor="snapshot-start">Jump to</label>
           <span className="w-[104px]">
             <Select
               id="snapshot-start"
@@ -105,11 +105,21 @@ function SnapshotCard({
   primaryId: string;
   startYear: number;
 }) {
-  const table = buildSnapshotTable(scenario, household, primaryId, startYear);
+  // Every year of the plan, about six in view; scroll (or "Jump to") for more.
+  const firstRowYear = scenario.rows[0]?.calendarYear ?? startYear;
+  const table = buildSnapshotTable(
+    scenario,
+    household,
+    primaryId,
+    firstRowYear,
+    scenario.rows.length,
+  );
   if (table.years.length === 0) return null;
 
-  const window = snapshotRows(scenario.rows, startYear);
-  const primaryAges = window.map((r) => r.ages[primaryId]).filter((a) => a != null);
+  const primaryAges = scenario.rows
+    .map((r) => r.ages[primaryId])
+    .filter((a) => a != null);
+  const startIndex = Math.max(0, table.years.indexOf(startYear));
   const firstYear = table.years[0];
   const lastYear = table.years[table.years.length - 1];
   const ageText =
@@ -126,17 +136,20 @@ function SnapshotCard({
         {label} · {firstYear}–{lastYear}
         {ageText}
       </div>
-      <DualScroll className="pb-1">
-        <table className="mx-auto w-full min-w-[640px] table-fixed border-collapse text-[12.5px] tabular-nums">
+      <DualScroll className="pb-1" scrollLeft={startIndex * YEAR_COL}>
+        <table
+          className="table-fixed border-collapse text-[12.5px] tabular-nums"
+          style={{ width: LABEL_COL + table.years.length * YEAR_COL }}
+        >
           <colgroup>
-            <col className="w-[26%]" />
+            <col style={{ width: LABEL_COL }} />
             {table.years.map((y) => (
-              <col key={y} />
+              <col key={y} style={{ width: YEAR_COL }} />
             ))}
           </colgroup>
           <thead>
             <tr className="bg-[#1B365D] text-white">
-              <th className={`${CELL} text-left text-[13.5px] font-bold`}>Year</th>
+              <th className={`${CELL} ${STICKY} text-left text-[13.5px] font-bold`}>Year</th>
               {table.years.map((y) => (
                 <th key={y} className={`${CELL} text-center text-[13.5px] font-bold`}>
                   {y}
@@ -145,7 +158,7 @@ function SnapshotCard({
             </tr>
             {table.ages.map((age) => (
               <tr key={age.label} className="bg-[#2D4A73] text-white">
-                <th className={`${CELL} text-left font-bold`}>{age.label}</th>
+                <th className={`${CELL} ${STICKY} text-left font-bold`}>{age.label}</th>
                 {age.values.map((v, i) => (
                   <td key={table.years[i]} className={`${CELL} text-center font-bold`}>
                     {v ?? "–"}
@@ -159,14 +172,14 @@ function SnapshotCard({
               const style = SECTION_STYLE[section.key];
               return [
                 <tr key={`${section.key}-head`} className={`${style.head} ${style.rule} text-white`}>
-                  <th className={`${CELL} text-left font-bold uppercase`}>{section.title}</th>
+                  <th className={`${CELL} ${STICKY} text-left font-bold uppercase`}>{section.title}</th>
                   {table.years.map((y) => (
                     <td key={y} className={CELL} />
                   ))}
                 </tr>,
                 ...section.lines.map((line) => (
                   <tr key={line.key} className={style.row}>
-                    <th className={`${CELL} text-left ${TONE_CLASS[line.tone]}`}>{line.label}</th>
+                    <th className={`${CELL} ${STICKY} text-left ${TONE_CLASS[line.tone]}`}>{line.label}</th>
                     {line.values.map((v, i) => (
                       <td
                         key={table.years[i]}
