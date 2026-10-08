@@ -1,0 +1,22 @@
+---
+description: Slide-style "Assets, Income & Taxes" tables for both scenarios
+globs: src/components/results/ScenarioSnapshot.tsx,src/components/results/snapshotTable.ts,src/components/results/snapshotTable.test.ts
+alwaysApply: false
+---
+
+# Scenario snapshot
+
+Two presentation-ready tables (No conversion, With conversion) over a six-year
+window, styled after the planning deck's "Assets, Income & Taxes" slide so an
+advisor can screenshot them into a deck. One "Starting in" picker drives both.
+
+- `snapshotTable.ts` is pure: it only reads `ProjectionRow` fields, never
+  recomputes money. Keep it that way.
+- Sections: assets (each tax-deferred and after-tax account in
+  `accountsInDisplayOrder`, real-estate equity, Roth total, and a yearly
+  conversion row only when the scenario converts), income (monthly, per
+  source, RMD rows kept when they pay anywhere in the projection), cash flow
+  (monthly; a deposits row shows when the plan has deposits, since surplus
+  nets them).
+- It sits above the year-by-year table: nothing may go below that table in
+  the results scroller.

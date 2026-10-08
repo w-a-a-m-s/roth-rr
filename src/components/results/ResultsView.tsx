@@ -12,6 +12,7 @@ import { AssetsChart } from '@/components/results/AssetsChart';
 import { AfterTaxAssetsTimeline } from '@/components/results/AfterTaxAssetsTimeline';
 import { CashflowChart } from '@/components/results/CashflowChart';
 import { ProjectionTable } from '@/components/results/ProjectionTable';
+import { ScenarioSnapshot } from '@/components/results/ScenarioSnapshot';
 import { LabsLoading } from '@/lib/common/client';
 
 export function ResultsView() {
@@ -91,6 +92,8 @@ export function ResultsView() {
 					refs={refs}
 					primaryId={primaryId}
 				/>
+
+				<ScenarioSnapshot comparison={comparison} household={household} primaryId={primaryId} />
 
 				<div className="flex flex-col gap-3">
 					<h3 className="m-0 text-[14.5px] font-bold text-foreground">Year-by-year</h3>
