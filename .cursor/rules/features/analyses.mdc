@@ -28,7 +28,8 @@ next year:
   Medicare count only `livingIds`,
 - life-only pensions of the deceased stop, survivorship pensions keep paying
   the same amount (`pensionPayout`),
-- Social Security: the survivor keeps the larger of the two benefits,
+- Social Security: the survivor keeps the larger of the two benefits; the
+  tab notes a step-up (`socialSecurityAfterDeath`) or that none happens,
 - the deceased's salary and business income stop; withdrawals and other
   income keep running,
 - accounts pass to the survivor (`effectiveOwner`): RMDs and conversion

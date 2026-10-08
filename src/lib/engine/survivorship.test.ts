@@ -5,6 +5,7 @@ import { calculate } from "@/lib/calculate";
 import {
   defaultDeathEvent,
   resolveDeath,
+  socialSecurityAfterDeath,
   survivorshipEvent,
 } from "@/lib/domain/survivorship";
 
@@ -122,5 +123,29 @@ describe("survivorship setting", () => {
 
   it("resolves the death year from the birth year", () => {
     expect(resolveDeath(couple(), death)).toEqual({ personId: "a", year: 2028, survivorId: "b" });
+  });
+});
+
+describe("socialSecurityAfterDeath", () => {
+  it("reports a step-up when the deceased's benefit is larger", () => {
+    const h = couple();
+    expect(socialSecurityAfterDeath(h, resolveDeath(h, death), 2026, 2057)).toEqual({
+      steppedUp: true,
+      year: 2029,
+      deceasedMonthly: 3000,
+      survivorMonthly: 1500,
+    });
+  });
+
+  it("reports no step-up when the survivor's own benefit is larger", () => {
+    const h = couple();
+    const r = socialSecurityAfterDeath(h, resolveDeath(h, { personId: "b", deathAge: 70 }), 2026, 2057);
+    expect(r?.steppedUp).toBe(false);
+    expect(r?.survivorMonthly).toBe(3000);
+  });
+
+  it("is null without Social Security", () => {
+    const h = { ...couple(), incomes: [] };
+    expect(socialSecurityAfterDeath(h, resolveDeath(h, death), 2026, 2057)).toBeNull();
   });
 });

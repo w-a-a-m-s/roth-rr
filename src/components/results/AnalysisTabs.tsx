@@ -16,8 +16,12 @@ import {
   peopleInCare,
 } from "@/lib/domain/longTermCare";
 import { formatCurrency, formatPercent } from "@/lib/format";
-import { SURVIVOR_EXPENSE_SHARE, resolveDeath } from "@/lib/domain/survivorship";
-import { projectionStartYear } from "@/lib/engine/project";
+import {
+  SURVIVOR_EXPENSE_SHARE,
+  resolveDeath,
+  socialSecurityAfterDeath,
+} from "@/lib/domain/survivorship";
+import { projectionStartYear, projectionYears } from "@/lib/engine/project";
 import { useScenario } from "@/store/useScenario";
 import { useUI, type AnalysisKind } from "@/store/useUI";
 
@@ -74,6 +78,12 @@ export function SurvivorshipControls({
   const ageNow = person?.birthYear != null ? start - person.birthYear : 50;
   const ages = Array.from({ length: Math.max(1, 111 - ageNow) }, (_, i) => ageNow + i);
   const death = resolveDeath(household, event);
+  const ss = socialSecurityAfterDeath(
+    household,
+    death,
+    start,
+    start + projectionYears(household) - 1,
+  );
   const name = (p?: { name?: string }) => p?.name?.trim() || "Spouse";
 
   return (
@@ -113,6 +123,32 @@ export function SurvivorshipControls({
           {name(person)}&apos;s life-only pensions and earnings stop;
           survivorship pensions keep paying the same amount. Expenses drop to{" "}
           {Math.round(SURVIVOR_EXPENSE_SHARE * 100)}% of what you spent together.
+        </p>
+      ) : null}
+      {ss ? (
+        <p
+          className={`m-0 rounded-lg px-3 py-2 text-[13px] leading-relaxed ${
+            ss.steppedUp ? "bg-accent-soft text-foreground" : "bg-card text-muted"
+          }`}
+        >
+          {ss.steppedUp ? (
+            <>
+              <strong>Social Security step-up:</strong> from {ss.year},{" "}
+              {name(survivor)} steps up to {name(person)}&apos;s Social Security
+              of {formatCurrency(ss.deceasedMonthly)}/mo
+              {ss.survivorMonthly > 0
+                ? ` instead of their own ${formatCurrency(ss.survivorMonthly)}/mo`
+                : ""}
+              . {name(survivor)}&apos;s own benefit stops.
+            </>
+          ) : (
+            <>
+              No Social Security step-up: {name(survivor)}&apos;s own benefit (
+              {formatCurrency(ss.survivorMonthly)}/mo in {ss.year}) is larger than{" "}
+              {name(person)}&apos;s ({formatCurrency(ss.deceasedMonthly)}/mo), so{" "}
+              {name(survivor)} keeps their own.
+            </>
+          )}
         </p>
       ) : null}
     </div>

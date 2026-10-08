@@ -140,3 +140,39 @@ export function incomesStoppedByDeath(
   }
   return stopped;
 }
+
+/** What happens to Social Security after the death, for the analysis note. */
+export interface SocialSecurityAfterDeath {
+  /** True when the survivor switches to the deceased's larger benefit. */
+  steppedUp: boolean;
+  /** First year after the death in which either benefit pays. */
+  year: number;
+  deceasedMonthly: number;
+  survivorMonthly: number;
+}
+
+/**
+ * The first year after the death with any Social Security, and whether the
+ * survivor steps up to the deceased's benefit then. Null when neither has
+ * Social Security in the years given.
+ */
+export function socialSecurityAfterDeath(
+  household: Household,
+  death: ResolvedDeath | null,
+  start: number,
+  lastYear: number,
+): SocialSecurityAfterDeath | null {
+  if (!death?.survivorId) return null;
+  for (let year = death.year + 1; year <= lastYear; year++) {
+    const deceasedMonthly = socialSecurityMonthly(household.incomes, death.personId, year, start);
+    const survivorMonthly = socialSecurityMonthly(household.incomes, death.survivorId, year, start);
+    if (deceasedMonthly <= 0 && survivorMonthly <= 0) continue;
+    return {
+      steppedUp: deceasedMonthly > survivorMonthly,
+      year,
+      deceasedMonthly,
+      survivorMonthly,
+    };
+  }
+  return null;
+}
