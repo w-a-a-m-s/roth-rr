@@ -65,7 +65,7 @@ Use this guide for UI, product features, and the index below.
 | Rental passive loss | [features/rental-passive-loss.mdc](features/rental-passive-loss.mdc) | Per-property PAL, $25k allowance / MAGI phase-out, RE-pro exception, carryforward in the year-by-year table |
 | Conversion strategies | [features/conversion-strategies.mdc](features/conversion-strategies.mdc) | Live even / immediate / fill-bracket / IRMAA / empty-by-RMD schedules and the Total impact menu |
 | Mobile shell | [features/mobile-shell.mdc](features/mobile-shell.mdc) | Compact header, sticky Configure / Details / Actions below `lg` |
-| Scenario snapshot | [features/scenario-snapshot.mdc](features/scenario-snapshot.mdc) | Slide-style six-year assets / income / cash-flow tables for both scenarios |
+| Scenario snapshot | [features/scenario-snapshot.mdc](features/scenario-snapshot.mdc) | Slide-style six-year assets / income / cash-flow tables for both scenarios, and the four retirement analysis charts |
 | Projection charts | [features/projection-charts.mdc](features/projection-charts.mdc) | Assets / cash-flow Recharts; desktop idle last-year tooltip |
 | Form controls | [features/form-controls.mdc](features/form-controls.mdc) | Shared Field / inputs; Select is a custom listbox; YearSelect is a typed year field |
 

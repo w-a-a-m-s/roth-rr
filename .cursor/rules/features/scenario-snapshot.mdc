@@ -1,6 +1,6 @@
 ---
 description: Slide-style "Assets, Income & Taxes" tables for both scenarios
-globs: src/components/results/ScenarioSnapshot.tsx,src/components/results/snapshotTable.ts,src/components/results/snapshotTable.test.ts
+globs: src/components/results/ScenarioSnapshot.tsx,src/components/results/snapshotTable.ts,src/components/results/snapshotTable.test.ts,src/components/results/PresentationCharts.tsx,src/components/results/presentationCharts.ts,src/components/results/presentationCharts.test.ts
 alwaysApply: false
 ---
 
@@ -20,3 +20,14 @@ advisor can screenshot them into a deck. One "Starting in" picker drives both.
   nets them).
 - It sits above the year-by-year table: nothing may go below that table in
   the results scroller.
+
+## Retirement analysis charts
+
+`PresentationCharts.tsx` (data in `presentationCharts.ts`) tells the snapshot
+as four report-style pages with a No conversion / With conversion toggle:
+need (spending + income tax per year), income sources (not drawn from the
+household's accounts), those sources applied to the need, and the result once
+RMDs and withdrawals are added. Applied income fills the need in
+`INCOME_CATEGORIES` order and never exceeds it, so a year's shortfall equals
+the table's negative surplus (before deposits). "Capitalized" is present value
+at the balance-weighted average account growth rate (5% if no balances).
