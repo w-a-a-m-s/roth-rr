@@ -2,6 +2,7 @@ import type { Household } from "@/lib/domain/types";
 import { primaryRmdAge } from "@/lib/domain/rmd";
 import type {
   Comparison,
+  ProjectionOptions,
   ProjectionRow,
   ScenarioResult,
   ScenarioTotals,
@@ -47,8 +48,8 @@ function estateRetirementValue(
   retirementTotal: number,
   federal: FederalTaxYear,
   stateTax: StateIncomeTaxYear,
+  fs: Household["filingStatus"] = household.filingStatus,
 ): number {
-  const fs = household.filingStatus;
   const federalTax = progressiveTax(
     retirementTotal,
     forFiling(federal.brackets, fs, "federal brackets"),
@@ -102,6 +103,7 @@ function inheritanceValue(
       row.retirementTotal,
       federal,
       stateTax,
+      row.filingStatus,
     ) +
     row.rothTotal +
     Math.max(0, row.afterTaxTotal - costBasis) +
@@ -125,6 +127,7 @@ export function deferredTaxOwed(
       row.retirementTotal,
       refs.federalTax,
       refs.stateIncomeTax,
+      row.filingStatus,
     )
   );
 }
@@ -139,18 +142,17 @@ function medicareTotal(
   rows: ProjectionRow[],
   medicare: MedicarePartBYear,
 ): number {
-  const fs = household.filingStatus;
   let total = 0;
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const enrolled = household.people.filter(
-      (p) => row.ages[p.id] >= MEDICARE_ELIGIBILITY_AGE,
+    const enrolled = row.livingIds.filter(
+      (id) => row.ages[id] >= MEDICARE_ELIGIBILITY_AGE,
     ).length;
     if (enrolled === 0) continue;
     const lookback = rows[Math.max(0, i - MEDICARE_IRMAA_LOOKBACK_YEARS)];
     const monthly = medicarePartBMonthlyPremium(
       lookback.grossTaxableIncome + lookback.capitalGainsIncome,
-      fs,
+      row.filingStatus,
       medicare,
     );
     total += enrolled * monthly * 12;
@@ -223,8 +225,9 @@ export function runScenario(
   conversionSchedule: number[],
   label: string,
   refs: ReferenceData = FALLBACK_REFERENCE_DATA,
+  options: ProjectionOptions = {},
 ): ScenarioResult {
-  const rows = projectScenario(household, conversionSchedule, refs);
+  const rows = projectScenario(household, conversionSchedule, refs, options);
   return {
     label,
     rows,
@@ -267,6 +270,7 @@ export function compareScenarios(
   household: Household,
   conversionSchedule: number[],
   refs: ReferenceData = FALLBACK_REFERENCE_DATA,
+  options: ProjectionOptions = {},
 ): Comparison {
   const zeros = new Array(conversionSchedule.length).fill(0);
   const baseline = runScenario(
@@ -274,12 +278,14 @@ export function compareScenarios(
     zeros,
     "No Roth conversion",
     refs,
+    options,
   );
   const roth = runScenario(
     household,
     conversionSchedule,
     "With Roth conversion",
     refs,
+    options,
   );
   return comparisonFrom(baseline, roth);
 }

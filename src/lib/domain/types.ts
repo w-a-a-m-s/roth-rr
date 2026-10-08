@@ -373,4 +373,16 @@ export interface Household {
   deletedExpenses?: DeletedItem<Expense>[];
   assumptions: Assumptions;
   optimizer: OptimizerConfig;
+  /**
+   * Settings for the Survivorship analysis: which spouse passes and at what
+   * age. The Retirement analysis ignores it. Optional; the analysis falls back
+   * to `defaultDeathEvent` when it's missing.
+   */
+  survivorship?: DeathEvent;
+}
+
+/** One spouse passing at a given age (end of that year). */
+export interface DeathEvent {
+  personId: string;
+  deathAge: number;
 }

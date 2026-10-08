@@ -58,6 +58,7 @@ const HOUSEHOLD_KEYS = [
   "deletedExpenses",
   "assumptions",
   "optimizer",
+  "survivorship",
 ] as const satisfies readonly (keyof Household)[];
 
 const NOT_SET = "Not set";
@@ -130,6 +131,8 @@ const PROPERTY_LABELS: Record<string, string> = {
   targetBracketRate: "Target bracket",
   convertAmount: "Amount to convert",
   deletedAt: "Deleted at",
+  personId: "Person who passes",
+  deathAge: "Age at death",
 };
 
 const MONEY_KEYS = new Set([
@@ -615,6 +618,8 @@ export function formatPlanChangeLabel(field: string): string {
       return "Assumptions";
     case "optimizer":
       return "Conversion strategy";
+    case "survivorship":
+      return "Survivorship";
     default:
       return field;
   }
@@ -808,6 +813,20 @@ export function detailPlanSnapshots(
       formatPlanChangeLabel("assumptions"),
       prevAssumptions,
       next.household.assumptions as unknown as Record<string, unknown>,
+      out,
+      ctx,
+    );
+  }
+
+  if (hasOwn(nextHousehold, "survivorship") && next.household.survivorship) {
+    const prevSurv =
+      hasOwn(prevHousehold, "survivorship") && prevHousehold.survivorship != null
+        ? (prevHousehold.survivorship as unknown as Record<string, unknown>)
+        : null;
+    diffRecordFields(
+      formatPlanChangeLabel("survivorship"),
+      prevSurv,
+      next.household.survivorship as unknown as Record<string, unknown>,
       out,
       ctx,
     );

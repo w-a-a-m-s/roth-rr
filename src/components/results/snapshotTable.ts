@@ -22,7 +22,8 @@ export interface SnapshotSection {
 
 export interface SnapshotTable {
   years: number[];
-  ages: { label: string; values: number[] }[];
+  /** Age per year, or null once that person has passed (Survivorship). */
+  ages: { label: string; values: (number | null)[] }[];
   sections: SnapshotSection[];
 }
 
@@ -100,7 +101,9 @@ export function buildSnapshotTable(
   ];
   const ages = people.map((p) => ({
     label: p.name ? `Age · ${p.name}` : "Age",
-    values: pick((r) => r.ages[p.id] ?? 0),
+    values: window.map((r) =>
+      r.livingIds.includes(p.id) ? (r.ages[p.id] ?? 0) : null,
+    ),
   }));
 
   const accounts = accountsInDisplayOrder(household.accounts);

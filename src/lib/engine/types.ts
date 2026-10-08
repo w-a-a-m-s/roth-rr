@@ -11,11 +11,23 @@ export interface StateDeductionBreakdown {
   total: number;
 }
 
+import type { DeathEvent, FilingStatus } from "@/lib/domain/types";
+
+/** Extra inputs for an analysis other than plain Retirement. */
+export interface ProjectionOptions {
+  /** Survivorship: one spouse passes at this age. */
+  death?: DeathEvent;
+}
+
 export interface ProjectionRow {
   yearIndex: number;
   calendarYear: number;
   /** Age of each person (keyed by person id) in this year. */
   ages: Record<string, number>;
+  /** People still living this year (everyone, outside Survivorship). */
+  livingIds: string[];
+  /** Filing status used for this year's tax (single after a spouse passes). */
+  filingStatus: FilingStatus;
   /** End-of-year balance per account (keyed by account id). */
   balances: Record<string, number>;
   retirementTotal: number;

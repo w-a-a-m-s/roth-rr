@@ -11,8 +11,18 @@ import {
   isIncomeActive,
   isWithdrawalIncome,
 } from "@/lib/domain/household";
+import {
+  effectiveOwner,
+  hasPassed,
+  incomesStoppedByDeath,
+  resolveDeath,
+} from "@/lib/domain/survivorship";
 import { personRmdAge } from "@/lib/domain/rmd";
-import type { DeductionBreakdown, ProjectionRow } from "@/lib/engine/types";
+import type {
+  DeductionBreakdown,
+  ProjectionOptions,
+  ProjectionRow,
+} from "@/lib/engine/types";
 import {
   capitalGainsTaxByBracket,
   capitalGainsTaxStacked,
@@ -391,13 +401,13 @@ function applyRentalPassiveLoss(input: {
 }
 
 function computeDeductions(
-  household: Household,
+  fs: Household["filingStatus"],
+  livingIds: string[],
   ages: Record<string, number>,
   grossTaxableIncome: number,
   federal: FederalTaxYear,
   allowedDepreciation: number,
 ): DeductionBreakdown {
-  const fs = household.filingStatus;
   const standard = forFiling(
     federal.standardDeduction,
     fs,
@@ -413,7 +423,7 @@ function computeDeductions(
       "federal seniorDeductionPhaseOut",
     )
   ) {
-    const eligible = household.people.filter((p) => ages[p.id] >= 65).length;
+    const eligible = livingIds.filter((id) => ages[id] >= 65).length;
     senior = eligible * federal.seniorDeductionPerPerson;
   }
 
@@ -476,8 +486,11 @@ export function projectScenario(
   household: Household,
   conversionSchedule: number[],
   refs: ReferenceData = FALLBACK_REFERENCE_DATA,
+  options: ProjectionOptions = {},
 ): ProjectionRow[] {
-  const fs = household.filingStatus;
+  const planFiling = household.filingStatus;
+  // Survivorship analysis: one spouse passes at the end of `death.year`.
+  const death = resolveDeath(household, options.death);
   const federal = refs.federalTax;
   const state = getStateTaxTable(
     refs.stateIncomeTax,
@@ -555,6 +568,19 @@ export function projectScenario(
     const ages: Record<string, number> = {};
     for (const p of household.people)
       ages[p.id] = calendarYear - (p.birthYear ?? NaN);
+    const livingIds = household.people
+      .filter((p) => !hasPassed(death, p.id, calendarYear))
+      .map((p) => p.id);
+    // A surviving spouse files jointly for the year of death, then single.
+    const widowed =
+      death != null && calendarYear > death.year && planFiling === "mfj";
+    const fs: Household["filingStatus"] = widowed ? "single" : planFiling;
+    const stoppedIncomes = incomesStoppedByDeath(
+      household,
+      death,
+      calendarYear,
+      start,
+    );
 
     // 1) Grow balances. Starting balances are January 1 of the first projection
     //    year, so year 0 gets a full year of returns before withdrawals, except
@@ -602,9 +628,10 @@ export function projectScenario(
     let converted = 0;
     for (const acc of retirementAccounts) {
       if (toConvert <= 0) break;
-      const owner = household.people.find((p) => p.id === acc.ownerId);
+      const ownerId = effectiveOwner(death, acc.ownerId, calendarYear);
+      const owner = household.people.find((p) => p.id === ownerId);
       const ownerRmdAge = personRmdAge(owner);
-      const ownerAge = ages[acc.ownerId];
+      const ownerAge = ages[ownerId];
       // Missing birth year → still convertible. Known age at/after RMD → skip.
       if (ownerRmdAge != null && ownerAge >= ownerRmdAge) continue;
       const take = Math.min(Math.max(0, balances[acc.id]), toConvert);
@@ -645,6 +672,7 @@ export function projectScenario(
     const incomeMonthly: Record<string, number> = {};
     for (const income of household.incomes) {
       if (!isIncomeActive(income, calendarYear)) continue;
+      if (stoppedIncomes.has(income.id)) continue;
       // A withdrawal income with no valid source account is inactive: it neither
       // depletes an account (step 2) nor produces taxable income / cash flow.
       if (isWithdrawalIncome(income.kind) && !withdrawalHasSource(income, balances))
@@ -692,11 +720,12 @@ export function projectScenario(
     // to any scheduled retirement draw; both show as separate income lines. No
     // birth year → no forced RMD.
     for (const acc of retirementAccounts) {
-      const owner = household.people.find((p) => p.id === acc.ownerId);
+      const ownerId = effectiveOwner(death, acc.ownerId, calendarYear);
+      const owner = household.people.find((p) => p.id === ownerId);
       const ownerRmdAge = personRmdAge(owner);
-      if (ownerRmdAge == null || ages[acc.ownerId] < ownerRmdAge) continue;
+      if (ownerRmdAge == null || ages[ownerId] < ownerRmdAge) continue;
       const base = Math.max(0, priorYearEndBalances[acc.id] ?? 0);
-      const required = base / uniformLifetimeDenominator(ages[acc.ownerId]);
+      const required = base / uniformLifetimeDenominator(ages[ownerId]);
       const bal = Math.max(0, balances[acc.id]);
       const rmdAnnual = Math.min(bal, required);
       if (rmdAnnual <= 0) continue;
@@ -749,7 +778,8 @@ export function projectScenario(
 
     // 5) Deductions, taxable income, federal + state tax (incl. capital gains).
     const deductions = computeDeductions(
-      household,
+      fs,
+      livingIds,
       ages,
       federalOrdinaryGross,
       federal,
@@ -856,6 +886,8 @@ export function projectScenario(
       yearIndex: i,
       calendarYear,
       ages,
+      livingIds,
+      filingStatus: fs,
       balances: { ...balances },
       retirementTotal,
       rothTotal,

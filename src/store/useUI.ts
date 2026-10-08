@@ -47,7 +47,16 @@ interface NameModalState {
   sourceId: string | null;
 }
 
+/** Which analysis the results show. All of them run from the same plan. */
+export type AnalysisKind =
+  | "retirement"
+  | "survivorship"
+  | "disability"
+  | "longTermCare";
+
 interface UIState {
+  analysis: AnalysisKind;
+  setAnalysis: (analysis: AnalysisKind) => void;
   planModal: PlanModalState;
   nameModal: NameModalState;
   /**
@@ -135,6 +144,8 @@ function flushPreviousDraft(get: () => UIState) {
 }
 
 export const useUI = create<UIState>((set, get) => ({
+  analysis: "retirement",
+  setAnalysis: (analysis) => set({ analysis }),
   planModal: CLOSED,
   nameModal: NAME_CLOSED,
   authModalKind: null,

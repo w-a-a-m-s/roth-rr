@@ -1,0 +1,33 @@
+---
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care) and the survivorship death model
+globs: src/components/results/AnalysisTabs.tsx,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
+alwaysApply: false
+---
+
+# Analyses
+
+Links above Total impact switch the results between analyses
+(`useUI().analysis`, transient). Every analysis runs from the same plan; an
+analysis only adds options to `calculate(household, refs, options)`. The
+conversion schedule always comes from the plan's strategy as-is.
+
+- **Retirement**: `calculate(household, refs)`, no options. Golden cases pin it.
+- **Survivorship**: `options.death` = `survivorshipEvent(household)`: the saved
+  `household.survivorship` (person + age, set in the tab) or the default (main
+  person at 80). Needs two people.
+- **Disability**, **Long-term care**: placeholders, to be designed with the user.
+
+## Survivorship rules (`domain/survivorship.ts` + `projectScenario`)
+
+The person passes at the end of `birthYear + deathAge`; effects start the
+next year:
+- filing status mfj becomes single (row `filingStatus`), senior deduction and
+  Medicare count only `livingIds`,
+- life-only pensions of the deceased stop, survivorship pensions keep paying
+  the same amount (`pensionPayout`),
+- Social Security: the survivor keeps the larger of the two benefits,
+- the deceased's salary and business income stop; withdrawals and other
+  income keep running,
+- accounts pass to the survivor (`effectiveOwner`): RMDs and conversion
+  eligibility follow the survivor's age.
+Expenses are unchanged. Inheritance uses the final row's filing status.

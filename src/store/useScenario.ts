@@ -4,6 +4,7 @@ import { create } from "zustand";
 import type {
   Account,
   Assumptions,
+  DeathEvent,
   DeletedItem,
   Deposit,
   Expense,
@@ -173,6 +174,16 @@ export function migrateHousehold(household: Household): Household {
       // Deposit amounts used to escalate yearly; they are flat now.
       delete (dep as { growthRate?: number }).growthRate;
     }
+  }
+  // The Survivorship setting must name someone in the plan and a real age.
+  const survivorship = legacy.survivorship;
+  if (
+    survivorship != null &&
+    (typeof survivorship !== "object" ||
+      !(legacy.people ?? []).some((p) => p.id === survivorship.personId) ||
+      !Number.isFinite(survivorship.deathAge))
+  ) {
+    delete legacy.survivorship;
   }
   for (const inc of legacy.incomes ?? []) {
     if (!Number.isFinite(inc.growthRate)) inc.growthRate = 0;
@@ -472,6 +483,8 @@ interface ScenarioState {
   discardDeletedRealEstate: (id: string) => void;
   setAssumptions: (patch: Partial<Assumptions>) => void;
   setOptimizer: (patch: Partial<OptimizerConfig>) => void;
+  /** Survivorship analysis: which spouse passes and at what age. */
+  setSurvivorship: (event: DeathEvent) => void;
 }
 
 export const useScenario = create<ScenarioState>()((set, get) => {
@@ -1181,6 +1194,8 @@ export const useScenario = create<ScenarioState>()((set, get) => {
         ...h,
         optimizer: { ...h.optimizer, ...patch },
       })),
+    setSurvivorship: (event) =>
+      editActive((h) => ({ ...h, survivorship: { ...event } })),
   };
 });
 

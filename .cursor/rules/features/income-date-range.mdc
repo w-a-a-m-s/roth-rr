@@ -33,5 +33,5 @@ surviving spouse for life). Missing means life only; read it through
 `migrateHousehold` drops it from non-pensions and bad values, and the editor
 clears it when the type changes away from a pension.
 
-Step 1 is the choice only: the engine has no death year yet, so both options
-project the same until a life-expectancy input lands.
+The choice only matters in the Survivorship analysis (see the analyses
+feature guide), where a spouse's death is modeled.

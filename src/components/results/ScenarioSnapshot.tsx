@@ -147,7 +147,7 @@ function SnapshotCard({
                 <th className={`${CELL} text-left font-bold`}>{age.label}</th>
                 {age.values.map((v, i) => (
                   <td key={table.years[i]} className={`${CELL} text-center font-bold`}>
-                    {v}
+                    {v ?? "–"}
                   </td>
                 ))}
               </tr>

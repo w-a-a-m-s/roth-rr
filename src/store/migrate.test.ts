@@ -605,3 +605,24 @@ describe("migrateHousehold: pension payout", () => {
     expect(out.incomes[1]).not.toHaveProperty("pensionPayout");
   });
 });
+
+describe("migrateHousehold: survivorship setting", () => {
+  it("keeps a setting that names someone in the plan", () => {
+    const h = household([], []);
+    h.survivorship = { personId: "p1", deathAge: 82 };
+    expect(migrateHousehold(h).survivorship).toEqual({ personId: "p1", deathAge: 82 });
+  });
+
+  it("drops a setting for someone no longer in the plan, or a bad age", () => {
+    const gone = household([], []);
+    gone.survivorship = { personId: "nobody", deathAge: 82 };
+    expect(migrateHousehold(gone)).not.toHaveProperty("survivorship");
+    const bad = household([], []);
+    bad.survivorship = { personId: "p1", deathAge: Number.NaN };
+    expect(migrateHousehold(bad)).not.toHaveProperty("survivorship");
+  });
+
+  it("leaves older plans without one", () => {
+    expect(migrateHousehold(household([], []))).not.toHaveProperty("survivorship");
+  });
+});

@@ -15,6 +15,9 @@ import { ProjectionTable } from '@/components/results/ProjectionTable';
 import { ScenarioSnapshot } from '@/components/results/ScenarioSnapshot';
 import { PresentationCharts } from '@/components/results/PresentationCharts';
 import { LabsLoading } from '@/lib/common/client';
+import { AnalysisTabs, ComingSoon, SurvivorshipControls } from '@/components/results/AnalysisTabs';
+import { survivorshipEvent } from '@/lib/domain/survivorship';
+import { useUI } from '@/store/useUI';
 
 export function ResultsView() {
 	const household = useHousehold();
@@ -22,7 +25,14 @@ export function ResultsView() {
 	const refsStatus = useExternalData(s => s.status);
 	const refs = useExternalData(s => s.refs);
 	const refsReady = refsStatus === 'ready';
-	const comparison = useMemo(() => (ready && refsReady ? calculate(household, refs) : null), [household, ready, refsReady, refs]);
+	const analysis = useUI(s => s.analysis);
+	const deathEvent = useMemo(() => survivorshipEvent(household), [household]);
+	const death = analysis === 'survivorship' ? deathEvent : null;
+	// Every analysis runs from the same plan; Survivorship adds the death.
+	const comparison = useMemo(
+		() => (ready && refsReady ? calculate(household, refs, death ? { death } : {}) : null),
+		[household, ready, refsReady, refs, death],
+	);
 	const [tab, setTab] = useState<'baseline' | 'roth'>('baseline');
 	const primaryId = primaryPersonId(household);
 
@@ -44,11 +54,36 @@ export function ResultsView() {
 		);
 	}
 
+	if (analysis === 'disability' || analysis === 'longTermCare') {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<ComingSoon title={analysis === 'disability' ? 'Disability' : 'Long-term care'} />
+			</div>
+		);
+	}
+
+	if (analysis === 'survivorship' && !deathEvent) {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<div className="rounded-2xl border border-border bg-white p-6 text-center text-sm text-muted">
+					<p className="font-medium text-foreground">Survivorship needs two people</p>
+					<p className="mt-1">Add a spouse in the Household step to see what happens when one of you passes.</p>
+				</div>
+			</div>
+		);
+	}
+
 	const scenario = tab === 'baseline' ? comparison.baseline : comparison.roth;
 	const rmdAge = primaryRmdAge(household);
 
 	return (
 		<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-6">
+			<AnalysisTabs />
+			{analysis === 'survivorship' && deathEvent ? (
+				<SurvivorshipControls household={household} event={deathEvent} />
+			) : null}
 			<section className="flex flex-col gap-4">
 				<TotalImpact comparison={comparison} />
 				<ComparisonMetrics comparison={comparison} rmdAge={rmdAge} />
