@@ -51,3 +51,14 @@ Inheritance uses the final row's filing status.
   everyone is, back to 100% after care ends. Survivorship's 70% multiplies in
   if both analyses' options are ever combined.
 - Care costs aren't deducted as medical expenses (no itemizing in the model).
+
+## Results layout (what clients see first)
+
+Under the analysis links: Total impact, then a second row of links,
+**Summary | Projection | Graphic view**, that open and close sections
+(`ResultsView` state, all closed on load): Summary is the metric cards plus
+After-tax assets, Projection the Assets / Cash flow charts, Graphic view the
+`PresentationCharts`. Always shown: the Assets, Income & Taxes tables and the
+Year-by-year table, which stays last in the scroller (pin-to-top). The No
+conversion / With conversion toggle sits on Year-by-year and on Projection
+(shared state).
