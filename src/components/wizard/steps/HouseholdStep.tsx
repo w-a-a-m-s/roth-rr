@@ -19,13 +19,19 @@ import {
 } from "@/lib/config/defaults";
 import { US_STATE_CODES, US_STATE_LABELS } from "@/lib/config/stateTax";
 import { maxPeople } from "@/lib/domain/household";
-import type { FilingStatus } from "@/lib/domain/types";
+import type { FilingStatus, Sex } from "@/lib/domain/types";
 import { primaryPersonId } from "@/lib/engine/project";
 import { uid } from "@/lib/id";
 import {
   HOUSEHOLD_TOUR_STEPS,
   findPlanModalPrimaryAction,
 } from "@/lib/onboarding/householdTour";
+
+const SEX_OPTIONS: { value: "" | Sex; label: string }[] = [
+  { value: "", label: "Not set" },
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+];
 
 export function HouseholdStep() {
   const household = useHousehold();
@@ -227,6 +233,19 @@ export function HouseholdStep() {
                       onChange={(birthYear) =>
                         updatePerson(person.id, { birthYear })
                       }
+                    />
+                  </Field>
+                  <Field
+                    label="Sex"
+                    className="min-w-[100px] flex-1"
+                    help="Optional. Sets the default length of long-term care: 3 years for men, 5 for women."
+                  >
+                    <Select
+                      value={person.sex ?? ""}
+                      onChange={(sex) =>
+                        updatePerson(person.id, { sex: sex || undefined })
+                      }
+                      options={SEX_OPTIONS}
                     />
                   </Field>
                   <Field label="Retirement year" className="min-w-[100px] flex-1">

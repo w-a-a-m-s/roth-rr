@@ -24,3 +24,21 @@ export function incomeLabel(household: Household, key: string): string {
   if (!owner || label.toLowerCase().includes(owner.toLowerCase())) return label;
   return `${label} · ${owner}`;
 }
+
+/** Display label for an expense key: an expense id, or `ltc:<person>` care. */
+export function expenseLabel(household: Household, key: string): string {
+  if (key.startsWith("ltc:")) {
+    const name = household.people.find((p) => p.id === key.slice(4))?.name?.trim();
+    return name ? `Long-term care · ${name}` : "Long-term care";
+  }
+  return household.expenses.find((e) => e.id === key)?.label ?? key;
+}
+
+/** Monthly long-term care cost in a row (all `ltc:` expense keys). */
+export function careMonthly(expenseMonthly: Record<string, number>): number {
+  let total = 0;
+  for (const [key, value] of Object.entries(expenseMonthly)) {
+    if (key.startsWith("ltc:")) total += value;
+  }
+  return total;
+}

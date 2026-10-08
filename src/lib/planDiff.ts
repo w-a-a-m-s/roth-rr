@@ -59,6 +59,7 @@ const HOUSEHOLD_KEYS = [
   "assumptions",
   "optimizer",
   "survivorship",
+  "longTermCare",
 ] as const satisfies readonly (keyof Household)[];
 
 const NOT_SET = "Not set";
@@ -133,6 +134,11 @@ const PROPERTY_LABELS: Record<string, string> = {
   deletedAt: "Deleted at",
   personId: "Person who passes",
   deathAge: "Age at death",
+  sex: "Sex",
+  who: "Who's in care",
+  careType: "Care type",
+  inflation: "Care cost inflation",
+  periods: "Care periods",
 };
 
 const MONEY_KEYS = new Set([
@@ -150,6 +156,7 @@ const MONEY_KEYS = new Set([
 ]);
 
 const PERCENT_KEYS = new Set([
+  "inflation",
   "growthRate",
   "expenseGrowth",
   "appreciationRate",
@@ -620,6 +627,8 @@ export function formatPlanChangeLabel(field: string): string {
       return "Conversion strategy";
     case "survivorship":
       return "Survivorship";
+    case "longTermCare":
+      return "Long-term care";
     default:
       return field;
   }
@@ -827,6 +836,20 @@ export function detailPlanSnapshots(
       formatPlanChangeLabel("survivorship"),
       prevSurv,
       next.household.survivorship as unknown as Record<string, unknown>,
+      out,
+      ctx,
+    );
+  }
+
+  if (hasOwn(nextHousehold, "longTermCare") && next.household.longTermCare) {
+    const prevCare =
+      hasOwn(prevHousehold, "longTermCare") && prevHousehold.longTermCare != null
+        ? (prevHousehold.longTermCare as unknown as Record<string, unknown>)
+        : null;
+    diffRecordFields(
+      formatPlanChangeLabel("longTermCare"),
+      prevCare,
+      next.household.longTermCare as unknown as Record<string, unknown>,
       out,
       ctx,
     );

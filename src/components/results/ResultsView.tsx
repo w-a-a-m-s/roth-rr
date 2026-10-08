@@ -15,7 +15,8 @@ import { ProjectionTable } from '@/components/results/ProjectionTable';
 import { ScenarioSnapshot } from '@/components/results/ScenarioSnapshot';
 import { PresentationCharts } from '@/components/results/PresentationCharts';
 import { LabsLoading } from '@/lib/common/client';
-import { AnalysisTabs, ComingSoon, SurvivorshipControls } from '@/components/results/AnalysisTabs';
+import { AnalysisTabs, ComingSoon, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
+import { longTermCareSettings } from '@/lib/domain/longTermCare';
 import { survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
 
@@ -27,11 +28,16 @@ export function ResultsView() {
 	const refsReady = refsStatus === 'ready';
 	const analysis = useUI(s => s.analysis);
 	const deathEvent = useMemo(() => survivorshipEvent(household), [household]);
-	const death = analysis === 'survivorship' ? deathEvent : null;
-	// Every analysis runs from the same plan; Survivorship adds the death.
+	const careSettings = useMemo(() => longTermCareSettings(household), [household]);
+	// Every analysis runs from the same plan; each one only adds its options.
+	const options = useMemo(() => {
+		if (analysis === 'survivorship' && deathEvent) return { death: deathEvent };
+		if (analysis === 'longTermCare' && careSettings) return { longTermCare: careSettings };
+		return {};
+	}, [analysis, deathEvent, careSettings]);
 	const comparison = useMemo(
-		() => (ready && refsReady ? calculate(household, refs, death ? { death } : {}) : null),
-		[household, ready, refsReady, refs, death],
+		() => (ready && refsReady ? calculate(household, refs, options) : null),
+		[household, ready, refsReady, refs, options],
 	);
 	const [tab, setTab] = useState<'baseline' | 'roth'>('baseline');
 	const primaryId = primaryPersonId(household);
@@ -54,11 +60,11 @@ export function ResultsView() {
 		);
 	}
 
-	if (analysis === 'disability' || analysis === 'longTermCare') {
+	if (analysis === 'disability') {
 		return (
 			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
 				<AnalysisTabs />
-				<ComingSoon title={analysis === 'disability' ? 'Disability' : 'Long-term care'} />
+				<ComingSoon title="Disability" />
 			</div>
 		);
 	}
@@ -83,6 +89,9 @@ export function ResultsView() {
 			<AnalysisTabs />
 			{analysis === 'survivorship' && deathEvent ? (
 				<SurvivorshipControls household={household} event={deathEvent} />
+			) : null}
+			{analysis === 'longTermCare' && careSettings ? (
+				<LongTermCareControls household={household} settings={careSettings} />
 			) : null}
 			<section className="flex flex-col gap-4">
 				<TotalImpact comparison={comparison} />

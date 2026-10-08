@@ -12,6 +12,11 @@ import {
   isWithdrawalIncome,
 } from "@/lib/domain/household";
 import {
+  careExpenseKey,
+  careForYear,
+  resolveLongTermCare,
+} from "@/lib/domain/longTermCare";
+import {
   SURVIVOR_EXPENSE_SHARE,
   effectiveOwner,
   hasPassed,
@@ -492,6 +497,8 @@ export function projectScenario(
   const planFiling = household.filingStatus;
   // Survivorship analysis: one spouse passes at the end of `death.year`.
   const death = resolveDeath(household, options.death);
+  // Long-term care analysis: care costs per person and lower regular spending.
+  const care = resolveLongTermCare(household, options.longTermCare);
   const federal = refs.federalTax;
   const state = getStateTaxTable(
     refs.stateIncomeTax,
@@ -866,14 +873,20 @@ export function projectScenario(
     // spread to monthly. Out-of-range years are 0.
     // Survivorship: after a death the household spends a set share of what
     // the couple did.
+    const careYear = careForYear(care, calendarYear, start);
     const expenseShare =
-      death != null && calendarYear > death.year ? SURVIVOR_EXPENSE_SHARE : 1;
+      (death != null && calendarYear > death.year ? SURVIVOR_EXPENSE_SHARE : 1) *
+      careYear.expenseShare;
     const expenseMonthly: Record<string, number> = {};
     let monthlyExpenses = 0;
     for (const e of household.expenses) {
       const grown = expenseMonthlyForYear(e, calendarYear, start) * expenseShare;
       expenseMonthly[e.id] = grown;
       monthlyExpenses += grown;
+    }
+    for (const [personId, cost] of Object.entries(careYear.costMonthlyById)) {
+      expenseMonthly[careExpenseKey(personId)] = cost;
+      monthlyExpenses += cost;
     }
 
     // 6) Account totals snapshot.

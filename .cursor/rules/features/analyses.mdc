@@ -15,7 +15,10 @@ conversion schedule always comes from the plan's strategy as-is.
 - **Survivorship**: `options.death` = `survivorshipEvent(household)`: the saved
   `household.survivorship` (person + age, set in the tab) or the default (main
   person at 80). Needs two people.
-- **Disability**, **Long-term care**: placeholders, to be designed with the user.
+- **Long-term care**: `options.longTermCare` = `longTermCareSettings(household)`
+  (saved `household.longTermCare`, healed on read; default: main person, home
+  care, 3%, starting at 80).
+- **Disability**: placeholder, to be designed with the user.
 
 ## Survivorship rules (`domain/survivorship.ts` + `projectScenario`)
 
@@ -32,3 +35,17 @@ next year:
   eligibility follow the survivor's age.
 - expenses drop to `SURVIVOR_EXPENSE_SHARE` (70%) of the plan's amounts.
 Inheritance uses the final row's filing status.
+
+## Long-term care rules (`domain/longTermCare.ts` + `projectScenario`)
+
+- One spouse or both. Each person in care has a start age (default 80) and a
+  length in years (default 3 for men, 5 for women, 3 when `Person.sex` isn't
+  set), both editable in the tab.
+- Cost per person: home care $6,000/mo or nursing home $10,000/mo in
+  first-projection-year dollars, grown by `inflation` (default 3%) each year.
+  It lands in `expenseMonthly` under `ltc:<personId>` (labelled by
+  `expenseLabel`) and in `monthlyExpenses`.
+- Regular expenses: 70% while some of the household is in care, 0 while
+  everyone is, back to 100% after care ends. Survivorship's 70% multiplies in
+  if both analyses' options are ever combined.
+- Care costs aren't deducted as medical expenses (no itemizing in the model).

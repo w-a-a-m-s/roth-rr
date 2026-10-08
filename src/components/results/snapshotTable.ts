@@ -1,7 +1,7 @@
 import { accountsInDisplayOrder } from "@/lib/domain/household";
 import type { Household } from "@/lib/domain/types";
 import type { ProjectionRow, ScenarioResult } from "@/lib/engine/types";
-import { incomeLabel } from "@/components/results/incomeLabels";
+import { careMonthly, incomeLabel } from "@/components/results/incomeLabels";
 
 /** How many years the snapshot shows, like the deck's slide. */
 export const SNAPSHOT_YEARS = 6;
@@ -160,10 +160,18 @@ export function buildSnapshotTable(
     {
       key: "expenses",
       label: "Monthly expenses",
-      values: pick((r) => r.monthlyExpenses),
+      values: pick((r) => r.monthlyExpenses - careMonthly(r.expenseMonthly)),
       tone: "plain",
     },
   ];
+  if (scenario.rows.some((r) => careMonthly(r.expenseMonthly) !== 0)) {
+    cashLines.push({
+      key: "care",
+      label: "Long-term care",
+      values: pick((r) => careMonthly(r.expenseMonthly)),
+      tone: "tax",
+    });
+  }
   if (scenario.rows.some((r) => r.monthlyDeposits !== 0)) {
     cashLines.push({
       key: "deposits",

@@ -1,7 +1,21 @@
 "use client";
 
-import type { DeathEvent, Household } from "@/lib/domain/types";
-import { Select } from "@/components/ui/inputs";
+import type { ReactNode } from "react";
+import type {
+  CarePeriod,
+  DeathEvent,
+  Household,
+  LongTermCareSettings,
+} from "@/lib/domain/types";
+import { PercentInput, Select } from "@/components/ui/inputs";
+import {
+  CARE_EXPENSE_SHARE,
+  CARE_MONTHLY_COST,
+  CARE_TYPE_LABELS,
+  carePeriodFor,
+  peopleInCare,
+} from "@/lib/domain/longTermCare";
+import { formatCurrency, formatPercent } from "@/lib/format";
 import { SURVIVOR_EXPENSE_SHARE, resolveDeath } from "@/lib/domain/survivorship";
 import { projectionStartYear } from "@/lib/engine/project";
 import { useScenario } from "@/store/useScenario";
@@ -113,6 +127,134 @@ export function ComingSoon({ title }: { title: string }) {
       <p className="mt-2 text-sm text-muted">
         This analysis is on its way. It will run from the same plan as Retirement.
       </p>
+    </div>
+  );
+}
+
+/** Who's in long-term care, what kind, when, and for how long. */
+export function LongTermCareControls({
+  household,
+  settings,
+}: {
+  household: Household;
+  settings: LongTermCareSettings;
+}) {
+  const setLongTermCare = useScenario((s) => s.setLongTermCare);
+  const name = (id: string) =>
+    household.people.find((p) => p.id === id)?.name?.trim() || "Person";
+  const whoValue = settings.who === "both" ? "both" : settings.personId;
+  const whoOptions = [
+    ...household.people.map((p) => ({ value: p.id, label: `${name(p.id)} only` })),
+    ...(household.people.length > 1 ? [{ value: "both", label: "Both spouses" }] : []),
+  ];
+  const inCare = peopleInCare(household, settings);
+  const start = projectionStartYear(household);
+
+  const setPeriod = (period: CarePeriod) =>
+    setLongTermCare({
+      ...settings,
+      periods: [
+        ...settings.periods.filter((p) => p.personId !== period.personId),
+        period,
+      ],
+    });
+
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-5 py-4">
+      <div className="flex flex-wrap items-end gap-3">
+        <Control id="ltc-who" label="Who's in care" width="w-[180px]">
+          <Select
+            id="ltc-who"
+            value={whoValue}
+            onChange={(v) =>
+              setLongTermCare(
+                v === "both"
+                  ? { ...settings, who: "both" }
+                  : { ...settings, who: "one", personId: v },
+              )
+            }
+            options={whoOptions}
+          />
+        </Control>
+        <Control id="ltc-type" label="Care" width="w-[220px]">
+          <Select
+            id="ltc-type"
+            value={settings.careType}
+            onChange={(careType) => setLongTermCare({ ...settings, careType })}
+            options={(["home", "nursing"] as const).map((t) => ({
+              value: t,
+              label: `${CARE_TYPE_LABELS[t]} (${formatCurrency(CARE_MONTHLY_COST[t])}/mo)`,
+            }))}
+          />
+        </Control>
+        <Control id="ltc-inflation" label="Cost grows by" width="w-[110px]">
+          <PercentInput
+            id="ltc-inflation"
+            value={settings.inflation}
+            onChange={(inflation) => setLongTermCare({ ...settings, inflation })}
+          />
+        </Control>
+      </div>
+      <div className="flex flex-wrap gap-x-6 gap-y-3">
+        {inCare.map((personId) => {
+          const person = household.people.find((p) => p.id === personId);
+          const period = carePeriodFor(household, settings, personId);
+          const ageNow = person?.birthYear != null ? start - person.birthYear : 50;
+          const ages = Array.from({ length: Math.max(1, 111 - ageNow) }, (_, i) => ageNow + i);
+          return (
+            <div key={personId} className="flex flex-wrap items-end gap-3">
+              <Control id={`ltc-age-${personId}`} label={`${name(personId)} starts at age`} width="w-[104px]">
+                <Select
+                  id={`ltc-age-${personId}`}
+                  value={String(period.startAge)}
+                  onChange={(v) => setPeriod({ ...period, startAge: Number(v) })}
+                  options={ages.map((a) => ({ value: String(a), label: String(a) }))}
+                />
+              </Control>
+              <Control id={`ltc-years-${personId}`} label="For" width="w-[110px]">
+                <Select
+                  id={`ltc-years-${personId}`}
+                  value={String(period.years)}
+                  onChange={(v) => setPeriod({ ...period, years: Number(v) })}
+                  options={Array.from({ length: 15 }, (_, i) => ({
+                    value: String(i + 1),
+                    label: `${i + 1} ${i === 0 ? "year" : "years"}`,
+                  }))}
+                />
+              </Control>
+            </div>
+          );
+        })}
+      </div>
+      <p className="m-0 text-[13px] leading-relaxed text-muted">
+        Care costs {formatCurrency(CARE_MONTHLY_COST[settings.careType])}{" "}
+        a month
+        per person in today&apos;s dollars, growing{" "}
+        {formatPercent(settings.inflation)} a year. While one spouse is in care,
+        your other expenses drop to {Math.round(CARE_EXPENSE_SHARE * 100)}%; while
+        everyone is in care, only the care costs count. After care ends, expenses
+        go back to normal. Care length defaults to 3 years for men and 5 for women
+        (set in Household).
+      </p>
+    </div>
+  );
+}
+
+function Control({
+  id,
+  label,
+  width,
+  children,
+}: {
+  id: string;
+  label: string;
+  width: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1 text-[12.5px] font-semibold text-muted-2">
+      <label htmlFor={id}>{label}</label>
+      <span className={width}>{children}</span>
     </div>
   );
 }

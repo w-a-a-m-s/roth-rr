@@ -6,7 +6,7 @@ import { personRmdAge } from "@/lib/domain/rmd";
 import type { Household } from "@/lib/domain/types";
 import type { ScenarioResult } from "@/lib/engine/types";
 import { formatCurrency } from "@/lib/format";
-import { incomeLabel } from "@/components/results/incomeLabels";
+import { expenseLabel, incomeLabel } from "@/components/results/incomeLabels";
 
 function findScrollParent(el: HTMLElement | null): HTMLElement | null {
   let node = el?.parentElement ?? null;
@@ -286,7 +286,7 @@ function buildExpenseChildren(
   const scale = unit === "yr" ? 12 : 1;
   return expenseDetailKeys(scenario, household).map((key) => ({
     key: `expense-${unit}-${key}`,
-    label: household.expenses.find((e) => e.id === key)?.label ?? key,
+    label: expenseLabel(household, key),
     unit,
     value: (r) => (r.expenseMonthly[key] ?? 0) * scale,
   }));

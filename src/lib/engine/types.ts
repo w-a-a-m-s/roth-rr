@@ -11,12 +11,18 @@ export interface StateDeductionBreakdown {
   total: number;
 }
 
-import type { DeathEvent, FilingStatus } from "@/lib/domain/types";
+import type {
+  DeathEvent,
+  FilingStatus,
+  LongTermCareSettings,
+} from "@/lib/domain/types";
 
 /** Extra inputs for an analysis other than plain Retirement. */
 export interface ProjectionOptions {
   /** Survivorship: one spouse passes at this age. */
   death?: DeathEvent;
+  /** Long-term care: who's in care, when, and what it costs. */
+  longTermCare?: LongTermCareSettings;
 }
 
 export interface ProjectionRow {

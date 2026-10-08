@@ -626,3 +626,25 @@ describe("migrateHousehold: survivorship setting", () => {
     expect(migrateHousehold(household([], []))).not.toHaveProperty("survivorship");
   });
 });
+
+describe("migrateHousehold: sex and long-term care", () => {
+  it("keeps male / female and drops anything else", () => {
+    const h = household([], []);
+    h.people = [
+      { id: "p1", name: "A", sex: "female" },
+      { id: "p2", name: "B", sex: "x" as unknown as "male" },
+    ];
+    const out = migrateHousehold(h);
+    expect(out.people[0].sex).toBe("female");
+    expect(out.people[1]).not.toHaveProperty("sex");
+  });
+
+  it("keeps valid care settings and drops a broken shape", () => {
+    const ok = household([], []);
+    ok.longTermCare = { who: "both", personId: "p1", careType: "nursing", inflation: 0.03, periods: [] };
+    expect(migrateHousehold(ok).longTermCare?.who).toBe("both");
+    const bad = household([], []);
+    bad.longTermCare = { who: "all" } as unknown as typeof ok.longTermCare;
+    expect(migrateHousehold(bad)).not.toHaveProperty("longTermCare");
+  });
+});

@@ -6,6 +6,7 @@ import type {
   Assumptions,
   DeathEvent,
   DeletedItem,
+  LongTermCareSettings,
   Deposit,
   Expense,
   FilingStatus,
@@ -174,6 +175,20 @@ export function migrateHousehold(household: Household): Household {
       // Deposit amounts used to escalate yearly; they are flat now.
       delete (dep as { growthRate?: number }).growthRate;
     }
+  }
+  // A person's sex is optional; anything but male / female is dropped.
+  for (const person of legacy.people ?? []) {
+    if (person.sex !== "male" && person.sex !== "female") delete person.sex;
+  }
+  // Long-term care settings get healed when read; drop only a broken shape.
+  const care = legacy.longTermCare;
+  if (
+    care != null &&
+    (typeof care !== "object" ||
+      (care.who !== "one" && care.who !== "both") ||
+      !Array.isArray(care.periods))
+  ) {
+    delete legacy.longTermCare;
   }
   // The Survivorship setting must name someone in the plan and a real age.
   const survivorship = legacy.survivorship;
@@ -485,6 +500,8 @@ interface ScenarioState {
   setOptimizer: (patch: Partial<OptimizerConfig>) => void;
   /** Survivorship analysis: which spouse passes and at what age. */
   setSurvivorship: (event: DeathEvent) => void;
+  /** Long-term care analysis settings. */
+  setLongTermCare: (settings: LongTermCareSettings) => void;
 }
 
 export const useScenario = create<ScenarioState>()((set, get) => {
@@ -1196,6 +1213,14 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       })),
     setSurvivorship: (event) =>
       editActive((h) => ({ ...h, survivorship: { ...event } })),
+    setLongTermCare: (settings) =>
+      editActive((h) => ({
+        ...h,
+        longTermCare: {
+          ...settings,
+          periods: settings.periods.map((p) => ({ ...p })),
+        },
+      })),
   };
 });
 

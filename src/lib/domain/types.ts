@@ -70,7 +70,11 @@ export interface Person {
   birthYear?: number;
   /** Calendar year the person retires (drives projection start + salary end). */
   retirementYear?: number;
+  /** Optional. Sets the default length of long-term care (men 3, women 5 years). */
+  sex?: Sex;
 }
+
+export type Sex = "male" | "female";
 
 export type AccountKind =
   | "retirementTaxable" // tax-deferred (DROP, 401k, 403b, IRA...) - RMDs apply
@@ -379,6 +383,35 @@ export interface Household {
    * to `defaultDeathEvent` when it's missing.
    */
   survivorship?: DeathEvent;
+  /** Settings for the Long-term care analysis. Optional, with defaults. */
+  longTermCare?: LongTermCareSettings;
+}
+
+/** Home care or a nursing home, priced per person per month in today's dollars. */
+export type CareType = "home" | "nursing";
+
+/** One person's stretch of long-term care. */
+export interface CarePeriod {
+  personId: string;
+  /** Age care starts (the whole year counts). */
+  startAge: number;
+  /** Years of care, including the first. */
+  years: number;
+}
+
+/**
+ * Settings for the Long-term care analysis: one spouse or both in care, the
+ * kind of care, and how fast its cost grows. The Retirement analysis ignores it.
+ */
+export interface LongTermCareSettings {
+  who: "one" | "both";
+  /** Whose care runs when `who` is "one". */
+  personId: string;
+  careType: CareType;
+  /** Yearly growth of the care cost (decimal). */
+  inflation: number;
+  /** Per-person start age and length; anyone missing uses the defaults. */
+  periods: CarePeriod[];
 }
 
 /** One spouse passing at a given age (end of that year). */
