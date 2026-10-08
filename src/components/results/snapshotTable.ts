@@ -1,6 +1,7 @@
 import { accountsInDisplayOrder } from "@/lib/domain/household";
 import type { Household } from "@/lib/domain/types";
 import type { ProjectionRow, ScenarioResult } from "@/lib/engine/types";
+import { incomeLabel } from "@/components/results/incomeLabels";
 
 /** How many years the snapshot shows, like the deck's slide. */
 export const SNAPSHOT_YEARS = 6;
@@ -40,18 +41,6 @@ export function snapshotRows(
   const found = rows.findIndex((r) => r.calendarYear === startYear);
   const start = Math.min(found < 0 ? 0 : found, lastStart);
   return rows.slice(start, start + count);
-}
-
-function incomeLabel(household: Household, key: string): string {
-  if (key.startsWith("rmd:")) {
-    const acc = household.accounts.find((a) => a.id === key.slice(4));
-    return acc ? `RMD · ${acc.label}` : "RMD";
-  }
-  if (key.startsWith("re:")) {
-    const re = household.realEstate.find((r) => r.id === key.slice(3));
-    return re ? `Real estate · ${re.label}` : "Real estate";
-  }
-  return household.incomes.find((i) => i.id === key)?.label ?? key;
 }
 
 /**

@@ -12,6 +12,7 @@ import {
   isWithdrawalIncome,
 } from "@/lib/domain/household";
 import {
+  SURVIVOR_EXPENSE_SHARE,
   effectiveOwner,
   hasPassed,
   incomesStoppedByDeath,
@@ -863,10 +864,14 @@ export function projectScenario(
     const grossTaxableIncome = federalOrdinaryGross;
     // Each expense grows from its start year (or year 0); yearly amounts are
     // spread to monthly. Out-of-range years are 0.
+    // Survivorship: after a death the household spends a set share of what
+    // the couple did.
+    const expenseShare =
+      death != null && calendarYear > death.year ? SURVIVOR_EXPENSE_SHARE : 1;
     const expenseMonthly: Record<string, number> = {};
     let monthlyExpenses = 0;
     for (const e of household.expenses) {
-      const grown = expenseMonthlyForYear(e, calendarYear, start);
+      const grown = expenseMonthlyForYear(e, calendarYear, start) * expenseShare;
       expenseMonthly[e.id] = grown;
       monthlyExpenses += grown;
     }

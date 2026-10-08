@@ -2,7 +2,7 @@
 
 import type { DeathEvent, Household } from "@/lib/domain/types";
 import { Select } from "@/components/ui/inputs";
-import { resolveDeath } from "@/lib/domain/survivorship";
+import { SURVIVOR_EXPENSE_SHARE, resolveDeath } from "@/lib/domain/survivorship";
 import { projectionStartYear } from "@/lib/engine/project";
 import { useScenario } from "@/store/useScenario";
 import { useUI, type AnalysisKind } from "@/store/useUI";
@@ -97,7 +97,8 @@ export function SurvivorshipControls({
           {name(survivor)} files single, keeps the larger Social Security
           benefit, and inherits {name(person)}&apos;s accounts.{" "}
           {name(person)}&apos;s life-only pensions and earnings stop;
-          survivorship pensions keep paying the same amount.
+          survivorship pensions keep paying the same amount. Expenses drop to{" "}
+          {Math.round(SURVIVOR_EXPENSE_SHARE * 100)}% of what you spent together.
         </p>
       ) : null}
     </div>

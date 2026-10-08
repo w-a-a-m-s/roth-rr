@@ -30,4 +30,5 @@ next year:
   income keep running,
 - accounts pass to the survivor (`effectiveOwner`): RMDs and conversion
   eligibility follow the survivor's age.
-Expenses are unchanged. Inheritance uses the final row's filing status.
+- expenses drop to `SURVIVOR_EXPENSE_SHARE` (70%) of the plan's amounts.
+Inheritance uses the final row's filing status.

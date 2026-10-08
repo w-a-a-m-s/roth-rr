@@ -30,7 +30,9 @@ function couple(): Household {
       { id: "salB", label: "Salary Sam", ownerId: "b", kind: "salary", monthlyAmount: 2000, growthRate: 0, taxability: "full" },
     ],
     realEstate: [],
-    expenses: [],
+    expenses: [
+      { id: "living", label: "Living", amount: 5000, frequency: "monthly", growthRate: 0 },
+    ],
     assumptions: { expenseGrowth: 0, finalAge: 95 },
     optimizer: { strategy: "manual", manualSchedule: [] },
   };
@@ -66,6 +68,13 @@ describe("survivorship projection", () => {
     const y = year(after, 2029);
     expect(y.incomeMonthly.ssA).toBe(3000);
     expect(y.incomeMonthly.ssB).toBeUndefined();
+  });
+
+  it("cuts expenses to 70% from the year after the death", () => {
+    expect(year(after, 2028).monthlyExpenses).toBe(5000);
+    expect(year(after, 2029).monthlyExpenses).toBeCloseTo(3500, 6);
+    expect(year(after, 2029).expenseMonthly.living).toBeCloseTo(3500, 6);
+    expect(year(plain, 2029).monthlyExpenses).toBe(5000);
   });
 
   it("leaves the survivor's own income alone", () => {

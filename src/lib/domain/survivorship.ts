@@ -7,6 +7,9 @@ import {
   pensionPayout,
 } from "@/lib/domain/household";
 
+/** After a death, expenses drop to this share of what the couple spent. */
+export const SURVIVOR_EXPENSE_SHARE = 0.7;
+
 /** Default age for the Survivorship analysis when the plan hasn't set one. */
 export const DEFAULT_DEATH_AGE = 80;
 

@@ -6,6 +6,7 @@ import { personRmdAge } from "@/lib/domain/rmd";
 import type { Household } from "@/lib/domain/types";
 import type { ScenarioResult } from "@/lib/engine/types";
 import { formatCurrency } from "@/lib/format";
+import { incomeLabel } from "@/components/results/incomeLabels";
 
 function findScrollParent(el: HTMLElement | null): HTMLElement | null {
   let node = el?.parentElement ?? null;
@@ -170,20 +171,6 @@ function formatValue(line: LineDef, row: Row, primaryId: string): string {
   const v = line.value(row, primaryId);
   if (line.unit === "none") return String(v);
   return formatCurrency(v);
-}
-
-function incomeLabel(household: Household, key: string): string {
-  if (key.startsWith("rmd:")) {
-    const accId = key.slice(4);
-    const acc = household.accounts.find((a) => a.id === accId);
-    return acc ? `RMD · ${acc.label}` : "RMD";
-  }
-  if (key.startsWith("re:")) {
-    const reId = key.slice(3);
-    const re = household.realEstate.find((r) => r.id === reId);
-    return re ? `Real estate · ${re.label}` : "Real estate";
-  }
-  return household.incomes.find((i) => i.id === key)?.label ?? key;
 }
 
 /** Stable ordered keys for income detail rows across the projection. */
