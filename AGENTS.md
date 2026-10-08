@@ -319,6 +319,24 @@ in the app, fix the code, and **pin the corrected result as a golden case**
 (`src/lib/engine/golden/cases/*.json`; see "Golden-master regression is the
 safety net" above).
 
+# Results layout (approved by the user, keep it)
+
+The results page layout was signed off by the user. Keep it as is unless the
+user asks for a change:
+
+1. Analysis links: **Retirement | Survivorship | Disability | Long-term care**.
+   Survivorship and Long-term care show their own settings card under them.
+2. Results tabs: **Main | Summary | Graphic view**. Each tab shows only its
+   own sections; Main is the default.
+   - **Main**: the Assets, Income & Taxes tables (No conversion, then With
+     conversion), then the Year-by-year table (last, for pin-to-top).
+   - **Summary**: Total impact, the six metric cards, After-tax assets.
+   - **Graphic view**: Retirement Objective, Income Sources and Income
+     Applied charts, then the Assets and Cash flow charts.
+
+Don't move sections between tabs, rename the tabs, or add sections to a tab
+without asking. Details live in the analyses feature guide.
+
 # Year-by-year projection table (frozen behavior)
 
 The year-by-year table in `src/components/results/ProjectionTable.tsx` is a

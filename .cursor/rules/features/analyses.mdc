@@ -54,6 +54,8 @@ Inheritance uses the final row's filing status.
 
 ## Results layout (what clients see first)
 
+Approved by the user: keep it (see AGENTS.md, "Results layout").
+
 Under the analysis links, three tabs (`ResultsView` state, Main on load);
 each tab shows only its own sections:
 - **Main**: the Assets, Income & Taxes tables and the Year-by-year table
