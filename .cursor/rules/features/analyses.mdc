@@ -54,11 +54,11 @@ Inheritance uses the final row's filing status.
 
 ## Results layout (what clients see first)
 
-Under the analysis links: Total impact, then a second row of links,
-**Summary | Projection | Graphic view**, that open and close sections
-(`ResultsView` state, all closed on load): Summary is the metric cards plus
-After-tax assets, Projection the Assets / Cash flow charts, Graphic view the
-`PresentationCharts`. Always shown: the Assets, Income & Taxes tables and the
-Year-by-year table, which stays last in the scroller (pin-to-top). The No
-conversion / With conversion toggle sits on Year-by-year and on Projection
-(shared state).
+Under the analysis links, three tabs (`ResultsView` state, Main on load);
+each tab shows only its own sections:
+- **Main**: the Assets, Income & Taxes tables and the Year-by-year table
+  (stays last in the scroller for pin-to-top).
+- **Summary**: Total impact, the metric cards, and After-tax assets.
+- **Graphic view**: `PresentationCharts` plus the Assets / Cash flow charts.
+The No conversion / With conversion toggle sits on Year-by-year and on the
+Assets and cash flow charts (shared state).
