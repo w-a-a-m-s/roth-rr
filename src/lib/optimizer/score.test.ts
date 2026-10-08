@@ -74,6 +74,7 @@ describe("scoreConversionStrategies", () => {
       "fillBracket:0.24",
       "irmaa",
       "depleteByRmd",
+      "minTax",
     ]);
     for (const row of scores) {
       expect(Number.isFinite(row.impact)).toBe(true);

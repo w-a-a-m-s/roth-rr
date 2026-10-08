@@ -110,6 +110,26 @@ function inheritanceValue(
 }
 
 /**
+ * Income tax still owed on the tax-deferred balance in `row`: what the
+ * inheritance value takes out when it cashes those accounts out as a lump sum.
+ */
+export function deferredTaxOwed(
+  household: Household,
+  row: ProjectionRow,
+  refs: ReferenceData = FALLBACK_REFERENCE_DATA,
+): number {
+  return (
+    row.retirementTotal -
+    estateRetirementValue(
+      household,
+      row.retirementTotal,
+      refs.federalTax,
+      refs.stateIncomeTax,
+    )
+  );
+}
+
+/**
  * Total Medicare Part B premiums (including IRMAA) paid across the projection.
  * MAGI is approximated by federal ordinary gross taxable income plus realized
  * capital gains from after-tax withdrawals.

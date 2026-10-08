@@ -13,6 +13,7 @@ export const STRATEGY_LABELS: Record<ConversionStrategy, string> = {
   fillBracket: "Fill a federal bracket",
   irmaa: "Stay under IRMAA tier",
   depleteByRmd: "Empty by RMD",
+  minTax: "Minimum taxes",
   manual: "Manual",
 };
 
@@ -33,6 +34,8 @@ export const STRATEGY_HELP: Record<ConversionStrategy, string> = {
     "Each year, convert up to just under the next Medicare IRMAA income cliff so premiums stay in the current tier.",
   depleteByRmd:
     "Convert a share of what's left each year so tax-deferred accounts are empty by RMD age. This accounts for growth along the way.",
+  minTax:
+    "Searches for the yearly conversions that pay the least federal and state income tax over your whole retirement. It looks only at taxes, not Medicare or the inheritance.",
 };
 
 export function isFillBracketRate(value: unknown): value is FillBracketRate {
@@ -66,6 +69,7 @@ export const CONVERSION_STRATEGIES: readonly ConversionStrategy[] = [
   "fillBracket",
   "irmaa",
   "depleteByRmd",
+  "minTax",
 ];
 
 export function isConversionStrategy(

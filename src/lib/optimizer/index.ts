@@ -7,6 +7,7 @@ import { immediateSchedule } from "@/lib/optimizer/strategies/immediate";
 import { irmaaSchedule } from "@/lib/optimizer/strategies/irmaa";
 import { depleteByRmdSchedule } from "@/lib/optimizer/strategies/depleteByRmd";
 import { manualSchedule } from "@/lib/optimizer/strategies/manual";
+import { minTaxSchedule } from "@/lib/optimizer/strategies/minTax";
 
 /**
  * Resolve the household's optimizer config into a concrete per-year conversion
@@ -26,6 +27,8 @@ export function buildConversionSchedule(
       return irmaaSchedule(household, refs);
     case "depleteByRmd":
       return depleteByRmdSchedule(household);
+    case "minTax":
+      return minTaxSchedule(household, refs);
     case "manual":
       return manualSchedule(household);
     case "even":

@@ -256,7 +256,8 @@ export type ConversionStrategy =
   | "immediate"
   | "fillBracket"
   | "irmaa"
-  | "depleteByRmd";
+  | "depleteByRmd"
+  | "minTax";
 
 /** Federal ordinary rates the fill-bracket strategy can target. */
 export const FILL_BRACKET_RATES = [0.12, 0.22, 0.24] as const;

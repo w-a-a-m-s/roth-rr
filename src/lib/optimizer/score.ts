@@ -18,6 +18,7 @@ export type StrategyScoreId =
   | "fillBracket:0.24"
   | "irmaa"
   | "depleteByRmd"
+  | "minTax"
   | "manual";
 
 export interface StrategyScore {
@@ -78,6 +79,7 @@ export function scoreConversionStrategies(
     })),
     { strategy: "irmaa" },
     { strategy: "depleteByRmd" },
+    { strategy: "minTax" },
   ];
 
   return options.map((opt) => {

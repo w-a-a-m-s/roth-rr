@@ -1,0 +1,120 @@
+{
+  "name": "Minimum taxes conversion strategy",
+  "strategy": "minTax",
+  "note": "Pins calculate() for the minTax search (lowest lifetime income tax plus tax owed on tax-deferred money left at the end).",
+  "household": {
+    "filingStatus": "single",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 6000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Jordan",
+        "birthYear": 1968,
+        "retirementYear": 2033
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ira",
+        "label": "Traditional IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 800000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      },
+      {
+        "id": "k401",
+        "label": "401(k)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 400000,
+        "growthRate": 0.05,
+        "retirementType": "401k"
+      },
+      {
+        "id": "roth",
+        "label": "Roth IRA",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 50000,
+        "growthRate": 0.08
+      },
+      {
+        "id": "brk",
+        "label": "Brokerage",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 250000,
+        "costBasis": 150000,
+        "growthRate": 0.05
+      },
+      {
+        "id": "sav",
+        "label": "Savings",
+        "ownerId": "p1",
+        "kind": "savings",
+        "balance": 80000,
+        "growthRate": 0.03
+      }
+    ],
+    "incomes": [
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2800,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 2000,
+        "growthRate": 0.02,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "minTax"
+    }
+  },
+  "commit": "03b75da",
+  "commitDate": "2026-10-08T13:22:55+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 368074.12,
+      "medicareTotal": 77425.2,
+      "afterTaxAssetsAtRmd": 1791906.09,
+      "inheritanceFinal": 2218497.91
+    },
+    "roth": {
+      "taxesTotal": 457924.09,
+      "medicareTotal": 105661.2,
+      "afterTaxAssetsAtRmd": 3003300.54,
+      "inheritanceFinal": 6340853.41
+    },
+    "deltas": {
+      "taxesTotal": 89849.97,
+      "medicareTotal": 28236,
+      "afterTaxAssetsAtRmd": 1211394.45,
+      "inheritanceFinal": 4122355.5
+    }
+  }
+}

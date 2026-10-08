@@ -101,6 +101,7 @@ export function ConversionStrategyMenu({
       strategy: "depleteByRmd",
       label: STRATEGY_LABELS.depleteByRmd,
     },
+    { id: "minTax", strategy: "minTax", label: STRATEGY_LABELS.minTax },
   ];
 
   return (
