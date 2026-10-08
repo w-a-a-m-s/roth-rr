@@ -58,10 +58,15 @@ describe("long-term care defaults", () => {
 
   it("starts at 80 unless the plan says otherwise", () => {
     const h = couple();
-    expect(carePeriodFor(h, settings({}), "b")).toEqual({ personId: "b", startAge: 80, years: 5 });
+    expect(carePeriodFor(h, settings({}), "b")).toEqual({
+      personId: "b",
+      startAge: 80,
+      years: 5,
+      careType: "home",
+    });
     expect(
       carePeriodFor(h, settings({ periods: [{ personId: "b", startAge: 84, years: 2 }] }), "b"),
-    ).toEqual({ personId: "b", startAge: 84, years: 2 });
+    ).toEqual({ personId: "b", startAge: 84, years: 2, careType: "home" });
   });
 
   it("heals saved settings against the people in the plan", () => {
@@ -116,6 +121,37 @@ describe("both spouses in care", () => {
 
   it("is back to normal after both stays end", () => {
     expect(at(care, 2037).monthlyExpenses).toBe(5000);
+  });
+});
+
+describe("each spouse's own care", () => {
+  it("prices home care for one spouse and a nursing home for the other", () => {
+    const h = couple();
+    const care = rows(
+      h,
+      settings({
+        who: "both",
+        inflation: 0,
+        periods: [
+          { personId: "a", startAge: 80, years: 3, careType: "home" },
+          { personId: "b", startAge: 80, years: 5, careType: "nursing" },
+        ],
+      }),
+    );
+    const y = at(care, 2032);
+    expect(y.expenseMonthly["ltc:a"]).toBe(6000);
+    expect(y.expenseMonthly["ltc:b"]).toBe(10000);
+    expect(y.monthlyExpenses).toBe(16000);
+    expect(at(care, 2034).expenseMonthly["ltc:b"]).toBe(10000);
+  });
+
+  it("falls back to the plan-wide care type for older settings", () => {
+    const h = couple();
+    const care = rows(
+      h,
+      settings({ careType: "nursing", inflation: 0, periods: [{ personId: "a", startAge: 80, years: 3 }] }),
+    );
+    expect(at(care, 2030).expenseMonthly["ltc:a"]).toBe(10000);
   });
 });
 

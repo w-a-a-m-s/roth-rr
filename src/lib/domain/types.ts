@@ -397,6 +397,8 @@ export interface CarePeriod {
   startAge: number;
   /** Years of care, including the first. */
   years: number;
+  /** This person's care. Missing uses the settings' `careType`. */
+  careType?: CareType;
 }
 
 /**
@@ -407,6 +409,7 @@ export interface LongTermCareSettings {
   who: "one" | "both";
   /** Whose care runs when `who` is "one". */
   personId: string;
+  /** Care for anyone whose period doesn't set its own (older plans). */
   careType: CareType;
   /** Yearly growth of the care cost (decimal). */
   inflation: number;

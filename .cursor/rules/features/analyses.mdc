@@ -42,7 +42,8 @@ Inheritance uses the final row's filing status.
 - One spouse or both. Each person in care has a start age (default 80) and a
   length in years (default 3 for men, 5 for women, 3 when `Person.sex` isn't
   set), both editable in the tab.
-- Cost per person: home care $6,000/mo or nursing home $10,000/mo in
+- Cost per person, chosen per person (`CarePeriod.careType`, falling back to
+  the settings' `careType` for older plans): home care $6,000/mo or nursing home $10,000/mo in
   first-projection-year dollars, grown by `inflation` (default 3%) each year.
   It lands in `expenseMonthly` under `ltc:<personId>` (labelled by
   `expenseLabel`) and in `monthlyExpenses`.

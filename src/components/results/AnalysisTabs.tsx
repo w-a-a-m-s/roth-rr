@@ -167,6 +167,11 @@ export function ComingSoon({ title }: { title: string }) {
   );
 }
 
+const CARE_OPTIONS = (["home", "nursing"] as const).map((t) => ({
+  value: t,
+  label: `${CARE_TYPE_LABELS[t]} (${formatCurrency(CARE_MONTHLY_COST[t])}/mo)`,
+}));
+
 /** Who's in long-term care, what kind, when, and for how long. */
 export function LongTermCareControls({
   household,
@@ -212,17 +217,6 @@ export function LongTermCareControls({
             options={whoOptions}
           />
         </Control>
-        <Control id="ltc-type" label="Care" width="w-[220px]">
-          <Select
-            id="ltc-type"
-            value={settings.careType}
-            onChange={(careType) => setLongTermCare({ ...settings, careType })}
-            options={(["home", "nursing"] as const).map((t) => ({
-              value: t,
-              label: `${CARE_TYPE_LABELS[t]} (${formatCurrency(CARE_MONTHLY_COST[t])}/mo)`,
-            }))}
-          />
-        </Control>
         <Control id="ltc-inflation" label="Cost grows by" width="w-[110px]">
           <PercentInput
             id="ltc-inflation"
@@ -231,7 +225,7 @@ export function LongTermCareControls({
           />
         </Control>
       </div>
-      <div className="flex flex-wrap gap-x-6 gap-y-3">
+      <div className="flex flex-col gap-3">
         {inCare.map((personId) => {
           const person = household.people.find((p) => p.id === personId);
           const period = carePeriodFor(household, settings, personId);
@@ -239,7 +233,15 @@ export function LongTermCareControls({
           const ages = Array.from({ length: Math.max(1, 111 - ageNow) }, (_, i) => ageNow + i);
           return (
             <div key={personId} className="flex flex-wrap items-end gap-3">
-              <Control id={`ltc-age-${personId}`} label={`${name(personId)} starts at age`} width="w-[104px]">
+              <Control id={`ltc-type-${personId}`} label={`${name(personId)}'s care`} width="w-[220px]">
+                <Select
+                  id={`ltc-type-${personId}`}
+                  value={period.careType ?? settings.careType}
+                  onChange={(careType) => setPeriod({ ...period, careType })}
+                  options={CARE_OPTIONS}
+                />
+              </Control>
+              <Control id={`ltc-age-${personId}`} label="Starts at age" width="w-[104px]">
                 <Select
                   id={`ltc-age-${personId}`}
                   value={String(period.startAge)}
@@ -263,14 +265,12 @@ export function LongTermCareControls({
         })}
       </div>
       <p className="m-0 text-[13px] leading-relaxed text-muted">
-        Care costs {formatCurrency(CARE_MONTHLY_COST[settings.careType])}{" "}
-        a month
-        per person in today&apos;s dollars, growing{" "}
-        {formatPercent(settings.inflation)} a year. While one spouse is in care,
-        your other expenses drop to {Math.round(CARE_EXPENSE_SHARE * 100)}%; while
-        everyone is in care, only the care costs count. After care ends, expenses
-        go back to normal. Care length defaults to 3 years for men and 5 for women
-        (set in Household).
+        {[
+          `Home care costs ${formatCurrency(CARE_MONTHLY_COST.home)} and a nursing home ${formatCurrency(CARE_MONTHLY_COST.nursing)} a month per person in today's dollars, growing ${formatPercent(settings.inflation)} a year.`,
+          `While one spouse is in care, your other expenses drop to ${Math.round(CARE_EXPENSE_SHARE * 100)}%; while everyone is in care, only the care costs count.`,
+          "After care ends, expenses go back to normal.",
+          "Care length defaults to 3 years for men and 5 for women (set in Household).",
+        ].join(" ")}
       </p>
     </div>
   );

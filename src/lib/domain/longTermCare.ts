@@ -72,6 +72,10 @@ export function carePeriodFor(
       saved && Number.isFinite(saved.years) && saved.years > 0
         ? Math.round(saved.years)
         : defaultCareYears(person),
+    careType:
+      saved?.careType === "home" || saved?.careType === "nursing"
+        ? saved.careType
+        : settings.careType,
   };
 }
 
@@ -83,10 +87,10 @@ export function peopleInCare(household: Household, settings: LongTermCareSetting
 
 /** Care resolved to calendar years. */
 export interface ResolvedCare {
-  monthlyCost: number;
   inflation: number;
   peopleCount: number;
-  stays: { personId: string; firstYear: number; lastYear: number }[];
+  /** Each stay's monthly cost is in first-projection-year dollars. */
+  stays: { personId: string; firstYear: number; lastYear: number; monthlyCost: number }[];
 }
 
 export function resolveLongTermCare(
@@ -100,11 +104,15 @@ export function resolveLongTermCare(
     if (!person || !Number.isFinite(person.birthYear)) continue;
     const period = carePeriodFor(household, settings, personId);
     const firstYear = (person.birthYear as number) + Math.round(period.startAge);
-    stays.push({ personId, firstYear, lastYear: firstYear + period.years - 1 });
+    stays.push({
+      personId,
+      firstYear,
+      lastYear: firstYear + period.years - 1,
+      monthlyCost: CARE_MONTHLY_COST[period.careType ?? settings.careType],
+    });
   }
   if (stays.length === 0) return null;
   return {
-    monthlyCost: CARE_MONTHLY_COST[settings.careType],
     inflation: settings.inflation,
     peopleCount: household.people.length,
     stays,
@@ -124,12 +132,11 @@ export function careForYear(
 ): { costMonthlyById: Record<string, number>; expenseShare: number } {
   const costMonthlyById: Record<string, number> = {};
   if (!care) return { costMonthlyById, expenseShare: 1 };
-  const grown =
-    care.monthlyCost * Math.pow(1 + care.inflation, Math.max(0, calendarYear - projectionStart));
+  const growth = Math.pow(1 + care.inflation, Math.max(0, calendarYear - projectionStart));
   let inCare = 0;
   for (const stay of care.stays) {
     if (calendarYear < stay.firstYear || calendarYear > stay.lastYear) continue;
-    costMonthlyById[stay.personId] = grown;
+    costMonthlyById[stay.personId] = stay.monthlyCost * growth;
     inCare += 1;
   }
   if (inCare === 0) return { costMonthlyById, expenseShare: 1 };
