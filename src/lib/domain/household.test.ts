@@ -12,6 +12,7 @@ import {
   expenseYearsLabel,
   healRetirementType,
   incomeMonthlyForYear,
+  pensionPayout,
   isExpenseActive,
   isHouseholdReady,
   isIncomeActive,
@@ -445,5 +446,20 @@ describe("income date range", () => {
     expect(incomeMonthlyForYear(source, 2031, 2030)).toBe(2_000);
     expect(incomeMonthlyForYear(source, 2032, 2030)).toBe(2_000);
     expect(incomeMonthlyForYear(source, 2033, 2030)).toBeCloseTo(2_200, 6);
+  });
+});
+
+describe("pensionPayout", () => {
+  it("defaults pensions to life only and keeps survivorship", () => {
+    expect(pensionPayout({ kind: "pension" })).toBe("lifeOnly");
+    expect(pensionPayout({ kind: "militaryPension", pensionPayout: "survivor" })).toBe(
+      "survivor",
+    );
+    expect(pensionPayout({ kind: "pension", pensionPayout: "lifeOnly" })).toBe("lifeOnly");
+  });
+
+  it("has no payout for incomes that aren't pensions", () => {
+    expect(pensionPayout({ kind: "socialSecurity", pensionPayout: "survivor" })).toBeUndefined();
+    expect(pensionPayout({ kind: "salary" })).toBeUndefined();
   });
 });

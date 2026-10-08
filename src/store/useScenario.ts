@@ -27,6 +27,7 @@ import {
 import {
   DEPOSIT_FREQUENCIES,
   WITHDRAWAL_SOURCE_KINDS,
+  isPensionIncome,
   applyFilingStatus,
   healAccountJoint,
   healRetirementType,
@@ -175,6 +176,14 @@ export function migrateHousehold(household: Household): Household {
   }
   for (const inc of legacy.incomes ?? []) {
     if (!Number.isFinite(inc.growthRate)) inc.growthRate = 0;
+    // Older pensions have no payout option and are life only. Anything other
+    // than a valid pension choice is dropped.
+    if (
+      !isPensionIncome(inc.kind) ||
+      (inc.pensionPayout !== "lifeOnly" && inc.pensionPayout !== "survivor")
+    ) {
+      delete inc.pensionPayout;
+    }
     // Heal withdrawal incomes that lost (or never got) a source account: when
     // exactly one account is eligible for the income's kind, link to it so the
     // engine debits a real balance instead of dropping the income as phantom

@@ -154,6 +154,12 @@ export type IncomeKind =
   | "afterTaxWithdrawal" // withdraw from an after-tax account (basis tax-free; gains taxed as long-term capital gains)
   | "other";
 
+/**
+ * How a pension pays out once its owner passes. `lifeOnly` stops; `survivor`
+ * keeps paying the surviving spouse for the rest of their life.
+ */
+export type PensionPayout = "lifeOnly" | "survivor";
+
 export interface IncomeSource {
   id: string;
   label: string;
@@ -178,6 +184,11 @@ export interface IncomeSource {
    * draw keeps running past the RMD age, on top of the forced RMD.
    */
   drawsFromAccountId?: string;
+  /**
+   * Pension kinds only (`pension`, `militaryPension`). Missing means
+   * `lifeOnly`, the default for new and older plans.
+   */
+  pensionPayout?: PensionPayout;
 }
 
 export interface RealEstate {

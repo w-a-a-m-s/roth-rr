@@ -7,6 +7,7 @@ import type {
   Household,
   IncomeKind,
   IncomeSource,
+  PensionPayout,
   Person,
   RetirementAccountType,
 } from "@/lib/domain/types";
@@ -216,6 +217,22 @@ export function accountDepositEndYear(
   const known = years.filter((y): y is number => Number.isFinite(y));
   if (known.length === 0) return undefined;
   return Math.max(...known);
+}
+
+/** Pension kinds, the incomes that carry a life-only / survivorship choice. */
+export function isPensionIncome(kind: IncomeKind): boolean {
+  return kind === "pension" || kind === "militaryPension";
+}
+
+/**
+ * The pension's payout option, or undefined for incomes that aren't pensions.
+ * A pension without one is life only.
+ */
+export function pensionPayout(
+  income: Pick<IncomeSource, "kind" | "pensionPayout">,
+): PensionPayout | undefined {
+  if (!isPensionIncome(income.kind)) return undefined;
+  return income.pensionPayout === "survivor" ? "survivor" : "lifeOnly";
 }
 
 /** Whether an income kind withdraws from (and depletes) a specific account. */

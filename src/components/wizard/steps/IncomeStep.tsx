@@ -13,10 +13,17 @@ import {
 import { AddButton, EntityCard, ReadStat } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { StepTour } from "@/components/onboarding/StepTour";
-import type { IncomeKind, IncomeSource, Taxability } from "@/lib/domain/types";
+import type {
+  IncomeKind,
+  IncomeSource,
+  PensionPayout,
+  Taxability,
+} from "@/lib/domain/types";
 import {
   WITHDRAWAL_SOURCE_KINDS,
+  isPensionIncome,
   isWithdrawalIncome,
+  pensionPayout,
 } from "@/lib/domain/household";
 import { SOCIAL_SECURITY_TAXABLE_PCT } from "@/lib/config/federalTax";
 import { DEFAULT_INCOME_GROWTH } from "@/lib/config/defaults";
@@ -41,6 +48,16 @@ const TAXABILITY_OPTIONS: { value: Taxability; label: string }[] = [
   { value: "full", label: "Fully taxable" },
   { value: "taxFree", label: "Tax free" },
 ];
+
+const PAYOUT_OPTIONS: { value: PensionPayout; label: string }[] = [
+  { value: "lifeOnly", label: "Life only" },
+  { value: "survivor", label: "Survivorship" },
+];
+
+const PAYOUT_LABEL: Record<PensionPayout, string> = {
+  lifeOnly: "Life only",
+  survivor: "Survivorship",
+};
 
 const KIND_LABEL = Object.fromEntries(
   KIND_OPTIONS.map((o) => [o.value, o.label]),
@@ -90,6 +107,7 @@ function IncomeFields({
   const ownerName =
     household.people.find((p) => p.id === income.ownerId)?.name || "Person";
   const kindLabel = KIND_LABEL[income.kind];
+  const payout = pensionPayout(income);
 
   // Changing the type to a withdrawal kind must also pick a source account.
   // Without this the "From account" select would show the first option while
@@ -97,6 +115,10 @@ function IncomeFields({
   // phantom money (taxed/spent but never depleting any account).
   function handleKindChange(kind: IncomeKind) {
     const patch: Partial<IncomeSource> = { kind };
+    // The payout choice only means something on a pension.
+    if (!isPensionIncome(kind) && income.pensionPayout) {
+      patch.pensionPayout = undefined;
+    }
     const nextKinds = WITHDRAWAL_SOURCE_KINDS[kind];
     if (!nextKinds) {
       if (income.drawsFromAccountId) patch.drawsFromAccountId = undefined;
@@ -137,6 +159,9 @@ function IncomeFields({
             value={formatPercent(income.growthRate)}
           />
           <ReadStat label="Active years" value={activeYearsLabel(income)} />
+          {payout ? (
+            <ReadStat label="Payout" value={PAYOUT_LABEL[payout]} />
+          ) : null}
         </>
       }
     >
@@ -208,6 +233,20 @@ function IncomeFields({
             onChange={(growthRate) => updateIncome(income.id, { growthRate })}
           />
         </Field>
+        {payout ? (
+          <Field
+            label="Payout"
+            help="Life only stops when the pension's owner passes. Survivorship keeps paying the surviving spouse for the rest of their life."
+          >
+            <Select
+              value={payout}
+              onChange={(pensionPayout) =>
+                updateIncome(income.id, { pensionPayout })
+              }
+              options={PAYOUT_OPTIONS}
+            />
+          </Field>
+        ) : null}
         {sourceKinds ? (
           <Field label="From account">
             <Select

@@ -1,6 +1,6 @@
 ---
 description: Income start/end years and growth from the start year
-globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/optimizer/strategies/depleteByRmd.ts,src/components/wizard/steps/IncomeStep.tsx
+globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/optimizer/strategies/depleteByRmd.ts,src/components/wizard/steps/IncomeStep.tsx,src/store/useScenario.ts
 alwaysApply: false
 ---
 
@@ -23,3 +23,15 @@ put that back.
 `incomeMonthlyForYear` in `household.ts` is the single source. `project.ts`,
 `convertible.ts`, and `depleteByRmd.ts` must call it; don't re-derive grown
 amounts from `yearIndex`.
+
+## Pension payout (survivorship)
+
+Pension kinds (`pension`, `militaryPension`) carry `pensionPayout`:
+`lifeOnly` (stops when the owner passes) or `survivor` (keeps paying the
+surviving spouse for life). Missing means life only; read it through
+`pensionPayout()` in `household.ts`, which returns undefined for non-pensions.
+`migrateHousehold` drops it from non-pensions and bad values, and the editor
+clears it when the type changes away from a pension.
+
+Step 1 is the choice only: the engine has no death year yet, so both options
+project the same until a life-expectancy input lands.

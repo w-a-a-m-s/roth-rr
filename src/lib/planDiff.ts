@@ -106,6 +106,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   endYear: "End year",
   growthDelayYears: "Growth delay years",
   drawsFromAccountId: "Draws from account",
+  pensionPayout: "Pension payout",
   purchaseYear: "Purchase year",
   purchasePrice: "Purchase price",
   marketValue: "Market value",
@@ -258,6 +259,10 @@ function formatScalar(
   if (key === "taxability") {
     if (value === "full") return "Fully taxable";
     if (value === "taxFree") return "Tax free";
+  }
+  if (key === "pensionPayout") {
+    if (value === "lifeOnly") return "Life only";
+    if (value === "survivor") return "Survivorship";
   }
   if (key === "frequency") {
     if (value === "monthly") return "Monthly";

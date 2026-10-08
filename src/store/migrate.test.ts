@@ -566,3 +566,42 @@ describe("migrateHousehold: expense date range", () => {
     expect(out.deletedExpenses?.[0].item).not.toHaveProperty("startYear");
   });
 });
+
+describe("migrateHousehold: pension payout", () => {
+  it("leaves an older pension without a payout, which reads as life only", () => {
+    const out = migrateHousehold(household([], [income({ id: "pen", kind: "pension" })]));
+    expect(out.incomes[0]).not.toHaveProperty("pensionPayout");
+  });
+
+  it("keeps a survivorship choice on pensions and military pensions", () => {
+    const out = migrateHousehold(
+      household(
+        [],
+        [
+          income({ id: "pen", kind: "pension", pensionPayout: "survivor" }),
+          income({ id: "mil", kind: "militaryPension", pensionPayout: "lifeOnly" }),
+        ],
+      ),
+    );
+    expect(out.incomes[0].pensionPayout).toBe("survivor");
+    expect(out.incomes[1].pensionPayout).toBe("lifeOnly");
+  });
+
+  it("drops a payout from incomes that aren't pensions, and bad values", () => {
+    const out = migrateHousehold(
+      household(
+        [],
+        [
+          income({ id: "ss", kind: "socialSecurity", pensionPayout: "survivor" }),
+          income({
+            id: "pen",
+            kind: "pension",
+            pensionPayout: "joint" as unknown as "survivor",
+          }),
+        ],
+      ),
+    );
+    expect(out.incomes[0]).not.toHaveProperty("pensionPayout");
+    expect(out.incomes[1]).not.toHaveProperty("pensionPayout");
+  });
+});
