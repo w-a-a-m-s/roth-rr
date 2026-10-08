@@ -52,7 +52,10 @@ function usePinToTop() {
       const avail = scroller.clientHeight - padTop - padBottom;
       const wTop = wrapper.getBoundingClientRect().top;
       const table = wrapper.querySelector("table");
-      const contentH = table ? table.offsetHeight : wrapper.scrollHeight;
+      const topBar = wrapper.querySelector<HTMLElement>("[data-top-scrollbar]");
+      const contentH = table
+        ? table.offsetHeight + (topBar?.offsetHeight ?? 0)
+        : wrapper.scrollHeight;
       const tall = contentH > avail + 1;
       const nextPinned = tall && wTop <= stickTop + 1;
 
@@ -82,6 +85,55 @@ function usePinToTop() {
   }, []);
 
   return { wrapperRef, pinned, height };
+}
+
+/**
+ * A second horizontal scrollbar above the table, kept in sync with the real
+ * one at the bottom, so the user can pan years without scrolling down to it.
+ * It only shows while the table is wider than its box.
+ */
+function useTopScrollbar() {
+  const barRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [contentWidth, setContentWidth] = useState(0);
+  const [overflowing, setOverflowing] = useState(false);
+
+  useEffect(() => {
+    const bar = barRef.current;
+    const scroller = scrollRef.current;
+    if (!bar || !scroller) return;
+    const table = scroller.querySelector("table");
+
+    const measure = () => {
+      // Match the bar's scroll range to the table's, even when the table
+      // also has a vertical scrollbar eating into its width.
+      setContentWidth(scroller.scrollWidth - scroller.clientWidth + bar.clientWidth);
+      setOverflowing(scroller.scrollWidth > scroller.clientWidth + 1);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(scroller);
+    ro.observe(bar);
+    if (table) ro.observe(table);
+
+    // Each side copies the other's position; the equality check stops the
+    // echo scroll event from bouncing back.
+    const fromBar = () => {
+      if (scroller.scrollLeft !== bar.scrollLeft) scroller.scrollLeft = bar.scrollLeft;
+    };
+    const fromTable = () => {
+      if (bar.scrollLeft !== scroller.scrollLeft) bar.scrollLeft = scroller.scrollLeft;
+    };
+    bar.addEventListener("scroll", fromBar, { passive: true });
+    scroller.addEventListener("scroll", fromTable, { passive: true });
+    return () => {
+      ro.disconnect();
+      bar.removeEventListener("scroll", fromBar);
+      scroller.removeEventListener("scroll", fromTable);
+    };
+  }, []);
+
+  return { barRef, scrollRef, contentWidth, overflowing };
 }
 
 type Row = ScenarioResult["rows"][number];
@@ -958,6 +1010,7 @@ export function ProjectionTable({
 }) {
   const sections = buildSections(scenario, household, primaryId);
   const { wrapperRef, pinned, height } = usePinToTop();
+  const { barRef, scrollRef, contentWidth, overflowing } = useTopScrollbar();
   const headRowRef = useRef<HTMLTableRowElement>(null);
   const [headOffset, setHeadOffset] = useState(32);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
@@ -995,61 +1048,78 @@ export function ProjectionTable({
     <div
       ref={wrapperRef}
       style={pinned ? { height } : undefined}
-      className={`scrollbar-visible overflow-x-scroll rounded-2xl border border-border bg-white ${
-        pinned ? "sticky top-0 z-10 overflow-y-auto" : ""
+      className={`flex flex-col overflow-hidden rounded-2xl border border-border bg-white ${
+        pinned ? "sticky top-0 z-10" : ""
       }`}
     >
-      <table className="border-collapse text-right text-sm">
-        <thead>
-          <tr ref={headRowRef} className="text-xs font-semibold text-muted">
-            <th className="sticky left-0 top-0 z-30 w-36 min-w-36 max-w-36 bg-card px-2 py-1.5 shadow-[0_3px_0_#fff] lg:w-auto lg:min-w-[15rem] lg:max-w-none lg:px-3 lg:py-2" />
-            {scenario.rows.map((row) => (
-              <th
-                key={row.yearIndex}
-                className={`sticky top-0 z-20 whitespace-nowrap px-2 py-1.5 text-right font-semibold tabular-nums shadow-[0_3px_0_#fff] lg:px-3 lg:py-2 ${
-                  rmdYearIndexes.has(row.yearIndex)
-                    ? "bg-warning-rmd text-warning-rmd-text"
-                    : "bg-card text-muted-2"
-                }`}
-              >
-                {row.calendarYear}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {sections.map((section) => (
-            <Fragment key={section.key}>
-              {section.title ? (
-                <tr>
-                  <th
-                    colSpan={scenario.rows.length + 1}
-                    style={{ top: sectionTop }}
-                    className="sticky z-10 bg-accent-soft px-2 pb-2 pt-3 text-left text-xs font-bold uppercase tracking-wider text-accent shadow-[0_-3px_0_#fff] lg:px-3"
-                  >
-                    <span className="sticky left-2 whitespace-nowrap lg:left-3">
-                      {section.title}
-                    </span>
-                  </th>
-                </tr>
-              ) : null}
-              {section.lines.map((line) => (
-                <LineRows
-                  key={`${section.key}-${line.key}`}
-                  line={line}
-                  sectionKey={section.key}
-                  scenario={scenario}
-                  primaryId={primaryId}
-                  rmdYearIndexes={rmdYearIndexes}
-                  depth={0}
-                  expanded={expanded}
-                  toggle={toggle}
-                />
+      <div
+        ref={barRef}
+        data-top-scrollbar
+        aria-hidden
+        className={`scrollbar-visible shrink-0 overflow-x-scroll overflow-y-hidden border-b border-border ${
+          overflowing ? "" : "hidden"
+        }`}
+      >
+        <div style={{ width: contentWidth, height: 1 }} />
+      </div>
+      <div
+        ref={scrollRef}
+        className={`scrollbar-visible overflow-x-scroll ${
+          pinned ? "min-h-0 flex-1 overflow-y-auto" : ""
+        }`}
+      >
+        <table className="border-collapse text-right text-sm">
+          <thead>
+            <tr ref={headRowRef} className="text-xs font-semibold text-muted">
+              <th className="sticky left-0 top-0 z-30 w-36 min-w-36 max-w-36 bg-card px-2 py-1.5 shadow-[0_3px_0_#fff] lg:w-auto lg:min-w-[15rem] lg:max-w-none lg:px-3 lg:py-2" />
+              {scenario.rows.map((row) => (
+                <th
+                  key={row.yearIndex}
+                  className={`sticky top-0 z-20 whitespace-nowrap px-2 py-1.5 text-right font-semibold tabular-nums shadow-[0_3px_0_#fff] lg:px-3 lg:py-2 ${
+                    rmdYearIndexes.has(row.yearIndex)
+                      ? "bg-warning-rmd text-warning-rmd-text"
+                      : "bg-card text-muted-2"
+                  }`}
+                >
+                  {row.calendarYear}
+                </th>
               ))}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
+            </tr>
+          </thead>
+          <tbody>
+            {sections.map((section) => (
+              <Fragment key={section.key}>
+                {section.title ? (
+                  <tr>
+                    <th
+                      colSpan={scenario.rows.length + 1}
+                      style={{ top: sectionTop }}
+                      className="sticky z-10 bg-accent-soft px-2 pb-2 pt-3 text-left text-xs font-bold uppercase tracking-wider text-accent shadow-[0_-3px_0_#fff] lg:px-3"
+                    >
+                      <span className="sticky left-2 whitespace-nowrap lg:left-3">
+                        {section.title}
+                      </span>
+                    </th>
+                  </tr>
+                ) : null}
+                {section.lines.map((line) => (
+                  <LineRows
+                    key={`${section.key}-${line.key}`}
+                    line={line}
+                    sectionKey={section.key}
+                    scenario={scenario}
+                    primaryId={primaryId}
+                    rmdYearIndexes={rmdYearIndexes}
+                    depth={0}
+                    expanded={expanded}
+                    toggle={toggle}
+                  />
+                ))}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

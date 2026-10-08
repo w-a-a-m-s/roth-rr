@@ -368,6 +368,13 @@ to anything but `auto`, so those two standard properties live inside
 Hoisting them back out of that block silently reverts the table to a
 fades-away overlay scrollbar.
 
+A second horizontal scrollbar sits above the year header (`useTopScrollbar`,
+`data-top-scrollbar`) so users can pan years without scrolling to the bottom.
+It mirrors the table's own scroller both ways. The outer wrapper is what pins
+(sticky + height); the inner div is the one that scrolls on both axes, so the
+sticky headers still stick to it. `usePinToTop` counts the bar's height in the
+table's content height.
+
 ## Charts
 
 Assets and cash-flow charts (`AssetsChart.tsx`, `CashflowChart.tsx`) keep their
