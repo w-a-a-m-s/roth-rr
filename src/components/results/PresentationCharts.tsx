@@ -39,10 +39,9 @@ const category = (key: (typeof INCOME_CATEGORIES)[number]["key"]) =>
   INCOME_CATEGORIES.find((c) => c.key === key)!;
 
 /**
- * A four-page retirement story told in charts, in the style of a classic
- * planning report: what you need each year, what income you have, how much
- * of the need that income covers, and whether RMDs and withdrawals close the
- * gap. It reads the same projection as the snapshot tables above it.
+ * A three-page retirement story told in charts, in the style of a classic
+ * planning report: what you need each year, what income you have, and how
+ * much of the need that income covers, leaving the rest for your accounts. It reads the same projection as the snapshot tables above it.
  */
 export function PresentationCharts({
   comparison,
@@ -99,47 +98,8 @@ export function PresentationCharts({
     },
   ];
 
-  const additional = (y: PresentationYear) =>
-    y.applied.pension + y.applied.earnings + y.applied.other;
-  const resultSeries: Series[] = (
-    [
-    {
-      key: "socialSecurity",
-      label: "Social Security",
-      color: category("socialSecurity").color,
-      value: (y) => y.applied.socialSecurity,
-    },
-    {
-      key: "additional",
-      label: "Additional income",
-      color: category("other").color,
-      value: additional,
-    },
-    {
-      key: "rmd",
-      label: category("rmd").label,
-      color: category("rmd").color,
-      value: (y) => y.applied.rmd,
-    },
-    {
-      key: "withdrawals",
-      label: category("withdrawals").label,
-      color: category("withdrawals").color,
-      value: (y) => y.applied.withdrawals,
-    },
-    {
-      key: "shortfall",
-      label: "Shortfall",
-      color: NEED_COLOR,
-      value: (y) => y.shortfall,
-    },
-    ] as Series[]
-  ).filter((s) => has(s.value));
-
-  const covered = summary.capitalizedNeed - summary.capitalizedShortfall;
   const share = (v: number) =>
     summary.capitalizedNeed > 0 ? formatPercent(v / summary.capitalizedNeed) : "0%";
-  const fullyMet = summary.shortfallYears === 0;
 
   return (
     <div className="flex flex-col gap-3">
@@ -238,48 +198,7 @@ export function PresentationCharts({
             }}
           />
           <Footnote rate={ratePct} />
-        </ChartPage>
-
-        <ChartPage
-          title="Retirement Analysis Results"
-          subtitle="Has the objective been met?"
-          series={resultSeries}
-          years={years}
-          ageLabel={ageLabel}
-          lastAge={lastAge}
-        >
-          <p>
-            {fullyMet ? (
-              <>
-                Your need is <strong>completely</strong> covered every year.
-              </>
-            ) : (
-              <>
-                Income, RMDs and withdrawals cover {share(covered)} of the
-                need. {summary.shortfallYears}{" "}
-                {summary.shortfallYears === 1 ? "year falls" : "years fall"}{" "}
-                short.
-              </>
-            )}
-          </p>
-          <SummaryTable
-            share={share}
-            rows={[
-              {
-                label: "Capitalized income sources applied",
-                amount: summary.capitalizedIncomeSources,
-              },
-              {
-                label: "Capitalized RMDs and withdrawals",
-                amount: summary.capitalizedAssetDraws,
-              },
-              ...(fullyMet
-                ? []
-                : [{ label: "Capitalized shortfall", amount: summary.capitalizedShortfall }]),
-            ]}
-            total={{ label: "Total capitalized need covered", amount: covered }}
-          />
-          <p className="text-[11.5px] text-muted-2">
+          <p className="m-0 text-[11.5px] text-muted-2">
             These results are hypothetical and are not a promise of future
             performance.
           </p>

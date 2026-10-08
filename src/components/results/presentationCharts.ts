@@ -96,9 +96,6 @@ export interface PresentationSummary {
   capitalizedNeed: number;
   capitalizedIncomeSources: number;
   capitalizedNeededFromAssets: number;
-  capitalizedAssetDraws: number;
-  capitalizedShortfall: number;
-  shortfallYears: number;
 }
 
 export interface PresentationData {
@@ -123,9 +120,9 @@ export function capitalizationRate(household: Household): number {
 }
 
 /**
- * The four presentation charts' data: the yearly need, the income sources,
- * those sources applied to the need, and the need met once RMDs and
- * withdrawals are added. Everything is read off the projection rows.
+ * The presentation charts' data: the yearly need, the income sources, and
+ * those sources applied to the need (plus the full split with RMDs and
+ * withdrawals, kept for the per-year shortfall). Everything is read off the projection rows.
  */
 export function buildPresentationData(
   rows: ProjectionRow[],
@@ -187,9 +184,6 @@ export function buildPresentationData(
       capitalizedNeed: pv((y) => y.need),
       capitalizedIncomeSources: pv((y) => y.need - y.neededFromAssets),
       capitalizedNeededFromAssets: pv((y) => y.neededFromAssets),
-      capitalizedAssetDraws: pv((y) => y.applied.rmd + y.applied.withdrawals),
-      capitalizedShortfall: pv((y) => y.shortfall),
-      shortfallYears: years.filter((y) => y.shortfall > 0.5).length,
     },
   };
 }
