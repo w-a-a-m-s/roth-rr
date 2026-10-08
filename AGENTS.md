@@ -393,6 +393,11 @@ It mirrors the table's own scroller both ways. The outer wrapper is what pins
 sticky headers still stick to it. `usePinToTop` counts the bar's height in the
 table's content height.
 
+The hook lives in `useTopScrollbar.ts`. Every other wide results table (the
+Assets, Income & Taxes tables, After-tax assets) uses `DualScroll`, which puts
+the same synced bar on top. The user asked for visible bars on every
+analysis: the `.scrollbar-visible` thumb is deliberately dark and 14px tall.
+
 ## Charts
 
 Assets and cash-flow charts (`AssetsChart.tsx`, `CashflowChart.tsx`) keep their

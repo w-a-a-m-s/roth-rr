@@ -10,6 +10,7 @@ import { afterTaxAssets } from "@/lib/engine/runScenario";
 import type { ProjectionRow } from "@/lib/engine/types";
 import type { ReferenceData } from "@/lib/externalData/types";
 import { formatCurrency, formatSignedCurrency } from "@/lib/format";
+import { DualScroll } from "@/components/results/DualScroll";
 
 const STICKY_LABEL =
   "sticky left-0 z-10 min-w-[7.75rem] whitespace-nowrap bg-white px-2 py-1 text-left text-[11px] font-bold text-muted-3";
@@ -82,7 +83,7 @@ export function AfterTaxAssetsTimeline({
       <h3 className="mb-3 text-[14.5px] font-bold text-foreground">
         After-tax assets
       </h3>
-      <div className="scrollbar-visible overflow-x-scroll pb-1">
+      <DualScroll className="pb-1">
         <table className="border-collapse text-center text-sm">
           <tbody>
             <tr>
@@ -154,7 +155,7 @@ export function AfterTaxAssetsTimeline({
             />
           </tbody>
         </table>
-      </div>
+      </DualScroll>
     </div>
   );
 }

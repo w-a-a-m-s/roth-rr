@@ -5,6 +5,7 @@ import type { Household } from "@/lib/domain/types";
 import type { Comparison, ScenarioResult } from "@/lib/engine/types";
 import { Select } from "@/components/ui/inputs";
 import { formatCurrency } from "@/lib/format";
+import { DualScroll } from "@/components/results/DualScroll";
 import {
   SNAPSHOT_YEARS,
   buildSnapshotTable,
@@ -125,7 +126,7 @@ function SnapshotCard({
         {label} · {firstYear}–{lastYear}
         {ageText}
       </div>
-      <div className="scrollbar-visible overflow-x-auto pb-1">
+      <DualScroll className="pb-1">
         <table className="mx-auto w-full min-w-[640px] table-fixed border-collapse text-[12.5px] tabular-nums">
           <colgroup>
             <col className="w-[26%]" />
@@ -184,7 +185,7 @@ function SnapshotCard({
             })}
           </tbody>
         </table>
-      </div>
+      </DualScroll>
     </div>
   );
 }
