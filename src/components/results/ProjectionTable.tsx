@@ -6,6 +6,10 @@ import { personRmdAge } from "@/lib/domain/rmd";
 import type { Household } from "@/lib/domain/types";
 import type { ScenarioResult } from "@/lib/engine/types";
 import { formatCurrency } from "@/lib/format";
+import {
+  federalBracketLabel,
+  federalBracketsTitle,
+} from "@/components/results/bracketLabels";
 import { expenseLabel, incomeLabel } from "@/components/results/incomeLabels";
 import { useTopScrollbar } from "@/components/results/useTopScrollbar";
 
@@ -342,8 +346,6 @@ function buildSections(
       usedBrackets.push(i);
     }
   }
-  const rate = (i: number) =>
-    scenario.rows[0]?.federalTaxByBracket[i]?.rate ?? 0;
 
   const ltcgBracketCount =
     scenario.rows[0]?.federalCapitalGainsTaxByBracket.length ?? 0;
@@ -483,7 +485,7 @@ function buildSections(
 
   const bracketLines: LineDef[] = usedBrackets.map((i) => ({
     key: `bracket-${i}`,
-    label: `Tax @ ${Math.round(rate(i) * 100)}%`,
+    label: federalBracketLabel(scenario.rows, i),
     unit: "yr",
     value: (r) => r.federalTaxByBracket[i]?.tax ?? 0,
   }));
@@ -696,7 +698,7 @@ function buildSections(
   if (bracketLines.length > 0) {
     sections.push({
       key: "brackets",
-      title: "Federal tax brackets",
+      title: federalBracketsTitle(scenario.rows),
       lines: bracketLines,
     });
   }

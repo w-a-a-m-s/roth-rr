@@ -803,7 +803,12 @@ export function projectScenario(
     const federalTaxByBracket = progressiveTaxByBracket(
       taxableIncome,
       federalBrackets,
-    ).map((tax, bi) => ({ rate: federalBrackets[bi].rate, tax }));
+    ).map((tax, bi) => ({
+      rate: federalBrackets[bi].rate,
+      tax,
+      floor: federalBrackets[bi].floor,
+      ceiling: federalBrackets[bi + 1]?.floor ?? null,
+    }));
     const ltcgBrackets = forFiling(
       federal.longTermCapitalGains,
       fs,

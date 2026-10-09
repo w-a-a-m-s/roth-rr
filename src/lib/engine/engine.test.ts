@@ -105,6 +105,12 @@ describe("per-bracket tax breakdown", () => {
     for (const row of rows) {
       const sum = row.federalTaxByBracket.reduce((s, b) => s + b.tax, 0);
       expect(sum).toBeCloseTo(row.federalOrdinaryTax, 4);
+      const brackets = row.federalTaxByBracket;
+      brackets.forEach((b, i) => {
+        expect(b.ceiling).toBe(brackets[i + 1]?.floor ?? null);
+        if (b.ceiling == null) return;
+        expect(b.tax).toBeLessThanOrEqual((b.ceiling - b.floor) * b.rate + 1e-6);
+      });
       expect(row.annualTax).toBeCloseTo(
         row.federalAnnualTax + row.stateAnnualTax,
         4,

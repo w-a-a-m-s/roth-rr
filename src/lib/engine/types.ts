@@ -75,9 +75,16 @@ export interface ProjectionRow {
   federalAnnualTax: number;
   federalMonthlyTax: number;
   /**
-   * Per-bracket breakdown of federal ordinary tax (not LTCG).
+   * Per-bracket breakdown of federal ordinary tax (not LTCG), with each
+   * bracket's taxable-income range for this year's filing status. `ceiling`
+   * is the next bracket's floor, null for the top bracket.
    */
-  federalTaxByBracket: { rate: number; tax: number }[];
+  federalTaxByBracket: {
+    rate: number;
+    tax: number;
+    floor: number;
+    ceiling: number | null;
+  }[];
   /**
    * Per-bracket breakdown of federal long-term capital gains tax (0% / 15% / 20%).
    */
