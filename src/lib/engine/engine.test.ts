@@ -1551,6 +1551,27 @@ describe("business equity", () => {
     expect(biz.totals.taxesTotal).toBe(plain.totals.taxesTotal);
   });
 
+  it("taxes a linked business income exactly like an unlinked one", () => {
+    const income = {
+      id: "biz-inc",
+      label: "Shop income",
+      ownerId: SAMPLE_HOUSEHOLD.people[0].id,
+      kind: "business" as const,
+      monthlyAmount: 3_000,
+      growthRate: 0,
+      taxability: "full" as const,
+    };
+    const unlinked = { ...withBiz, incomes: [...withBiz.incomes, income] };
+    const linked = {
+      ...withBiz,
+      incomes: [...withBiz.incomes, { ...income, businessId: "b1" }],
+    };
+    const a = runScenario(unlinked, schedule, "baseline");
+    const b = runScenario(linked, schedule, "baseline");
+    expect(b.totals).toEqual(a.totals);
+    expect(b.rows[0].incomeMonthly["biz-inc"]).toBe(3_000);
+  });
+
   it("is zero for a plan without businesses", () => {
     const rows = projectScenario(SAMPLE_HOUSEHOLD, schedule);
     expect(rows[0].businessEquity).toBe(0);

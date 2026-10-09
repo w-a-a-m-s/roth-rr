@@ -539,6 +539,24 @@ describe("migrateHousehold: business equity", () => {
     expect(out.deletedBusinesses).toEqual([]);
   });
 
+  it("keeps a business link only on business income", () => {
+    const income = (id: string, kind: IncomeSource["kind"]): IncomeSource => ({
+      id,
+      label: id,
+      ownerId: "p1",
+      kind,
+      monthlyAmount: 1,
+      growthRate: 0,
+      taxability: "full",
+      businessId: "b1",
+    });
+    const out = migrateHousehold(
+      household([], [income("biz", "business"), income("sal", "salary")]),
+    );
+    expect(out.incomes[0].businessId).toBe("b1");
+    expect(out.incomes[1].businessId).toBeUndefined();
+  });
+
   it("fills a missing value or growth rate with 0", () => {
     const h = household([], []);
     h.businesses = [

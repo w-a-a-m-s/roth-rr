@@ -163,6 +163,16 @@ export function defaultGrowthStart(
   return isDropRetirementAccount(account) ? "retirement" : "planStart";
 }
 
+/** Business incomes linked to `businessId`, in plan order. */
+export function businessIncomes(
+  household: Pick<Household, "incomes">,
+  businessId: string,
+): IncomeSource[] {
+  return household.incomes.filter(
+    (income) => income.kind === "business" && income.businessId === businessId,
+  );
+}
+
 /** A property's growth start: `planStart` unless set to `retirement`. */
 export function realEstateGrowthStart(
   re: Pick<RealEstate, "growthStart">,

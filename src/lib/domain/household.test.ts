@@ -4,6 +4,7 @@ import {
   accountDepositEndYear,
   accountGrowsInYear,
   accountsInDisplayOrder,
+  businessIncomes,
   firstYearGrowthFraction,
   healGrowthStart,
   preStartGrowthYears,
@@ -374,6 +375,24 @@ describe("accountGrowsInYear", () => {
     const noYear: Person[] = [{ id: "p1", name: "Pat", birthYear: 1970 }];
     expect(accountGrowsInYear(acc, noYear, 2025, 2026)).toBe(false);
     expect(accountGrowsInYear(acc, noYear, 2026, 2026)).toBe(true);
+  });
+});
+
+describe("businessIncomes", () => {
+  it("returns only business incomes linked to that business", () => {
+    const base = {
+      ownerId: "p1",
+      monthlyAmount: 1_000,
+      growthRate: 0,
+      taxability: "full" as const,
+    };
+    const incomes = [
+      { ...base, id: "a", label: "A", kind: "business" as const, businessId: "b1" },
+      { ...base, id: "b", label: "B", kind: "business" as const, businessId: "b2" },
+      { ...base, id: "c", label: "C", kind: "business" as const },
+      { ...base, id: "d", label: "D", kind: "salary" as const, businessId: "b1" },
+    ];
+    expect(businessIncomes({ incomes }, "b1").map((i) => i.id)).toEqual(["a"]);
   });
 });
 

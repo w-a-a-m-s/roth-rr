@@ -325,7 +325,7 @@ function buildAssetLines(
   const businesses = household.businesses ?? [];
   if (businesses.length > 0) {
     lines.push({
-      key: "business",
+      key: "business-equity",
       label: "Business equity",
       unit: "sum",
       value: (r) => r.businessEquity,

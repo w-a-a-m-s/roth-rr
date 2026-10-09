@@ -17,6 +17,7 @@ import { StepTour } from "@/components/onboarding/StepTour";
 import {
   DEFAULT_BUSINESS_GROWTH,
   DEFAULT_DEPRECIATION_YEARS,
+  DEFAULT_INCOME_GROWTH,
   DEFAULT_REAL_ESTATE_APPRECIATION,
   DEFAULT_RENT_GROWTH,
 } from "@/lib/config/defaults";
@@ -25,6 +26,7 @@ import { formatCurrency, formatPercent } from "@/lib/format";
 import type { Business, RealEstate } from "@/lib/domain/types";
 import {
   GROWTH_START_LABELS,
+  businessIncomes,
   realEstateGrowthStart,
 } from "@/lib/domain/household";
 import { REAL_ESTATE_TOUR_STEPS } from "@/lib/onboarding/realEstateTour";
@@ -284,7 +286,33 @@ function BusinessFields({
   onEdit: () => void;
   onDone: () => void;
 }) {
-  const { updateBusiness, removeBusiness } = useScenario();
+  const household = useHousehold();
+  const { updateBusiness, removeBusiness, addIncome, updateIncome } =
+    useScenario();
+  const linked = businessIncomes(household, business.id);
+  const monthlyIncome = linked.reduce((sum, inc) => sum + inc.monthlyAmount, 0);
+  const purchasePrice = business.purchasePrice ?? 0;
+
+  // The card edits the first linked business income, or creates one. Dates,
+  // owner, growth and taxes stay on the Income step.
+  function setMonthlyIncome(monthlyAmount: number) {
+    const first = linked[0];
+    if (first) {
+      updateIncome(first.id, { monthlyAmount });
+      return;
+    }
+    if (monthlyAmount <= 0) return;
+    addIncome({
+      id: uid("inc"),
+      label: business.label || "Business income",
+      ownerId: household.mainPersonId ?? household.people[0]?.id ?? "",
+      kind: "business",
+      monthlyAmount,
+      growthRate: DEFAULT_INCOME_GROWTH,
+      taxability: "full",
+      businessId: business.id,
+    });
+  }
 
   return (
     <EntityCard
@@ -299,10 +327,15 @@ function BusinessFields({
       }}
       summary={
         <>
-          <ReadStat label="Value" value={formatCurrency(business.value)} />
+          <ReadStat label="Purchase price" value={formatCurrency(purchasePrice)} />
+          <ReadStat label="Current value" value={formatCurrency(business.value)} />
           <ReadStat
-            label="Growth"
+            label="Appreciation"
             value={`${formatPercent(business.growthRate)} / yr`}
+          />
+          <ReadStat
+            label="Business income"
+            value={`${formatCurrency(monthlyIncome)} / mo`}
           />
         </>
       }
@@ -316,8 +349,18 @@ function BusinessFields({
         </Field>
         <Field
           layout="row"
-          label="Equity value"
-          help="What your share of the business is worth today. It grows each year by the growth rate and counts toward total assets, after-tax assets, and the inheritance. Business income goes on the Income step."
+          label="Purchase price"
+          help="What you paid for your share of the business. Shown for reference with the gain to date: heirs get a stepped-up basis, so it does not change the projection."
+        >
+          <MoneyInput
+            value={purchasePrice}
+            onChange={(next) => updateBusiness(business.id, { purchasePrice: next })}
+          />
+        </Field>
+        <Field
+          layout="row"
+          label="Current value"
+          help="What your share of the business is worth today. It grows each year by the appreciation rate and counts toward total assets, after-tax assets, and the inheritance."
         >
           <MoneyInput
             value={business.value}
@@ -326,7 +369,7 @@ function BusinessFields({
         </Field>
         <Field
           layout="row"
-          label="Annual growth"
+          label="Appreciation"
           help="Yearly increase in the business's value."
         >
           <PercentInput
@@ -336,6 +379,22 @@ function BusinessFields({
             }
           />
         </Field>
+        <Field
+          layout="row"
+          label="Monthly business income"
+          help="What the business pays you each month. It is the Business income entry on the Income step, linked to this business: set its owner, years, growth, and taxes there."
+        >
+          <MoneyInput value={monthlyIncome} onChange={setMonthlyIncome} />
+        </Field>
+        {linked.length > 1 ? (
+          <p className="m-0 text-xs text-muted lg:pl-[calc(13.5rem+0.75rem)]">
+            {linked.length} business incomes are linked; this field edits the
+            first. Edit the others on the Income step.
+          </p>
+        ) : null}
+        <p className="m-0 text-xs text-muted lg:pl-[calc(13.5rem+0.75rem)]">
+          Gain to date: {formatCurrency(business.value - purchasePrice)}
+        </p>
       </div>
     </EntityCard>
   );

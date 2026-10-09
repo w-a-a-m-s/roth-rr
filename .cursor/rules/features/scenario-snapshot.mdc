@@ -42,3 +42,12 @@ RMDs and withdrawals are added. Applied income fills the need in
 the table's negative surplus (deposits are part of the need, as Surplus nets
 them). "Capitalized" is present value
 at the balance-weighted average account growth rate (5% if no balances).
+
+## Business equity input
+
+Businesses live on the Real estate & business step (`household.businesses`):
+purchase price (reference only, for the gain shown on the card), current
+value, and appreciation. The card's Monthly business income field edits the
+first `kind: "business"` income whose `businessId` points at it (or creates
+one); the Income step's From business select sets the same link
+(`businessIncomes` in `household.ts`). The link never changes the math.

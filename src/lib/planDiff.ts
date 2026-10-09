@@ -117,6 +117,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   endYear: "End year",
   growthDelayYears: "Growth delay years",
   drawsFromAccountId: "Draws from account",
+  businessId: "From business",
   pensionPayout: "Pension payout",
   disabilityWaitingDays: "Waiting period",
   disabilityCoverage: "Disability coverage",
@@ -260,6 +261,11 @@ function formatScalar(
       personName(ctx.previous, value) ||
       value
     );
+  }
+  if (key === "businessId" && typeof value === "string") {
+    const find = (h: Household | null | undefined) =>
+      h?.businesses?.find((b) => b.id === value)?.label || null;
+    return find(ctx.next) || find(ctx.previous) || value;
   }
   if (key === "drawsFromAccountId" && typeof value === "string") {
     return (

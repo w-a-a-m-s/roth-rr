@@ -232,6 +232,10 @@ export function migrateHousehold(household: Household): Household {
     // engine debits a real balance instead of dropping the income as phantom
     // money. Ambiguous cases (zero or multiple eligible accounts) are left for
     // the user to resolve in the editor.
+    // Only business income links to a business.
+    if (inc.kind !== "business" || typeof inc.businessId !== "string") {
+      delete inc.businessId;
+    }
     const sourceKinds = WITHDRAWAL_SOURCE_KINDS[inc.kind];
     if (sourceKinds && !inc.drawsFromAccountId) {
       const eligible = (legacy.accounts ?? []).filter((acc) =>
@@ -265,6 +269,9 @@ export function migrateHousehold(household: Household): Household {
   const healBusiness = (biz: Business) => {
     if (!Number.isFinite(biz.value)) biz.value = 0;
     if (!Number.isFinite(biz.growthRate)) biz.growthRate = 0;
+    if (biz.purchasePrice != null && !Number.isFinite(biz.purchasePrice)) {
+      delete biz.purchasePrice;
+    }
   };
   for (const biz of legacy.businesses) healBusiness(biz);
   for (const entry of legacy.deletedBusinesses ?? []) healBusiness(entry.item);

@@ -218,6 +218,11 @@ export interface IncomeSource {
   disabilityWaitingDays?: DisabilityWaitingDays;
   /** Disability insurance only. Missing means `full`. */
   disabilityCoverage?: DisabilityCoverage;
+  /**
+   * Business income only: the business (`Household.businesses`) that pays
+   * it. Links the income to that business's card; it does not change the math.
+   */
+  businessId?: string;
 }
 
 export interface RealEstate {
@@ -266,9 +271,14 @@ export interface RealEstate {
 export interface Business {
   id: string;
   label: string;
+  /**
+   * What the household paid for its share. For reference (the gain shown on
+   * the card); heirs get a stepped-up basis, so the engine does not tax it.
+   */
+  purchasePrice?: number;
   /** Current value of the household's share (projection year 0). */
   value: number;
-  /** Annual growth applied to `value` (decimal). */
+  /** Annual appreciation applied to `value` (decimal). */
   growthRate: number;
 }
 

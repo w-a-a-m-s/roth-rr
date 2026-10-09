@@ -138,6 +138,8 @@ function IncomeFields({
     if (!isPensionIncome(kind) && income.pensionPayout) {
       patch.pensionPayout = undefined;
     }
+    // Only business income links to a business.
+    if (kind !== "business" && income.businessId) patch.businessId = undefined;
     // Disability settings only mean something on disability insurance.
     if (kind !== "disabilityInsurance") {
       if (income.disabilityWaitingDays) patch.disabilityWaitingDays = undefined;
@@ -322,6 +324,26 @@ function IncomeFields({
                 updateIncome(income.id, { disabilityCoverage })
               }
               options={COVERAGE_OPTIONS}
+            />
+          </Field>
+        ) : null}
+        {income.kind === "business" ? (
+          <Field
+            label="From business"
+            help="Link this income to a business on the Real estate & business step, so its card shows and edits it."
+          >
+            <Select
+              value={income.businessId ?? ""}
+              onChange={(businessId) =>
+                updateIncome(income.id, { businessId: businessId || undefined })
+              }
+              options={[
+                { value: "", label: "Not linked" },
+                ...(household.businesses ?? []).map((b) => ({
+                  value: b.id,
+                  label: b.label || "Business",
+                })),
+              ]}
             />
           </Field>
         ) : null}
