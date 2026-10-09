@@ -9,6 +9,7 @@ import {
   firstYearGrowthFraction,
   preStartGrowthYears,
   realEstateGrowthStart,
+  businessGrowthStart,
   expenseMonthlyForYear,
   incomeMonthlyForYear,
   isIncomeActive,
@@ -158,14 +159,19 @@ function amortizeYear(
   return { endBalance: bal, interest, principal };
 }
 
-/** A business's value in projection year `yearIndex` (year 0 = as entered). */
+/**
+ * A business's value in projection year `yearIndex`. Year 0 is the value on
+ * January 1 of the start year: as entered, grown first by `preStartYears`
+ * (the years from today to the plan start, for a plan-start business).
+ */
 export function businessValueForYear(
   business: Business,
   yearIndex: number,
+  preStartYears = 0,
 ): number {
   const value = Number.isFinite(business.value) ? business.value : 0;
   const rate = Number.isFinite(business.growthRate) ? business.growthRate : 0;
-  return value * Math.pow(1 + rate, yearIndex);
+  return value * Math.pow(1 + rate, yearIndex + preStartYears);
 }
 
 interface RealEstateYear {
@@ -590,6 +596,13 @@ export function projectScenario(
         ? preStartGrowthYears(start, refs.asOfDate)
         : 0;
   }
+  const businessPreStartYears: Record<string, number> = {};
+  for (const biz of household.businesses ?? []) {
+    businessPreStartYears[biz.id] =
+      businessGrowthStart(biz) === "planStart"
+        ? preStartGrowthYears(start, refs.asOfDate)
+        : 0;
+  }
   const suspendedLossById: Record<string, number> = {};
 
   // RMDs divide the balance as of December 31 of the preceding year, so each
@@ -931,11 +944,16 @@ export function projectScenario(
       monthlyExpenses += cost;
     }
 
-    // 6) Business equity grows like real estate: year 0 is the value entered.
+    // 6) Business equity grows like real estate: year 0 is the January 1
+    //    value (grown from today for a plan-start business).
     let businessEquity = 0;
     const businessEquityById: Record<string, number> = {};
     for (const biz of household.businesses ?? []) {
-      const value = businessValueForYear(biz, i);
+      const value = businessValueForYear(
+        biz,
+        i,
+        businessPreStartYears[biz.id] ?? 0,
+      );
       businessEquityById[biz.id] = value;
       businessEquity += value;
     }

@@ -52,3 +52,7 @@ value, and appreciation. The card's Monthly business income field edits the
 first `kind: "business"` income whose `businessId` points at it (or creates
 one); the Income step's From business select sets the same link
 (`businessIncomes` in `household.ts`). The link never changes the math.
+Each business has the same Growth starts toggle as accounts and properties
+(`Business.growthStart`, read through `businessGrowthStart`, default
+`planStart`): Plan start grows the value from `refs.asOfDate` up to the plan
+start, Retirement holds it at the entered value until the plan starts.

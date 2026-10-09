@@ -13,7 +13,12 @@ import {
 import { uid } from "@/lib/id";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import type { Business } from "@/lib/domain/types";
-import { businessIncomes } from "@/lib/domain/household";
+import {
+  GROWTH_START_LABELS,
+  businessGrowthStart,
+  businessIncomes,
+} from "@/lib/domain/household";
+import { GrowthStartToggle } from "@/components/ui/GrowthStartToggle";
 
 function BusinessFields({
   business,
@@ -74,6 +79,10 @@ function BusinessFields({
             value={`${formatPercent(business.growthRate)} / yr`}
           />
           <ReadStat
+            label="Growth starts"
+            value={GROWTH_START_LABELS[businessGrowthStart(business)]}
+          />
+          <ReadStat
             label="Business income"
             value={`${formatCurrency(monthlyIncome)} / mo`}
           />
@@ -116,6 +125,18 @@ function BusinessFields({
             value={business.growthRate}
             onChange={(growthRate) =>
               updateBusiness(business.id, { growthRate })
+            }
+          />
+        </Field>
+        <Field
+          layout="row"
+          label="Growth starts"
+          help="Plan start grows the value from today. Retirement keeps it at today's value until the plan starts (the household's first retirement year), then it starts growing."
+        >
+          <GrowthStartToggle
+            value={businessGrowthStart(business)}
+            onChange={(growthStart) =>
+              updateBusiness(business.id, { growthStart })
             }
           />
         </Field>

@@ -280,6 +280,13 @@ export interface Business {
   value: number;
   /** Annual appreciation applied to `value` (decimal). */
   growthRate: number;
+  /**
+   * When appreciation starts. `planStart` (the default when unset) grows the
+   * value from today, so a later plan start opens with it grown; `retirement`
+   * keeps it at the entered value until the plan starts (the household's
+   * first retirement year).
+   */
+  growthStart?: GrowthStart;
 }
 
 export type ExpenseFrequency = "monthly" | "yearly";

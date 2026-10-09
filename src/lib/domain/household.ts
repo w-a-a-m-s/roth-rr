@@ -1,6 +1,7 @@
 import type {
   Account,
   AccountKind,
+  Business,
   DepositFrequency,
   DisabilityCoverage,
   DisabilityWaitingDays,
@@ -178,6 +179,15 @@ export function realEstateGrowthStart(
   re: Pick<RealEstate, "growthStart">,
 ): GrowthStart {
   return isGrowthStart(re.growthStart) ? re.growthStart : "planStart";
+}
+
+/** A business's growth start: `planStart` unless set to `retirement`. */
+export function businessGrowthStart(
+  business: Pick<Business, "growthStart">,
+): GrowthStart {
+  return isGrowthStart(business.growthStart)
+    ? business.growthStart
+    : "planStart";
 }
 
 /** The account's chosen growth start, or its type's default when unset. */

@@ -1572,6 +1572,30 @@ describe("business equity", () => {
     expect(b.rows[0].incomeMonthly["biz-inc"]).toBe(3_000);
   });
 
+  it("grows a plan-start business from today up to the plan start", () => {
+    const start = projectionStartYear(withBiz);
+    const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: `${start - 2}-01-01` };
+    const rows = projectScenario(withBiz, schedule, refs);
+    // Two full years before the start at 5%, then 5% a year.
+    expect(rows[0].businessEquityById.b1).toBeCloseTo(100_000 * 1.05 ** 2, 6);
+    expect(rows[1].businessEquityById.b1).toBeCloseTo(100_000 * 1.05 ** 3, 6);
+  });
+
+  it("holds a retirement business at today's value until the plan starts", () => {
+    const start = projectionStartYear(withBiz);
+    const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: `${start - 2}-01-01` };
+    const waits: Household = {
+      ...withBiz,
+      businesses: withBiz.businesses!.map((b) => ({
+        ...b,
+        growthStart: "retirement" as const,
+      })),
+    };
+    const rows = projectScenario(waits, schedule, refs);
+    expect(rows[0].businessEquityById.b1).toBe(100_000);
+    expect(rows[1].businessEquityById.b1).toBeCloseTo(105_000, 6);
+  });
+
   it("is zero for a plan without businesses", () => {
     const rows = projectScenario(SAMPLE_HOUSEHOLD, schedule);
     expect(rows[0].businessEquity).toBe(0);

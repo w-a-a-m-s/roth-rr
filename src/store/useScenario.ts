@@ -272,6 +272,9 @@ export function migrateHousehold(household: Household): Household {
     if (biz.purchasePrice != null && !Number.isFinite(biz.purchasePrice)) {
       delete biz.purchasePrice;
     }
+    if (biz.growthStart != null && !isGrowthStart(biz.growthStart)) {
+      delete biz.growthStart;
+    }
   };
   for (const biz of legacy.businesses) healBusiness(biz);
   for (const entry of legacy.deletedBusinesses ?? []) healBusiness(entry.item);

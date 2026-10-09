@@ -557,6 +557,17 @@ describe("migrateHousehold: business equity", () => {
     expect(out.incomes[1].businessId).toBeUndefined();
   });
 
+  it("keeps a valid business growth start and drops an unknown one", () => {
+    const h = household([], []);
+    h.businesses = [
+      { id: "a", label: "A", value: 1, growthRate: 0, growthStart: "retirement" },
+      { id: "b", label: "B", value: 1, growthRate: 0, growthStart: "later" as never },
+    ];
+    const out = migrateHousehold(h);
+    expect(out.businesses![0].growthStart).toBe("retirement");
+    expect(out.businesses![1].growthStart).toBeUndefined();
+  });
+
   it("fills a missing value or growth rate with 0", () => {
     const h = household([], []);
     h.businesses = [
