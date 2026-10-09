@@ -43,12 +43,36 @@ describe("buildSnapshotTable", () => {
     expect(labels[0]).toBe("DROP (David)");
     expect(labels[1]).toBe("DROP (Batsheva)");
     expect(labels).toContain("Investment account");
-    const groups = lines.map((l) => l.group);
+    const groups = lines.slice(0, -1).map((l) => l.group);
     expect(groups.every((g) => g != null)).toBe(true);
     // Groups never interleave: each starts after the previous one ends.
     const order = groups.filter((g, i) => g !== groups[i - 1]);
     expect(order).toEqual(["retirement", "regular", "roth"]);
-    expect(labels[labels.length - 1]).toBe("Total Roth");
+    expect(labels[labels.length - 1]).toBe("Total assets");
+    expect(labels[labels.length - 2]).toBe("Total Roth");
+  });
+
+  it("closes the assets with a total of every group", () => {
+    const lines = section("assets").lines;
+    const total = lines[lines.length - 1];
+    expect(total.key).toBe("assets-total");
+    expect(total.group).toBeUndefined();
+    const row = comparison.baseline.rows[0];
+    expect(total.values[0]).toBeCloseTo(
+      row.retirementTotal +
+        row.afterTaxTotal +
+        row.realEstateEquity +
+        row.businessEquity +
+        row.rothTotal,
+      6,
+    );
+    const groupTotals = ["retirement-total", "regular-total", "roth"].map(
+      (key) => lines.find((l) => l.key === key)!.values[0],
+    );
+    expect(total.values[0]).toBeCloseTo(
+      groupTotals.reduce((a, b) => a + b, 0),
+      6,
+    );
   });
 
   it("ends each group with a total that matches the projection", () => {

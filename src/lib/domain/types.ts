@@ -230,6 +230,13 @@ export interface RealEstate {
   marketValue: number;
   /** Annual appreciation applied to this property's market value (decimal). */
   appreciationRate: number;
+  /**
+   * When appreciation starts. `planStart` (the default when unset) grows the
+   * market value from today, so a later plan start opens with it grown;
+   * `retirement` keeps it at the entered value until the plan starts (the
+   * household's first retirement year).
+   */
+  growthStart?: GrowthStart;
   /** Useful life in years for straight-line depreciation of this property. */
   depreciationYears: number;
   /** Gross monthly rent (year 0). Omit/0 for a non-rental property. */

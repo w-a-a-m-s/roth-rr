@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/inputs";
 import { AddButton, EntityCard, ReadStat } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
+import { GrowthStartToggle } from "@/components/ui/GrowthStartToggle";
 import { StepTour } from "@/components/onboarding/StepTour";
 import {
   DEFAULT_BUSINESS_GROWTH,
@@ -22,6 +23,10 @@ import {
 import { uid } from "@/lib/id";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import type { Business, RealEstate } from "@/lib/domain/types";
+import {
+  GROWTH_START_LABELS,
+  realEstateGrowthStart,
+} from "@/lib/domain/household";
 import { REAL_ESTATE_TOUR_STEPS } from "@/lib/onboarding/realEstateTour";
 
 function PropertyFields({
@@ -55,6 +60,10 @@ function PropertyFields({
           <ReadStat
             label="Appreciation"
             value={`${formatPercent(re.appreciationRate)} / yr`}
+          />
+          <ReadStat
+            label="Growth starts"
+            value={GROWTH_START_LABELS[realEstateGrowthStart(re)]}
           />
           <ReadStat
             label="Monthly rent"
@@ -135,6 +144,18 @@ function PropertyFields({
             value={re.appreciationRate}
             onChange={(appreciationRate) =>
               updateRealEstate(re.id, { appreciationRate })
+            }
+          />
+        </Field>
+        <Field
+          layout="row"
+          label="Growth starts"
+          help="Plan start appreciates the market value from today. Retirement keeps it at today's value until the plan starts (the household's first retirement year), then it starts growing."
+        >
+          <GrowthStartToggle
+            value={realEstateGrowthStart(re)}
+            onChange={(growthStart) =>
+              updateRealEstate(re.id, { growthStart })
             }
           />
         </Field>

@@ -12,6 +12,7 @@ import type {
   IncomeSource,
   PensionPayout,
   Person,
+  RealEstate,
   RetirementAccountType,
 } from "@/lib/domain/types";
 import { uid } from "@/lib/id";
@@ -160,6 +161,13 @@ export function defaultGrowthStart(
   account: Pick<Account, "kind" | "retirementType">,
 ): GrowthStart {
   return isDropRetirementAccount(account) ? "retirement" : "planStart";
+}
+
+/** A property's growth start: `planStart` unless set to `retirement`. */
+export function realEstateGrowthStart(
+  re: Pick<RealEstate, "growthStart">,
+): GrowthStart {
+  return isGrowthStart(re.growthStart) ? re.growthStart : "planStart";
 }
 
 /** The account's chosen growth start, or its type's default when unset. */

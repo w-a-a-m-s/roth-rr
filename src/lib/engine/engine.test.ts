@@ -380,6 +380,31 @@ describe("real estate", () => {
     expect(rows[1].realEstateValue).toBeCloseTo(1_030_000, 2);
   });
 
+  it("appreciates a plan-start property from today up to the plan start", () => {
+    const start = projectionStartYear(household);
+    const asOfDate = `${start - 2}-01-01`;
+    const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate };
+    const rows = projectScenario(household, zeros(n), refs);
+    // Two full years before the start at 3%, then 3% a year as before.
+    expect(rows[0].realEstateValue).toBeCloseTo(1_000_000 * 1.03 ** 2, 2);
+    expect(rows[1].realEstateValue).toBeCloseTo(1_000_000 * 1.03 ** 3, 2);
+  });
+
+  it("holds a retirement property at today's value until the plan starts", () => {
+    const start = projectionStartYear(household);
+    const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: `${start - 2}-01-01` };
+    const waits: Household = {
+      ...household,
+      realEstate: household.realEstate.map((re) => ({
+        ...re,
+        growthStart: "retirement" as const,
+      })),
+    };
+    const rows = projectScenario(waits, zeros(n), refs);
+    expect(rows[0].realEstateValue).toBeCloseTo(1_000_000, 2);
+    expect(rows[1].realEstateValue).toBeCloseTo(1_030_000, 2);
+  });
+
   it("counts full equity when there is no mortgage", () => {
     const rows = projectScenario(household, zeros(n));
     expect(rows[0].mortgageBalance).toBe(0);

@@ -18,6 +18,7 @@ import {
   ReadStat,
 } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
+import { GrowthStartToggle } from "@/components/ui/GrowthStartToggle";
 import { submitEditOnEnter } from "@/components/ui/submitEditOnEnter";
 import { StepTour } from "@/components/onboarding/StepTour";
 import type {
@@ -25,14 +26,11 @@ import type {
   AccountKind,
   Deposit,
   DepositFrequency,
-  GrowthStart,
   RetirementAccountType,
 } from "@/lib/domain/types";
 import {
   AFTER_TAX_ACCOUNT_KINDS,
   DEFAULT_RETIREMENT_ACCOUNT_TYPE,
-  GROWTH_START_LABELS,
-  GROWTH_STARTS,
   JOINT_OWNER_VALUE,
   RETIREMENT_ACCOUNT_TYPES,
   RETIREMENT_ACCOUNT_TYPE_LABELS,
@@ -481,42 +479,6 @@ function AccountFields({
       </div>
       <Deposits account={account} />
     </EntityCard>
-  );
-}
-
-function GrowthStartToggle({
-  value,
-  onChange,
-}: {
-  value: GrowthStart;
-  onChange: (value: GrowthStart) => void;
-}) {
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Growth starts"
-      className="flex rounded-[9px] border border-border-2 bg-surface-muted p-0.5"
-    >
-      {GROWTH_STARTS.map((option) => {
-        const on = option === value;
-        return (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={on}
-            onClick={() => onChange(option)}
-            className={`flex-1 whitespace-nowrap rounded-[7px] px-2 py-1 text-base transition md:text-sm ${
-              on
-                ? "bg-white font-semibold text-foreground shadow-sm"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            {GROWTH_START_LABELS[option]}
-          </button>
-        );
-      })}
-    </div>
   );
 }
 

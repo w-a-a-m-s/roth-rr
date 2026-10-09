@@ -5,6 +5,7 @@ import type {
   Expense,
   Household,
   IncomeSource,
+  RealEstate,
 } from "@/lib/domain/types";
 import { migrateHousehold } from "@/store/useScenario";
 
@@ -507,6 +508,27 @@ describe("migrateHousehold: retirement account type", () => {
     const once = migrateHousehold(h);
     const twice = migrateHousehold(once);
     expect(twice.accounts[0].retirementType).toBe("drop");
+  });
+});
+
+describe("migrateHousehold: real estate growth start", () => {
+  it("keeps a valid growth start and drops an unknown one", () => {
+    const property = (id: string, growthStart: unknown): RealEstate =>
+      ({
+        id,
+        label: id,
+        purchaseYear: 2020,
+        purchasePrice: 1,
+        marketValue: 1,
+        appreciationRate: 0.03,
+        depreciationYears: 27.5,
+        growthStart,
+      }) as RealEstate;
+    const h = household([], []);
+    h.realEstate = [property("a", "retirement"), property("b", "later")];
+    const out = migrateHousehold(h);
+    expect(out.realEstate[0].growthStart).toBe("retirement");
+    expect(out.realEstate[1].growthStart).toBeUndefined();
   });
 });
 

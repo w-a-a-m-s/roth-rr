@@ -22,8 +22,9 @@ both to a year.
   **Roth** (each Roth account, the engine's implicit Roth when a plan converts
   without one, the Roth total, then a yearly conversion row only when the
   scenario converts). The Roth group always shows; the other two only when
-  they have rows. Lines carry `group` and `subtotal`; other sections leave
-  them unset. Income (monthly, per
+  they have rows. A final **Total assets** row (no group, `subtotal: true`,
+  darkest navy tint) adds up all three groups. Lines carry `group` and
+  `subtotal`; other sections leave them unset. Income (monthly, per
   source, RMD rows kept when they pay anywhere in the projection), cash flow
   (monthly; a deposits row shows when the plan has deposits, since surplus
   nets them).

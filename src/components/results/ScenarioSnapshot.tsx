@@ -37,8 +37,11 @@ const ASSET_GROUP_ROW: Record<
   roth: { row: "bg-[#E7F2EC]", total: "bg-[#D2E8DB]" },
 };
 
+/** The grand total under all three groups: the darkest shade, ruled above. */
+const ALL_ASSETS_ROW = "bg-[#C3D1E4] border-t-[3px] border-t-[#1B365D]";
+
 function lineRowClass(line: SnapshotLine, sectionRow: string): string {
-  if (!line.group) return sectionRow;
+  if (!line.group) return line.subtotal ? ALL_ASSETS_ROW : sectionRow;
   const tint = ASSET_GROUP_ROW[line.group];
   return line.subtotal ? `${tint.total} border-b-2 border-b-[#B8C4D4]` : tint.row;
 }

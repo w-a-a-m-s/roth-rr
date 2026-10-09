@@ -84,7 +84,8 @@ function incomeKeys(scenario: ScenarioResult, household: Household): string[] {
  * (tax-deferred accounts), regular investments (after-tax accounts,
  * real-estate equity, business equity), and Roth (every Roth account, plus the
  * yearly conversion row when the scenario converts). The Roth group always
- * shows; the other two only when the plan has something in them.
+ * shows; the other two only when the plan has something in them. A final
+ * "Total assets" row adds up all three groups.
  */
 function buildAssetLines(
   scenario: ScenarioResult,
@@ -182,6 +183,20 @@ function buildAssetLines(
       group: "roth",
     });
   }
+  lines.push({
+    key: "assets-total",
+    label: "Total assets",
+    values: pick(
+      (r) =>
+        r.retirementTotal +
+        r.afterTaxTotal +
+        r.realEstateEquity +
+        r.businessEquity +
+        r.rothTotal,
+    ),
+    tone: "strong",
+    subtotal: true,
+  });
   return lines;
 }
 

@@ -36,6 +36,7 @@ import {
   applyFilingStatus,
   healAccountJoint,
   healGrowthStart,
+  isGrowthStart,
   healRetirementType,
   maxPeople,
 } from "@/lib/domain/household";
@@ -248,6 +249,9 @@ export function migrateHousehold(household: Household): Household {
     }
     if (typeof re.activeParticipation !== "boolean") {
       re.activeParticipation = true;
+    }
+    if (re.growthStart != null && !isGrowthStart(re.growthStart)) {
+      delete re.growthStart;
     }
   };
   for (const re of legacy.realEstate ?? []) healRealEstate(re);

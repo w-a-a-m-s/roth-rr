@@ -7,6 +7,8 @@ import type {
 import {
   accountGrowsInYear,
   firstYearGrowthFraction,
+  preStartGrowthYears,
+  realEstateGrowthStart,
   expenseMonthlyForYear,
   incomeMonthlyForYear,
   isIncomeActive,
@@ -195,6 +197,7 @@ function stepRealEstate(
   household: Household,
   yearIndex: number,
   mortgageBalances: Record<string, number>,
+  preStartYearsById: Record<string, number>,
 ): RealEstateYear {
   const a = household.assumptions;
   let value = 0;
@@ -207,8 +210,14 @@ function stepRealEstate(
   const isRentalById: Record<string, boolean> = {};
 
   for (const re of household.realEstate) {
+    // Year 0 is the value on January 1 of the start year: the entered value,
+    // grown from today first when the property's growth starts at plan start.
     const propValue =
-      re.marketValue * Math.pow(1 + re.appreciationRate, yearIndex);
+      re.marketValue *
+      Math.pow(
+        1 + re.appreciationRate,
+        yearIndex + (preStartYearsById[re.id] ?? 0),
+      );
     value += propValue;
 
     const rentGrowth = re.rentGrowthRate ?? DEFAULT_RENT_GROWTH;
@@ -572,6 +581,15 @@ export function projectScenario(
   const mortgageBalances: Record<string, number> = {};
   for (const re of household.realEstate)
     mortgageBalances[re.id] = re.mortgageBalance ?? 0;
+  // Market values are entered as of today. A plan-start property appreciates
+  // from then up to the plan start; a retirement one waits for the plan.
+  const realEstatePreStartYears: Record<string, number> = {};
+  for (const re of household.realEstate) {
+    realEstatePreStartYears[re.id] =
+      realEstateGrowthStart(re) === "planStart"
+        ? preStartGrowthYears(start, refs.asOfDate)
+        : 0;
+  }
   const suspendedLossById: Record<string, number> = {};
 
   // RMDs divide the balance as of December 31 of the preceding year, so each
@@ -764,7 +782,12 @@ export function projectScenario(
     stateOrdinaryGross += converted;
 
     // Real estate: appreciation, mortgage amortization, and rental cash flow.
-    const realEstate = stepRealEstate(household, i, mortgageBalances);
+    const realEstate = stepRealEstate(
+      household,
+      i,
+      mortgageBalances,
+      realEstatePreStartYears,
+    );
     totalMonthlyIncome += realEstate.cashAnnual / 12;
     for (const [id, monthly] of Object.entries(realEstate.cashMonthlyById)) {
       incomeMonthly[`re:${id}`] = monthly;
