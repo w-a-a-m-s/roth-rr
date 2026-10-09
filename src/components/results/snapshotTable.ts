@@ -8,11 +8,18 @@ export const SNAPSHOT_YEARS = 6;
 
 export type SnapshotTone = "plain" | "roth" | "tax" | "strong" | "surplus";
 
+/** Asset groups in the assets section, each with its own tint and total. */
+export type SnapshotAssetGroup = "retirement" | "regular" | "roth";
+
 export interface SnapshotLine {
   key: string;
   label: string;
   values: number[];
   tone: SnapshotTone;
+  /** Assets section only: which group the line belongs to. */
+  group?: SnapshotAssetGroup;
+  /** True for a group's total row. */
+  subtotal?: boolean;
 }
 
 export interface SnapshotSection {
@@ -29,6 +36,9 @@ export interface SnapshotTable {
 }
 
 const AFTER_TAX_KINDS = new Set(["investment", "annuity", "cd", "savings"]);
+
+/** The engine's stand-in Roth when a converting plan has no Roth account. */
+const IMPLICIT_ROTH_ID = "__implicit_roth__";
 
 /** Window rows: `count` years starting at `startYear` (clamped to the projection). */
 export function snapshotRows(
@@ -70,6 +80,112 @@ function incomeKeys(scenario: ScenarioResult, household: Household): string[] {
 }
 
 /**
+ * Assets in three groups, each followed by its total: retirement assets
+ * (tax-deferred accounts), regular investments (after-tax accounts,
+ * real-estate equity, business equity), and Roth (every Roth account, plus the
+ * yearly conversion row when the scenario converts). The Roth group always
+ * shows; the other two only when the plan has something in them.
+ */
+function buildAssetLines(
+  scenario: ScenarioResult,
+  household: Household,
+  pick: (fn: (r: ProjectionRow) => number) => number[],
+): SnapshotLine[] {
+  const accounts = accountsInDisplayOrder(household.accounts);
+  const accountLine = (
+    acc: (typeof accounts)[number],
+    group: SnapshotAssetGroup,
+  ): SnapshotLine => ({
+    key: `acc-${acc.id}`,
+    label: acc.label,
+    values: pick((r) => r.balances[acc.id] ?? 0),
+    tone: "plain",
+    group,
+  });
+
+  const retirement = accounts
+    .filter((acc) => acc.kind === "retirementTaxable")
+    .map((acc) => accountLine(acc, "retirement"));
+
+  const regular = accounts
+    .filter((acc) => AFTER_TAX_KINDS.has(acc.kind))
+    .map((acc) => accountLine(acc, "regular"));
+  if (scenario.rows.some((r) => r.realEstateValue !== 0)) {
+    regular.push({
+      key: "re-equity",
+      label: "Real-estate equity",
+      values: pick((r) => r.realEstateEquity),
+      tone: "plain",
+      group: "regular",
+    });
+  }
+  for (const biz of household.businesses ?? []) {
+    regular.push({
+      key: `biz-${biz.id}`,
+      label: biz.label ? `Business · ${biz.label}` : "Business equity",
+      values: pick((r) => r.businessEquityById[biz.id] ?? 0),
+      tone: "plain",
+      group: "regular",
+    });
+  }
+
+  const roth = accounts
+    .filter((acc) => acc.kind === "rothTaxFree")
+    .map((acc) => accountLine(acc, "roth"));
+  if (scenario.rows.some((r) => (r.balances[IMPLICIT_ROTH_ID] ?? 0) !== 0)) {
+    roth.push({
+      key: `acc-${IMPLICIT_ROTH_ID}`,
+      label: "New Roth (conversions)",
+      values: pick((r) => r.balances[IMPLICIT_ROTH_ID] ?? 0),
+      tone: "plain",
+      group: "roth",
+    });
+  }
+
+  const lines: SnapshotLine[] = [];
+  if (retirement.length > 0) {
+    lines.push(...retirement, {
+      key: "retirement-total",
+      label: "Total retirement assets",
+      values: pick((r) => r.retirementTotal),
+      tone: "strong",
+      group: "retirement",
+      subtotal: true,
+    });
+  }
+  if (regular.length > 0) {
+    lines.push(...regular, {
+      key: "regular-total",
+      label: "Total regular investments",
+      values: pick(
+        (r) => r.afterTaxTotal + r.realEstateEquity + r.businessEquity,
+      ),
+      tone: "strong",
+      group: "regular",
+      subtotal: true,
+    });
+  }
+  lines.push(...roth, {
+    key: "roth",
+    label: "Total Roth",
+    values: pick((r) => r.rothTotal),
+    tone: "roth",
+    group: "roth",
+    subtotal: true,
+  });
+  if (scenario.rows.some((r) => r.conversion !== 0)) {
+    lines.push({
+      key: "conversion",
+      label: "Converted to Roth (yr)",
+      values: pick((r) => r.conversion),
+      tone: "roth",
+      group: "roth",
+    });
+  }
+  return lines;
+}
+
+/**
  * The slide-style "Assets, Income & Taxes" table for one scenario: balances
  * per account, monthly income per source, and the monthly cash flow, over a
  * short window of years. Values come straight off the projection rows.
@@ -95,39 +211,7 @@ export function buildSnapshotTable(
     ),
   }));
 
-  const accounts = accountsInDisplayOrder(household.accounts);
-  const assetLines: SnapshotLine[] = [];
-  for (const acc of accounts) {
-    if (acc.kind !== "retirementTaxable" && !AFTER_TAX_KINDS.has(acc.kind)) continue;
-    assetLines.push({
-      key: `acc-${acc.id}`,
-      label: acc.label,
-      values: pick((r) => r.balances[acc.id] ?? 0),
-      tone: "plain",
-    });
-  }
-  if (scenario.rows.some((r) => r.realEstateValue !== 0)) {
-    assetLines.push({
-      key: "re-equity",
-      label: "Real-estate equity",
-      values: pick((r) => r.realEstateEquity),
-      tone: "plain",
-    });
-  }
-  assetLines.push({
-    key: "roth",
-    label: "Roth",
-    values: pick((r) => r.rothTotal),
-    tone: "roth",
-  });
-  if (scenario.rows.some((r) => r.conversion !== 0)) {
-    assetLines.push({
-      key: "conversion",
-      label: "Converted to Roth (yr)",
-      values: pick((r) => r.conversion),
-      tone: "roth",
-    });
-  }
+  const assetLines = buildAssetLines(scenario, household, pick);
 
   const incomeLines: SnapshotLine[] = incomeKeys(scenario, household).map(
     (key) => ({

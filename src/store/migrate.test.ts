@@ -510,6 +510,24 @@ describe("migrateHousehold: retirement account type", () => {
   });
 });
 
+describe("migrateHousehold: business equity", () => {
+  it("gives older plans an empty business list", () => {
+    const out = migrateHousehold(household([], []));
+    expect(out.businesses).toEqual([]);
+    expect(out.deletedBusinesses).toEqual([]);
+  });
+
+  it("fills a missing value or growth rate with 0", () => {
+    const h = household([], []);
+    h.businesses = [
+      { id: "b1", label: "Shop", value: NaN, growthRate: undefined as never },
+    ];
+    const out = migrateHousehold(h);
+    expect(out.businesses![0].value).toBe(0);
+    expect(out.businesses![0].growthRate).toBe(0);
+  });
+});
+
 describe("migrateHousehold: growth start", () => {
   it("leaves older plans without a growth start (type default applies)", () => {
     const h = household([account({ id: "ira", kind: "retirementTaxable" })], []);

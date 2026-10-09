@@ -9,6 +9,9 @@ export const DEFAULT_ASSUMPTIONS: Assumptions = {
 export const DEFAULT_REAL_ESTATE_APPRECIATION = 0.03;
 export const DEFAULT_DEPRECIATION_YEARS = 27.5;
 
+/** Default yearly growth for a new business equity entry. */
+export const DEFAULT_BUSINESS_GROWTH = 0.03;
+
 /**
  * Starting annual rent growth used to seed a new rental property and as the
  * fallback when a property doesn't set its own `rentGrowthRate`.

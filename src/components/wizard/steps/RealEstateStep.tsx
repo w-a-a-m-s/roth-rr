@@ -14,13 +14,14 @@ import { AddButton, EntityCard, ReadStat } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { StepTour } from "@/components/onboarding/StepTour";
 import {
+  DEFAULT_BUSINESS_GROWTH,
   DEFAULT_DEPRECIATION_YEARS,
   DEFAULT_REAL_ESTATE_APPRECIATION,
   DEFAULT_RENT_GROWTH,
 } from "@/lib/config/defaults";
 import { uid } from "@/lib/id";
 import { formatCurrency, formatPercent } from "@/lib/format";
-import type { RealEstate } from "@/lib/domain/types";
+import type { Business, RealEstate } from "@/lib/domain/types";
 import { REAL_ESTATE_TOUR_STEPS } from "@/lib/onboarding/realEstateTour";
 
 function PropertyFields({
@@ -248,6 +249,126 @@ function PropertyFields({
         </p>
       </div>
     </EntityCard>
+  );
+}
+
+function BusinessFields({
+  business,
+  editing,
+  onEdit,
+  onDone,
+}: {
+  business: Business;
+  editing: boolean;
+  onEdit: () => void;
+  onDone: () => void;
+}) {
+  const { updateBusiness, removeBusiness } = useScenario();
+
+  return (
+    <EntityCard
+      title={business.label || "Business"}
+      editing={editing}
+      onEdit={onEdit}
+      onDone={onDone}
+      summaryLayout="stacked"
+      onRemove={() => {
+        removeBusiness(business.id);
+        onDone();
+      }}
+      summary={
+        <>
+          <ReadStat label="Value" value={formatCurrency(business.value)} />
+          <ReadStat
+            label="Growth"
+            value={`${formatPercent(business.growthRate)} / yr`}
+          />
+        </>
+      }
+    >
+      <div className="flex flex-col gap-2.5">
+        <Field layout="row" label="Label">
+          <TextInput
+            value={business.label}
+            onChange={(label) => updateBusiness(business.id, { label })}
+          />
+        </Field>
+        <Field
+          layout="row"
+          label="Equity value"
+          help="What your share of the business is worth today. It grows each year by the growth rate and counts toward total assets, after-tax assets, and the inheritance. Business income goes on the Income step."
+        >
+          <MoneyInput
+            value={business.value}
+            onChange={(value) => updateBusiness(business.id, { value })}
+          />
+        </Field>
+        <Field
+          layout="row"
+          label="Annual growth"
+          help="Yearly increase in the business's value."
+        >
+          <PercentInput
+            value={business.growthRate}
+            onChange={(growthRate) =>
+              updateBusiness(business.id, { growthRate })
+            }
+          />
+        </Field>
+      </div>
+    </EntityCard>
+  );
+}
+
+function BusinessSection() {
+  const household = useHousehold();
+  const { addBusiness, restoreBusiness, discardDeletedBusiness } =
+    useScenario();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const businesses = household.businesses ?? [];
+
+  return (
+    <div className="mt-2 flex flex-col gap-3.5 border-t border-border pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="m-0 text-[14.5px] font-bold text-foreground">
+          Business equity
+        </h3>
+        <div className="flex gap-2">
+          <RestoreDeleted
+            items={(household.deletedBusinesses ?? []).map((entry) => ({
+              id: entry.item.id,
+              label: entry.item.label || "Business",
+              deletedAt: entry.deletedAt,
+            }))}
+            onRestore={restoreBusiness}
+            onDiscard={discardDeletedBusiness}
+          />
+          <AddButton
+            label="Add business"
+            onClick={() => {
+              const id = uid("biz");
+              addBusiness({
+                id,
+                label: "",
+                value: 0,
+                growthRate: DEFAULT_BUSINESS_GROWTH,
+              });
+              setEditingId(id);
+            }}
+          />
+        </div>
+      </div>
+      {businesses.map((business) => (
+        <BusinessFields
+          key={business.id}
+          business={business}
+          editing={editingId === business.id}
+          onEdit={() => setEditingId(business.id)}
+          onDone={() => setEditingId(null)}
+        />
+      ))}
+      <BusinessSection />
+    </div>
   );
 }
 

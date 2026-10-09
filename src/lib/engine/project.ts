@@ -1,5 +1,6 @@
 import type {
   Account,
+  Business,
   Household,
   IncomeSource,
 } from "@/lib/domain/types";
@@ -153,6 +154,16 @@ function amortizeYear(
     principal += monthPrincipal;
   }
   return { endBalance: bal, interest, principal };
+}
+
+/** A business's value in projection year `yearIndex` (year 0 = as entered). */
+export function businessValueForYear(
+  business: Business,
+  yearIndex: number,
+): number {
+  const value = Number.isFinite(business.value) ? business.value : 0;
+  const rate = Number.isFinite(business.growthRate) ? business.growthRate : 0;
+  return value * Math.pow(1 + rate, yearIndex);
 }
 
 interface RealEstateYear {
@@ -897,7 +908,16 @@ export function projectScenario(
       monthlyExpenses += cost;
     }
 
-    // 6) Account totals snapshot.
+    // 6) Business equity grows like real estate: year 0 is the value entered.
+    let businessEquity = 0;
+    const businessEquityById: Record<string, number> = {};
+    for (const biz of household.businesses ?? []) {
+      const value = businessValueForYear(biz, i);
+      businessEquityById[biz.id] = value;
+      businessEquity += value;
+    }
+
+    // 7) Account totals snapshot.
     let retirementTotal = 0;
     let rothTotal = 0;
     let afterTaxTotal = 0;
@@ -922,6 +942,8 @@ export function projectScenario(
       mortgageBalance: realEstate.mortgage,
       realEstateEquity: realEstate.value - realEstate.mortgage,
       realEstateEquityById: { ...realEstate.equityById },
+      businessEquity,
+      businessEquityById,
       rentalLossCarryforward: rentalPal.suspendedLoss,
       rentalLossCarryforwardById: { ...rentalPal.suspendedLossById },
       conversion: converted,

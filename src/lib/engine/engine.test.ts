@@ -1497,6 +1497,41 @@ describe("afterTaxAssets", () => {
   });
 });
 
+describe("business equity", () => {
+  const withBiz: Household = {
+    ...SAMPLE_HOUSEHOLD,
+    businesses: [
+      { id: "b1", label: "Shop", value: 100_000, growthRate: 0.05 },
+      { id: "b2", label: "Stake", value: 50_000, growthRate: 0 },
+    ],
+  };
+  const schedule = zeros(projectionYears(withBiz));
+
+  it("grows each business from the value entered in year 0", () => {
+    const rows = projectScenario(withBiz, schedule);
+    expect(rows[0].businessEquityById.b1).toBe(100_000);
+    expect(rows[2].businessEquityById.b1).toBeCloseTo(110_250, 6);
+    expect(rows[2].businessEquityById.b2).toBe(50_000);
+    expect(rows[2].businessEquity).toBeCloseTo(160_250, 6);
+  });
+
+  it("adds to after-tax assets and the inheritance, and leaves taxes alone", () => {
+    const plain = runScenario(SAMPLE_HOUSEHOLD, schedule, "baseline");
+    const biz = runScenario(withBiz, schedule, "baseline");
+    const last = biz.rows[biz.rows.length - 1];
+    expect(biz.totals.inheritanceFinal - plain.totals.inheritanceFinal).toBeCloseTo(
+      last.businessEquity,
+      4,
+    );
+    expect(biz.totals.taxesTotal).toBe(plain.totals.taxesTotal);
+  });
+
+  it("is zero for a plan without businesses", () => {
+    const rows = projectScenario(SAMPLE_HOUSEHOLD, schedule);
+    expect(rows[0].businessEquity).toBe(0);
+  });
+});
+
 describe("DROP growth delay", () => {
   function household(opts: {
     retirementType: "drop" | "ira" | "401k";

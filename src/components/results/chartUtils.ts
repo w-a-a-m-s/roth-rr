@@ -40,7 +40,8 @@ export function totalAssets(row: ProjectionRow): number {
     row.retirementTotal +
     row.rothTotal +
     row.afterTaxTotal +
-    row.realEstateEquity
+    row.realEstateEquity +
+    row.businessEquity
   );
 }
 

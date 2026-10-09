@@ -1,0 +1,265 @@
+{
+  "name": "Business equity (modern sample plus two businesses)",
+  "strategy": "manual",
+  "note": "The modern sample with two businesses: one growing 5% a year, one flat. Business equity adds to after-tax assets at RMD and the inheritance in both scenarios, and leaves taxes and Medicare unchanged.",
+  "household": {
+    "filingStatus": "mfj",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 12000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "David",
+        "birthYear": 1965,
+        "retirementYear": 2030
+      },
+      {
+        "id": "p2",
+        "name": "Batsheva",
+        "birthYear": 1967,
+        "retirementYear": 2032
+      }
+    ],
+    "accounts": [
+      {
+        "id": "drop-s1",
+        "label": "DROP (David)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 1100000,
+        "growthRate": 0.05,
+        "retirementType": "drop"
+      },
+      {
+        "id": "drop-s2",
+        "label": "DROP (Batsheva)",
+        "ownerId": "p2",
+        "kind": "retirementTaxable",
+        "balance": 300000,
+        "growthRate": 0.05,
+        "retirementType": "drop"
+      },
+      {
+        "id": "tsp-s1",
+        "label": "403(B)/401(K)/TSP (David)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 250000,
+        "growthRate": 0.05,
+        "retirementType": "tsp"
+      },
+      {
+        "id": "tsp-s2",
+        "label": "403(B)/401(K)/TSP (Batsheva)",
+        "ownerId": "p2",
+        "kind": "retirementTaxable",
+        "balance": 120000,
+        "growthRate": 0.05,
+        "retirementType": "tsp"
+      },
+      {
+        "id": "ira-s1",
+        "label": "IRA (David)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 50000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      },
+      {
+        "id": "ira-s2",
+        "label": "IRA (Batsheva)",
+        "ownerId": "p2",
+        "kind": "retirementTaxable",
+        "balance": 20000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      },
+      {
+        "id": "roth-s1",
+        "label": "Roth IRA (David)",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 30000,
+        "growthRate": 0.08
+      },
+      {
+        "id": "roth-s2",
+        "label": "Roth IRA (Batsheva)",
+        "ownerId": "p2",
+        "kind": "rothTaxFree",
+        "balance": 15000,
+        "growthRate": 0.08
+      },
+      {
+        "id": "annuity",
+        "label": "Annuity",
+        "ownerId": "p1",
+        "kind": "annuity",
+        "balance": 40000,
+        "costBasis": 30000,
+        "growthRate": 0.05
+      },
+      {
+        "id": "brokerage",
+        "label": "Investment account",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 400000,
+        "costBasis": 500000,
+        "growthRate": 0.05
+      }
+    ],
+    "incomes": [
+      {
+        "id": "pension-s1",
+        "label": "Pension (David)",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 4000,
+        "growthRate": 0.023,
+        "taxability": "full"
+      },
+      {
+        "id": "pension-s2",
+        "label": "Pension (Batsheva)",
+        "ownerId": "p2",
+        "kind": "pension",
+        "monthlyAmount": 4000,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "salary-s2",
+        "label": "Salary (Batsheva)",
+        "ownerId": "p2",
+        "kind": "salary",
+        "monthlyAmount": 7500,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "endYear": 2031
+      },
+      {
+        "id": "business",
+        "label": "Business income",
+        "ownerId": "p1",
+        "kind": "business",
+        "monthlyAmount": 2000,
+        "growthRate": 0,
+        "taxability": "full",
+        "endYear": 2035
+      },
+      {
+        "id": "ss-s1",
+        "label": "Social Security (David)",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 3000,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "ss-s2",
+        "label": "Social Security (Batsheva)",
+        "ownerId": "p2",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2600,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "military",
+        "label": "Military pension",
+        "ownerId": "p1",
+        "kind": "militaryPension",
+        "monthlyAmount": 1100,
+        "growthRate": 0.02,
+        "taxability": "taxFree"
+      },
+      {
+        "id": "discretionary",
+        "label": "Income from retirement assets",
+        "ownerId": "p1",
+        "kind": "retirementDraw",
+        "monthlyAmount": 1000,
+        "growthRate": 0,
+        "taxability": "full",
+        "drawsFromAccountId": "drop-s1"
+      }
+    ],
+    "realEstate": [
+      {
+        "id": "re-investment",
+        "label": "Investment property",
+        "purchaseYear": 2010,
+        "purchasePrice": 300000,
+        "marketValue": 1000000,
+        "appreciationRate": 0.03,
+        "depreciationYears": 27.5,
+        "monthlyRent": 4000,
+        "monthlyOperatingExpenses": 2600,
+        "rentGrowthRate": 0.02
+      }
+    ],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        150000,
+        150000,
+        150000,
+        150000,
+        150000,
+        150000,
+        150000,
+        150855
+      ]
+    },
+    "businesses": [
+      {
+        "id": "biz-1",
+        "label": "Practice",
+        "value": 400000,
+        "growthRate": 0.05
+      },
+      {
+        "id": "biz-2",
+        "label": "Partnership stake",
+        "value": 150000,
+        "growthRate": 0
+      }
+    ]
+  },
+  "commit": "e3349d4",
+  "commitDate": "2026-10-09T18:54:04+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 1069906,
+      "medicareTotal": 183091.2,
+      "afterTaxAssetsAtRmd": 4341415.34,
+      "inheritanceFinal": 5748747.03
+    },
+    "roth": {
+      "taxesTotal": 1124978.45,
+      "medicareTotal": 214252.8,
+      "afterTaxAssetsAtRmd": 5347568.48,
+      "inheritanceFinal": 9141094.25
+    },
+    "deltas": {
+      "taxesTotal": 55072.45,
+      "medicareTotal": 31161.6,
+      "afterTaxAssetsAtRmd": 1006153.14,
+      "inheritanceFinal": 3392347.22
+    }
+  }
+}

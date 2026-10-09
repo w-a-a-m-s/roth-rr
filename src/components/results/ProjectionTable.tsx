@@ -322,6 +322,22 @@ function buildAssetLines(
     });
   }
 
+  const businesses = household.businesses ?? [];
+  if (businesses.length > 0) {
+    lines.push({
+      key: "business",
+      label: "Business equity",
+      unit: "sum",
+      value: (r) => r.businessEquity,
+      children: businesses.map((biz) => ({
+        key: `biz-${biz.id}`,
+        label: biz.label || "Business",
+        unit: "sum" as const,
+        value: (r: Row) => r.businessEquityById[biz.id] ?? 0,
+      })),
+    });
+  }
+
   return lines;
 }
 

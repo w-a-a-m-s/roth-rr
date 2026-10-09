@@ -37,12 +37,59 @@ describe("buildSnapshotTable", () => {
   const section = (key: string) =>
     table.sections.find((s) => s.key === key)!;
 
-  it("lists DROP first, one row per tax-deferred and after-tax account, then Roth", () => {
-    const labels = section("assets").lines.map((l) => l.label);
+  it("groups assets: retirement, then regular investments, then Roth", () => {
+    const lines = section("assets").lines;
+    const labels = lines.map((l) => l.label);
     expect(labels[0]).toBe("DROP (David)");
     expect(labels[1]).toBe("DROP (Batsheva)");
     expect(labels).toContain("Investment account");
-    expect(labels[labels.length - 1]).toBe("Roth");
+    const groups = lines.map((l) => l.group);
+    expect(groups.every((g) => g != null)).toBe(true);
+    // Groups never interleave: each starts after the previous one ends.
+    const order = groups.filter((g, i) => g !== groups[i - 1]);
+    expect(order).toEqual(["retirement", "regular", "roth"]);
+    expect(labels[labels.length - 1]).toBe("Total Roth");
+  });
+
+  it("ends each group with a total that matches the projection", () => {
+    const lines = section("assets").lines;
+    const row = comparison.baseline.rows[0];
+    const total = (key: string) => lines.find((l) => l.key === key)!;
+    expect(total("retirement-total").subtotal).toBe(true);
+    expect(total("retirement-total").values[0]).toBe(row.retirementTotal);
+    expect(total("regular-total").values[0]).toBe(
+      row.afterTaxTotal + row.realEstateEquity + row.businessEquity,
+    );
+    expect(total("roth").values[0]).toBe(row.rothTotal);
+    // The member rows add up to their group's total.
+    const sum = (group: string) =>
+      lines
+        .filter((l) => l.group === group && !l.subtotal)
+        .reduce((acc, l) => acc + l.values[0], 0);
+    expect(sum("retirement")).toBeCloseTo(row.retirementTotal, 6);
+    expect(sum("regular")).toBeCloseTo(
+      row.afterTaxTotal + row.realEstateEquity,
+      6,
+    );
+  });
+
+  it("lists each business under regular investments", () => {
+    const withBiz: Household = {
+      ...household,
+      businesses: [{ id: "b1", label: "Shop", value: 200_000, growthRate: 0.05 }],
+    };
+    const result = calculate(withBiz);
+    const t = buildSnapshotTable(result.baseline, withBiz, primaryId, firstYear);
+    const lines = t.sections[0].lines;
+    const biz = lines.find((l) => l.key === "biz-b1")!;
+    expect(biz.label).toBe("Business · Shop");
+    expect(biz.group).toBe("regular");
+    expect(biz.values[0]).toBe(200_000);
+    expect(biz.values[1]).toBeCloseTo(210_000, 6);
+    const row = result.baseline.rows[0];
+    expect(lines.find((l) => l.key === "regular-total")!.values[0]).toBe(
+      row.afterTaxTotal + row.realEstateEquity + 200_000,
+    );
   });
 
   it("shows ages for both people, the main person first", () => {

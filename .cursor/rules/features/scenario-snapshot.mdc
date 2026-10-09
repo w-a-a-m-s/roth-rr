@@ -14,9 +14,16 @@ both to a year.
 
 - `snapshotTable.ts` is pure: it only reads `ProjectionRow` fields, never
   recomputes money. Keep it that way.
-- Sections: assets (each tax-deferred and after-tax account in
-  `accountsInDisplayOrder`, real-estate equity, Roth total, and a yearly
-  conversion row only when the scenario converts), income (monthly, per
+- Sections: assets, income, cash flow. Assets come in three groups, each
+  tinted (`ASSET_GROUP_ROW`) and closed by a darker total row:
+  **retirement assets** (each tax-deferred account, in
+  `accountsInDisplayOrder`), **regular investments** (each after-tax account,
+  real-estate equity, and each business from `household.businesses`), and
+  **Roth** (each Roth account, the engine's implicit Roth when a plan converts
+  without one, the Roth total, then a yearly conversion row only when the
+  scenario converts). The Roth group always shows; the other two only when
+  they have rows. Lines carry `group` and `subtotal`; other sections leave
+  them unset. Income (monthly, per
   source, RMD rows kept when they pay anywhere in the projection), cash flow
   (monthly; a deposits row shows when the plan has deposits, since surplus
   nets them).

@@ -44,8 +44,8 @@ export const PLAN_STEPS: PlanStep[] = [
   },
   {
     id: "realEstate",
-    title: "Real estate",
-    description: "Property value, rent, and mortgages.",
+    title: "Real estate & business",
+    description: "Property value, rent, mortgages, and business equity.",
     Component: RealEstateStep,
     isComplete: always,
   },

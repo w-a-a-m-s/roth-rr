@@ -107,7 +107,8 @@ function inheritanceValue(
     ) +
     row.rothTotal +
     Math.max(0, row.afterTaxTotal - costBasis) +
-    row.realEstateEquity
+    row.realEstateEquity +
+    row.businessEquity
   );
 }
 

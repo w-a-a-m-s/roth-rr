@@ -8,6 +8,8 @@ import { formatCurrency } from "@/lib/format";
 import { DualScroll } from "@/components/results/DualScroll";
 import {
   buildSnapshotTable,
+  type SnapshotAssetGroup,
+  type SnapshotLine,
   type SnapshotSection,
   type SnapshotTone,
 } from "@/components/results/snapshotTable";
@@ -21,6 +23,25 @@ const SECTION_STYLE: Record<
   income: { head: "bg-[#20784F]", row: "bg-[#E7F2EC]", rule: "border-t-[3px] border-t-[#14243D]" },
   cashflow: { head: "bg-[#B85C38]", row: "bg-[#F7EAE3]", rule: "border-t-[3px] border-t-[#7A3B22]" },
 };
+
+/**
+ * Asset groups get their own tint so retirement money, regular investments,
+ * and Roth read apart at a glance; each group's total row is a shade darker.
+ */
+const ASSET_GROUP_ROW: Record<
+  SnapshotAssetGroup,
+  { row: string; total: string }
+> = {
+  retirement: { row: "bg-[#E8EEF6]", total: "bg-[#D3DEEC]" },
+  regular: { row: "bg-[#F5F0E3]", total: "bg-[#EAE0C8]" },
+  roth: { row: "bg-[#E7F2EC]", total: "bg-[#D2E8DB]" },
+};
+
+function lineRowClass(line: SnapshotLine, sectionRow: string): string {
+  if (!line.group) return sectionRow;
+  const tint = ASSET_GROUP_ROW[line.group];
+  return line.subtotal ? `${tint.total} border-b-2 border-b-[#B8C4D4]` : tint.row;
+}
 
 const TONE_CLASS: Record<SnapshotTone, string> = {
   plain: "font-normal text-[#1B365D]",
@@ -178,7 +199,7 @@ function SnapshotCard({
                   ))}
                 </tr>,
                 ...section.lines.map((line) => (
-                  <tr key={line.key} className={style.row}>
+                  <tr key={line.key} className={lineRowClass(line, style.row)}>
                     <th className={`${CELL} ${STICKY} text-left ${TONE_CLASS[line.tone]}`}>{line.label}</th>
                     {line.values.map((v, i) => (
                       <td

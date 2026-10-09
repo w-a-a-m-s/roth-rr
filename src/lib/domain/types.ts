@@ -251,6 +251,20 @@ export interface RealEstate {
   activeParticipation?: boolean;
 }
 
+/**
+ * Equity in a privately held business. Like real-estate equity it is not
+ * spendable by the projection: it only grows, and counts toward total assets,
+ * after-tax assets, and the inheritance.
+ */
+export interface Business {
+  id: string;
+  label: string;
+  /** Current value of the household's share (projection year 0). */
+  value: number;
+  /** Annual growth applied to `value` (decimal). */
+  growthRate: number;
+}
+
 export type ExpenseFrequency = "monthly" | "yearly";
 
 export interface Expense {
@@ -392,6 +406,11 @@ export interface Household {
    * in full. Default / missing is false.
    */
   realEstateProfessional?: boolean;
+  /**
+   * Business equity. Optional for older plans; `migrateHousehold` defaults it
+   * to `[]` and the engine treats a missing list as empty.
+   */
+  businesses?: Business[];
   /** Itemized household expenses; each grows by its own rate. */
   expenses: Expense[];
   /**
@@ -405,6 +424,7 @@ export interface Household {
   deletedAccounts?: DeletedItem<Account>[];
   deletedIncomes?: DeletedItem<IncomeSource>[];
   deletedRealEstate?: DeletedItem<RealEstate>[];
+  deletedBusinesses?: DeletedItem<Business>[];
   deletedExpenses?: DeletedItem<Expense>[];
   assumptions: Assumptions;
   optimizer: OptimizerConfig;

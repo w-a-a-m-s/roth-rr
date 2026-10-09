@@ -47,6 +47,7 @@ now at today's bracket, can mean lower lifetime taxes,
 lower Medicare premiums, and a larger after-tax inheritance.
 
 The app lets a user describe a household (people, accounts, income, real estate,
+business equity,
 assumptions, and a conversion strategy), then **projects their finances year by
 year** and **compares two scenarios**: doing nothing vs. running Roth
 conversions. The headline outputs are lifetime taxes, Medicare cost, and after-tax

@@ -12,6 +12,7 @@ import type {
   IncomeSource,
   Person,
   RealEstate,
+  Business,
   RetirementAccountType,
   UsStateCode,
 } from "@/lib/domain/types";
@@ -54,11 +55,13 @@ const HOUSEHOLD_KEYS = [
   "accounts",
   "incomes",
   "realEstate",
+  "businesses",
   "expenses",
   "deletedPeople",
   "deletedAccounts",
   "deletedIncomes",
   "deletedRealEstate",
+  "deletedBusinesses",
   "deletedExpenses",
   "assumptions",
   "optimizer",
@@ -120,6 +123,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   purchaseYear: "Purchase year",
   purchasePrice: "Purchase price",
   marketValue: "Market value",
+  value: "Value",
   appreciationRate: "Appreciation rate",
   depreciationYears: "Depreciation years",
   monthlyRent: "Monthly rent",
@@ -156,6 +160,7 @@ const MONEY_KEYS = new Set([
   "amount",
   "purchasePrice",
   "marketValue",
+  "value",
   "monthlyRent",
   "monthlyOperatingExpenses",
   "mortgageBalance",
@@ -626,6 +631,8 @@ export function formatPlanChangeLabel(field: string): string {
       return "Income";
     case "realEstate":
       return "Real estate";
+    case "businesses":
+      return "Business equity";
     case "expenses":
       return "Expenses";
     case "deletedPeople":
@@ -636,6 +643,8 @@ export function formatPlanChangeLabel(field: string): string {
       return "Deleted income";
     case "deletedRealEstate":
       return "Deleted real estate";
+    case "deletedBusinesses":
+      return "Deleted business equity";
     case "deletedExpenses":
       return "Deleted expenses";
     case "assumptions":
@@ -766,6 +775,19 @@ export function detailPlanSnapshots(
     );
   }
 
+  if (hasOwn(nextHousehold, "businesses")) {
+    diffEntityList<Business>(
+      "businesses",
+      hasOwn(prevHousehold, "businesses")
+        ? previous.household.businesses
+        : undefined,
+      next.household.businesses ?? [],
+      out,
+      ctx,
+      (b) => entityLabel(b, "Business"),
+    );
+  }
+
   if (hasOwn(nextHousehold, "expenses")) {
     diffEntityList<Expense>(
       "expenses",
@@ -818,6 +840,16 @@ export function detailPlanSnapshots(
     out,
     ctx,
     "Property",
+  );
+  diffDeletedEntityList(
+    "deletedBusinesses",
+    previous.household.deletedBusinesses,
+    next.household.deletedBusinesses,
+    prevHousehold,
+    nextHousehold,
+    out,
+    ctx,
+    "Business",
   );
   diffDeletedEntityList(
     "deletedExpenses",

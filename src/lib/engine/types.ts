@@ -45,6 +45,10 @@ export interface ProjectionRow {
   mortgageBalance: number;
   /** Real-estate equity (value - mortgage), included in estate totals. */
   realEstateEquity: number;
+  /** Business equity (sum of every business's grown value), in estate totals. */
+  businessEquity: number;
+  /** Per-business value; sums to `businessEquity`. */
+  businessEquityById: Record<string, number>;
   /** Amount actually converted from tax-deferred to Roth this year. */
   conversion: number;
   /** Gross spendable monthly income (excludes Roth conversions). */

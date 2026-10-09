@@ -324,6 +324,20 @@ export function PlanDetails() {
         )}
       </Section>
 
+      <Section title="Business equity" stepId="realEstate" readOnly={readOnly}>
+        {(household.businesses ?? []).length === 0 ? (
+          <Empty>No businesses added</Empty>
+        ) : (
+          (household.businesses ?? []).map((biz) => (
+            <Row
+              key={biz.id}
+              label={biz.label || "Business"}
+              value={formatCurrency(biz.value)}
+            />
+          ))
+        )}
+      </Section>
+
       <Section title="Expenses" stepId="expenses" readOnly={readOnly}>
         {household.expenses.length === 0 ? (
           <Empty>No expenses added</Empty>

@@ -7,6 +7,7 @@ import type {
   DeathEvent,
   DeletedItem,
   LongTermCareSettings,
+  Business,
   Deposit,
   Expense,
   FilingStatus,
@@ -145,6 +146,7 @@ export function migrateHousehold(household: Household): Household {
   legacy.deletedAccounts = normalizeDeletedList(legacy.deletedAccounts);
   legacy.deletedIncomes = normalizeDeletedList(legacy.deletedIncomes);
   legacy.deletedRealEstate = normalizeDeletedList(legacy.deletedRealEstate);
+  legacy.deletedBusinesses = normalizeDeletedList(legacy.deletedBusinesses);
   legacy.deletedExpenses = normalizeDeletedList(legacy.deletedExpenses);
   for (const entry of legacy.deletedExpenses ?? []) healExpense(entry.item);
   for (const entry of legacy.deletedAccounts ?? []) {
@@ -255,6 +257,13 @@ export function migrateHousehold(household: Household): Household {
   if (typeof legacy.realEstateProfessional !== "boolean") {
     legacy.realEstateProfessional = false;
   }
+  if (!Array.isArray(legacy.businesses)) legacy.businesses = [];
+  const healBusiness = (biz: Business) => {
+    if (!Number.isFinite(biz.value)) biz.value = 0;
+    if (!Number.isFinite(biz.growthRate)) biz.growthRate = 0;
+  };
+  for (const biz of legacy.businesses) healBusiness(biz);
+  for (const entry of legacy.deletedBusinesses ?? []) healBusiness(entry.item);
 
   // RMD starting age is derived from each person's birth year (SECURE /
   // SECURE 2.0) and the amount from the IRS Uniform Lifetime Table; drop the
@@ -294,7 +303,13 @@ export function migrateHousehold(household: Household): Household {
   return legacy;
 }
 
-type ListKey = "people" | "accounts" | "incomes" | "realEstate" | "expenses";
+type ListKey =
+  | "people"
+  | "accounts"
+  | "incomes"
+  | "realEstate"
+  | "businesses"
+  | "expenses";
 
 /** Live list key paired with its soft-delete trash list. */
 type SoftDeleteKey = ListKey;
@@ -304,6 +319,7 @@ const DELETED_KEY: Record<SoftDeleteKey, keyof Household> = {
   accounts: "deletedAccounts",
   incomes: "deletedIncomes",
   realEstate: "deletedRealEstate",
+  businesses: "deletedBusinesses",
   expenses: "deletedExpenses",
 };
 
@@ -363,6 +379,10 @@ function savedListIdsFromHousehold(household: Household): SavedListIds {
     realEstate: new Set([
       ...household.realEstate.map((r) => r.id),
       ...(household.deletedRealEstate ?? []).map((e) => e.item.id),
+    ]),
+    businesses: new Set([
+      ...(household.businesses ?? []).map((b) => b.id),
+      ...(household.deletedBusinesses ?? []).map((e) => e.item.id),
     ]),
     expenses: new Set([
       ...household.expenses.map((e) => e.id),
@@ -515,6 +535,11 @@ interface ScenarioState {
   removeRealEstate: (id: string) => void;
   restoreRealEstate: (id: string) => void;
   discardDeletedRealEstate: (id: string) => void;
+  addBusiness: (business: Business) => void;
+  updateBusiness: (id: string, patch: Partial<Business>) => void;
+  removeBusiness: (id: string) => void;
+  restoreBusiness: (id: string) => void;
+  discardDeletedBusiness: (id: string) => void;
   setAssumptions: (patch: Partial<Assumptions>) => void;
   setOptimizer: (patch: Partial<OptimizerConfig>) => void;
   /** Survivorship analysis: which spouse passes and at what age. */
@@ -632,10 +657,13 @@ export const useScenario = create<ScenarioState>()((set, get) => {
     scheduleSave(activeId);
   };
 
-  const addTo = <K extends ListKey>(key: K, item: Household[K][number]) =>
+  const addTo = <K extends ListKey>(
+    key: K,
+    item: NonNullable<Household[K]>[number],
+  ) =>
     editActive((h) => ({
       ...h,
-      [key]: [...(h[key] as Household[K]), item],
+      [key]: [...((h[key] as NonNullable<Household[K]>) ?? []), item],
     }));
 
   const patchIn = (
@@ -645,7 +673,7 @@ export const useScenario = create<ScenarioState>()((set, get) => {
   ) =>
     editActive((h) => ({
       ...h,
-      [key]: (h[key] as { id: string }[]).map((item) =>
+      [key]: ((h[key] as { id: string }[]) ?? []).map((item) =>
         item.id === id ? { ...item, ...patch } : item,
       ),
     }));
@@ -670,7 +698,7 @@ export const useScenario = create<ScenarioState>()((set, get) => {
    */
   const softDeleteIn = (key: SoftDeleteKey, id: string) =>
     editActive((h) => {
-      const live = h[key] as { id: string }[];
+      const live = (h[key] as { id: string }[]) ?? [];
       const item = live.find((x) => x.id === id);
       if (!item) return h;
       const nextLive = live.filter((x) => x.id !== id);
@@ -698,7 +726,7 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       const trash = (h[trashKey] as DeletedItem<{ id: string }>[]) ?? [];
       const entry = trash.find((x) => x.item.id === id);
       if (!entry) return h;
-      const live = h[key] as { id: string }[];
+      const live = (h[key] as { id: string }[]) ?? [];
       // Avoid duplicates if the id somehow already exists on the live list.
       if (live.some((x) => x.id === id)) {
         return { ...h, [trashKey]: trash.filter((x) => x.item.id !== id) };
@@ -1098,6 +1126,7 @@ export const useScenario = create<ScenarioState>()((set, get) => {
             accounts: new Set<string>(),
             incomes: new Set<string>(),
             realEstate: new Set<string>(),
+            businesses: new Set<string>(),
             expenses: new Set<string>(),
           } satisfies SavedListIds);
         const keptPeople = new Set(next.people.map((p) => p.id));
@@ -1219,6 +1248,12 @@ export const useScenario = create<ScenarioState>()((set, get) => {
     removeRealEstate: (id) => softDeleteIn("realEstate", id),
     restoreRealEstate: (id) => restoreIn("realEstate", id),
     discardDeletedRealEstate: (id) => discardDeletedIn("realEstate", id),
+
+    addBusiness: (business) => addTo("businesses", business),
+    updateBusiness: (id, patch) => patchIn("businesses", id, patch),
+    removeBusiness: (id) => softDeleteIn("businesses", id),
+    restoreBusiness: (id) => restoreIn("businesses", id),
+    discardDeletedBusiness: (id) => discardDeletedIn("businesses", id),
 
     setAssumptions: (patch) =>
       editActive((h) => ({
