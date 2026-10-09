@@ -389,6 +389,25 @@ describe("migrateHousehold: allowOverConvertible default", () => {
   });
 });
 
+describe("migrateHousehold: maxMonthlyShortfall", () => {
+  it("leaves the cap off on plans that never had it", () => {
+    const out = migrateHousehold(household([], []));
+    expect(out.optimizer).not.toHaveProperty("maxMonthlyShortfall");
+  });
+
+  it("keeps a saved cap", () => {
+    const h = household([], []);
+    h.optimizer.maxMonthlyShortfall = 1000;
+    expect(migrateHousehold(h).optimizer.maxMonthlyShortfall).toBe(1000);
+  });
+
+  it("drops a cap that isn't a non-negative number", () => {
+    const h = household([], []);
+    (h.optimizer as { maxMonthlyShortfall?: unknown }).maxMonthlyShortfall = "x";
+    expect(migrateHousehold(h).optimizer).not.toHaveProperty("maxMonthlyShortfall");
+  });
+});
+
 describe("migrateHousehold: conversion strategy", () => {
   it("defaults a missing optimizer to manual", () => {
     const h = household([], []);

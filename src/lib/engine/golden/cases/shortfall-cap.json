@@ -1,0 +1,107 @@
+{
+  "name": "Monthly shortfall cap on conversions",
+  "strategy": "manual",
+  "note": "A $120k-a-year manual schedule would leave this retiree several thousand a month short; maxMonthlyShortfall lowers each year so the Surplus stays at or above -$1,000.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 8000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Casey",
+        "birthYear": 1961,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "k403",
+        "label": "403(b)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 900000,
+        "growthRate": 0.05,
+        "retirementType": "403b"
+      },
+      {
+        "id": "roth",
+        "label": "Roth IRA",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 0,
+        "growthRate": 0.05
+      }
+    ],
+    "incomes": [
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 6452,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 3014,
+        "growthRate": 0.02,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        120000,
+        120000,
+        120000,
+        120000,
+        120000,
+        120000,
+        120000,
+        120000,
+        120000
+      ],
+      "maxMonthlyShortfall": 1000
+    }
+  },
+  "commit": "959f3d0",
+  "commitDate": "2026-10-08T21:43:39+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 641281.51,
+      "medicareTotal": 103719.6,
+      "afterTaxAssetsAtRmd": 976261.13,
+      "inheritanceFinal": 964629.7
+    },
+    "roth": {
+      "taxesTotal": 665967.95,
+      "medicareTotal": 122707.2,
+      "afterTaxAssetsAtRmd": 1261018.71,
+      "inheritanceFinal": 1708917.45
+    },
+    "deltas": {
+      "taxesTotal": 24686.44,
+      "medicareTotal": 18987.6,
+      "afterTaxAssetsAtRmd": 284757.58,
+      "inheritanceFinal": 744287.76
+    }
+  }
+}

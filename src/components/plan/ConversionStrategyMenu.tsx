@@ -3,7 +3,7 @@
 import type { ConversionStrategy, FillBracketRate } from "@/lib/domain/types";
 import { FILL_BRACKET_RATES } from "@/lib/domain/types";
 import { isConversionEmpty } from "@/lib/engine/conversionEmpty";
-import { formatSignedCurrency } from "@/lib/format";
+import { formatCurrency, formatSignedCurrency } from "@/lib/format";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import {
   STRATEGY_HELP,
@@ -11,6 +11,7 @@ import {
   resolveBracketRate,
 } from "@/lib/optimizer/labels";
 import type { StrategyScore, StrategyScoreId } from "@/lib/optimizer/score";
+import { DEFAULT_MAX_MONTHLY_SHORTFALL } from "@/lib/optimizer/shortfall";
 import { hasManualConversionSchedule } from "@/lib/optimizer/util";
 import { useStrategyScores } from "@/components/plan/useStrategyScores";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
@@ -51,6 +52,15 @@ export function ConversionStrategyMenu({
   if (isConversionEmpty(household)) return null;
 
   const selected = household.optimizer.strategy;
+  const shortfallCap = household.optimizer.maxMonthlyShortfall;
+  const capOn = shortfallCap != null;
+  const capLabel = formatCurrency(shortfallCap ?? DEFAULT_MAX_MONTHLY_SHORTFALL);
+  const toggleCap = () => {
+    if (readOnly) return;
+    setOptimizer({
+      maxMonthlyShortfall: capOn ? undefined : DEFAULT_MAX_MONTHLY_SHORTFALL,
+    });
+  };
   const rate = resolveBracketRate(household.optimizer.targetBracketRate);
 
   const select = (
@@ -106,9 +116,37 @@ export function ConversionStrategyMenu({
 
   return (
     <div className={className ?? "mb-5"}>
-      <h3 className="mb-2 text-[13.5px] font-bold text-foreground">
-        Conversion strategy
-      </h3>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="m-0 text-[13.5px] font-bold text-foreground">
+          Conversion strategy
+        </h3>
+        <div className="flex items-center gap-1.5">
+          <InfoTooltip
+            text={`When on, each year converts only as much as keeps that year's monthly shortfall (a negative Surplus) at ${capLabel} or less. Applies to every strategy.`}
+            label="About the shortfall limit"
+          />
+          <span className="text-[11.5px] font-semibold text-muted-2">
+            Max {capLabel}/mo short
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={capOn}
+            aria-label={`Limit the monthly shortfall to ${capLabel}`}
+            disabled={readOnly}
+            onClick={toggleCap}
+            className={`relative h-[22px] w-[40px] shrink-0 rounded-full border-0 transition-colors ${
+              capOn ? "bg-accent" : "bg-border-2"
+            } ${readOnly ? "cursor-default" : "cursor-pointer"}`}
+          >
+            <span
+              className={`absolute top-[3px] left-[3px] h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                capOn ? "translate-x-[18px]" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+      </div>
       <div
         role="radiogroup"
         aria-label="Conversion strategy"

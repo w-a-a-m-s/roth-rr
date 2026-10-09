@@ -270,6 +270,11 @@ export function migrateHousehold(household: Household): Household {
         legacy.optimizer.targetBracketRate,
       );
     }
+    // The shortfall cap is optional: anything but a non-negative number is off.
+    const cap = legacy.optimizer.maxMonthlyShortfall;
+    if (cap != null && !(Number.isFinite(cap) && cap >= 0)) {
+      delete legacy.optimizer.maxMonthlyShortfall;
+    }
   }
 
   return legacy;

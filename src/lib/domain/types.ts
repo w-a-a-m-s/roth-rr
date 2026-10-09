@@ -297,6 +297,12 @@ export interface OptimizerConfig {
    * the full estimated convertible total.
    */
   convertAmount?: number;
+  /**
+   * When set, every strategy's yearly conversion is lowered so that year's
+   * monthly shortfall (negative Surplus) stays at or under this many dollars.
+   * Missing means no cap.
+   */
+  maxMonthlyShortfall?: number;
 }
 
 /**

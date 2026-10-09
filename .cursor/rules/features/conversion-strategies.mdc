@@ -25,6 +25,18 @@ do not change income, expenses, withdrawals, or RMD rules.
 `buildConversionSchedule(household, refs)` is the switch. Fill-bracket and
 IRMAA need live federal / Medicare tables via `refs`.
 
+## Monthly shortfall limit
+
+`optimizer.maxMonthlyShortfall` (missing = off) caps every strategy, Manual
+included. `buildConversionSchedule` runs the strategy, then
+`capConversionsToShortfall` (`src/lib/optimizer/shortfall.ts`) walks the years
+in order and bisects each year's amount down until that year's `surplus`
+(monthly) is at least `-maxMonthlyShortfall`. A year already short by more than
+the limit with no conversion converts nothing. The menu's switch next to the
+Conversion strategy heading sets it to `DEFAULT_MAX_MONTHLY_SHORTFALL` ($1,000)
+or clears it. Strategy scores and Minimum taxes go through the same cap
+(Minimum taxes searches uncapped, then is capped).
+
 ## Menu
 
 `ConversionStrategyMenu` sits above the plan Timeline on desktop, and in the
