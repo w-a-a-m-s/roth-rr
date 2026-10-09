@@ -81,8 +81,8 @@ function incomeKeys(scenario: ScenarioResult, household: Household): string[] {
 
 /**
  * Assets in three groups, each followed by its total: retirement assets
- * (tax-deferred accounts), regular investments (after-tax accounts,
- * real-estate equity, business equity), and Roth (every Roth account, plus the
+ * (tax-deferred accounts), regular investments (after-tax accounts, each
+ * property's equity, each business's equity), and Roth (every Roth account, plus the
  * yearly conversion row when the scenario converts). The Roth group always
  * shows; the other two only when the plan has something in them. A final
  * "Total assets" row adds up all three groups.
@@ -111,11 +111,15 @@ function buildAssetLines(
   const regular = accounts
     .filter((acc) => AFTER_TAX_KINDS.has(acc.kind))
     .map((acc) => accountLine(acc, "regular"));
-  if (scenario.rows.some((r) => r.realEstateValue !== 0)) {
+  // One row per property, so each one's equity reads on its own.
+  for (const re of household.realEstate) {
+    if (!scenario.rows.some((r) => (r.realEstateEquityById[re.id] ?? 0) !== 0)) {
+      continue;
+    }
     regular.push({
-      key: "re-equity",
-      label: "Real-estate equity",
-      values: pick((r) => r.realEstateEquity),
+      key: `re-${re.id}`,
+      label: re.label ? `Real estate · ${re.label}` : "Real-estate equity",
+      values: pick((r) => r.realEstateEquityById[re.id] ?? 0),
       tone: "plain",
       group: "regular",
     });

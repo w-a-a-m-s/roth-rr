@@ -330,7 +330,7 @@ function IncomeFields({
         {income.kind === "business" ? (
           <Field
             label="From business"
-            help="Link this income to a business on the Real estate & business step, so its card shows and edits it."
+            help="Link this income to a business on the Business step, so its card shows and edits it."
           >
             <Select
               value={income.businessId ?? ""}

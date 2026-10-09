@@ -324,7 +324,7 @@ export function PlanDetails() {
         )}
       </Section>
 
-      <Section title="Business equity" stepId="realEstate" readOnly={readOnly}>
+      <Section title="Business equity" stepId="business" readOnly={readOnly}>
         {(household.businesses ?? []).length === 0 ? (
           <Empty>No businesses added</Empty>
         ) : (

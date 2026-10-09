@@ -6,6 +6,7 @@ import { HouseholdStep } from "@/components/wizard/steps/HouseholdStep";
 import { AccountsStep } from "@/components/wizard/steps/AccountsStep";
 import { IncomeStep } from "@/components/wizard/steps/IncomeStep";
 import { RealEstateStep } from "@/components/wizard/steps/RealEstateStep";
+import { BusinessStep } from "@/components/wizard/steps/BusinessStep";
 import { ExpensesStep } from "@/components/wizard/steps/ExpensesStep";
 import { ConversionStep } from "@/components/wizard/steps/ConversionStep";
 
@@ -44,9 +45,16 @@ export const PLAN_STEPS: PlanStep[] = [
   },
   {
     id: "realEstate",
-    title: "Real estate & business",
-    description: "Property value, rent, mortgages, and business equity.",
+    title: "Real estate",
+    description: "Property value, rent, and mortgages.",
     Component: RealEstateStep,
+    isComplete: always,
+  },
+  {
+    id: "business",
+    title: "Business",
+    description: "Business value, appreciation, and income.",
+    Component: BusinessStep,
     isComplete: always,
   },
   {

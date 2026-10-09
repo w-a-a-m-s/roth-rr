@@ -97,6 +97,31 @@ describe("buildSnapshotTable", () => {
     );
   });
 
+  it("lists each property's equity on its own row", () => {
+    const two: Household = {
+      ...household,
+      realEstate: [
+        ...household.realEstate,
+        { ...household.realEstate[0], id: "re-2", label: "Beach condo" },
+      ],
+    };
+    const result = calculate(two);
+    const t = buildSnapshotTable(result.baseline, two, primaryId, firstYear);
+    const lines = t.sections[0].lines;
+    const row = result.baseline.rows[0];
+    const condo = lines.find((l) => l.key === "re-re-2")!;
+    expect(condo.label).toBe("Real estate · Beach condo");
+    expect(condo.group).toBe("regular");
+    expect(condo.values[0]).toBe(row.realEstateEquityById["re-2"]);
+    expect(lines.some((l) => l.key === "re-equity")).toBe(false);
+    const propertyRows = lines.filter((l) => l.key.startsWith("re-"));
+    expect(propertyRows).toHaveLength(2);
+    expect(propertyRows.reduce((a, l) => a + l.values[0], 0)).toBeCloseTo(
+      row.realEstateEquity,
+      6,
+    );
+  });
+
   it("lists each business under regular investments", () => {
     const withBiz: Household = {
       ...household,

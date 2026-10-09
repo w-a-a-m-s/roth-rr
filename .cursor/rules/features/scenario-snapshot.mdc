@@ -18,7 +18,8 @@ both to a year.
   tinted (`ASSET_GROUP_ROW`) and closed by a darker total row:
   **retirement assets** (each tax-deferred account, in
   `accountsInDisplayOrder`), **regular investments** (each after-tax account,
-  real-estate equity, and each business from `household.businesses`), and
+  one equity row per property (`realEstateEquityById`), and each business
+  from `household.businesses`), and
   **Roth** (each Roth account, the engine's implicit Roth when a plan converts
   without one, the Roth total, then a yearly conversion row only when the
   scenario converts). The Roth group always shows; the other two only when
@@ -45,7 +46,7 @@ at the balance-weighted average account growth rate (5% if no balances).
 
 ## Business equity input
 
-Businesses live on the Real estate & business step (`household.businesses`):
+Businesses live on the Business step (`household.businesses`):
 purchase price (reference only, for the gain shown on the card), current
 value, and appreciation. The card's Monthly business income field edits the
 first `kind: "business"` income whose `businessId` points at it (or creates
