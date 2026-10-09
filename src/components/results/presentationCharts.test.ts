@@ -54,7 +54,7 @@ describe("buildPresentationData", () => {
     it(`${name}: shortfall matches a negative table surplus`, () => {
       years.forEach((y, i) => {
         const row = scenario.rows[i];
-        const gap = Math.max(0, -(row.surplus + row.monthlyDeposits) * 12);
+        const gap = Math.max(0, -row.surplus * 12);
         expect(y.shortfall).toBeCloseTo(gap, 4);
       });
     });

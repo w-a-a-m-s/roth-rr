@@ -331,8 +331,8 @@ user asks for a change:
    - **Main**: the Assets, Income & Taxes tables (No conversion, then With
      conversion).
    - **Summary**: Total impact, the six metric cards, After-tax assets.
-   - **Graphic view**: Retirement Objective, Income Sources and Income
-     Applied charts, then the Assets and Cash flow charts.
+   - **Graphic view**: Retirement Objective, Income Sources, Income Applied
+     and Analysis Results charts, then the Assets and Cash flow charts.
    - **Main in detail analysis**: the Year-by-year table (alone, for
      pin-to-top).
 

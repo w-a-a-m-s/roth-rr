@@ -26,10 +26,11 @@ both to a year.
 ## Retirement analysis charts
 
 `PresentationCharts.tsx` (data in `presentationCharts.ts`) tells the snapshot
-as three report-style pages with a No conversion / With conversion toggle:
-need (spending + income tax per year), income sources (not drawn from the
-household's accounts), and those sources applied to the need. A fourth
-"Analysis Results" page was removed at the user's request. Applied income fills the need in
+as four report-style pages with a No conversion / With conversion toggle:
+need (spending + income tax + deposits into accounts per year), income sources (not drawn from the
+household's accounts), those sources applied to the need, and the result once
+RMDs and withdrawals are added. Applied income fills the need in
 `INCOME_CATEGORIES` order and never exceeds it, so a year's shortfall equals
-the table's negative surplus (before deposits). "Capitalized" is present value
+the table's negative surplus (deposits are part of the need, as Surplus nets
+them). "Capitalized" is present value
 at the balance-weighted average account growth rate (5% if no balances).

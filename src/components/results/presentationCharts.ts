@@ -73,8 +73,13 @@ const zero = (): ByCategory => ({
 export interface PresentationYear {
   year: number;
   age: number;
-  /** Annual spending plus income tax: what the year's income has to cover. */
+  /**
+   * Annual spending, income tax, and deposits into accounts: what the year's
+   * income has to cover. Deposits count because the Surplus row nets them.
+   */
   need: number;
+  /** Annual deposits into accounts, already inside `need`. */
+  deposits: number;
   /** Annual income by category, before it's matched to the need. */
   income: ByCategory;
   /** Income actually used toward the need, filled in category order. */
@@ -96,6 +101,9 @@ export interface PresentationSummary {
   capitalizedNeed: number;
   capitalizedIncomeSources: number;
   capitalizedNeededFromAssets: number;
+  capitalizedAssetDraws: number;
+  capitalizedShortfall: number;
+  shortfallYears: number;
 }
 
 export interface PresentationData {
@@ -120,9 +128,9 @@ export function capitalizationRate(household: Household): number {
 }
 
 /**
- * The presentation charts' data: the yearly need, the income sources, and
- * those sources applied to the need (plus the full split with RMDs and
- * withdrawals, kept for the per-year shortfall). Everything is read off the projection rows.
+ * The four presentation charts' data: the yearly need, the income sources,
+ * those sources applied to the need, and the need met once RMDs and
+ * withdrawals are added. Everything is read off the projection rows.
  */
 export function buildPresentationData(
   rows: ProjectionRow[],
@@ -131,7 +139,11 @@ export function buildPresentationData(
 ): PresentationData {
   const rate = capitalizationRate(household);
   const years: PresentationYear[] = rows.map((row) => {
-    const need = Math.max(0, (row.monthlyExpenses + row.monthlyTax) * 12);
+    const deposits = Math.max(0, row.monthlyDeposits * 12);
+    const need = Math.max(
+      0,
+      (row.monthlyExpenses + row.monthlyTax) * 12 + deposits,
+    );
 
     const income = zero();
     for (const [key, monthly] of Object.entries(row.incomeMonthly)) {
@@ -162,6 +174,7 @@ export function buildPresentationData(
       year: row.calendarYear,
       age: row.ages[primaryId] ?? 0,
       need,
+      deposits,
       income,
       applied,
       neededFromAssets: need - fromSources,
@@ -184,6 +197,9 @@ export function buildPresentationData(
       capitalizedNeed: pv((y) => y.need),
       capitalizedIncomeSources: pv((y) => y.need - y.neededFromAssets),
       capitalizedNeededFromAssets: pv((y) => y.neededFromAssets),
+      capitalizedAssetDraws: pv((y) => y.applied.rmd + y.applied.withdrawals),
+      capitalizedShortfall: pv((y) => y.shortfall),
+      shortfallYears: years.filter((y) => y.shortfall > 0.5).length,
     },
   };
 }
