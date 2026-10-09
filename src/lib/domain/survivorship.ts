@@ -97,7 +97,7 @@ function socialSecurityMonthly(
  * - a life-only pension of the deceased stops; a survivorship pension keeps
  *   paying the same amount to the spouse,
  * - Social Security: the survivor keeps the larger of the two benefits,
- * - the deceased's salary and business income stop.
+ * - the deceased's salary, business and disability insurance income stop.
  * Withdrawals keep running (the accounts pass to the spouse), and so does
  * anything else.
  */

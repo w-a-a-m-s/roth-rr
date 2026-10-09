@@ -30,8 +30,8 @@ next year:
   the same amount (`pensionPayout`),
 - Social Security: the survivor keeps the larger of the two benefits; the
   tab notes a step-up (`socialSecurityAfterDeath`) or that none happens,
-- the deceased's salary and business income stop; withdrawals and other
-  income keep running,
+- the deceased's salary, business and disability insurance income stop;
+  withdrawals and other income keep running,
 - accounts pass to the survivor (`effectiveOwner`): RMDs and conversion
   eligibility follow the survivor's age.
 - expenses drop to `SURVIVOR_EXPENSE_SHARE` (70%) of the plan's amounts.

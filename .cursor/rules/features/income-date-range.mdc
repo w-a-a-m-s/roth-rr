@@ -1,6 +1,6 @@
 ---
 description: Income start/end years and growth from the start year
-globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/optimizer/strategies/depleteByRmd.ts,src/components/wizard/steps/IncomeStep.tsx,src/store/useScenario.ts
+globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/lib/domain/survivorship.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/optimizer/strategies/depleteByRmd.ts,src/components/wizard/steps/IncomeStep.tsx,src/store/useScenario.ts
 alwaysApply: false
 ---
 
@@ -35,3 +35,17 @@ clears it when the type changes away from a pension.
 
 The choice only matters in the Survivorship analysis (see the analyses
 feature guide), where a spouse's death is modeled.
+
+## Disability insurance
+
+`disabilityInsurance` incomes add `disabilityWaitingDays` (30 / 60 / 90 /
+180, default 90) and `disabilityCoverage` (`full`, default, or `partial`,
+which pays half). Read them through `disabilityWaitingDays()` /
+`disabilityCoverage()`, which return undefined for other kinds.
+`startYear` / `endYear` are the benefit period (the editor calls it that).
+`incomeMonthlyForYear` applies both: the wait runs from January 1 of the
+first benefit year (30 days = one month), so a 90-day wait pays 9 of 12
+months that year. New disability lines default to tax free (individual
+policy); employer-paid plans switch to taxable. The benefit stops when its
+owner passes (Survivorship). `migrateHousehold` strips the fields from
+other kinds and drops bad values.
