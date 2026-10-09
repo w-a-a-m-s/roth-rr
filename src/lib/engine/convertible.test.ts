@@ -107,10 +107,19 @@ describe("convertibleTotal", () => {
     expect(convertibleTotal(h)).toBe(55_125);
   });
 
-  it("skips DROP growth in the retirement year", () => {
+  it("grows a DROP from the retirement year", () => {
     const h = baseHousehold({ growthRate: 0.05 });
     h.accounts[0].retirementType = "drop";
-    // Year 0 (2033): no growth. Year 1 (2034): 100_000 * 1.05 = 105_000.
-    expect(convertibleTotal(h)).toBe(105_000);
+    // The owner retires in 2033, so 2033 and 2034 both grow 5%.
+    expect(convertibleTotal(h)).toBeCloseTo(110_250, 2);
+  });
+
+  it("compounds a plan-start balance from the as-of date to the plan start", () => {
+    const h = baseHousehold({ growthRate: 0.05 });
+    // 2032-01-01 leaves a full year before the 2033 start, then two more.
+    expect(convertibleTotal(h, "2032-01-01")).toBeCloseTo(
+      convertibleTotal(h) * 1.05,
+      2,
+    );
   });
 });

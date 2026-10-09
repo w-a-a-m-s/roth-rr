@@ -1,5 +1,8 @@
 import type { Account, Deposit } from "@/lib/domain/types";
-import { accountGrowthStart } from "@/lib/domain/household";
+import {
+  accountGrowthStart,
+  preStartGrowthYears,
+} from "@/lib/domain/household";
 import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
 
 /**
@@ -13,8 +16,9 @@ import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
  * Deposits dated *before* the start year happen in years the projection never
  * runs (someone still working who contributes until they retire). They can't
  * touch cash flow or taxes, so {@link preStartDepositValue} compounds them
- * forward into the opening balance using that same convention (DROP adds
- * principal only: growth starts the year after the owner retires). Deposits
+ * forward into the opening balance using that same convention (a
+ * `retirement` growth start, DROP's default, adds principal only: growth
+ * starts in the owner's retirement year, never before the plan). Deposits
  * from the start year on run through {@link depositAmountForYear} inside the
  * loop.
  */
@@ -111,7 +115,7 @@ export function preStartDepositValue(
   // An account that waits for retirement (DROP by default) does not compound
   // before the plan starts, so pre-start deposits add principal only.
   const rate =
-    accountGrowthStart(account) === "afterRetirement"
+    accountGrowthStart(account) === "retirement"
       ? 0
       : accountGrowthRate(account);
   let total = 0;
@@ -121,4 +125,23 @@ export function preStartDepositValue(
     });
   }
   return total;
+}
+/**
+ * The account's balance on January 1 of `startYear`. `account.balance` is as
+ * of `asOfDate` (today, in the app). A `planStart` account compounds from that
+ * date up to the plan start; a `retirement` account stays flat (its owner
+ * retires in or after the start year). Pre-start deposits are added on top.
+ * With no `asOfDate` the balance is already January 1 of the start year.
+ */
+export function openingBalance(
+  account: Account,
+  startYear: number,
+  asOfDate?: string,
+): number {
+  const years =
+    accountGrowthStart(account) === "planStart"
+      ? preStartGrowthYears(startYear, asOfDate)
+      : 0;
+  const grown = account.balance * Math.pow(1 + accountGrowthRate(account), years);
+  return grown + preStartDepositValue(account, startYear);
 }

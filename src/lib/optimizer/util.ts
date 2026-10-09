@@ -46,9 +46,12 @@ export function hasManualConversionSchedule(household: Household): boolean {
  * Per-year conversion amounts for the conversion window. When the user has not
  * entered a schedule, defaults to the full convertible total spread evenly.
  */
-export function defaultConversionSchedule(household: Household): number[] {
+export function defaultConversionSchedule(
+  household: Household,
+  asOfDate?: string,
+): number[] {
   const years = conversionYears(household);
-  const convertible = convertibleTotal(household);
+  const convertible = convertibleTotal(household, asOfDate);
   return spreadConversionEvenly(convertible, years, convertible);
 }
 
@@ -56,8 +59,11 @@ export function defaultConversionSchedule(household: Household): number[] {
  * Dollar target for `even` / `immediate`: optional `convertAmount`, otherwise
  * the full convertible total. Capped unless over-convertible is allowed.
  */
-export function conversionTarget(household: Household): number {
-  const convertible = convertibleTotal(household);
+export function conversionTarget(
+  household: Household,
+  asOfDate?: string,
+): number {
+  const convertible = convertibleTotal(household, asOfDate);
   const requested = household.optimizer.convertAmount;
   const amount =
     requested != null && requested > 0 ? requested : convertible;

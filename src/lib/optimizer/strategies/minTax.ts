@@ -75,13 +75,13 @@ function searchMinTax(household: Household, refs: ReferenceData): number[] {
   });
   const starts: number[][] = [
     zeros,
-    evenSchedule(as("even")),
-    immediateSchedule(as("immediate")),
+    evenSchedule(as("even"), refs.asOfDate),
+    immediateSchedule(as("immediate"), refs.asOfDate),
     ...FILL_BRACKET_RATES.map((targetBracketRate) =>
       fillBracketSchedule(as("fillBracket", { targetBracketRate }), refs),
     ),
     irmaaSchedule(as("irmaa"), refs),
-    depleteByRmdSchedule(as("depleteByRmd")),
+    depleteByRmdSchedule(as("depleteByRmd"), refs.asOfDate),
   ];
 
   let best = zeros;
@@ -94,7 +94,7 @@ function searchMinTax(household: Household, refs: ReferenceData): number[] {
     bestTax = tax;
   }
 
-  const convertible = convertibleTotal(household);
+  const convertible = convertibleTotal(household, refs.asOfDate);
   let step = Math.max(MIN_STEP, Math.round(convertible / 5));
   while (step >= MIN_STEP) {
     for (let pass = 0; pass < MAX_PASSES; pass++) {

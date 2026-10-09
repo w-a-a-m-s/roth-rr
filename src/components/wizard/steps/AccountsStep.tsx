@@ -469,7 +469,7 @@ function AccountFields({
         </Field>
         <Field
           label="Growth starts"
-          help="Plan start compounds this balance from the first year of the plan. After retirement keeps it flat until the year after the owner retires, then it starts growing."
+          help="Plan start compounds this balance from today. Retirement keeps it flat until the owner's retirement year, then it starts growing."
         >
           <GrowthStartToggle
             value={growthStart}

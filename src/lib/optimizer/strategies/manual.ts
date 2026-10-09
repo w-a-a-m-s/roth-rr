@@ -10,10 +10,13 @@ import {
  * when set; otherwise defaults to converting the full convertible balance,
  * spread evenly across the conversion years.
  */
-export function manualSchedule(household: Household): number[] {
+export function manualSchedule(
+  household: Household,
+  asOfDate?: string,
+): number[] {
   const n = projectionYears(household);
   const provided = hasManualConversionSchedule(household)
     ? (household.optimizer.manualSchedule ?? [])
-    : defaultConversionSchedule(household);
+    : defaultConversionSchedule(household, asOfDate);
   return Array.from({ length: n }, (_, i) => Math.max(0, provided[i] ?? 0));
 }

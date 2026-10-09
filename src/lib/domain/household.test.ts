@@ -5,6 +5,8 @@ import {
   accountGrowsInYear,
   accountsInDisplayOrder,
   firstYearGrowthFraction,
+  healGrowthStart,
+  preStartGrowthYears,
   accountOwnerLabel,
   applyFilingStatus,
   canAccountBeJoint,
@@ -287,6 +289,23 @@ describe("firstYearGrowthFraction", () => {
   });
 });
 
+describe("preStartGrowthYears", () => {
+  it("counts the rest of today's year plus every full year before the start", () => {
+    expect(preStartGrowthYears(2040, "2026-10-09")).toBeCloseTo(
+      84 / 365 + 13,
+      10,
+    );
+    expect(preStartGrowthYears(2027, "2026-01-01")).toBe(1);
+  });
+
+  it("is zero with no date, or a date in or after the start year", () => {
+    expect(preStartGrowthYears(2040)).toBe(0);
+    expect(preStartGrowthYears(2040, "soon")).toBe(0);
+    expect(preStartGrowthYears(2026, "2026-10-07")).toBe(0);
+    expect(preStartGrowthYears(2025, "2026-10-07")).toBe(0);
+  });
+});
+
 describe("accountGrowsInYear", () => {
   const people: Person[] = [
     { id: "p1", name: "Pat", birthYear: 1970, retirementYear: 2026 },
@@ -306,7 +325,7 @@ describe("accountGrowsInYear", () => {
     expect(accountGrowsInYear(acc, people, 2026, 2026)).toBe(true);
   });
 
-  it("grows a DROP only after the owner retires", () => {
+  it("grows a DROP from the owner's retirement year", () => {
     const acc: Account = {
       id: "drop",
       label: "DROP",
@@ -317,8 +336,8 @@ describe("accountGrowsInYear", () => {
       growthRate: 0.05,
     };
     expect(accountGrowsInYear(acc, people, 2026, 2026)).toBe(false);
-    expect(accountGrowsInYear(acc, people, 2028, 2026)).toBe(false);
-    expect(accountGrowsInYear(acc, people, 2029, 2026)).toBe(true);
+    expect(accountGrowsInYear(acc, people, 2027, 2026)).toBe(false);
+    expect(accountGrowsInYear(acc, people, 2028, 2026)).toBe(true);
   });
 
   it("follows an explicit growth start over the type default", () => {
@@ -330,9 +349,9 @@ describe("accountGrowsInYear", () => {
       balance: 1,
       growthRate: 0.05,
     };
-    const waits = { ...base, growthStart: "afterRetirement" as const };
-    expect(accountGrowsInYear(waits, people, 2028, 2026)).toBe(false);
-    expect(accountGrowsInYear(waits, people, 2029, 2026)).toBe(true);
+    const waits = { ...base, growthStart: "retirement" as const };
+    expect(accountGrowsInYear(waits, people, 2027, 2026)).toBe(false);
+    expect(accountGrowsInYear(waits, people, 2028, 2026)).toBe(true);
     const drop: Account = {
       ...base,
       kind: "retirementTaxable",
@@ -353,8 +372,24 @@ describe("accountGrowsInYear", () => {
       growthRate: 0.05,
     };
     const noYear: Person[] = [{ id: "p1", name: "Pat", birthYear: 1970 }];
-    expect(accountGrowsInYear(acc, noYear, 2026, 2026)).toBe(false);
-    expect(accountGrowsInYear(acc, noYear, 2027, 2026)).toBe(true);
+    expect(accountGrowsInYear(acc, noYear, 2025, 2026)).toBe(false);
+    expect(accountGrowsInYear(acc, noYear, 2026, 2026)).toBe(true);
+  });
+});
+
+describe("healGrowthStart", () => {
+  it("turns the old after-retirement value into retirement", () => {
+    const acc = {
+      id: "a",
+      label: "A",
+      ownerId: "p1",
+      kind: "investment",
+      balance: 1,
+      growthRate: 0.05,
+      growthStart: "afterRetirement",
+    } as unknown as Account;
+    healGrowthStart(acc);
+    expect(acc.growthStart).toBe("retirement");
   });
 });
 

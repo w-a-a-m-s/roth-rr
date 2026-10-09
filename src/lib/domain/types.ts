@@ -94,12 +94,13 @@ export type RetirementAccountType =
   | "drop";
 
 /**
- * When an account starts compounding. `planStart` grows from the first
- * projection year; `afterRetirement` stays flat until the year after the
- * owner's retirement. Unset falls back to the account type's default
- * (`afterRetirement` for DROP, `planStart` for everything else).
+ * When an account starts compounding. `planStart` grows from today (the
+ * balance's as-of date) on; `retirement` stays flat until the owner's
+ * retirement year and first grows in that year. Unset falls back to the
+ * account type's default (`retirement` for DROP, `planStart` for everything
+ * else).
  */
-export type GrowthStart = "planStart" | "afterRetirement";
+export type GrowthStart = "planStart" | "retirement";
 
 export type DepositFrequency = "monthly" | "yearly" | "oneTime";
 

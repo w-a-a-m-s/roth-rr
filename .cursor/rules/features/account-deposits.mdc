@@ -20,8 +20,8 @@ working, so they are dated **before** the plan starts: those years are never
 projected, so they cannot touch cash flow, taxes, or surplus.
 
 - Before the start year: compounded into the opening balance by
-  `preStartDepositValue` (DROP adds principal only: it does not grow until
-  the year after the owner retires), and (for after-tax accounts) added to
+  `preStartDepositValue` (a Retirement growth start, DROP's default, adds
+  principal only: it does not grow until the owner's retirement year), and (for after-tax accounts) added to
   the opening cost basis by `preStartDepositPrincipal`.
 - From the start year on: credited inside the projection loop, and subtracted
   from `surplus` like an expense.

@@ -100,9 +100,10 @@ export function isConversionEmpty(household: Household): boolean {
 /** Facts explaining why conversion is empty, with real plan numbers. */
 export function diagnoseConversionEmpty(
   household: Household,
+  asOfDate?: string,
 ): ConversionEmptyDiagnostic {
   const years = conversionYears(household);
-  const convertible = convertibleTotal(household);
+  const convertible = convertibleTotal(household, asOfDate);
   const empty = years < 1 || convertible <= 0;
   const facts: ConversionEmptyFact[] = [];
 

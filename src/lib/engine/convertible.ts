@@ -12,7 +12,7 @@ import {
 } from "@/lib/engine/project";
 import {
   depositAmountForYear,
-  preStartDepositValue,
+  openingBalance,
 } from "@/lib/engine/deposits";
 
 function growthRate(account: Account): number {
@@ -67,9 +67,13 @@ export function conversionYears(household: Household): number {
  * conversions applied, then banks each account in its last pre-RMD year (so
  * growth after that owner reaches RMD is not counted). Equals
  * initial + cumulative growth - cumulative withdrawals for accounts that stay
- * convertible through the window.
+ * convertible through the window. `asOfDate` is the date the balances were
+ * entered (today, in the app), as in `projectScenario`.
  */
-export function convertibleTotal(household: Household): number {
+export function convertibleTotal(
+  household: Household,
+  asOfDate?: string,
+): number {
   const start = projectionStartYear(household);
   const years = conversionYears(household);
   if (!Number.isFinite(start) || years < 1) return 0;
@@ -79,10 +83,7 @@ export function convertibleTotal(household: Household): number {
   );
   const balances: Record<string, number> = {};
   for (const acc of retirementAccounts) {
-    balances[acc.id] = Math.max(
-      0,
-      acc.balance + preStartDepositValue(acc, start),
-    );
+    balances[acc.id] = Math.max(0, openingBalance(acc, start, asOfDate));
   }
 
   let banked = 0;
@@ -91,7 +92,7 @@ export function convertibleTotal(household: Household): number {
     const calendarYear = start + i;
 
     // Grow balances. Same order as `projectScenario`, including the
-    // after-retirement delay (first growth the year after the owner retires).
+    // retirement delay (first growth in the owner's retirement year).
     for (const acc of retirementAccounts) {
       if (!accountGrowsInYear(acc, household.people, calendarYear, start)) {
         continue;

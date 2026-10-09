@@ -47,7 +47,7 @@ export function irmaaSchedule(
     "medicare IRMAA tiers",
   );
   const years = conversionYears(household);
-  const uncapped = conversionTarget(household);
+  const uncapped = conversionTarget(household, refs.asOfDate);
 
   const window = rows.slice(0, years).map((row) => {
     const magi = row.grossTaxableIncome + row.capitalGainsIncome;

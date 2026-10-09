@@ -519,10 +519,18 @@ describe("migrateHousehold: growth start", () => {
 
   it("keeps a valid growth start", () => {
     const h = household(
-      [account({ id: "b", kind: "investment", growthStart: "afterRetirement" })],
+      [account({ id: "b", kind: "investment", growthStart: "retirement" })],
       [],
     );
-    expect(migrateHousehold(h).accounts[0].growthStart).toBe("afterRetirement");
+    expect(migrateHousehold(h).accounts[0].growthStart).toBe("retirement");
+  });
+
+  it("renames the old after-retirement growth start to retirement", () => {
+    const h = household(
+      [account({ id: "b", kind: "investment", growthStart: "afterRetirement" as never })],
+      [],
+    );
+    expect(migrateHousehold(h).accounts[0].growthStart).toBe("retirement");
   });
 
   it("drops an unknown growth start on live and deleted accounts", () => {

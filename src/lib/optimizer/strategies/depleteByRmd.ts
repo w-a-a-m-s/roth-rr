@@ -7,7 +7,7 @@ import {
 } from "@/lib/engine/convertible";
 import {
   depositAmountForYear,
-  preStartDepositValue,
+  openingBalance,
 } from "@/lib/engine/deposits";
 import {
   projectionStartYear,
@@ -37,7 +37,10 @@ function ownerConvertibleInYear(
  * tax-deferred accounts empty by RMD. Walk order matches the engine: grow,
  * withdrawals, convert, then deposits.
  */
-export function depleteByRmdSchedule(household: Household): number[] {
+export function depleteByRmdSchedule(
+  household: Household,
+  asOfDate?: string,
+): number[] {
   const start = projectionStartYear(household);
   const years = conversionYears(household);
   if (!Number.isFinite(start) || years < 1) return padToProjection(household, []);
@@ -47,10 +50,7 @@ export function depleteByRmdSchedule(household: Household): number[] {
   );
   const balances: Record<string, number> = {};
   for (const acc of retirementAccounts) {
-    balances[acc.id] = Math.max(
-      0,
-      acc.balance + preStartDepositValue(acc, start),
-    );
+    balances[acc.id] = Math.max(0, openingBalance(acc, start, asOfDate));
   }
 
   const window: number[] = [];

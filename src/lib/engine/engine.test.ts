@@ -333,19 +333,19 @@ describe("baseline projection vs spreadsheet", () => {
     expect(rows[0].totalMonthlyIncome).toBeCloseTo(26_600, 2);
   });
 
-  it("DROP (David) waits until the year after he retires to grow", () => {
-    // 2030 (retirement): no growth, then the $12k draw.
-    expect(rows[0].balances["drop-s1"]).toBeCloseTo(1_088_000, 2);
-    // 2031: first 5%, then draw.
-    expect(rows[1].balances["drop-s1"]).toBeCloseTo(1_130_400, 2);
+  it("DROP (David) starts growing in the year he retires", () => {
+    // 2030 (retirement): first 5%, then the $12k draw.
+    expect(rows[0].balances["drop-s1"]).toBeCloseTo(1_143_000, 2);
+    // 2031: 5% again, then draw.
+    expect(rows[1].balances["drop-s1"]).toBeCloseTo(1_188_150, 2);
   });
 
-  it("DROP (Batsheva) stays flat until the year after she retires", () => {
-    // Plan starts 2030; she retires 2032. First growth is 2033.
+  it("DROP (Batsheva) stays flat until the year she retires", () => {
+    // Plan starts 2030; she retires 2032. First growth is 2032.
     expect(rows[0].balances["drop-s2"]).toBeCloseTo(300_000, 2);
     expect(rows[1].balances["drop-s2"]).toBeCloseTo(300_000, 2);
-    expect(rows[2].balances["drop-s2"]).toBeCloseTo(300_000, 2);
-    expect(rows[3].balances["drop-s2"]).toBeCloseTo(315_000, 2);
+    expect(rows[2].balances["drop-s2"]).toBeCloseTo(315_000, 2);
+    expect(rows[3].balances["drop-s2"]).toBeCloseTo(330_750, 2);
   });
 
   it("Roth (Batsheva) compounds at 8% each year, including year 0", () => {
@@ -887,9 +887,9 @@ describe("roth scenario with the spreadsheet's manual schedule", () => {
     expect(rows[0].conversion).toBeCloseTo(150_000, 2);
   });
 
-  it("DROP (David) is reduced by draw + conversion with no year-0 growth", () => {
-    // 1,100,000 - 12,000 - 150,000 = 938,000.
-    expect(rows[0].balances["drop-s1"]).toBeCloseTo(938_000, 2);
+  it("DROP (David) grows in his retirement year, then pays draw + conversion", () => {
+    // 1,100,000 * 1.05 - 12,000 - 150,000 = 993,000.
+    expect(rows[0].balances["drop-s1"]).toBeCloseTo(993_000, 2);
   });
 
   it("Roth (David) receives the conversion after growth", () => {
@@ -1500,7 +1500,7 @@ describe("afterTaxAssets", () => {
 describe("DROP growth delay", () => {
   function household(opts: {
     retirementType: "drop" | "ira" | "401k";
-    growthStart?: "planStart" | "afterRetirement";
+    growthStart?: "planStart" | "retirement";
     retirementYear: number;
     spouseRetirementYear?: number;
     monthlyDraw?: number;
@@ -1559,7 +1559,7 @@ describe("DROP growth delay", () => {
     };
   }
 
-  it("leaves a DROP flat in the retirement year, then grows the next year", () => {
+  it("grows a DROP from the retirement year", () => {
     const h = household({
       retirementType: "drop",
       retirementYear: 2026,
@@ -1567,12 +1567,12 @@ describe("DROP growth delay", () => {
     });
     const rows = projectScenario(h, zeros(projectionYears(h)));
     expect(rows[0].calendarYear).toBe(2026);
-    expect(rows[0].balances.ret).toBeCloseTo(88_000, 2);
+    expect(rows[0].balances.ret).toBeCloseTo(93_000, 2);
     expect(rows[1].calendarYear).toBe(2027);
-    expect(rows[1].balances.ret).toBeCloseTo(80_400, 2);
+    expect(rows[1].balances.ret).toBeCloseTo(85_650, 2);
   });
 
-  it("holds a later-retiring spouse DROP until the year after they retire", () => {
+  it("holds a later-retiring spouse DROP until their retirement year", () => {
     const h = household({
       retirementType: "drop",
       retirementYear: 2026,
@@ -1582,23 +1582,23 @@ describe("DROP growth delay", () => {
     expect(rows[0].calendarYear).toBe(2026);
     expect(rows[0].balances.ret).toBeCloseTo(100_000, 2);
     expect(rows[1].balances.ret).toBeCloseTo(100_000, 2);
-    expect(rows[2].balances.ret).toBeCloseTo(100_000, 2);
-    expect(rows[3].calendarYear).toBe(2029);
-    expect(rows[3].balances.ret).toBeCloseTo(105_000, 2);
+    expect(rows[2].calendarYear).toBe(2028);
+    expect(rows[2].balances.ret).toBeCloseTo(105_000, 2);
+    expect(rows[3].balances.ret).toBeCloseTo(110_250, 2);
   });
 
-  it("holds an IRA set to grow after retirement until the year after its owner retires", () => {
+  it("holds an IRA set to grow at retirement until its owner's retirement year", () => {
     const h = household({
       retirementType: "ira",
-      growthStart: "afterRetirement",
+      growthStart: "retirement",
       retirementYear: 2026,
       spouseRetirementYear: 2028,
     });
     const rows = projectScenario(h, zeros(projectionYears(h)));
     expect(rows[0].balances.ret).toBeCloseTo(100_000, 2);
-    expect(rows[2].calendarYear).toBe(2028);
-    expect(rows[2].balances.ret).toBeCloseTo(100_000, 2);
-    expect(rows[3].balances.ret).toBeCloseTo(105_000, 2);
+    expect(rows[1].calendarYear).toBe(2027);
+    expect(rows[1].balances.ret).toBeCloseTo(100_000, 2);
+    expect(rows[2].balances.ret).toBeCloseTo(105_000, 2);
   });
 
   it("grows a DROP set to plan start from year 0", () => {
@@ -1633,24 +1633,36 @@ describe("DROP growth delay", () => {
     expect(rows[1].balances.ret).toBeCloseTo(year0 * 1.05, 2);
   });
 
-  it("keeps a full year-0 year when the as-of date is outside the start year", () => {
-    const h = household({ retirementType: "ira", retirementYear: 2027 });
+  it("compounds a plan-start balance from today up to a later plan start", () => {
+    const h = household({ retirementType: "ira", retirementYear: 2030 });
     const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: "2026-10-07" };
     const rows = projectScenario(h, zeros(projectionYears(h)), refs);
-    expect(rows[0].calendarYear).toBe(2027);
+    // 86 days left in 2026, then 2027 to 2029 in full, then a full 2030.
+    const opening = 100_000 * Math.pow(1.05, 86 / 365 + 3);
+    expect(rows[0].calendarYear).toBe(2030);
+    expect(rows[0].balances.ret).toBeCloseTo(opening * 1.05, 2);
+  });
+
+  it("keeps a retirement growth start flat from today until retirement", () => {
+    const h = household({ retirementType: "drop", retirementYear: 2030 });
+    const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: "2026-10-07" };
+    const rows = projectScenario(h, zeros(projectionYears(h)), refs);
+    expect(rows[0].calendarYear).toBe(2030);
     expect(rows[0].balances.ret).toBeCloseTo(105_000, 2);
   });
 
-  it("applies year-0 growth when the same account is switched from DROP to IRA", () => {
+  it("grows from today only once the same account is switched from DROP to IRA", () => {
     const drop = household({ retirementType: "drop", retirementYear: 2026 });
     const ira = {
       ...drop,
       accounts: [{ ...drop.accounts[0], retirementType: "ira" as const }],
     };
-    const dropRows = projectScenario(drop, zeros(projectionYears(drop)));
-    const iraRows = projectScenario(ira, zeros(projectionYears(ira)));
-    expect(dropRows[0].balances.ret).toBeCloseTo(100_000, 2);
-    expect(iraRows[0].balances.ret).toBeCloseTo(105_000, 2);
+    const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: "2025-01-01" };
+    const dropRows = projectScenario(drop, zeros(projectionYears(drop)), refs);
+    const iraRows = projectScenario(ira, zeros(projectionYears(ira)), refs);
+    // Both grow in 2026, the retirement year; only the IRA grows from today.
+    expect(dropRows[0].balances.ret).toBeCloseTo(105_000, 2);
+    expect(iraRows[0].balances.ret).toBeCloseTo(110_250, 2);
   });
 
   it("adds DROP pre-start deposits as principal only", () => {
@@ -1667,10 +1679,10 @@ describe("DROP growth delay", () => {
       },
     ];
     const rows = projectScenario(h, zeros(projectionYears(h)));
-    // Three $10k deposits, no pre-start compounding, no 2030 growth.
+    // Three $10k deposits, no pre-start compounding, growth from 2030.
     expect(rows[0].calendarYear).toBe(2030);
-    expect(rows[0].balances.ret).toBeCloseTo(30_000, 2);
+    expect(rows[0].balances.ret).toBeCloseTo(31_500, 2);
     expect(rows[0].monthlyDeposits).toBe(0);
-    expect(rows[1].balances.ret).toBeCloseTo(31_500, 2);
+    expect(rows[1].balances.ret).toBeCloseTo(33_075, 2);
   });
 });

@@ -53,8 +53,8 @@ import {
 import { uniformLifetimeDenominator } from "@/lib/config/rmdTable";
 import {
   depositAmountForYear,
+  openingBalance,
   preStartDepositPrincipal,
-  preStartDepositValue,
 } from "@/lib/engine/deposits";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import type { ReferenceData } from "@/lib/externalData/types";
@@ -536,12 +536,14 @@ export function projectScenario(
   );
   const targetRoth = accounts.find((acc) => acc.kind === "rothTaxFree");
 
-  // Deposits dated before the projection starts happen in years we never
-  // project, so they can't run through cash flow. They compound into the
-  // opening balance instead (see `lib/engine/deposits.ts`).
+  // Balances are entered as of today (`refs.asOfDate`): a plan-start account
+  // compounds from then up to the plan start. Deposits dated before the
+  // projection starts happen in years we never project, so they can't run
+  // through cash flow. They compound into the opening balance instead (see
+  // `lib/engine/deposits.ts`).
   const balances: Record<string, number> = {};
   for (const acc of accounts) {
-    balances[acc.id] = acc.balance + preStartDepositValue(acc, start);
+    balances[acc.id] = openingBalance(acc, start, refs.asOfDate);
   }
 
   // Track remaining cost basis for after-tax accounts so withdrawals can
@@ -592,8 +594,8 @@ export function projectScenario(
 
     // 1) Grow balances. Starting balances are January 1 of the first projection
     //    year, so year 0 gets a full year of returns before withdrawals, except
-    //    accounts set to start after retirement (DROP by default): those wait
-    //    until the year after the owner's retirement. When the
+    //    accounts set to start at retirement (DROP by default): those wait
+    //    until the owner's retirement year. When the
     //    balances are as of a date inside year 0 (`refs.asOfDate`, today in
     //    the app), year 0 compounds only for the rest of that year. All
     //    accounts keep compounding for life, including tax-deferred ones past

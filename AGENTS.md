@@ -76,21 +76,26 @@ rather than reading the live balance. And because the base can exceed what's
 left in a depleting account, the take is capped at the current balance so a
 balance never goes negative.
 
-Starting balances are January 1 of the first projection year. Every year,
-including year 0, applies a full year of growth *before* withdrawals,
-conversions, and RMDs, **except accounts whose Growth starts toggle is After
-retirement** (DROP's default): those wait until the year after *that owner's*
-retirement year (see the retirement account types feature guide). Skipping year-0 growth on other accounts made an
-after-tax account that earns about as much as it distributes look like it was
-shrinking.
+The projection starts at the earliest retirement year. Every year, including
+year 0, applies a full year of growth *before* withdrawals, conversions, and
+RMDs, **except accounts whose Growth starts toggle is Retirement** (DROP's
+default): those stay flat until *that owner's* retirement year and first grow
+in it (see the retirement account types feature guide). Skipping year-0 growth
+on other accounts made an after-tax account that earns about as much as it
+distributes look like it was shrinking.
 
 In the app, balances are entered as of **today**, not January 1. The external
-data store stamps today's date on the refs (`refs.asOfDate`), and when that date
-falls inside year 0, `projectScenario` compounds year 0 only for what is left of
-the year (`firstYearGrowthFraction`: on October 7, 86 of 365 days). Later years
-get a full year. With no `asOfDate` (tests, golden cases) year 0 is a full year.
-Only the projection's growth step is prorated: the conversion strategies,
-including `depleteByRmd`, and `convertibleTotal` still use a full first year.
+data store stamps today's date on the refs (`refs.asOfDate`). **Plan start
+means today**: when that date is before the start year, a Plan start account
+compounds from today up to January 1 of the start year (`openingBalance` in
+`lib/engine/deposits.ts`, using `preStartGrowthYears`: on October 9, 2026 with
+a 2040 start, 84/365 of 2026 plus 13 full years). Retirement accounts stay flat
+until then. When the date falls inside year 0 instead, `projectScenario`
+compounds year 0 only for what is left of the year (`firstYearGrowthFraction`:
+on October 7, 86 of 365 days). Later years get a full year. With no `asOfDate`
+(tests, golden cases) balances are January 1 of the start year and year 0 is a
+full year. `convertibleTotal` and the strategies take the same `asOfDate` for
+the opening balance, but only the projection prorates year 0.
 
 Plans used to carry a flat `assumptions.rmdRate` (default 5%) applied to the
 live balance. That overstated RMDs in the early years and understated them in

@@ -3,11 +3,13 @@
 import type { Household } from "@/lib/domain/types";
 import { diagnoseConversionEmpty } from "@/lib/engine/conversionEmpty";
 import { usePlanNav } from "@/components/plan/PlanNavContext";
+import { useExternalData } from "@/store/useExternalData";
 
 /** Empty-state notice when the plan has no conversion window or balance. */
 export function ConversionEmptyNotice({ household }: { household: Household }) {
   const nav = usePlanNav();
-  const { facts } = diagnoseConversionEmpty(household);
+  const asOfDate = useExternalData((s) => s.refs.asOfDate);
+  const { facts } = diagnoseConversionEmpty(household, asOfDate);
 
   return (
     <div className="rounded-xl border border-warning-border bg-warning-bg px-4 py-3.5">

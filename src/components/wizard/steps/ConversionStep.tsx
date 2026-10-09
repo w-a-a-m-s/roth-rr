@@ -27,7 +27,7 @@ export function ConversionStep() {
 
   const years = conversionYears(household);
   const start = projectionStartYear(household);
-  const convertible = convertibleTotal(household);
+  const convertible = convertibleTotal(household, refs.asOfDate);
   const allowOverConvertible = household.optimizer.allowOverConvertible === true;
 
   const totalConvertibleRef = useRef<HTMLDivElement>(null);

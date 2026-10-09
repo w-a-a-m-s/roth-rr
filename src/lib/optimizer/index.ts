@@ -33,19 +33,19 @@ function strategySchedule(
 ): number[] {
   switch (household.optimizer.strategy) {
     case "immediate":
-      return immediateSchedule(household);
+      return immediateSchedule(household, refs.asOfDate);
     case "fillBracket":
       return fillBracketSchedule(household, refs);
     case "irmaa":
       return irmaaSchedule(household, refs);
     case "depleteByRmd":
-      return depleteByRmdSchedule(household);
+      return depleteByRmdSchedule(household, refs.asOfDate);
     case "minTax":
       return minTaxSchedule(household, refs);
     case "manual":
-      return manualSchedule(household);
+      return manualSchedule(household, refs.asOfDate);
     case "even":
     default:
-      return evenSchedule(household);
+      return evenSchedule(household, refs.asOfDate);
   }
 }

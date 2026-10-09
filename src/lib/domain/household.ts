@@ -124,22 +124,42 @@ export function firstYearGrowthFraction(
   return Math.min(1, Math.max(0, (nextYearStart - asOf) / (nextYearStart - yearStart)));
 }
 
-export const GROWTH_STARTS: GrowthStart[] = ["planStart", "afterRetirement"];
+/**
+ * Years of growth between `asOfDate` (today, in the app) and January 1 of
+ * `startYear`, for balances entered today on a plan that starts in a later
+ * year. On October 9, 2026 with a 2040 start that is the 84 days left in 2026
+ * plus 13 full years (2027 to 2039). Zero with no date, or when the date
+ * already falls in or after the start year (year 0 proration covers that, see
+ * {@link firstYearGrowthFraction}).
+ */
+export function preStartGrowthYears(
+  startYear: number,
+  asOfDate?: string,
+): number {
+  if (!asOfDate || !Number.isFinite(startYear)) return 0;
+  const match = /^(\d{4})-/.exec(asOfDate);
+  if (!match) return 0;
+  const year = Number(match[1]);
+  if (year >= startYear) return 0;
+  return firstYearGrowthFraction(year, asOfDate) + (startYear - year - 1);
+}
+
+export const GROWTH_STARTS: GrowthStart[] = ["planStart", "retirement"];
 
 export const GROWTH_START_LABELS: Record<GrowthStart, string> = {
   planStart: "Plan start",
-  afterRetirement: "After retirement",
+  retirement: "Retirement",
 };
 
 export function isGrowthStart(value: unknown): value is GrowthStart {
-  return value === "planStart" || value === "afterRetirement";
+  return value === "planStart" || value === "retirement";
 }
 
 /** DROP waits for retirement by default; every other account grows right away. */
 export function defaultGrowthStart(
   account: Pick<Account, "kind" | "retirementType">,
 ): GrowthStart {
-  return isDropRetirementAccount(account) ? "afterRetirement" : "planStart";
+  return isDropRetirementAccount(account) ? "retirement" : "planStart";
 }
 
 /** The account's chosen growth start, or its type's default when unset. */
@@ -152,11 +172,11 @@ export function accountGrowthStart(
 }
 
 /**
- * Whether this account compounds in `calendarYear`. An `afterRetirement`
- * account (DROP by default) waits until the year after the owner's
- * retirement. If that year is missing, fall back to the household start year
- * (first growth is start + 1). A `planStart` account grows every projection
- * year, including year 0.
+ * Whether this account compounds in `calendarYear`. A `retirement` account
+ * (DROP by default) stays flat until the owner's retirement year and first
+ * grows in that year. If that year is missing, fall back to the household
+ * start year. A `planStart` account grows every projection year, including
+ * year 0 (and before it, from today: see {@link preStartGrowthYears}).
  */
 export function accountGrowsInYear(
   account: Pick<Account, "kind" | "retirementType" | "growthStart" | "ownerId">,
@@ -170,11 +190,19 @@ export function accountGrowsInYear(
     owner?.retirementYear != null && Number.isFinite(owner.retirementYear)
       ? owner.retirementYear
       : fallbackStartYear;
-  return calendarYear > retire;
+  return calendarYear >= retire;
 }
 
-/** Unknown growth starts are dropped so the account falls back to its default. */
+/**
+ * Unknown growth starts are dropped so the account falls back to its default.
+ * The old `afterRetirement` value (first growth the year after retiring)
+ * becomes `retirement` (first growth in the retirement year).
+ */
 export function healGrowthStart(account: Account): void {
+  if ((account.growthStart as string) === "afterRetirement") {
+    account.growthStart = "retirement";
+    return;
+  }
   if (account.growthStart == null || isGrowthStart(account.growthStart)) return;
   delete account.growthStart;
 }
