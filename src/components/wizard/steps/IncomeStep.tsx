@@ -127,6 +127,8 @@ function IncomeFields({
   const waitingDays = disabilityWaitingDays(income);
   const coverage = disabilityCoverage(income);
   const isDisability = income.kind === "disabilityInsurance";
+  const businesses = household.businesses ?? [];
+  const linkedBusiness = businesses.find((b) => b.id === income.businessId);
 
   // Changing the type to a withdrawal kind must also pick a source account.
   // Without this the "From account" select would show the first option while
@@ -138,8 +140,12 @@ function IncomeFields({
     if (!isPensionIncome(kind) && income.pensionPayout) {
       patch.pensionPayout = undefined;
     }
-    // Only business income links to a business.
+    // Only business income links to a business. With a single business there
+    // is nothing to choose, so link it straight away.
     if (kind !== "business" && income.businessId) patch.businessId = undefined;
+    if (kind === "business" && !income.businessId && businesses.length === 1) {
+      patch.businessId = businesses[0].id;
+    }
     // Disability settings only mean something on disability insurance.
     if (kind !== "disabilityInsurance") {
       if (income.disabilityWaitingDays) patch.disabilityWaitingDays = undefined;
@@ -193,6 +199,14 @@ function IncomeFields({
             label={isDisability ? "Benefit period" : "Active years"}
             value={activeYearsLabel(income)}
           />
+          {income.kind === "business" ? (
+            <ReadStat
+              label="From business"
+              value={
+                linkedBusiness ? linkedBusiness.label || "Business" : "Not linked"
+              }
+            />
+          ) : null}
           {payout ? (
             <ReadStat label="Payout" value={PAYOUT_LABEL[payout]} />
           ) : null}
@@ -330,7 +344,7 @@ function IncomeFields({
         {income.kind === "business" ? (
           <Field
             label="From business"
-            help="Link this income to a business on the Business step, so its card shows and edits it."
+            help="The business that pays this income. Linking shows it on that business's card. It does not reduce the business's value: it is treated as profit the business pays out."
           >
             <Select
               value={income.businessId ?? ""}
@@ -339,7 +353,7 @@ function IncomeFields({
               }
               options={[
                 { value: "", label: "Not linked" },
-                ...(household.businesses ?? []).map((b) => ({
+                ...businesses.map((b) => ({
                   value: b.id,
                   label: b.label || "Business",
                 })),

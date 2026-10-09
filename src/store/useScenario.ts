@@ -232,9 +232,18 @@ export function migrateHousehold(household: Household): Household {
     // engine debits a real balance instead of dropping the income as phantom
     // money. Ambiguous cases (zero or multiple eligible accounts) are left for
     // the user to resolve in the editor.
-    // Only business income links to a business.
+    // Only business income links to a business. An unlinked one in a plan
+    // with exactly one business belongs to it.
     if (inc.kind !== "business" || typeof inc.businessId !== "string") {
       delete inc.businessId;
+    }
+    if (
+      inc.kind === "business" &&
+      !inc.businessId &&
+      Array.isArray(legacy.businesses) &&
+      legacy.businesses.length === 1
+    ) {
+      inc.businessId = legacy.businesses[0].id;
     }
     const sourceKinds = WITHDRAWAL_SOURCE_KINDS[inc.kind];
     if (sourceKinds && !inc.drawsFromAccountId) {

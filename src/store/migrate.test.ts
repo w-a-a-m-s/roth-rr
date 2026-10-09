@@ -568,6 +568,28 @@ describe("migrateHousehold: business equity", () => {
     expect(out.businesses![1].growthStart).toBeUndefined();
   });
 
+  it("links an unlinked business income when the plan has one business", () => {
+    const h = household(
+      [],
+      [
+        {
+          id: "biz",
+          label: "Biz",
+          ownerId: "p1",
+          kind: "business",
+          monthlyAmount: 1,
+          growthRate: 0,
+          taxability: "full",
+        },
+      ],
+    );
+    h.businesses = [{ id: "b1", label: "Shop", value: 1, growthRate: 0 }];
+    expect(migrateHousehold(h).incomes[0].businessId).toBe("b1");
+    h.businesses.push({ id: "b2", label: "Other", value: 1, growthRate: 0 });
+    h.incomes[0].businessId = undefined;
+    expect(migrateHousehold(h).incomes[0].businessId).toBeUndefined();
+  });
+
   it("fills a missing value or growth rate with 0", () => {
     const h = household([], []);
     h.businesses = [
