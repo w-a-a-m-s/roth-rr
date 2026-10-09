@@ -134,7 +134,11 @@ export function incomesStoppedByDeath(
       }
       continue;
     }
-    if (income.kind === "salary" || income.kind === "business") {
+    if (
+      income.kind === "salary" ||
+      income.kind === "business" ||
+      income.kind === "disabilityInsurance"
+    ) {
       stopped.add(income.id);
     }
   }

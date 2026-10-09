@@ -47,6 +47,7 @@ const INCOME_KIND_LABELS: Record<IncomeKind, string> = {
   socialSecurity: "Social Security",
   militaryPension: "Military pension",
   lifeInsurance: "Life insurance",
+  disabilityInsurance: "Disability insurance",
   retirementDraw: "Retirement withdrawal",
   rothWithdrawal: "Roth withdrawal",
   afterTaxWithdrawal: "After-tax withdrawal",

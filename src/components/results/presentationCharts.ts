@@ -43,6 +43,7 @@ const KIND_CATEGORY: Record<IncomeKind, IncomeCategory> = {
   salary: "earnings",
   business: "earnings",
   lifeInsurance: "other",
+  disabilityInsurance: "other",
   other: "other",
   retirementDraw: "withdrawals",
   rothWithdrawal: "withdrawals",

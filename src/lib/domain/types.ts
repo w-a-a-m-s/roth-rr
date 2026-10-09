@@ -161,6 +161,7 @@ export type IncomeKind =
   | "business"
   | "socialSecurity"
   | "lifeInsurance"
+  | "disabilityInsurance" // disability insurance benefit (see `disabilityWaitingDays`, `disabilityCoverage`)
   // Account withdrawals: income tied to a specific account (chosen via
   // `drawsFromAccountId`) whose amount reduces that account's balance.
   | "retirementDraw" // withdraw from a tax-deferred retirement account (taxable; continues past RMD age in addition to RMDs)
@@ -173,6 +174,12 @@ export type IncomeKind =
  * keeps paying the surviving spouse for the rest of their life.
  */
 export type PensionPayout = "lifeOnly" | "survivor";
+
+/** Disability insurance elimination period, in days before benefits start. */
+export type DisabilityWaitingDays = 30 | 60 | 90 | 180;
+
+/** Full disability pays the whole monthly benefit; partial pays half. */
+export type DisabilityCoverage = "full" | "partial";
 
 export interface IncomeSource {
   id: string;
@@ -203,6 +210,13 @@ export interface IncomeSource {
    * `lifeOnly`, the default for new and older plans.
    */
   pensionPayout?: PensionPayout;
+  /**
+   * Disability insurance only. Waiting (elimination) period before the first
+   * payment, counted from January 1 of the start year. Missing means 90 days.
+   */
+  disabilityWaitingDays?: DisabilityWaitingDays;
+  /** Disability insurance only. Missing means `full`. */
+  disabilityCoverage?: DisabilityCoverage;
 }
 
 export interface RealEstate {

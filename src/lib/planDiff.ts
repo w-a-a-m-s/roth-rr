@@ -18,7 +18,9 @@ import type {
 import { STRATEGY_LABELS } from "@/lib/optimizer/labels";
 import {
   JOINT_OWNER_VALUE,
+  DISABILITY_COVERAGE_LABELS,
   GROWTH_START_LABELS,
+  isDisabilityCoverage,
   RETIREMENT_ACCOUNT_TYPE_LABELS,
   isGrowthStart,
   isRetirementAccountType,
@@ -82,6 +84,7 @@ const INCOME_KIND_LABELS: Record<IncomeKind, string> = {
   socialSecurity: "Social Security",
   militaryPension: "Military pension",
   lifeInsurance: "Life insurance",
+  disabilityInsurance: "Disability insurance",
   retirementDraw: "Retirement withdrawal",
   rothWithdrawal: "Roth withdrawal",
   afterTaxWithdrawal: "After-tax withdrawal",
@@ -112,6 +115,8 @@ const PROPERTY_LABELS: Record<string, string> = {
   growthDelayYears: "Growth delay years",
   drawsFromAccountId: "Draws from account",
   pensionPayout: "Pension payout",
+  disabilityWaitingDays: "Waiting period",
+  disabilityCoverage: "Disability coverage",
   purchaseYear: "Purchase year",
   purchasePrice: "Purchase price",
   marketValue: "Market value",
@@ -279,6 +284,12 @@ function formatScalar(
   if (key === "pensionPayout") {
     if (value === "lifeOnly") return "Life only";
     if (value === "survivor") return "Survivorship";
+  }
+  if (key === "disabilityWaitingDays" && typeof value === "number") {
+    return `${value} days`;
+  }
+  if (key === "disabilityCoverage" && isDisabilityCoverage(value)) {
+    return DISABILITY_COVERAGE_LABELS[value];
   }
   if (key === "frequency") {
     if (value === "monthly") return "Monthly";

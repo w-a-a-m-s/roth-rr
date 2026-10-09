@@ -2,6 +2,8 @@ import type {
   Account,
   AccountKind,
   DepositFrequency,
+  DisabilityCoverage,
+  DisabilityWaitingDays,
   Expense,
   FilingStatus,
   GrowthStart,
@@ -270,6 +272,69 @@ export function pensionPayout(
   return income.pensionPayout === "survivor" ? "survivor" : "lifeOnly";
 }
 
+export const DISABILITY_WAITING_DAYS: DisabilityWaitingDays[] = [30, 60, 90, 180];
+export const DEFAULT_DISABILITY_WAITING_DAYS: DisabilityWaitingDays = 90;
+
+export const DISABILITY_COVERAGE_LABELS: Record<DisabilityCoverage, string> = {
+  full: "Full disability",
+  partial: "Partial disability",
+};
+
+/** Share of the monthly benefit each coverage pays. */
+const DISABILITY_COVERAGE_SHARE: Record<DisabilityCoverage, number> = {
+  full: 1,
+  partial: 0.5,
+};
+
+export function isDisabilityWaitingDays(
+  value: unknown,
+): value is DisabilityWaitingDays {
+  return (DISABILITY_WAITING_DAYS as unknown[]).includes(value);
+}
+
+export function isDisabilityCoverage(value: unknown): value is DisabilityCoverage {
+  return value === "full" || value === "partial";
+}
+
+/** The waiting period in days, or undefined for incomes that aren't disability. */
+export function disabilityWaitingDays(
+  income: Pick<IncomeSource, "kind" | "disabilityWaitingDays">,
+): DisabilityWaitingDays | undefined {
+  if (income.kind !== "disabilityInsurance") return undefined;
+  return isDisabilityWaitingDays(income.disabilityWaitingDays)
+    ? income.disabilityWaitingDays
+    : DEFAULT_DISABILITY_WAITING_DAYS;
+}
+
+/** Full or partial, or undefined for incomes that aren't disability. */
+export function disabilityCoverage(
+  income: Pick<IncomeSource, "kind" | "disabilityCoverage">,
+): DisabilityCoverage | undefined {
+  if (income.kind !== "disabilityInsurance") return undefined;
+  return income.disabilityCoverage === "partial" ? "partial" : "full";
+}
+
+/**
+ * Average monthly share of a disability benefit actually paid in
+ * `calendarYear`. Partial disability pays half. The waiting period runs from
+ * January 1 of the first benefit year, so that year pays only the months left
+ * after it (30 days is one month): a 90-day wait pays 9 of 12 months. Other
+ * incomes always return 1.
+ */
+function disabilityPayoutShare(
+  income: IncomeSource,
+  calendarYear: number,
+  firstYear: number,
+): number {
+  const coverage = disabilityCoverage(income);
+  const waitingDays = disabilityWaitingDays(income);
+  if (coverage == null || waitingDays == null) return 1;
+  const share = DISABILITY_COVERAGE_SHARE[coverage];
+  if (calendarYear !== firstYear) return share;
+  const waitingMonths = Math.min(12, waitingDays / 30);
+  return (share * (12 - waitingMonths)) / 12;
+}
+
 /** Whether an income kind withdraws from (and depletes) a specific account. */
 export function isWithdrawalIncome(kind: IncomeKind): boolean {
   return kind in WITHDRAWAL_SOURCE_KINDS;
@@ -409,7 +474,11 @@ export function incomeMonthlyForYear(
   const delay = income.growthDelayYears ?? 0;
   const growthStart = income.startYear ?? projectionStart;
   const periods = Math.max(0, calendarYear - growthStart - delay);
-  return (income.monthlyAmount || 0) * Math.pow(1 + rate, periods);
+  return (
+    (income.monthlyAmount || 0) *
+    Math.pow(1 + rate, periods) *
+    disabilityPayoutShare(income, calendarYear, growthStart)
+  );
 }
 
 /** Inclusive start/end: omitted bounds mean the expense runs the whole plan. */

@@ -618,6 +618,62 @@ describe("migrateHousehold: expense date range", () => {
   });
 });
 
+describe("migrateHousehold: disability insurance", () => {
+  it("keeps valid disability settings", () => {
+    const out = migrateHousehold(
+      household(
+        [],
+        [
+          income({
+            id: "dis",
+            kind: "disabilityInsurance",
+            disabilityWaitingDays: 180,
+            disabilityCoverage: "partial",
+          }),
+        ],
+      ),
+    );
+    expect(out.incomes[0].disabilityWaitingDays).toBe(180);
+    expect(out.incomes[0].disabilityCoverage).toBe("partial");
+  });
+
+  it("drops bad values so the defaults apply", () => {
+    const out = migrateHousehold(
+      household(
+        [],
+        [
+          income({
+            id: "dis",
+            kind: "disabilityInsurance",
+            disabilityWaitingDays: 45 as never,
+            disabilityCoverage: "most" as never,
+          }),
+        ],
+      ),
+    );
+    expect(out.incomes[0]).not.toHaveProperty("disabilityWaitingDays");
+    expect(out.incomes[0]).not.toHaveProperty("disabilityCoverage");
+  });
+
+  it("strips disability settings from other incomes", () => {
+    const out = migrateHousehold(
+      household(
+        [],
+        [
+          income({
+            id: "sal",
+            kind: "salary",
+            disabilityWaitingDays: 90,
+            disabilityCoverage: "full",
+          }),
+        ],
+      ),
+    );
+    expect(out.incomes[0]).not.toHaveProperty("disabilityWaitingDays");
+    expect(out.incomes[0]).not.toHaveProperty("disabilityCoverage");
+  });
+});
+
 describe("migrateHousehold: pension payout", () => {
   it("leaves an older pension without a payout, which reads as life only", () => {
     const out = migrateHousehold(household([], [income({ id: "pen", kind: "pension" })]));

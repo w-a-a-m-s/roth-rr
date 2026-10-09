@@ -14,13 +14,18 @@ import { AddButton, EntityCard, ReadStat } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { StepTour } from "@/components/onboarding/StepTour";
 import type {
+  DisabilityCoverage,
   IncomeKind,
   IncomeSource,
   PensionPayout,
   Taxability,
 } from "@/lib/domain/types";
 import {
+  DISABILITY_COVERAGE_LABELS,
+  DISABILITY_WAITING_DAYS,
   WITHDRAWAL_SOURCE_KINDS,
+  disabilityCoverage,
+  disabilityWaitingDays,
   isPensionIncome,
   isWithdrawalIncome,
   pensionPayout,
@@ -33,6 +38,7 @@ import { INCOME_TOUR_STEPS } from "@/lib/onboarding/incomeTour";
 
 const KIND_OPTIONS: { value: IncomeKind; label: string }[] = [
   { value: "business", label: "Business income" },
+  { value: "disabilityInsurance", label: "Disability insurance" },
   { value: "lifeInsurance", label: "Life insurance" },
   { value: "militaryPension", label: "Military pension" },
   { value: "pension", label: "Pension" },
@@ -58,6 +64,16 @@ const PAYOUT_LABEL: Record<PensionPayout, string> = {
   lifeOnly: "Life only",
   survivor: "Survivorship",
 };
+
+const WAITING_OPTIONS = DISABILITY_WAITING_DAYS.map((days) => ({
+  value: String(days),
+  label: `${days} days`,
+}));
+
+const COVERAGE_OPTIONS: { value: DisabilityCoverage; label: string }[] = [
+  { value: "full", label: `${DISABILITY_COVERAGE_LABELS.full} (100%)` },
+  { value: "partial", label: `${DISABILITY_COVERAGE_LABELS.partial} (50%)` },
+];
 
 const KIND_LABEL = Object.fromEntries(
   KIND_OPTIONS.map((o) => [o.value, o.label]),
@@ -108,6 +124,9 @@ function IncomeFields({
     household.people.find((p) => p.id === income.ownerId)?.name || "Person";
   const kindLabel = KIND_LABEL[income.kind];
   const payout = pensionPayout(income);
+  const waitingDays = disabilityWaitingDays(income);
+  const coverage = disabilityCoverage(income);
+  const isDisability = income.kind === "disabilityInsurance";
 
   // Changing the type to a withdrawal kind must also pick a source account.
   // Without this the "From account" select would show the first option while
@@ -118,6 +137,16 @@ function IncomeFields({
     // The payout choice only means something on a pension.
     if (!isPensionIncome(kind) && income.pensionPayout) {
       patch.pensionPayout = undefined;
+    }
+    // Disability settings only mean something on disability insurance.
+    if (kind !== "disabilityInsurance") {
+      if (income.disabilityWaitingDays) patch.disabilityWaitingDays = undefined;
+      if (income.disabilityCoverage) patch.disabilityCoverage = undefined;
+    }
+    // Individually bought disability policies pay tax-free benefits, so start
+    // there. Employer-paid plans can switch it back to taxable.
+    if (kind === "disabilityInsurance" && income.kind !== kind) {
+      patch.taxability = "taxFree";
     }
     const nextKinds = WITHDRAWAL_SOURCE_KINDS[kind];
     if (!nextKinds) {
@@ -150,7 +179,7 @@ function IncomeFields({
         <>
           <ReadStat label="Owner" value={ownerName} />
           <ReadStat
-            label="Monthly amount"
+            label={isDisability ? "Monthly benefit" : "Monthly amount"}
             value={formatCurrency(income.monthlyAmount)}
           />
           <ReadStat label="Taxability" value={taxabilityLabel(income)} />
@@ -158,9 +187,21 @@ function IncomeFields({
             label="Annual growth"
             value={formatPercent(income.growthRate)}
           />
-          <ReadStat label="Active years" value={activeYearsLabel(income)} />
+          <ReadStat
+            label={isDisability ? "Benefit period" : "Active years"}
+            value={activeYearsLabel(income)}
+          />
           {payout ? (
             <ReadStat label="Payout" value={PAYOUT_LABEL[payout]} />
+          ) : null}
+          {waitingDays ? (
+            <ReadStat label="Waiting period" value={`${waitingDays} days`} />
+          ) : null}
+          {coverage ? (
+            <ReadStat
+              label="Coverage"
+              value={DISABILITY_COVERAGE_LABELS[coverage]}
+            />
           ) : null}
         </>
       }
@@ -189,7 +230,14 @@ function IncomeFields({
             }))}
           />
         </Field>
-        <Field label="Monthly amount">
+        <Field
+          label={isDisability ? "Monthly benefit" : "Monthly amount"}
+          help={
+            isDisability
+              ? "The policy's full monthly benefit. Partial disability pays half of it."
+              : undefined
+          }
+        >
           <MoneyInput
             value={income.monthlyAmount}
             onChange={(monthlyAmount) =>
@@ -247,6 +295,36 @@ function IncomeFields({
             />
           </Field>
         ) : null}
+        {waitingDays ? (
+          <Field
+            label="Waiting period"
+            help="Days before the first payment, counted from the start of the benefit period. The first year pays only the months left after it (90 days skips 3 months)."
+          >
+            <Select
+              value={String(waitingDays)}
+              onChange={(days) =>
+                updateIncome(income.id, {
+                  disabilityWaitingDays: Number(days) as typeof waitingDays,
+                })
+              }
+              options={WAITING_OPTIONS}
+            />
+          </Field>
+        ) : null}
+        {coverage ? (
+          <Field
+            label="Coverage"
+            help="Full disability pays the whole monthly benefit. Partial disability pays half of it."
+          >
+            <Select
+              value={coverage}
+              onChange={(disabilityCoverage) =>
+                updateIncome(income.id, { disabilityCoverage })
+              }
+              options={COVERAGE_OPTIONS}
+            />
+          </Field>
+        ) : null}
         {sourceKinds ? (
           <Field label="From account">
             <Select
@@ -266,7 +344,14 @@ function IncomeFields({
             />
           </Field>
         ) : null}
-        <Field label="Active years" hint="Optional start / end">
+        <Field
+          label={isDisability ? "Benefit period" : "Active years"}
+          hint={
+            isDisability
+              ? "First and last year the policy pays"
+              : "Optional start / end"
+          }
+        >
           <div className="flex flex-col gap-2 lg:flex-row [&>*]:min-w-0 lg:[&>*]:flex-1">
             <YearSelect
               value={income.startYear}

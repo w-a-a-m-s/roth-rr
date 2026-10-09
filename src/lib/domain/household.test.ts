@@ -11,6 +11,8 @@ import {
   expenseMonthlyForYear,
   expenseYearsLabel,
   healRetirementType,
+  disabilityCoverage,
+  disabilityWaitingDays,
   incomeMonthlyForYear,
   pensionPayout,
   isExpenseActive,
@@ -482,5 +484,67 @@ describe("pensionPayout", () => {
   it("has no payout for incomes that aren't pensions", () => {
     expect(pensionPayout({ kind: "socialSecurity", pensionPayout: "survivor" })).toBeUndefined();
     expect(pensionPayout({ kind: "salary" })).toBeUndefined();
+  });
+});
+
+describe("disability insurance income", () => {
+  const disability = (
+    partial: Partial<IncomeSource> = {},
+  ): IncomeSource => ({
+    id: "dis",
+    label: "Disability",
+    ownerId: "p1",
+    kind: "disabilityInsurance",
+    monthlyAmount: 6_000,
+    growthRate: 0,
+    taxability: "taxFree",
+    startYear: 2030,
+    endYear: 2032,
+    ...partial,
+  });
+
+  it("defaults to a 90-day wait and full coverage", () => {
+    const source = disability();
+    expect(disabilityWaitingDays(source)).toBe(90);
+    expect(disabilityCoverage(source)).toBe("full");
+    // 90 days skips 3 months of the first year: 9 of 12 months paid.
+    expect(incomeMonthlyForYear(source, 2030, 2026)).toBeCloseTo(4_500, 6);
+    expect(incomeMonthlyForYear(source, 2031, 2026)).toBe(6_000);
+    expect(incomeMonthlyForYear(source, 2033, 2026)).toBe(0);
+  });
+
+  it("skips one, two, three or six months for each waiting period", () => {
+    const paid = (days: 30 | 60 | 90 | 180) =>
+      incomeMonthlyForYear(disability({ disabilityWaitingDays: days }), 2030, 2026) * 12;
+    expect(paid(30)).toBeCloseTo(66_000, 6);
+    expect(paid(60)).toBeCloseTo(60_000, 6);
+    expect(paid(90)).toBeCloseTo(54_000, 6);
+    expect(paid(180)).toBeCloseTo(36_000, 6);
+  });
+
+  it("pays half the benefit for partial disability", () => {
+    const source = disability({
+      disabilityCoverage: "partial",
+      disabilityWaitingDays: 180,
+    });
+    expect(incomeMonthlyForYear(source, 2030, 2026)).toBeCloseTo(1_500, 6);
+    expect(incomeMonthlyForYear(source, 2031, 2026)).toBe(3_000);
+  });
+
+  it("starts the wait in the first plan year when no start year is set", () => {
+    const source = disability({ startYear: undefined, endYear: undefined });
+    expect(incomeMonthlyForYear(source, 2026, 2026)).toBeCloseTo(4_500, 6);
+    expect(incomeMonthlyForYear(source, 2027, 2026)).toBe(6_000);
+  });
+
+  it("ignores disability settings on other incomes", () => {
+    const pension = disability({
+      kind: "pension",
+      disabilityCoverage: "partial",
+      disabilityWaitingDays: 180,
+    });
+    expect(disabilityWaitingDays(pension)).toBeUndefined();
+    expect(disabilityCoverage(pension)).toBeUndefined();
+    expect(incomeMonthlyForYear(pension, 2030, 2026)).toBe(6_000);
   });
 });

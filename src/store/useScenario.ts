@@ -29,6 +29,8 @@ import {
 import {
   DEPOSIT_FREQUENCIES,
   WITHDRAWAL_SOURCE_KINDS,
+  isDisabilityCoverage,
+  isDisabilityWaitingDays,
   isPensionIncome,
   applyFilingStatus,
   healAccountJoint,
@@ -212,6 +214,15 @@ export function migrateHousehold(household: Household): Household {
       (inc.pensionPayout !== "lifeOnly" && inc.pensionPayout !== "survivor")
     ) {
       delete inc.pensionPayout;
+    }
+    // Disability settings only belong on disability insurance; bad values
+    // are dropped so the defaults (90 days, full) apply.
+    const isDisability = inc.kind === "disabilityInsurance";
+    if (!isDisability || !isDisabilityWaitingDays(inc.disabilityWaitingDays)) {
+      delete inc.disabilityWaitingDays;
+    }
+    if (!isDisability || !isDisabilityCoverage(inc.disabilityCoverage)) {
+      delete inc.disabilityCoverage;
     }
     // Heal withdrawal incomes that lost (or never got) a source account: when
     // exactly one account is eligible for the income's kind, link to it so the

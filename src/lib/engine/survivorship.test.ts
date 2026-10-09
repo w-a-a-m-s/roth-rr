@@ -95,6 +95,22 @@ describe("survivorship projection", () => {
     expect(year(after, 2037).incomeMonthly["rmd:iraA"]).toBeGreaterThan(0);
   });
 
+  it("stops the deceased's disability insurance", () => {
+    const h = couple();
+    h.incomes.push({
+      id: "disA",
+      label: "Disability Alex",
+      ownerId: "a",
+      kind: "disabilityInsurance",
+      monthlyAmount: 2000,
+      growthRate: 0,
+      taxability: "taxFree",
+    });
+    const r = projectScenario(h, zeros(h), undefined, { death });
+    expect(year(r, 2028).incomeMonthly.disA).toBe(2000);
+    expect(year(r, 2029).incomeMonthly.disA).toBeUndefined();
+  });
+
   it("changes nothing without a death", () => {
     const h = couple();
     expect(calculate(h)).toEqual(calculate(h, undefined, {}));

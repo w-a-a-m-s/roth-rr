@@ -1,0 +1,121 @@
+{
+  "name": "Disability insurance income and after-retirement growth start",
+  "strategy": "manual",
+  "note": "Single filer with a partial-disability policy (60-day wait, taxable) paying 2027 to 2030, and a 401(k) and brokerage set to start growing after retirement (2033).",
+  "household": {
+    "filingStatus": "single",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 6000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Jordan",
+        "birthYear": 1968,
+        "retirementYear": 2033
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ira",
+        "label": "Traditional IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 800000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      },
+      {
+        "id": "k401",
+        "label": "401(k)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 400000,
+        "growthRate": 0.05,
+        "retirementType": "401k",
+        "growthStart": "afterRetirement"
+      },
+      {
+        "id": "roth",
+        "label": "Roth IRA",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 50000,
+        "growthRate": 0.08
+      },
+      {
+        "id": "brk",
+        "label": "Brokerage",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 250000,
+        "costBasis": 150000,
+        "growthRate": 0.05,
+        "growthStart": "afterRetirement"
+      },
+      {
+        "id": "sav",
+        "label": "Savings",
+        "ownerId": "p1",
+        "kind": "savings",
+        "balance": 80000,
+        "growthRate": 0.03
+      }
+    ],
+    "incomes": [
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2800,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 2000,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "dis",
+        "label": "Disability insurance",
+        "ownerId": "p1",
+        "kind": "disabilityInsurance",
+        "monthlyAmount": 5000,
+        "growthRate": 0,
+        "taxability": "full",
+        "startYear": 2027,
+        "endYear": 2030,
+        "disabilityWaitingDays": 60,
+        "disabilityCoverage": "partial"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        80000,
+        80000,
+        80000,
+        80000,
+        80000
+      ]
+    }
+  },
+  "expected": {}
+}
