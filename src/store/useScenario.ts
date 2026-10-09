@@ -32,6 +32,7 @@ import {
   isPensionIncome,
   applyFilingStatus,
   healAccountJoint,
+  healGrowthStart,
   healRetirementType,
   maxPeople,
 } from "@/lib/domain/household";
@@ -147,11 +148,13 @@ export function migrateHousehold(household: Household): Household {
   for (const entry of legacy.deletedAccounts ?? []) {
     healAccountJoint(entry.item, legacy.filingStatus);
     healRetirementType(entry.item);
+    healGrowthStart(entry.item);
   }
 
   for (const acc of legacy.accounts ?? []) {
     healAccountJoint(acc, legacy.filingStatus);
     healRetirementType(acc);
+    healGrowthStart(acc);
     if (!Number.isFinite(acc.growthRate)) {
       acc.growthRate = DEFAULT_ACCOUNT_GROWTH[acc.kind] ?? 0;
     }

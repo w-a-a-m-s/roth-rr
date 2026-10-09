@@ -510,6 +510,38 @@ describe("migrateHousehold: retirement account type", () => {
   });
 });
 
+describe("migrateHousehold: growth start", () => {
+  it("leaves older plans without a growth start (type default applies)", () => {
+    const h = household([account({ id: "ira", kind: "retirementTaxable" })], []);
+    const out = migrateHousehold(h);
+    expect(out.accounts[0].growthStart).toBeUndefined();
+  });
+
+  it("keeps a valid growth start", () => {
+    const h = household(
+      [account({ id: "b", kind: "investment", growthStart: "afterRetirement" })],
+      [],
+    );
+    expect(migrateHousehold(h).accounts[0].growthStart).toBe("afterRetirement");
+  });
+
+  it("drops an unknown growth start on live and deleted accounts", () => {
+    const h = household(
+      [account({ id: "b", kind: "investment", growthStart: "later" as never })],
+      [],
+    );
+    h.deletedAccounts = [
+      {
+        item: account({ id: "old", kind: "savings", growthStart: "x" as never }),
+        deletedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ];
+    const out = migrateHousehold(h);
+    expect(out.accounts[0].growthStart).toBeUndefined();
+    expect(out.deletedAccounts?.[0].item.growthStart).toBeUndefined();
+  });
+});
+
 describe("migrateHousehold: expense date range", () => {
   it("leaves open-ended expenses unchanged", () => {
     const h = household([], []);

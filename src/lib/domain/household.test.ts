@@ -319,6 +319,27 @@ describe("accountGrowsInYear", () => {
     expect(accountGrowsInYear(acc, people, 2029, 2026)).toBe(true);
   });
 
+  it("follows an explicit growth start over the type default", () => {
+    const base: Account = {
+      id: "acc",
+      label: "Acc",
+      ownerId: "p2",
+      kind: "investment",
+      balance: 1,
+      growthRate: 0.05,
+    };
+    const waits = { ...base, growthStart: "afterRetirement" as const };
+    expect(accountGrowsInYear(waits, people, 2028, 2026)).toBe(false);
+    expect(accountGrowsInYear(waits, people, 2029, 2026)).toBe(true);
+    const drop: Account = {
+      ...base,
+      kind: "retirementTaxable",
+      retirementType: "drop",
+      growthStart: "planStart",
+    };
+    expect(accountGrowsInYear(drop, people, 2026, 2026)).toBe(true);
+  });
+
   it("falls back to the household start year when retirement year is missing", () => {
     const acc: Account = {
       id: "drop",

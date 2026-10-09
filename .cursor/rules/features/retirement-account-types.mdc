@@ -1,6 +1,6 @@
 ---
-description: Taxable retirement account subtypes and DROP growth delay
-globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/components/wizard/steps/AccountsStep.tsx,src/store/useScenario.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/engine/deposits.ts,src/lib/planDiff.ts
+description: Taxable retirement account subtypes and per-account growth start (DROP delay)
+globs: src/lib/planDiff.ts,src/lib/domain/types.ts,src/lib/domain/household.ts,src/components/wizard/steps/AccountsStep.tsx,src/store/useScenario.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/engine/deposits.ts
 alwaysApply: false
 ---
 
@@ -20,19 +20,25 @@ Older plans have no subtype. `migrateHousehold` / `healRetirementType` set
 missing or unknown values to `"drop"` on live accounts and `deletedAccounts`.
 New cards default to DROP too. Strip `retirementType` from any other kind.
 
-## DROP growth
+## Growth start (DROP delay)
 
-Only `retirementType === "drop"` delays compounding. First growth is the
-calendar year **after the owner's `retirementYear`**. If that year is missing,
-fall back to the household start year (`accountGrowsInYear`).
+Every account card has a **Growth starts** toggle (`Account.growthStart`):
+`planStart` compounds from year 0, `afterRetirement` stays flat through the
+owner's `retirementYear` and first grows the year after. Unset means the
+type default (`defaultGrowthStart`): `afterRetirement` for DROP, `planStart`
+for everything else, so older plans keep their numbers. Read it through
+`accountGrowthStart`, never `growthStart` directly. `healGrowthStart` drops
+unknown values. If the owner has no retirement year, fall back to the
+household start year (`accountGrowsInYear`). Joint accounts use `ownerId`.
 
 Example: plan starts 2030 (David), Batsheva retires 2032. Her DROP is flat in
-2030, 2031, and 2032. First 5% is 2033. Her IRA still grows in 2030.
+2030, 2031, and 2032. First 5% is 2033. Her IRA still grows in 2030 unless
+it's switched to After retirement.
 
 `projectScenario` and `convertibleTotal` both call `accountGrowsInYear`. Keep
-them in sync. Pre-start DROP deposits add principal only
+them in sync. Pre-start deposits into an `afterRetirement` account add principal only
 (`preStartDepositValue` uses rate 0): growth never starts before the plan
-does, and in-loop deposits still land after the grow step, so a DROP deposit
+does, and in-loop deposits still land after the grow step, so such a deposit
 in the retirement year first compounds the following year.
 
 Everyone else (401(k), IRA, TSP, …) still grows in year 0: a full year, or

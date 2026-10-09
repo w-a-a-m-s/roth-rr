@@ -1,5 +1,5 @@
 import type { Account, Deposit } from "@/lib/domain/types";
-import { isDropRetirementAccount } from "@/lib/domain/household";
+import { accountGrowthStart } from "@/lib/domain/household";
 import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
 
 /**
@@ -108,9 +108,12 @@ export function preStartDepositValue(
   startYear: number,
 ): number {
   if (!Number.isFinite(startYear)) return 0;
-  // DROP does not compound until the year after the owner retires, which is
-  // never before the plan starts, so pre-start deposits add principal only.
-  const rate = isDropRetirementAccount(account) ? 0 : accountGrowthRate(account);
+  // An account that waits for retirement (DROP by default) does not compound
+  // before the plan starts, so pre-start deposits add principal only.
+  const rate =
+    accountGrowthStart(account) === "afterRetirement"
+      ? 0
+      : accountGrowthRate(account);
   let total = 0;
   for (const deposit of account.deposits ?? []) {
     eachDepositYear(deposit, startYear - 1, (year, amount) => {

@@ -25,15 +25,19 @@ import type {
   AccountKind,
   Deposit,
   DepositFrequency,
+  GrowthStart,
   RetirementAccountType,
 } from "@/lib/domain/types";
 import {
   AFTER_TAX_ACCOUNT_KINDS,
   DEFAULT_RETIREMENT_ACCOUNT_TYPE,
+  GROWTH_START_LABELS,
+  GROWTH_STARTS,
   JOINT_OWNER_VALUE,
   RETIREMENT_ACCOUNT_TYPES,
   RETIREMENT_ACCOUNT_TYPE_LABELS,
   accountDepositEndYear,
+  accountGrowthStart,
   accountOwnerLabel,
   accountsInDisplayOrder,
   canAccountBeJoint,
@@ -361,11 +365,7 @@ function AccountFields({
           account.retirementType ?? DEFAULT_RETIREMENT_ACCOUNT_TYPE
         ]
       : KIND_LABELS[account.kind];
-  const growthHelp =
-    account.kind === "retirementTaxable" &&
-    (account.retirementType ?? DEFAULT_RETIREMENT_ACCOUNT_TYPE) === "drop"
-      ? "Annual return for this DROP. Growth starts the year after the owner retires."
-      : GROWTH_HELP[account.kind];
+  const growthStart = accountGrowthStart(account);
 
   return (
     <EntityCard
@@ -461,15 +461,62 @@ function AccountFields({
             />
           </Field>
         ) : null}
-        <Field label="Annual growth" help={growthHelp}>
+        <Field label="Annual growth" help={GROWTH_HELP[account.kind]}>
           <PercentInput
             value={account.growthRate}
             onChange={(growthRate) => updateAccount(account.id, { growthRate })}
           />
         </Field>
+        <Field
+          label="Growth starts"
+          help="Plan start compounds this balance from the first year of the plan. After retirement keeps it flat until the year after the owner retires, then it starts growing."
+        >
+          <GrowthStartToggle
+            value={growthStart}
+            onChange={(next) =>
+              updateAccount(account.id, { growthStart: next })
+            }
+          />
+        </Field>
       </div>
       <Deposits account={account} />
     </EntityCard>
+  );
+}
+
+function GrowthStartToggle({
+  value,
+  onChange,
+}: {
+  value: GrowthStart;
+  onChange: (value: GrowthStart) => void;
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Growth starts"
+      className="flex rounded-[9px] border border-border-2 bg-surface-muted p-0.5"
+    >
+      {GROWTH_STARTS.map((option) => {
+        const on = option === value;
+        return (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(option)}
+            className={`flex-1 whitespace-nowrap rounded-[7px] px-2 py-1 text-base transition md:text-sm ${
+              on
+                ? "bg-white font-semibold text-foreground shadow-sm"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            {GROWTH_START_LABELS[option]}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

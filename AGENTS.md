@@ -78,9 +78,9 @@ balance never goes negative.
 
 Starting balances are January 1 of the first projection year. Every year,
 including year 0, applies a full year of growth *before* withdrawals,
-conversions, and RMDs, **except DROP**: a `retirementType === "drop"` account
-waits until the year after *that owner's* retirement year (see the retirement
-account types feature guide). Skipping year-0 growth on other accounts made an
+conversions, and RMDs, **except accounts whose Growth starts toggle is After
+retirement** (DROP's default): those wait until the year after *that owner's*
+retirement year (see the retirement account types feature guide). Skipping year-0 growth on other accounts made an
 after-tax account that earns about as much as it distributes look like it was
 shrinking.
 

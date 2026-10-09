@@ -4,6 +4,7 @@ import type {
   DepositFrequency,
   Expense,
   FilingStatus,
+  GrowthStart,
   Household,
   IncomeKind,
   IncomeSource,
@@ -121,25 +122,59 @@ export function firstYearGrowthFraction(
   return Math.min(1, Math.max(0, (nextYearStart - asOf) / (nextYearStart - yearStart)));
 }
 
+export const GROWTH_STARTS: GrowthStart[] = ["planStart", "afterRetirement"];
+
+export const GROWTH_START_LABELS: Record<GrowthStart, string> = {
+  planStart: "Plan start",
+  afterRetirement: "After retirement",
+};
+
+export function isGrowthStart(value: unknown): value is GrowthStart {
+  return value === "planStart" || value === "afterRetirement";
+}
+
+/** DROP waits for retirement by default; every other account grows right away. */
+export function defaultGrowthStart(
+  account: Pick<Account, "kind" | "retirementType">,
+): GrowthStart {
+  return isDropRetirementAccount(account) ? "afterRetirement" : "planStart";
+}
+
+/** The account's chosen growth start, or its type's default when unset. */
+export function accountGrowthStart(
+  account: Pick<Account, "kind" | "retirementType" | "growthStart">,
+): GrowthStart {
+  return isGrowthStart(account.growthStart)
+    ? account.growthStart
+    : defaultGrowthStart(account);
+}
+
 /**
- * Whether this account compounds in `calendarYear`. DROP waits until the year
- * after the owner's retirement. If that year is missing, fall back to the
- * household start year (first growth is start + 1). Everyone else grows every
- * projection year, including year 0.
+ * Whether this account compounds in `calendarYear`. An `afterRetirement`
+ * account (DROP by default) waits until the year after the owner's
+ * retirement. If that year is missing, fall back to the household start year
+ * (first growth is start + 1). A `planStart` account grows every projection
+ * year, including year 0.
  */
 export function accountGrowsInYear(
-  account: Pick<Account, "kind" | "retirementType" | "ownerId">,
+  account: Pick<Account, "kind" | "retirementType" | "growthStart" | "ownerId">,
   people: Person[],
   calendarYear: number,
   fallbackStartYear: number,
 ): boolean {
-  if (!isDropRetirementAccount(account)) return true;
+  if (accountGrowthStart(account) === "planStart") return true;
   const owner = people.find((p) => p.id === account.ownerId);
   const retire =
     owner?.retirementYear != null && Number.isFinite(owner.retirementYear)
       ? owner.retirementYear
       : fallbackStartYear;
   return calendarYear > retire;
+}
+
+/** Unknown growth starts are dropped so the account falls back to its default. */
+export function healGrowthStart(account: Account): void {
+  if (account.growthStart == null || isGrowthStart(account.growthStart)) return;
+  delete account.growthStart;
 }
 
 /** Missing or unknown tax-deferred subtypes become DROP (legacy plans). */

@@ -93,6 +93,14 @@ export type RetirementAccountType =
   | "tsp"
   | "drop";
 
+/**
+ * When an account starts compounding. `planStart` grows from the first
+ * projection year; `afterRetirement` stays flat until the year after the
+ * owner's retirement. Unset falls back to the account type's default
+ * (`afterRetirement` for DROP, `planStart` for everything else).
+ */
+export type GrowthStart = "planStart" | "afterRetirement";
+
 export type DepositFrequency = "monthly" | "yearly" | "oneTime";
 
 /**
@@ -133,6 +141,8 @@ export interface Account {
   costBasis?: number;
   /** Annual growth (decimal, e.g. 0.05). Required per account. */
   growthRate: number;
+  /** When growth starts. Optional: unset uses `defaultGrowthStart`. */
+  growthStart?: GrowthStart;
   /** Money paid into this account. Optional for older plans (defaults to []). */
   deposits?: Deposit[];
 }

@@ -18,7 +18,9 @@ import type {
 import { STRATEGY_LABELS } from "@/lib/optimizer/labels";
 import {
   JOINT_OWNER_VALUE,
+  GROWTH_START_LABELS,
   RETIREMENT_ACCOUNT_TYPE_LABELS,
+  isGrowthStart,
   isRetirementAccountType,
 } from "@/lib/domain/household";
 import { depositSummary } from "@/lib/depositSummary";
@@ -102,6 +104,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   costBasis: "Cost basis",
   deposits: "Deposits",
   growthRate: "Growth rate",
+  growthStart: "Growth starts",
   monthlyAmount: "Monthly amount",
   taxability: "Taxability",
   startYear: "Start year",
@@ -262,6 +265,9 @@ function formatScalar(
     if (value in INCOME_KIND_LABELS) {
       return INCOME_KIND_LABELS[value as IncomeKind];
     }
+  }
+  if (key === "growthStart" && isGrowthStart(value)) {
+    return GROWTH_START_LABELS[value];
   }
   if (key === "retirementType" && isRetirementAccountType(value)) {
     return RETIREMENT_ACCOUNT_TYPE_LABELS[value as RetirementAccountType];

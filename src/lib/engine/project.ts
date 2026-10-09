@@ -592,7 +592,8 @@ export function projectScenario(
 
     // 1) Grow balances. Starting balances are January 1 of the first projection
     //    year, so year 0 gets a full year of returns before withdrawals, except
-    //    DROP: those wait until the year after the owner's retirement. When the
+    //    accounts set to start after retirement (DROP by default): those wait
+    //    until the year after the owner's retirement. When the
     //    balances are as of a date inside year 0 (`refs.asOfDate`, today in
     //    the app), year 0 compounds only for the rest of that year. All
     //    accounts keep compounding for life, including tax-deferred ones past

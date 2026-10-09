@@ -1500,6 +1500,7 @@ describe("afterTaxAssets", () => {
 describe("DROP growth delay", () => {
   function household(opts: {
     retirementType: "drop" | "ira" | "401k";
+    growthStart?: "planStart" | "afterRetirement";
     retirementYear: number;
     spouseRetirementYear?: number;
     monthlyDraw?: number;
@@ -1531,6 +1532,7 @@ describe("DROP growth delay", () => {
           ownerId: people[people.length - 1].id,
           kind: "retirementTaxable",
           retirementType: opts.retirementType,
+          growthStart: opts.growthStart,
           balance: 100_000,
           growthRate: 0.05,
         },
@@ -1583,6 +1585,32 @@ describe("DROP growth delay", () => {
     expect(rows[2].balances.ret).toBeCloseTo(100_000, 2);
     expect(rows[3].calendarYear).toBe(2029);
     expect(rows[3].balances.ret).toBeCloseTo(105_000, 2);
+  });
+
+  it("holds an IRA set to grow after retirement until the year after its owner retires", () => {
+    const h = household({
+      retirementType: "ira",
+      growthStart: "afterRetirement",
+      retirementYear: 2026,
+      spouseRetirementYear: 2028,
+    });
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    expect(rows[0].balances.ret).toBeCloseTo(100_000, 2);
+    expect(rows[2].calendarYear).toBe(2028);
+    expect(rows[2].balances.ret).toBeCloseTo(100_000, 2);
+    expect(rows[3].balances.ret).toBeCloseTo(105_000, 2);
+  });
+
+  it("grows a DROP set to plan start from year 0", () => {
+    const h = household({
+      retirementType: "drop",
+      growthStart: "planStart",
+      retirementYear: 2026,
+      spouseRetirementYear: 2028,
+    });
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    expect(rows[0].balances.ret).toBeCloseTo(105_000, 2);
+    expect(rows[1].balances.ret).toBeCloseTo(110_250, 2);
   });
 
   it("still grows an IRA and a 401(k) in year 0", () => {

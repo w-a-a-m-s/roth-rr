@@ -90,8 +90,8 @@ export function convertibleTotal(household: Household): number {
   for (let i = 0; i < years; i++) {
     const calendarYear = start + i;
 
-    // Grow balances. Same order as `projectScenario`, including the DROP delay
-    // (first growth the year after the owner's retirement).
+    // Grow balances. Same order as `projectScenario`, including the
+    // after-retirement delay (first growth the year after the owner retires).
     for (const acc of retirementAccounts) {
       if (!accountGrowsInYear(acc, household.people, calendarYear, start)) {
         continue;
