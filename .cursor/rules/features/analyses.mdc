@@ -56,11 +56,12 @@ Inheritance uses the final row's filing status.
 
 Approved by the user: keep it (see AGENTS.md, "Results layout").
 
-Under the analysis links, three tabs (`ResultsView` state, Main on load);
+Under the analysis links, four tabs (`ResultsView` state, Main on load);
 each tab shows only its own sections:
-- **Main**: the Assets, Income & Taxes tables and the Year-by-year table
-  (stays last in the scroller for pin-to-top).
+- **Main**: the Assets, Income & Taxes tables.
 - **Summary**: Total impact, the metric cards, and After-tax assets.
 - **Graphic view**: `PresentationCharts` plus the Assets / Cash flow charts.
+- **Main in detail analysis**: the Year-by-year table, alone in the scroller
+  for pin-to-top.
 The No conversion / With conversion toggle sits on Year-by-year and on the
 Assets and cash flow charts (shared state).

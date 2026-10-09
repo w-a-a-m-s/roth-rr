@@ -40,7 +40,8 @@ export function ResultsView() {
 		[household, ready, refsReady, refs, options],
 	);
 	const [tab, setTab] = useState<'baseline' | 'roth'>('baseline');
-	// Clients land on Main (the tables); Summary and Graphic view are tabs.
+	// Clients land on Main (the tables); Summary, Graphic view and the
+	// year-by-year detail are tabs.
 	const [view, setView] = useState<ResultsViewKey>('main');
 	const primaryId = primaryPersonId(household);
 
@@ -130,26 +131,29 @@ export function ResultsView() {
 			{view === 'main' ? (
 				<section className="flex flex-col gap-4">
 					<ScenarioSnapshot comparison={comparison} household={household} primaryId={primaryId} />
+				</section>
+			) : null}
 
-					<div className="flex flex-col gap-3">
-						<div className="flex flex-wrap items-center justify-between gap-4">
-							<h3 className="m-0 text-[14.5px] font-bold text-foreground">Year-by-year</h3>
-							<ScenarioToggle tab={tab} onChange={setTab} />
-						</div>
-						<ProjectionTable scenario={scenario} household={household} primaryId={primaryId} />
+			{view === 'detail' ? (
+				<section className="flex flex-col gap-3">
+					<div className="flex flex-wrap items-center justify-between gap-4">
+						<h3 className="m-0 text-[14.5px] font-bold text-foreground">Year-by-year</h3>
+						<ScenarioToggle tab={tab} onChange={setTab} />
 					</div>
+					<ProjectionTable scenario={scenario} household={household} primaryId={primaryId} />
 				</section>
 			) : null}
 		</div>
 	);
 }
 
-type ResultsViewKey = 'main' | 'summary' | 'graphic';
+type ResultsViewKey = 'main' | 'summary' | 'graphic' | 'detail';
 
 const VIEW_LINKS: { key: ResultsViewKey; label: string }[] = [
 	{ key: 'main', label: 'Main' },
 	{ key: 'summary', label: 'Summary' },
 	{ key: 'graphic', label: 'Graphic view' },
+	{ key: 'detail', label: 'Main in detail analysis' },
 ];
 
 /** Tabs for the results: each shows only its own sections. */

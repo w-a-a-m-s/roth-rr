@@ -326,13 +326,15 @@ user asks for a change:
 
 1. Analysis links: **Retirement | Survivorship | Disability | Long-term care**.
    Survivorship and Long-term care show their own settings card under them.
-2. Results tabs: **Main | Summary | Graphic view**. Each tab shows only its
-   own sections; Main is the default.
+2. Results tabs: **Main | Summary | Graphic view | Main in detail analysis**.
+   Each tab shows only its own sections; Main is the default.
    - **Main**: the Assets, Income & Taxes tables (No conversion, then With
-     conversion), then the Year-by-year table (last, for pin-to-top).
+     conversion).
    - **Summary**: Total impact, the six metric cards, After-tax assets.
    - **Graphic view**: Retirement Objective, Income Sources and Income
      Applied charts, then the Assets and Cash flow charts.
+   - **Main in detail analysis**: the Year-by-year table (alone, for
+     pin-to-top).
 
 Don't move sections between tabs, rename the tabs, or add sections to a tab
 without asking. Details live in the analyses feature guide.
