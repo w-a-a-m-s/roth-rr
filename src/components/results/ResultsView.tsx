@@ -159,7 +159,12 @@ export function ResultsView() {
 
 			{view === 'main' ? (
 				<section className="flex flex-col gap-4">
-					<ScenarioSnapshot comparison={comparison} household={household} primaryId={primaryId} />
+					<ScenarioSnapshot
+						key={comparison.baseline.rows[0]?.calendarYear}
+						comparison={comparison}
+						household={household}
+						primaryId={primaryId}
+					/>
 				</section>
 			) : null}
 

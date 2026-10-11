@@ -82,6 +82,22 @@ const AFTER_TAX_KINDS: Account["kind"][] = [
   "savings",
 ];
 
+/**
+ * First year an analysis projects. Normally the plan start; Survivorship with
+ * a death before it starts in the year of death, but never before the year of
+ * `asOfDate` (today in the app).
+ */
+export function analysisStartYear(
+  household: Household,
+  death: { year: number } | null,
+  asOfDate?: string,
+): number {
+  const planStart = projectionStartYear(household);
+  if (!death || !(death.year < planStart)) return planStart;
+  const today = asOfDate ? Number(asOfDate.slice(0, 4)) : NaN;
+  return Number.isFinite(today) ? Math.min(planStart, Math.max(death.year, today)) : death.year;
+}
+
 /** Projection start = the earliest retirement year across the household. */
 export function projectionStartYear(household: Household): number {
   return Math.min(...household.people.map((p) => p.retirementYear ?? NaN));
@@ -216,6 +232,7 @@ function stepRealEstate(
   yearIndex: number,
   mortgageBalances: Record<string, number>,
   preStartYearsById: Record<string, number>,
+  rentYearIndex = yearIndex,
 ): RealEstateYear {
   const a = household.assumptions;
   let value = 0;
@@ -240,11 +257,11 @@ function stepRealEstate(
 
     const rentGrowth = re.rentGrowthRate ?? DEFAULT_RENT_GROWTH;
     const rentAnnual =
-      (re.monthlyRent ?? 0) * 12 * Math.pow(1 + rentGrowth, yearIndex);
+      (re.monthlyRent ?? 0) * 12 * Math.pow(1 + rentGrowth, rentYearIndex);
     const expenseAnnual =
       (re.monthlyOperatingExpenses ?? 0) *
       12 *
-      Math.pow(1 + a.expenseGrowth, yearIndex);
+      Math.pow(1 + a.expenseGrowth, rentYearIndex);
 
     const bal = mortgageBalances[re.id] ?? 0;
     const am =
@@ -552,8 +569,15 @@ export function projectScenario(
     refs.stateIncomeTax,
     household.residenceState ?? "FL",
   );
-  const start = projectionStartYear(household);
-  const years = projectionYears(household);
+  // The plan starts at the first retirement year. Survivorship can start
+  // earlier: a death before then starts the projection in the year of death
+  // (never before today). Amounts the plan states in start-year dollars
+  // (incomes, expenses, rent, care) stay anchored to the plan start, so every
+  // year from the plan start on matches what a later death would show.
+  const planStart = projectionStartYear(household);
+  const start = analysisStartYear(household, death, refs.asOfDate);
+  const offset = planStart - start;
+  const years = projectionYears(household) + offset;
 
   // Roth conversions need a tax-free destination. If the plan has no Roth
   // account but a conversion is scheduled, add an implicit empty Roth bucket so
@@ -654,7 +678,7 @@ export function projectScenario(
       household,
       death,
       calendarYear,
-      start,
+      planStart,
     );
     // A disabled person's salary and business income stop.
     if (disability && calendarYear >= disability.year) {
@@ -675,7 +699,7 @@ export function projectScenario(
     //    the RMD age: the money stays invested while RMDs are taken.
     const yearFraction = i === 0 ? firstYearGrowth : 1;
     for (const acc of accounts) {
-      if (!accountGrowsInYear(acc, household.people, calendarYear, start)) {
+      if (!accountGrowsInYear(acc, household.people, calendarYear, planStart)) {
         continue;
       }
       balances[acc.id] *= Math.pow(1 + growthRate(acc), yearFraction);
@@ -694,7 +718,7 @@ export function projectScenario(
       if (!isIncomeActive(income, calendarYear)) continue;
       const accId = income.drawsFromAccountId;
       if (!accId || balances[accId] == null) continue;
-      const withdraw = incomeMonthlyForYear(income, calendarYear, start) * 12;
+      const withdraw = incomeMonthlyForYear(income, calendarYear, planStart) * 12;
       const balBefore = Math.max(0, balances[accId]);
       const take = Math.min(balBefore, Math.max(0, withdraw));
       if (income.kind === "afterTaxWithdrawal" && take > 0 && balBefore > 0) {
@@ -708,7 +732,8 @@ export function projectScenario(
     }
 
     // 3) Roth conversions: cascade out of tax-deferred accounts into Roth.
-    let toConvert = conversionSchedule[i] ?? 0;
+    // The schedule is per plan year; years before the plan start convert nothing.
+    let toConvert = (i >= offset ? conversionSchedule[i - offset] : 0) ?? 0;
     let converted = 0;
     for (const acc of retirementAccounts) {
       if (toConvert <= 0) break;
@@ -765,7 +790,7 @@ export function projectScenario(
       // the source balance). A scheduled draw against an empty account is $0.
       const annual = isWithdrawalIncome(income.kind)
         ? (withdrawalTaken[income.id] ?? 0)
-        : incomeMonthlyForYear(income, calendarYear, start) * 12;
+        : incomeMonthlyForYear(income, calendarYear, planStart) * 12;
       if (annual <= 0 && isWithdrawalIncome(income.kind)) continue;
       const monthly = annual / 12;
       totalMonthlyIncome += monthly;
@@ -871,7 +896,7 @@ export function projectScenario(
     //  - Long-term care: a policy on someone in care pays its monthly benefit
     //    (up to that month's care cost) after the waiting period, for its
     //    benefit years or while care lasts. Tax free.
-    const careYearCosts = careForYear(care, calendarYear, start).costMonthlyById;
+    const careYearCosts = careForYear(care, calendarYear, planStart).costMonthlyById;
     for (const stay of care?.stays ?? []) {
       const cost = careYearCosts[stay.personId] ?? 0;
       if (cost <= 0) continue;
@@ -900,6 +925,7 @@ export function projectScenario(
       i,
       mortgageBalances,
       realEstatePreStartYears,
+      i - offset,
     );
     totalMonthlyIncome += realEstate.cashAnnual / 12;
     for (const [id, monthly] of Object.entries(realEstate.cashMonthlyById)) {
@@ -1083,14 +1109,14 @@ export function projectScenario(
     // spread to monthly. Out-of-range years are 0.
     // Survivorship: after a death the household spends a set share of what
     // the couple did.
-    const careYear = careForYear(care, calendarYear, start);
+    const careYear = careForYear(care, calendarYear, planStart);
     const expenseShare =
       (death != null && calendarYear > death.year ? SURVIVOR_EXPENSE_SHARE : 1) *
       careYear.expenseShare;
     const expenseMonthly: Record<string, number> = {};
     let monthlyExpenses = 0;
     for (const e of household.expenses) {
-      const grown = expenseMonthlyForYear(e, calendarYear, start) * expenseShare;
+      const grown = expenseMonthlyForYear(e, calendarYear, planStart) * expenseShare;
       expenseMonthly[e.id] = grown;
       monthlyExpenses += grown;
     }

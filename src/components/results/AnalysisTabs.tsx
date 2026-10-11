@@ -86,7 +86,10 @@ export function SurvivorshipControls({
   const person = household.people.find((p) => p.id === event.personId);
   const survivor = household.people.find((p) => p.id !== event.personId);
   const start = projectionStartYear(household);
-  const ageNow = person?.birthYear != null ? start - person.birthYear : 50;
+  // A death can be any year from today on, before retirement too: the
+  // projection then starts in the year of death.
+  const thisYear = new Date().getFullYear();
+  const ageNow = person?.birthYear != null ? thisYear - person.birthYear : 50;
   const ages = Array.from({ length: Math.max(1, 111 - ageNow) }, (_, i) => ageNow + i);
   const death = resolveDeath(household, event);
   const ss = socialSecurityAfterDeath(
@@ -110,7 +113,11 @@ export function SurvivorshipControls({
             <Select
               id="survivorship-person"
               value={event.personId}
-              onChange={(personId) => setSurvivorship({ ...event, personId })}
+              onChange={(personId) => {
+                const next = household.people.find((p) => p.id === personId);
+                const nextAgeNow = next?.birthYear != null ? thisYear - next.birthYear : 0;
+                setSurvivorship({ personId, deathAge: Math.max(event.deathAge, nextAgeNow) });
+              }}
               options={household.people.map((p) => ({
                 value: p.id,
                 label: name(p),
@@ -132,6 +139,9 @@ export function SurvivorshipControls({
       </div>
       {death ? (
         <p className="m-0 text-[13px] leading-relaxed text-muted">
+          {death.year < start
+            ? `This is before the plan starts in ${start}, so the projection starts in ${death.year}. `
+            : ""}
           {name(person)} passes at the end of {death.year}. From {death.year + 1},{" "}
           {name(survivor)} files single, keeps the larger Social Security
           benefit, and inherits {name(person)}&apos;s accounts.{" "}

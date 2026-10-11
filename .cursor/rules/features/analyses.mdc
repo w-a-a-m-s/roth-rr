@@ -34,6 +34,16 @@ conversion schedule always comes from the plan's strategy as-is.
 
 ## Survivorship rules (`domain/survivorship.ts` + `projectScenario`)
 
+A death can be any age from today on. When it comes before the plan start
+(first retirement year), `analysisStartYear` starts the projection in the
+year of death (never before `asOfDate`'s year) and runs to the same final
+age. Start-year amounts (incomes, expenses, rent, care) stay anchored to the
+plan start: before it they hold at the entered amount. The conversion
+schedule is per plan year, so earlier years convert nothing. Accounts,
+property and business values compound from today to the earlier start;
+mortgages amortize from it. ResultsView keys the snapshot by the first row's
+year so Jump to resets.
+
 The person passes at the end of `birthYear + deathAge`; effects start the
 next year:
 - filing status mfj becomes single (row `filingStatus`), senior deduction and

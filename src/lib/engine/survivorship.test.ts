@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { Household } from "@/lib/domain/types";
 import { projectScenario, projectionYears } from "@/lib/engine/project";
 import { calculate } from "@/lib/calculate";
+import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
+
+const FALLBACK_WITH_DATE = (asOfDate: string) => ({ ...FALLBACK_REFERENCE_DATA, asOfDate });
 import {
   defaultDeathEvent,
   resolveDeath,
@@ -163,5 +166,84 @@ describe("socialSecurityAfterDeath", () => {
   it("is null without Social Security", () => {
     const h = { ...couple(), incomes: [] };
     expect(socialSecurityAfterDeath(h, resolveDeath(h, death), 2026, 2057)).toBeNull();
+  });
+});
+
+// Ran (born 1973) and Rita (born 1979) both retire in 2040, so the plan
+// starts in 2040, when Ran is 67.
+function laterRetirees(): Household {
+  return {
+    filingStatus: "mfj",
+    residenceState: "FL",
+    people: [
+      { id: "r", name: "Ran", birthYear: 1973, retirementYear: 2040 },
+      { id: "t", name: "Rita", birthYear: 1979, retirementYear: 2040 },
+    ],
+    mainPersonId: "r",
+    accounts: [
+      { id: "sep", label: "SEP", ownerId: "r", kind: "retirementTaxable", balance: 500_000, growthRate: 0.06, retirementType: "ira" },
+      { id: "brk", label: "Brokerage", ownerId: "r", kind: "investment", balance: 100_000, growthRate: 0.05, costBasis: 100_000 },
+    ],
+    incomes: [
+      { id: "ssR", label: "SS Ran", ownerId: "r", kind: "socialSecurity", monthlyAmount: 4000, growthRate: 0.02, taxability: "full", startYear: 2040 },
+      { id: "rent", label: "Side income", ownerId: "t", kind: "other", monthlyAmount: 1000, growthRate: 0.03, taxability: "full" },
+    ],
+    realEstate: [],
+    expenses: [
+      { id: "living", label: "Living", amount: 8000, frequency: "monthly", growthRate: 0.02 },
+    ],
+    assumptions: { expenseGrowth: 0, finalAge: 90 },
+    optimizer: { strategy: "manual", manualSchedule: [50_000, 50_000] },
+    insurance: [
+      { id: "wl", kind: "life", label: "Whole life", insuredId: "r", policyType: "permanent", permanentType: "whole", faceAmount: 1_000_000 },
+    ],
+  };
+}
+
+describe("a death before the plan starts", () => {
+  const h = laterRetirees();
+  // Ran passes at 55, the end of 2028.
+  const early = { death: { personId: "r", deathAge: 55 } };
+  const plain = calculate(h);
+  const survivor = calculate(h, undefined, early);
+  const rows = survivor.roth.rows;
+  const at = (y: number) => rows.find((r) => r.calendarYear === y)!;
+
+  it("starts the projection in the year of death and still runs to the plan's final age", () => {
+    expect(rows[0].calendarYear).toBe(2028);
+    expect(rows[rows.length - 1].calendarYear).toBe(plain.roth.rows[plain.roth.rows.length - 1].calendarYear);
+    expect(rows.length).toBe(projectionYears(h) + 12);
+  });
+
+  it("keeps start-year dollars anchored to the plan start", () => {
+    const planRow = plain.roth.rows[0];
+    expect(at(2040).incomeMonthly.rent).toBeCloseTo(planRow.incomeMonthly.rent, 6);
+    // Before the plan start the amount holds at what was entered.
+    expect(at(2028).incomeMonthly.rent).toBe(1000);
+    expect(at(2041).incomeMonthly.rent).toBeCloseTo(1030, 6);
+    expect(at(2041).expenseMonthly.living).toBeCloseTo(8000 * 1.02 * 0.7, 6);
+  });
+
+  it("only converts in plan years", () => {
+    expect(at(2030).conversion).toBe(0);
+    expect(at(2040).conversion).toBe(50_000);
+    expect(at(2041).conversion).toBe(50_000);
+  });
+
+  it("pays life insurance from the year after the death at the under-59 rate", () => {
+    expect(at(2028).incomeMonthly["life:wl"]).toBeUndefined();
+    expect(at(2029).incomeMonthly["life:wl"]).toBeCloseTo(50_000 / 12, 6);
+    expect(at(2029).filingStatus).toBe("single");
+    expect(at(2029).livingIds).toEqual(["t"]);
+  });
+
+  it("never starts before today", () => {
+    const r = projectScenario(h, [], FALLBACK_WITH_DATE("2030-03-01"), early);
+    expect(r[0].calendarYear).toBe(2030);
+  });
+
+  it("leaves a death after the plan start where it was", () => {
+    const later = calculate(h, undefined, { death: { personId: "r", deathAge: 75 } });
+    expect(later.roth.rows[0].calendarYear).toBe(2040);
   });
 });
