@@ -1,4 +1,10 @@
-import type { PropertyLoan, PropertyLoanKind, RealEstate } from "@/lib/domain/types";
+import type {
+  Household,
+  MortgageStatement,
+  PropertyLoan,
+  PropertyLoanKind,
+  RealEstate,
+} from "@/lib/domain/types";
 
 export const PROPERTY_LOAN_LABELS: Record<PropertyLoanKind, string> = {
   mortgage: "Mortgage",
@@ -43,4 +49,45 @@ export function loanMonthlyPaymentToday(loan: PropertyLoan): number {
 
 export function isPropertyLoanKind(value: unknown): value is PropertyLoanKind {
   return value === "mortgage" || value === "lineOfCredit";
+}
+
+/**
+ * Mortgage analysis statements for the mortgages entered on properties that
+ * don't have one yet (saved or deleted), filled in from the property loan.
+ * `nextPayment` is the first row of the table (the app passes next month).
+ */
+export function propertyMortgageStatements(
+  household: Household,
+  nextPayment: { month: number; year: number },
+): MortgageStatement[] {
+  const linked = new Set(
+    [
+      ...(household.mortgages ?? []),
+      ...(household.deletedMortgages ?? []).map((e) => e.item),
+    ]
+      .map((m) => m.loanId)
+      .filter((id): id is string => id != null),
+  );
+  const out: MortgageStatement[] = [];
+  for (const re of household.realEstate) {
+    for (const loan of propertyLoans(re)) {
+      if (loan.kind !== "mortgage") continue;
+      if (!(loan.balance > 0)) continue;
+      if (linked.has(loan.id)) continue;
+      const property = re.label || "Property";
+      const name = loan.label?.trim() || PROPERTY_LOAN_LABELS.mortgage;
+      out.push({
+        id: `mtg-${loan.id}`,
+        label: `${property} · ${name}`,
+        propertyId: re.id,
+        loanId: loan.id,
+        principalBalance: loan.balance,
+        interestRate: loan.rate,
+        monthlyPayment: loan.monthlyPayment ?? 0,
+        nextPaymentMonth: nextPayment.month,
+        nextPaymentYear: nextPayment.year,
+      });
+    }
+  }
+  return out;
 }

@@ -335,7 +335,9 @@ user asks for a change:
 
 1. Analysis links: **Retirement | Survivorship | Disability | Long-term care |
    Mortgage analysis**. Survivorship, Disability and Long-term care show their
-   own settings card under them. Mortgage analysis (added at the user's
+   own settings card under them. Survivorship also shows the Life insurance
+   summary table (the one on the Insurance step) under its card, at the
+   user's request. Mortgage analysis (added at the user's
    request) skips the results tabs: it shows statement inputs and an
    amortization table instead.
 2. Results tabs: **Main | Summary | Graphic view | Main in detail analysis**.

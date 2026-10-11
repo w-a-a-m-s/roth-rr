@@ -423,6 +423,7 @@ function isMortgageShaped(raw: unknown): raw is MortgageStatement {
 function healMortgage(m: MortgageStatement) {
   if (typeof m.label !== "string") m.label = "";
   if (typeof m.propertyId !== "string") delete m.propertyId;
+  if (typeof m.loanId !== "string") delete m.loanId;
   if (!Number.isFinite(m.principalBalance)) m.principalBalance = 0;
   if (!Number.isFinite(m.interestRate)) m.interestRate = 0;
   const now = new Date();

@@ -542,6 +542,12 @@ export interface MortgageStatement {
   label: string;
   /** The property it's on (`Household.realEstate`), for reference. */
   propertyId?: string;
+  /**
+   * The property mortgage (`RealEstate.loans`) it was filled in from. A
+   * property mortgage without a statement shows up in Mortgage analysis on
+   * its own; editing it saves a statement with this id.
+   */
+  loanId?: string;
   /** Unpaid principal balance on the statement (not the payoff amount). */
   principalBalance: number;
   /** Yearly interest rate (decimal). */

@@ -18,6 +18,7 @@ import { ScenarioSnapshot } from '@/components/results/ScenarioSnapshot';
 import { PresentationCharts } from '@/components/results/PresentationCharts';
 import { LabsLoading } from '@/lib/common/client';
 import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
+import { LifeInsuranceSummary } from '@/components/wizard/steps/LifeInsuranceSummary';
 import { AnalysisTabs, DisabilityControls, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
 import { disabilityEvent } from '@/lib/domain/insurance';
 import { longTermCareSettings } from '@/lib/domain/longTermCare';
@@ -128,7 +129,10 @@ export function ResultsView() {
 		<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-6">
 			<AnalysisTabs />
 			{analysis === 'survivorship' && deathEvent ? (
-				<SurvivorshipControls household={household} event={deathEvent} />
+				<>
+					<SurvivorshipControls household={household} event={deathEvent} />
+					<LifeInsuranceSummary household={household} />
+				</>
 			) : null}
 			{analysis === 'disability' && disabilitySetting ? (
 				<DisabilityControls household={household} event={disabilitySetting} />

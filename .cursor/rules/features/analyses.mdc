@@ -29,8 +29,11 @@ conversion schedule always comes from the plan's strategy as-is.
   (`lib/engine/amortization.ts`): monthly interest = balance x rate / 12 to
   the cent, payment left at 0 is worked out from the maturity date, a
   payment on the maturity date clears cent rounding, extra principal shows
-  its savings. It never feeds `projectScenario`; real estate keeps its own
-  mortgage fields. ResultsView returns it before the tax tables load.
+  its savings. It never feeds `projectScenario`. Every mortgage entered on a
+  property (`RealEstate.loans`, kind mortgage, balance > 0) with no statement
+  linked by `loanId` (saved or deleted) shows up as one
+  (`propertyMortgageStatements`); the first edit saves it, Remove saves then
+  deletes it so it stays gone. ResultsView returns it before the tax tables load.
 
 ## Survivorship rules (`domain/survivorship.ts` + `projectScenario`)
 

@@ -19,7 +19,7 @@ import { DualScroll } from "@/components/results/DualScroll";
 import { amortize, type AmortizationResult } from "@/lib/engine/amortization";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { uid } from "@/lib/id";
-import { propertyLoans } from "@/lib/domain/propertyLoans";
+import { propertyLoans, propertyMortgageStatements } from "@/lib/domain/propertyLoans";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTH_OPTIONS = MONTHS.map((label, i) => ({ value: String(i + 1), label }));
@@ -60,7 +60,13 @@ export function MortgageAnalysis({ household }: { household: Household }) {
   const { addMortgage, restoreMortgage, discardDeletedMortgage } = useScenario();
   const { readOnly } = usePlanAccess();
   const canEdit = !readOnly;
-  const mortgages = household.mortgages ?? [];
+  // Saved statements, then every mortgage entered on a property that doesn't
+  // have one yet (editing one saves it).
+  const saved = household.mortgages ?? [];
+  const mortgages = useMemo(
+    () => [...(household.mortgages ?? []), ...propertyMortgageStatements(household, nextMonth())],
+    [household],
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = mortgages.find((m) => m.id === selectedId) ?? mortgages[0];
 
@@ -116,12 +122,19 @@ export function MortgageAnalysis({ household }: { household: Household }) {
       </div>
 
       {selected ? (
-        <MortgageDetail key={selected.id} household={household} mortgage={selected} readOnly={!canEdit} />
+        <MortgageDetail
+          key={selected.id}
+          household={household}
+          mortgage={selected}
+          saved={saved.some((m) => m.id === selected.id)}
+          readOnly={!canEdit}
+        />
       ) : (
         <div className="rounded-2xl border border-border bg-white p-6 text-center text-sm text-muted">
           <p className="font-medium text-foreground">No mortgages yet</p>
           <p className="mt-1">
-            Add a mortgage and fill it in from your latest statement to build its amortization table.
+            A mortgage you enter on a property shows up here. You can also add one and fill it in from
+            your latest statement to build its amortization table.
           </p>
         </div>
       )}
@@ -132,16 +145,25 @@ export function MortgageAnalysis({ household }: { household: Household }) {
 function MortgageDetail({
   household,
   mortgage,
+  saved,
   readOnly,
 }: {
   household: Household;
   mortgage: MortgageStatement;
+  /** False for a property mortgage not saved yet: the first edit saves it. */
+  saved: boolean;
   readOnly: boolean;
 }) {
-  const { updateMortgage, removeMortgage } = useScenario();
+  const { addMortgage, updateMortgage, removeMortgage } = useScenario();
   const update = (patch: Partial<MortgageStatement>) => {
     if (readOnly) return;
+    if (!saved) return addMortgage({ ...mortgage, ...patch });
     updateMortgage(mortgage.id, patch);
+  };
+  const remove = () => {
+    // Save it first so the deleted list remembers it and it doesn't come back.
+    if (!saved) addMortgage(mortgage);
+    removeMortgage(mortgage.id);
   };
   const result = useMemo(() => amortize(mortgage), [mortgage]);
 
@@ -249,7 +271,7 @@ function MortgageDetail({
             <div className="flex justify-end pt-1">
               <button
                 type="button"
-                onClick={() => removeMortgage(mortgage.id)}
+                onClick={remove}
                 className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-danger"
               >
                 Delete mortgage
