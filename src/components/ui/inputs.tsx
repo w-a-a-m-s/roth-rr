@@ -9,6 +9,11 @@ import type {
 import { filterComboOptions } from "./comboOptions";
 import { SelectMenu } from "./SelectMenu";
 import {
+  caretAfterGrouping,
+  formatGrouped,
+  groupTyped,
+} from "./groupedNumber";
+import {
   digitsOnly,
   parseYearInput,
   yearBounds,
@@ -295,6 +300,68 @@ export function MoneyInput({
       value={value}
       onChange={(v) => onChange(v ?? 0)}
     />
+  );
+}
+
+/**
+ * Money input with thousands separators: shows "$1,000" and regroups as you
+ * type, keeping the caret in place. Stores a plain number like MoneyInput.
+ */
+export function GroupedMoneyInput({
+  value,
+  onChange,
+  id,
+  placeholder,
+  decimals = 0,
+}: {
+  value: number | undefined;
+  onChange: (value: number) => void;
+  id?: string;
+  placeholder?: string;
+  /** Cents allowed (2) or whole dollars (0, the default). */
+  decimals?: number;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState("");
+  const caret = useRef<number | null>(null);
+
+  // Put the caret back where the digits were once the regrouped text renders.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || caret.current == null) return;
+    el.setSelectionRange(caret.current, caret.current);
+    caret.current = null;
+  }, [draft]);
+
+  const shown = focused ? draft : formatGrouped(value, value != null && value % 1 !== 0 ? decimals : 0);
+
+  return (
+    <div className="relative flex w-full min-w-0 items-center">
+      <span className="pointer-events-none absolute left-2.5 z-[1] text-sm text-muted-3">$</span>
+      <input
+        ref={ref}
+        id={id}
+        type="text"
+        inputMode={decimals > 0 ? "decimal" : "numeric"}
+        autoComplete="off"
+        placeholder={placeholder}
+        className={`min-w-0 ${baseInput} pl-6`}
+        value={shown}
+        onFocus={() => {
+          setFocused(true);
+          setDraft(formatGrouped(value, value != null && value % 1 !== 0 ? decimals : 0));
+        }}
+        onBlur={() => setFocused(false)}
+        onChange={(e) => {
+          const typed = e.target.value;
+          const { text, value: next } = groupTyped(typed, decimals);
+          caret.current = caretAfterGrouping(typed, e.target.selectionStart ?? typed.length, text);
+          setDraft(text);
+          onChange(next ?? 0);
+        }}
+      />
+    </div>
   );
 }
 

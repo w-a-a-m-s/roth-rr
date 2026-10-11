@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { useHousehold, useScenario } from "@/store/useScenario";
 import { Field } from "@/components/ui/Field";
 import {
-  MoneyInput,
+  GroupedMoneyInput,
   NumberField,
   Select,
   TextInput,
@@ -225,7 +225,7 @@ function LifeCard(props: CardProps<LifeInsurancePolicy>) {
         label="Face amount"
         help="The death benefit. In the Survivorship analysis it's invested at 8% a year and pays the survivor a guaranteed lifetime income."
       >
-        <MoneyInput value={policy.faceAmount} onChange={(faceAmount) => update({ faceAmount })} />
+        <GroupedMoneyInput value={policy.faceAmount} onChange={(faceAmount) => update({ faceAmount })} />
       </Field>
       {!isTerm ? (
         <Field
@@ -233,7 +233,7 @@ function LifeCard(props: CardProps<LifeInsurancePolicy>) {
           label="Cash value"
           help="The policy's cash value today. For reference: it doesn't change the projection."
         >
-          <MoneyInput value={policy.cashValue} onChange={(cashValue) => update({ cashValue })} />
+          <GroupedMoneyInput value={policy.cashValue} onChange={(cashValue) => update({ cashValue })} />
         </Field>
       ) : null}
       <Field
@@ -242,8 +242,7 @@ function LifeCard(props: CardProps<LifeInsurancePolicy>) {
         help="What you pay for the policy. For reference: it isn't added to your expenses."
       >
         <div className="flex gap-2">
-          <MoneyInput
-            step={50}
+          <GroupedMoneyInput
             value={policy.premium}
             onChange={(premium) => update({ premium })}
           />
@@ -295,8 +294,7 @@ function DisabilityCard(props: CardProps<DisabilityInsurancePolicy>) {
         />
       </Field>
       <Field layout="row" label="Monthly benefit amount">
-        <MoneyInput
-          step={100}
+        <GroupedMoneyInput
           value={policy.monthlyBenefit}
           onChange={(monthlyBenefit) => update({ monthlyBenefit })}
         />
@@ -368,8 +366,7 @@ function LongTermCareCard(props: CardProps<LongTermCarePolicy>) {
         />
       </Field>
       <Field layout="row" label="Monthly benefit amount">
-        <MoneyInput
-          step={100}
+        <GroupedMoneyInput
           value={policy.monthlyBenefit}
           onChange={(monthlyBenefit) => update({ monthlyBenefit })}
         />

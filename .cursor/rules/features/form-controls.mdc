@@ -22,3 +22,11 @@ Parse / strip helpers live in `yearInput.ts`.
 
 `ComboInput` stays a text field with in-flow suggestions. Enter on a
 highlighted suggestion is still ignored by `submitEditOnEnter` (preventDefault).
+
+## Grouped money input
+
+`GroupedMoneyInput` (in `inputs.tsx`) shows thousands separators ("$1,000")
+and regroups while you type, keeping the caret after the same digits
+(`groupedNumber.ts`, tested). It's a text input, so it has no spinner step.
+Used on the Insurance step's money fields; `MoneyInput` (a number input,
+no commas) is still everywhere else.
