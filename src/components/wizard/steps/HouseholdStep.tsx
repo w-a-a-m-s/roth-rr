@@ -20,7 +20,7 @@ import {
 import { US_STATE_CODES, US_STATE_LABELS } from "@/lib/config/stateTax";
 import { maxPeople } from "@/lib/domain/household";
 import type { FilingStatus, Sex } from "@/lib/domain/types";
-import { primaryPersonId } from "@/lib/engine/project";
+import { primaryPersonId, retirementStartYear } from "@/lib/engine/project";
 import { uid } from "@/lib/id";
 import {
   HOUSEHOLD_TOUR_STEPS,
@@ -45,8 +45,10 @@ export function HouseholdStep() {
     discardDeletedPerson,
     setMainPerson,
     setAssumptions,
+    setProjectionStart,
   } = useScenario();
   const currentYear = new Date().getFullYear();
+  const retirementStart = retirementStartYear(household);
   const canAddPerson = household.people.length < maxPeople(household.filingStatus);
   const mainPersonId = primaryPersonId(household);
   const [pendingMainId, setPendingMainId] = useState<string | null>(null);
@@ -128,6 +130,26 @@ export function HouseholdStep() {
             />
           </Field>
         </div>
+        <Field
+          label="Projection starts"
+          help="The first year the plan projects. Leave it empty to start at the first retirement year (the default). Amounts entered without a start year are in this year's dollars."
+          hint={
+            household.assumptions.startYear != null
+              ? Number.isFinite(retirementStart)
+                ? `Retirement year is ${retirementStart}. Clear to use it.`
+                : undefined
+              : "Retirement year (default)"
+          }
+        >
+          <YearSelect
+            value={household.assumptions.startYear}
+            allowEmpty
+            from={currentYear}
+            to={2100}
+            placeholder={Number.isFinite(retirementStart) ? String(retirementStart) : "Year"}
+            onChange={(year) => setProjectionStart(year)}
+          />
+        </Field>
         <Field
           label="Project to age"
           help="Age of the primary person at which the projection stops."

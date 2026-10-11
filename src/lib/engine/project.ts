@@ -98,9 +98,19 @@ export function analysisStartYear(
   return Number.isFinite(today) ? Math.min(planStart, Math.max(eventYear, today)) : eventYear;
 }
 
-/** Projection start = the earliest retirement year across the household. */
-export function projectionStartYear(household: Household): number {
+/** The earliest retirement year across the household (the default start). */
+export function retirementStartYear(household: Household): number {
   return Math.min(...household.people.map((p) => p.retirementYear ?? NaN));
+}
+
+/**
+ * Projection start: the plan's chosen start year, or by default the earliest
+ * retirement year across the household.
+ */
+export function projectionStartYear(household: Household): number {
+  const chosen = household.assumptions?.startYear;
+  if (chosen != null && Number.isFinite(chosen)) return chosen;
+  return retirementStartYear(household);
 }
 
 /**
@@ -115,7 +125,7 @@ export function primaryPerson(household: Household) {
     );
     if (explicit) return explicit;
   }
-  const start = projectionStartYear(household);
+  const start = retirementStartYear(household);
   return (
     household.people.find((p) => p.retirementYear === start) ??
     household.people[0]

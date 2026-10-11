@@ -44,6 +44,8 @@ import {
   maxPeople,
 } from "@/lib/domain/household";
 import { isUsStateCode } from "@/lib/config/stateTax";
+import { projectionStartYear } from "@/lib/engine/project";
+import { shiftSchedule } from "@/lib/optimizer/shiftSchedule";
 import {
   DEFAULT_TERM_YEARS,
   DEFAULT_WAITING_DAYS,
@@ -330,6 +332,13 @@ export function migrateHousehold(household: Household): Household {
   // legacy household-level overrides for both.
   if (legacy.assumptions && "rmdAge" in legacy.assumptions) {
     delete (legacy.assumptions as { rmdAge?: number }).rmdAge;
+  }
+  // The chosen start year is optional; anything but a year means the default.
+  if (
+    legacy.assumptions?.startYear != null &&
+    !Number.isInteger(legacy.assumptions.startYear)
+  ) {
+    delete legacy.assumptions.startYear;
   }
   if (legacy.assumptions && "rmdRate" in legacy.assumptions) {
     delete (legacy.assumptions as { rmdRate?: number }).rmdRate;
@@ -700,6 +709,12 @@ interface ScenarioState {
   restoreBusiness: (id: string) => void;
   discardDeletedBusiness: (id: string) => void;
   setAssumptions: (patch: Partial<Assumptions>) => void;
+  /**
+   * Set (or clear, with undefined) the first projection year. A manual
+   * conversion schedule is per projection year, so it shifts to keep each
+   * amount on the same calendar year.
+   */
+  setProjectionStart: (year: number | undefined) => void;
   setOptimizer: (patch: Partial<OptimizerConfig>) => void;
   /** Survivorship analysis: which spouse passes and at what age. */
   setSurvivorship: (event: DeathEvent) => void;
@@ -1433,6 +1448,24 @@ export const useScenario = create<ScenarioState>()((set, get) => {
         ...h,
         assumptions: { ...h.assumptions, ...patch },
       })),
+    setProjectionStart: (year) =>
+      editActive((h) => {
+        const before = projectionStartYear(h);
+        const assumptions = { ...h.assumptions };
+        if (year == null) delete assumptions.startYear;
+        else assumptions.startYear = year;
+        const next = { ...h, assumptions };
+        const after = projectionStartYear(next);
+        const schedule = h.optimizer.manualSchedule;
+        if (!schedule || !Number.isFinite(before) || !Number.isFinite(after)) return next;
+        return {
+          ...next,
+          optimizer: {
+            ...h.optimizer,
+            manualSchedule: shiftSchedule(schedule, before, after),
+          },
+        };
+      }),
     setOptimizer: (patch) =>
       editActive((h) => ({
         ...h,

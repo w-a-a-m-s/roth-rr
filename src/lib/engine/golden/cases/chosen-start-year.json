@@ -1,0 +1,268 @@
+{
+  "name": "Chosen start year (projection starts 2026, retirement 2040)",
+  "strategy": "manual",
+  "note": "The plan starts in 2026 instead of the 2040 retirement year: 14 working years with SEP deposits, expenses in 2026 dollars, then conversions of $100k a year from 2040.",
+  "household": {
+    "filingStatus": "mfj",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-678jxeh",
+        "label": "All ",
+        "amount": 20000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p-t3nw6nr",
+        "name": "Pat",
+        "birthYear": 1973,
+        "sex": "male",
+        "retirementYear": 2040
+      },
+      {
+        "id": "p-qpdsqnf",
+        "name": "Lee",
+        "birthYear": 1979,
+        "sex": "female",
+        "retirementYear": 2040
+      }
+    ],
+    "accounts": [
+      {
+        "id": "acc-3ulomtd",
+        "label": "SEP",
+        "ownerId": "p-t3nw6nr",
+        "kind": "retirementTaxable",
+        "balance": 510000,
+        "growthRate": 0.1,
+        "retirementType": "ira",
+        "deposits": [
+          {
+            "id": "dep-2c6nz5m",
+            "label": "SEP contribution ",
+            "amount": 1000,
+            "frequency": "monthly",
+            "startYear": 2026,
+            "endYear": 2040
+          },
+          {
+            "id": "dep-70vvhvl",
+            "label": "",
+            "amount": 0,
+            "frequency": "monthly",
+            "startYear": 2026,
+            "endYear": 2040
+          }
+        ],
+        "growthStart": "planStart"
+      },
+      {
+        "id": "acc-605y63j",
+        "label": "IRA",
+        "ownerId": "p-qpdsqnf",
+        "kind": "retirementTaxable",
+        "balance": 120000,
+        "growthRate": 0.1,
+        "retirementType": "ira",
+        "joint": false,
+        "deposits": [],
+        "growthStart": "planStart"
+      },
+      {
+        "id": "acc-pjef0bi",
+        "label": "Roth",
+        "ownerId": "p-t3nw6nr",
+        "kind": "rothTaxFree",
+        "balance": 18000,
+        "growthRate": 0.1,
+        "deposits": []
+      },
+      {
+        "id": "acc-kszwbbt",
+        "label": "Fidelity ",
+        "ownerId": "p-t3nw6nr",
+        "kind": "investment",
+        "balance": 32000,
+        "growthRate": 0.1,
+        "costBasis": 0,
+        "deposits": [],
+        "growthStart": "planStart"
+      },
+      {
+        "id": "acc-diisi6b",
+        "label": "Shwab",
+        "ownerId": "p-t3nw6nr",
+        "kind": "investment",
+        "balance": 42000,
+        "growthRate": 0.1,
+        "costBasis": 0,
+        "deposits": []
+      },
+      {
+        "id": "acc-djbcdcf",
+        "label": "Robinhood",
+        "ownerId": "p-t3nw6nr",
+        "kind": "investment",
+        "balance": 14000,
+        "growthRate": 0.1,
+        "costBasis": 0,
+        "joint": true,
+        "deposits": []
+      }
+    ],
+    "incomes": [
+      {
+        "id": "inc-9ups1sf",
+        "label": "Social Security",
+        "ownerId": "p-t3nw6nr",
+        "kind": "socialSecurity",
+        "monthlyAmount": 4000,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2040
+      },
+      {
+        "id": "inc-50zr4hs",
+        "label": "Social Security ",
+        "ownerId": "p-qpdsqnf",
+        "kind": "socialSecurity",
+        "monthlyAmount": 4000,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2046
+      },
+      {
+        "id": "inc-v0fi6sz",
+        "label": "",
+        "ownerId": "p-t3nw6nr",
+        "kind": "pension",
+        "monthlyAmount": 0,
+        "growthRate": 0,
+        "taxability": "full"
+      },
+      {
+        "id": "inc-mrb8tby",
+        "label": "",
+        "ownerId": "p-t3nw6nr",
+        "kind": "business",
+        "monthlyAmount": 0,
+        "growthRate": 0,
+        "taxability": "full",
+        "businessId": "biz-gbne5pj"
+      }
+    ],
+    "realEstate": [
+      {
+        "id": "re-4e2037f",
+        "label": "Aventura Isle",
+        "purchaseYear": 2015,
+        "purchasePrice": 250000,
+        "marketValue": 500000,
+        "appreciationRate": 0.03,
+        "depreciationYears": 27.5,
+        "activeParticipation": true,
+        "monthlyRent": 2500,
+        "monthlyOperatingExpenses": 1500,
+        "growthStart": "planStart"
+      },
+      {
+        "id": "re-ihxqtg8",
+        "label": "Tara",
+        "purchaseYear": 2015,
+        "purchasePrice": 700000,
+        "marketValue": 1600000,
+        "appreciationRate": 0.03,
+        "depreciationYears": 27.5,
+        "activeParticipation": true
+      },
+      {
+        "id": "re-ckydbr4",
+        "label": "",
+        "purchaseYear": 2026,
+        "purchasePrice": 0,
+        "marketValue": 0,
+        "appreciationRate": 0.03,
+        "depreciationYears": 27.5,
+        "activeParticipation": true
+      }
+    ],
+    "realEstateProfessional": false,
+    "deletedPeople": [],
+    "deletedAccounts": [],
+    "deletedIncomes": [],
+    "deletedRealEstate": [],
+    "deletedExpenses": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 90,
+      "startYear": 2026
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "allowOverConvertible": false,
+      "manualSchedule": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000,
+        100000
+      ]
+    },
+    "mainPersonId": "p-t3nw6nr",
+    "deletedBusinesses": [],
+    "businesses": [
+      {
+        "id": "biz-gbne5pj",
+        "label": "Roche Media",
+        "value": 285000,
+        "growthRate": 0.03
+      },
+      {
+        "id": "biz-3a1hxxi",
+        "label": "Regev Financial ",
+        "value": 1500000,
+        "growthRate": 0.03
+      }
+    ]
+  },
+  "commit": "5b720c3",
+  "commitDate": "2026-10-11T17:31:15+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 2436581.13,
+      "medicareTotal": 244442.4,
+      "afterTaxAssetsAtRmd": 12414558.24,
+      "inheritanceFinal": 23422563.59
+    },
+    "roth": {
+      "taxesTotal": 2087706.78,
+      "medicareTotal": 230805.6,
+      "afterTaxAssetsAtRmd": 12818437.87,
+      "inheritanceFinal": 26569736.47
+    },
+    "deltas": {
+      "taxesTotal": -348874.35,
+      "medicareTotal": -13636.8,
+      "afterTaxAssetsAtRmd": 403879.63,
+      "inheritanceFinal": 3147172.88
+    }
+  }
+}

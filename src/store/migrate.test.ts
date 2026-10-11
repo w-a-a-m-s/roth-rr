@@ -876,3 +876,11 @@ describe("migrateHousehold: sex and long-term care", () => {
     expect(migrateHousehold(bad)).not.toHaveProperty("longTermCare");
   });
 });
+
+describe("chosen projection start year", () => {
+  it("keeps a whole year and drops anything else", () => {
+    const h = household([], []);
+    expect(migrateHousehold({ ...h, assumptions: { ...h.assumptions, startYear: 2026 } }).assumptions.startYear).toBe(2026);
+    expect(migrateHousehold({ ...h, assumptions: { ...h.assumptions, startYear: "soon" as unknown as number } }).assumptions.startYear).toBeUndefined();
+  });
+});

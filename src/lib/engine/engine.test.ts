@@ -7,7 +7,9 @@ import {
   projectScenario,
   projectionYears,
   projectionStartYear,
+  retirementStartYear,
 } from "@/lib/engine/project";
+import { shiftSchedule } from "@/lib/optimizer/shiftSchedule";
 import type { Deposit, Household } from "@/lib/domain/types";
 import { afterTaxAssets, runScenario } from "@/lib/engine/runScenario";
 import {
@@ -1837,5 +1839,45 @@ describe("conversion tax paid from assets", () => {
     const rows = projectScenario(fromAssets, zeros(years));
     expect(rows.every((r) => r.conversionTaxWithheld === 0)).toBe(true);
     expect(rows.map((r) => r.surplus)).toEqual(none.map((r) => r.surplus));
+  });
+});
+
+describe("chosen projection start year", () => {
+  const base = (): Household => ({
+    filingStatus: "single",
+    residenceState: "FL",
+    people: [{ id: "p", name: "P", birthYear: 1973, retirementYear: 2040 }],
+    accounts: [
+      { id: "ira", label: "IRA", ownerId: "p", kind: "retirementTaxable", balance: 500_000, growthRate: 0.05, retirementType: "ira" },
+    ],
+    incomes: [],
+    realEstate: [],
+    expenses: [{ id: "e", label: "Living", amount: 5000, frequency: "monthly", growthRate: 0.02 }],
+    assumptions: { expenseGrowth: 0, finalAge: 90 },
+    optimizer: { strategy: "manual", manualSchedule: [] },
+  });
+
+  it("defaults to the first retirement year", () => {
+    expect(projectionStartYear(base())).toBe(2040);
+    expect(retirementStartYear(base())).toBe(2040);
+  });
+
+  it("starts any year you pick and still runs to the final age", () => {
+    const h = { ...base(), assumptions: { ...base().assumptions, startYear: 2026 } };
+    expect(projectionStartYear(h)).toBe(2026);
+    const rows = projectScenario(h, []);
+    expect(rows[0].calendarYear).toBe(2026);
+    expect(rows[rows.length - 1].calendarYear).toBe(1973 + 90);
+    // Expenses are in the start year's dollars.
+    expect(rows[0].expenseMonthly.e).toBe(5000);
+    expect(rows[14].expenseMonthly.e).toBeCloseTo(5000 * 1.02 ** 14, 6);
+  });
+});
+
+describe("shiftSchedule", () => {
+  it("keeps each amount on its calendar year when the start moves", () => {
+    expect(shiftSchedule([1, 2, 3], 2040, 2038)).toEqual([0, 0, 1, 2, 3]);
+    expect(shiftSchedule([0, 0, 1, 2, 3], 2038, 2040)).toEqual([1, 2, 3]);
+    expect(shiftSchedule([1, 2], 2040, 2040)).toEqual([1, 2]);
   });
 });

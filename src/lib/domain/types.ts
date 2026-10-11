@@ -325,6 +325,12 @@ export interface Assumptions {
   expenseGrowth: number;
   /** Final age (of the primary person) the projection runs to. */
   finalAge: number;
+  /**
+   * First projection year, any year you pick. Missing (the default) means the
+   * household's first retirement year. Amounts entered without a start year
+   * are in this year's dollars.
+   */
+  startYear?: number;
 }
 
 /** How the per-year Roth conversion schedule is produced. */

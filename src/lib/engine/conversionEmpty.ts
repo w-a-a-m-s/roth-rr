@@ -129,7 +129,7 @@ export function diagnoseConversionEmpty(
   } else if (Number.isFinite(start)) {
     facts.push({
       label: "Convertible",
-      detail: `No conversion years from retirement (${start}) up to RMD. The calculator only schedules conversions in that window.`,
+      detail: `No conversion years from the projection start (${start}) up to RMD. The calculator only schedules conversions in that window.`,
     });
   }
 

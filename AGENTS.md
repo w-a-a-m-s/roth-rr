@@ -76,7 +76,11 @@ rather than reading the live balance. And because the base can exceed what's
 left in a depleting account, the take is capped at the current balance so a
 balance never goes negative.
 
-The projection starts at the earliest retirement year. Every year, including
+The projection starts at the earliest retirement year by default. A plan can
+pick any start year instead (`assumptions.startYear`, "Projection starts" on
+the Household step); `projectionStartYear` returns it, `retirementStartYear`
+is the default. Moving it re-indexes a manual conversion schedule
+(`shiftSchedule`) so amounts stay on their calendar years. Every year, including
 year 0, applies a full year of growth *before* withdrawals, conversions, and
 RMDs, **except accounts whose Growth starts toggle is Retirement** (DROP's
 default): those stay flat until *that owner's* retirement year and first grow
