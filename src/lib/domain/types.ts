@@ -227,6 +227,34 @@ export interface IncomeSource {
 
 export type PropertyUse = "investment" | "homestead";
 
+export type PropertyLoanKind = "mortgage" | "lineOfCredit";
+
+/**
+ * A loan against a property. A mortgage pays principal and interest every
+ * month. A line of credit (HELOC) pays interest only through its draw period,
+ * then a level payment that clears it over the repayment term.
+ */
+export interface PropertyLoan {
+  id: string;
+  kind: PropertyLoanKind;
+  label: string;
+  /** Outstanding balance today (for a line of credit, what's drawn). */
+  balance: number;
+  /** Yearly interest rate (decimal). */
+  rate: number;
+  /** Mortgage only: monthly principal and interest. */
+  monthlyPayment?: number;
+  /** Line of credit only: the credit limit, for reference. */
+  creditLimit?: number;
+  /**
+   * Line of credit only: last year of the draw period (interest only through
+   * it). Missing means interest only for the whole plan.
+   */
+  drawEndYear?: number;
+  /** Line of credit only: years to repay once the draw period ends. Default 20. */
+  repaymentYears?: number;
+}
+
 export interface RealEstate {
   id: string;
   label: string;
@@ -257,7 +285,13 @@ export interface RealEstate {
   monthlyOperatingExpenses?: number;
   /** Annual rent growth (decimal). Defaults to the income-growth assumption. */
   rentGrowthRate?: number;
-  /** Outstanding mortgage principal at projection year 0. */
+  /**
+   * Mortgages and lines of credit on this property. When set, it replaces the
+   * single-mortgage fields below (older plans; `migrateHousehold` moves them
+   * into this list).
+   */
+  loans?: PropertyLoan[];
+  /** Older plans: outstanding mortgage principal at projection year 0. */
   mortgageBalance?: number;
   /** Mortgage annual interest rate (decimal). */
   mortgageRate?: number;

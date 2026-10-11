@@ -28,6 +28,13 @@ import {
   realEstateGrowthStart,
 } from "@/lib/domain/household";
 import { REAL_ESTATE_TOUR_STEPS } from "@/lib/onboarding/realEstateTour";
+import {
+  PROPERTY_LOAN_LABELS,
+  loanMonthlyPaymentToday,
+  propertyLoanBalance,
+  propertyLoans,
+} from "@/lib/domain/propertyLoans";
+import { PropertyLoansEditor } from "@/components/wizard/steps/PropertyLoansEditor";
 
 function PropertyFields({
   re,
@@ -43,6 +50,7 @@ function PropertyFields({
   const { updateRealEstate, removeRealEstate } = useScenario();
   const currentYear = new Date().getFullYear();
   const homestead = re.use === "homestead";
+  const loans = propertyLoans(re);
 
   return (
     <EntityCard
@@ -75,18 +83,16 @@ function PropertyFields({
             label="Monthly operating expenses"
             value={formatCurrency(re.monthlyOperatingExpenses ?? 0)}
           />
-          <ReadStat
-            label="Mortgage balance"
-            value={formatCurrency(re.mortgageBalance ?? 0)}
-          />
-          <ReadStat
-            label="Interest rate"
-            value={formatPercent(re.mortgageRate ?? 0)}
-          />
-          <ReadStat
-            label="Monthly payment"
-            value={formatCurrency(re.mortgageMonthlyPayment ?? 0)}
-          />
+          {loans.length === 0 && (
+            <ReadStat label="Loans" value="None" />
+          )}
+          {loans.map((loan) => (
+            <ReadStat
+              key={loan.id}
+              label={loan.label || PROPERTY_LOAN_LABELS[loan.kind]}
+              value={`${formatCurrency(loan.balance)} at ${formatPercent(loan.rate)}, ${formatCurrency(loanMonthlyPaymentToday(loan))} / mo`}
+            />
+          ))}
         </>
       }
     >
@@ -248,46 +254,14 @@ function PropertyFields({
             }
           />
         </Field>
-        <Field
-          layout="row"
-          label="Mortgage balance"
-          help="Outstanding loan principal today. Set to 0 if the property is owned free and clear. Each year the model splits payments into interest (tax-deductible against rent) and principal (which reduces the balance and builds equity)."
-        >
-          <MoneyInput
-            value={re.mortgageBalance ?? 0}
-            onChange={(mortgageBalance) =>
-              updateRealEstate(re.id, { mortgageBalance })
-            }
-          />
-        </Field>
-        <Field
-          layout="row"
-          label="Interest rate"
-          help="Annual mortgage interest rate. Interest accrues monthly on the remaining balance."
-        >
-          <PercentInput
-            value={re.mortgageRate ?? 0}
-            onChange={(mortgageRate) =>
-              updateRealEstate(re.id, { mortgageRate })
-            }
-          />
-        </Field>
-        <Field
-          layout="row"
-          label="Monthly payment"
-          help="Total monthly principal + interest payment. The portion above the month's interest pays down principal; payments stop automatically once the loan is paid off."
-        >
-          <MoneyInput
-            value={re.mortgageMonthlyPayment ?? 0}
-            onChange={(mortgageMonthlyPayment) =>
-              updateRealEstate(re.id, { mortgageMonthlyPayment })
-            }
-          />
-        </Field>
+        <PropertyLoansEditor
+          re={re}
+          onChange={(patch) => updateRealEstate(re.id, patch)}
+        />
         <p className="m-0 text-xs text-muted lg:pl-[calc(13.5rem+0.75rem)]">
           Starting equity:{" "}
           {formatCurrency(
-            Math.max(0, re.marketValue - (re.mortgageBalance ?? 0)),
+            Math.max(0, re.marketValue - propertyLoanBalance(re)),
           )}
         </p>
       </div>

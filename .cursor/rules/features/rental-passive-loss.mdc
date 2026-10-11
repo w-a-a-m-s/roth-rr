@@ -45,3 +45,20 @@ hour-based material participation, or grouping elections.
 - Year-by-year table: "Real-estate depreciation" is the allowed amount;
   "Real-estate loss carryforward" is the year-end suspended total (per-property
   children when there is more than one property).
+
+## Mortgages and lines of credit
+
+A property carries any number of loans in `RealEstate.loans`
+(`PropertyLoan`, helpers in `lib/domain/propertyLoans.ts`). Each is a
+**mortgage** (balance, rate, monthly P&I payment) or a **line of credit**
+(amount drawn, rate, optional credit limit, draw period end year, repayment
+years, default 20). A line of credit pays interest only through its draw
+period (for the whole plan when no end year is set), then a level payment,
+fixed the year repayment starts, clears it over the repayment term. No further
+draws are assumed. Every loan's interest is deductible against rent; the row's
+`mortgageBalance` is the total owed across all loans.
+
+Older plans stored one mortgage in `mortgageBalance` / `mortgageRate` /
+`mortgageMonthlyPayment`. `propertyLoans` reads those as one mortgage
+(id `<property id>:mortgage`), and `migrateHousehold` moves them into `loans`
+and drops the flat fields.

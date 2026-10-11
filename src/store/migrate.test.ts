@@ -894,3 +894,63 @@ describe("property type", () => {
   });
 });
 
+
+describe("migrateHousehold: property loans", () => {
+  const property = () => ({
+    id: "re1",
+    label: "Rental",
+    purchaseYear: 2010,
+    purchasePrice: 300_000,
+    marketValue: 400_000,
+    appreciationRate: 0.03,
+    depreciationYears: 27.5,
+  });
+
+  it("moves an older plan's single mortgage into loans", () => {
+    const h = household([], []);
+    h.realEstate = [
+      {
+        ...property(),
+        mortgageBalance: 150_000,
+        mortgageRate: 0.05,
+        mortgageMonthlyPayment: 1_200,
+      },
+    ];
+    const out = migrateHousehold(migrateHousehold(h));
+    expect(out.realEstate[0].loans).toEqual([
+      {
+        id: "re1:mortgage",
+        kind: "mortgage",
+        label: "Mortgage",
+        balance: 150_000,
+        rate: 0.05,
+        monthlyPayment: 1_200,
+      },
+    ]);
+    expect(out.realEstate[0]).not.toHaveProperty("mortgageBalance");
+    expect(out.realEstate[0]).not.toHaveProperty("mortgageRate");
+    expect(out.realEstate[0]).not.toHaveProperty("mortgageMonthlyPayment");
+  });
+
+  it("gives a property with no mortgage an empty loan list", () => {
+    const h = household([], []);
+    h.realEstate = [property()];
+    expect(migrateHousehold(h).realEstate[0].loans).toEqual([]);
+  });
+
+  it("keeps several loans and drops ones with an unknown kind", () => {
+    const h = household([], []);
+    h.realEstate = [
+      {
+        ...property(),
+        loans: [
+          { id: "a", kind: "mortgage", label: "First", balance: 100_000, rate: 0.04, monthlyPayment: 900 },
+          { id: "b", kind: "lineOfCredit", label: "HELOC", balance: 20_000, rate: 0.08, drawEndYear: 2030 },
+          { id: "c", kind: "bogus", label: "?", balance: 1, rate: 0 } as never,
+        ],
+      },
+    ];
+    const out = migrateHousehold(h);
+    expect(out.realEstate[0].loans?.map((l) => l.id)).toEqual(["a", "b"]);
+  });
+});

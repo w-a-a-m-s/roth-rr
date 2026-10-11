@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import type { Household, MortgageStatement } from "@/lib/domain/types";
+import type {
+  Household,
+  MortgageStatement,
+  PropertyLoan,
+  RealEstate,
+} from "@/lib/domain/types";
+import { propertyLoans } from "@/lib/domain/propertyLoans";
 import { useScenario } from "@/store/useScenario";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
 import { Field } from "@/components/ui/Field";
@@ -33,16 +39,22 @@ function nextMonth(): { month: number; year: number } {
   return month > 12 ? { month: 1, year: now.getFullYear() + 1 } : { month, year: now.getFullYear() };
 }
 
+/** A property's first mortgage with a balance, to prefill a statement. */
+function firstMortgage(re: RealEstate): PropertyLoan | undefined {
+  return propertyLoans(re).find((l) => l.kind === "mortgage" && l.balance > 0);
+}
+
 function blankMortgage(household: Household): MortgageStatement {
   const next = nextMonth();
-  const property = household.realEstate.find((re) => (re.mortgageBalance ?? 0) > 0);
+  const property = household.realEstate.find((re) => firstMortgage(re) != null);
+  const loan = property ? firstMortgage(property) : undefined;
   return {
     id: uid("mtg"),
     label: property?.label ?? "",
     propertyId: property?.id,
-    principalBalance: property?.mortgageBalance ?? 0,
-    interestRate: property?.mortgageRate ?? 0,
-    monthlyPayment: property?.mortgageMonthlyPayment ?? 0,
+    principalBalance: loan?.balance ?? 0,
+    interestRate: loan?.rate ?? 0,
+    monthlyPayment: loan?.monthlyPayment ?? 0,
     nextPaymentMonth: next.month,
     nextPaymentYear: next.year,
   };
@@ -144,14 +156,15 @@ function MortgageDetail({
     const re = household.realEstate.find((r) => r.id === value);
     if (!re) return;
     const empty = !(mortgage.principalBalance > 0);
+    const loan = firstMortgage(re);
     update({
       propertyId: re.id,
       label: mortgage.label || re.label,
       ...(empty
         ? {
-            principalBalance: re.mortgageBalance ?? 0,
-            interestRate: re.mortgageRate ?? 0,
-            monthlyPayment: re.mortgageMonthlyPayment ?? 0,
+            principalBalance: loan?.balance ?? 0,
+            interestRate: loan?.rate ?? 0,
+            monthlyPayment: loan?.monthlyPayment ?? 0,
           }
         : {}),
     });

@@ -60,6 +60,11 @@ import {
 } from "@/lib/domain/insurance";
 import { isFilingStatus } from "@/lib/config/filingStatus";
 import { uid } from "@/lib/id";
+import {
+  PROPERTY_LOAN_LABELS,
+  isPropertyLoanKind,
+  propertyLoans,
+} from "@/lib/domain/propertyLoans";
 import { pickHydrateActiveId, readPlanIdFromWindow } from "@/lib/planUrl";
 import { withBasePath } from "@/lib/basePath";
 import {
@@ -309,6 +314,20 @@ export function migrateHousehold(household: Household): Household {
     if (re.growthStart != null && !isGrowthStart(re.growthStart)) {
       delete re.growthStart;
     }
+    // Older plans hold one mortgage in flat fields: move it into `loans`.
+    if (!Array.isArray(re.loans)) re.loans = propertyLoans(re);
+    re.loans = re.loans.filter(
+      (loan) => loan != null && typeof loan === "object" && isPropertyLoanKind(loan.kind),
+    );
+    for (const loan of re.loans) {
+      if (typeof loan.id !== "string" || !loan.id) loan.id = uid();
+      if (typeof loan.label !== "string") loan.label = PROPERTY_LOAN_LABELS[loan.kind];
+      if (!Number.isFinite(loan.balance)) loan.balance = 0;
+      if (!Number.isFinite(loan.rate)) loan.rate = 0;
+    }
+    delete re.mortgageBalance;
+    delete re.mortgageRate;
+    delete re.mortgageMonthlyPayment;
   };
   for (const re of legacy.realEstate ?? []) healRealEstate(re);
   for (const entry of legacy.deletedRealEstate ?? []) {
