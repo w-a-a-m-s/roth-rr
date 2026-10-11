@@ -9,6 +9,7 @@ import type {
   DisabilityEvent,
   InsurancePolicy,
   LongTermCareSettings,
+  MortgageStatement,
   Business,
   Deposit,
   Expense,
@@ -172,6 +173,13 @@ export function migrateHousehold(household: Household): Household {
     isInsuranceShaped(e.item),
   );
   for (const entry of legacy.deletedInsurance) healInsurance(entry.item);
+  if (!Array.isArray(legacy.mortgages)) legacy.mortgages = [];
+  legacy.mortgages = legacy.mortgages.filter(isMortgageShaped);
+  for (const m of legacy.mortgages) healMortgage(m);
+  legacy.deletedMortgages = normalizeDeletedList<MortgageStatement>(
+    legacy.deletedMortgages,
+  ).filter((e) => isMortgageShaped(e.item));
+  for (const entry of legacy.deletedMortgages) healMortgage(entry.item);
   if (
     legacy.disability != null &&
     (typeof legacy.disability.personId !== "string" ||
@@ -360,6 +368,42 @@ export function migrateHousehold(household: Household): Household {
   return legacy;
 }
 
+function isMortgageShaped(raw: unknown): raw is MortgageStatement {
+  return (
+    !!raw &&
+    typeof raw === "object" &&
+    typeof (raw as Record<string, unknown>).id === "string"
+  );
+}
+
+/** Fill missing or bad mortgage fields; optional ones that aren't numbers go. */
+function healMortgage(m: MortgageStatement) {
+  if (typeof m.label !== "string") m.label = "";
+  if (typeof m.propertyId !== "string") delete m.propertyId;
+  if (!Number.isFinite(m.principalBalance)) m.principalBalance = 0;
+  if (!Number.isFinite(m.interestRate)) m.interestRate = 0;
+  const now = new Date();
+  const validMonth = (v: unknown) =>
+    Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 12;
+  if (!validMonth(m.nextPaymentMonth) || !Number.isFinite(m.nextPaymentYear)) {
+    m.nextPaymentMonth = now.getMonth() === 11 ? 1 : now.getMonth() + 2;
+    m.nextPaymentYear = now.getFullYear() + (now.getMonth() === 11 ? 1 : 0);
+  }
+  if (!validMonth(m.maturityMonth) || !Number.isFinite(m.maturityYear)) {
+    delete m.maturityMonth;
+    delete m.maturityYear;
+  }
+  for (const key of [
+    "monthlyPayment",
+    "monthlyEscrow",
+    "extraPrincipal",
+    "originalAmount",
+    "originalTermYears",
+  ] as const) {
+    if (m[key] != null && !Number.isFinite(m[key])) delete m[key];
+  }
+}
+
 /** A saved policy needs an id and a known kind; anything else is dropped. */
 function isInsuranceShaped(raw: unknown): raw is InsurancePolicy {
   if (!raw || typeof raw !== "object") return false;
@@ -413,7 +457,8 @@ type ListKey =
   | "realEstate"
   | "businesses"
   | "expenses"
-  | "insurance";
+  | "insurance"
+  | "mortgages";
 
 /** Live list key paired with its soft-delete trash list. */
 type SoftDeleteKey = ListKey;
@@ -426,6 +471,7 @@ const DELETED_KEY: Record<SoftDeleteKey, keyof Household> = {
   businesses: "deletedBusinesses",
   expenses: "deletedExpenses",
   insurance: "deletedInsurance",
+  mortgages: "deletedMortgages",
 };
 
 /**
@@ -496,6 +542,10 @@ function savedListIdsFromHousehold(household: Household): SavedListIds {
     insurance: new Set([
       ...(household.insurance ?? []).map((p) => p.id),
       ...(household.deletedInsurance ?? []).map((e) => e.item.id),
+    ]),
+    mortgages: new Set([
+      ...(household.mortgages ?? []).map((m) => m.id),
+      ...(household.deletedMortgages ?? []).map((e) => e.item.id),
     ]),
   };
 }
@@ -662,6 +712,11 @@ interface ScenarioState {
   removeInsurance: (id: string) => void;
   restoreInsurance: (id: string) => void;
   discardDeletedInsurance: (id: string) => void;
+  addMortgage: (mortgage: MortgageStatement) => void;
+  updateMortgage: (id: string, patch: Partial<MortgageStatement>) => void;
+  removeMortgage: (id: string) => void;
+  restoreMortgage: (id: string) => void;
+  discardDeletedMortgage: (id: string) => void;
 }
 
 export const useScenario = create<ScenarioState>()((set, get) => {
@@ -1245,6 +1300,7 @@ export const useScenario = create<ScenarioState>()((set, get) => {
             businesses: new Set<string>(),
             expenses: new Set<string>(),
             insurance: new Set<string>(),
+            mortgages: new Set<string>(),
           } satisfies SavedListIds);
         const keptPeople = new Set(next.people.map((p) => p.id));
         const keptAccounts = new Set(next.accounts.map((a) => a.id));
@@ -1391,6 +1447,11 @@ export const useScenario = create<ScenarioState>()((set, get) => {
     removeInsurance: (id) => softDeleteIn("insurance", id),
     restoreInsurance: (id) => restoreIn("insurance", id),
     discardDeletedInsurance: (id) => discardDeletedIn("insurance", id),
+    addMortgage: (mortgage) => addTo("mortgages", mortgage),
+    updateMortgage: (id, patch) => patchIn("mortgages", id, patch),
+    removeMortgage: (id) => softDeleteIn("mortgages", id),
+    restoreMortgage: (id) => restoreIn("mortgages", id),
+    discardDeletedMortgage: (id) => discardDeletedIn("mortgages", id),
     setLongTermCare: (settings) =>
       editActive((h) => ({
         ...h,

@@ -40,6 +40,7 @@ const ANALYSES: { key: AnalysisKind; label: string }[] = [
   { key: "survivorship", label: "Survivorship" },
   { key: "disability", label: "Disability" },
   { key: "longTermCare", label: "Long-term care" },
+  { key: "mortgage", label: "Mortgage analysis" },
 ];
 
 /** Links that switch the results between analyses of the same plan. */

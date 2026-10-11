@@ -17,6 +17,7 @@ import { ProjectionTable } from '@/components/results/ProjectionTable';
 import { ScenarioSnapshot } from '@/components/results/ScenarioSnapshot';
 import { PresentationCharts } from '@/components/results/PresentationCharts';
 import { LabsLoading } from '@/lib/common/client';
+import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
 import { AnalysisTabs, DisabilityControls, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
 import { disabilityEvent } from '@/lib/domain/insurance';
 import { longTermCareSettings } from '@/lib/domain/longTermCare';
@@ -44,14 +45,25 @@ export function ResultsView() {
 		return {};
 	}, [analysis, deathEvent, careSettings, disabilitySetting]);
 	const comparison = useMemo(
-		() => (ready && refsReady ? calculate(household, refs, options) : null),
-		[household, ready, refsReady, refs, options],
+		() => (ready && refsReady && analysis !== 'mortgage' ? calculate(household, refs, options) : null),
+		[household, ready, refsReady, refs, options, analysis],
 	);
 	const [tab, setTab] = useState<'baseline' | 'roth'>('baseline');
 	// Clients land on Main (the tables); Summary, Graphic view and the
 	// year-by-year detail are tabs.
 	const [view, setView] = useState<ResultsViewKey>('main');
 	const primaryId = primaryPersonId(household);
+
+	// Mortgage analysis is an amortization table from a statement, not a
+	// projection, so it skips the results tabs.
+	if (analysis === 'mortgage') {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<MortgageAnalysis household={household} />
+			</div>
+		);
+	}
 
 	if (!refsReady) {
 		return (

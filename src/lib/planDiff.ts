@@ -9,6 +9,7 @@ import type {
   Expense,
   InsuranceKind,
   InsurancePolicy,
+  MortgageStatement,
   Household,
   IncomeKind,
   IncomeSource,
@@ -72,6 +73,8 @@ const HOUSEHOLD_KEYS = [
   "insurance",
   "deletedInsurance",
   "disability",
+  "mortgages",
+  "deletedMortgages",
 ] as const satisfies readonly (keyof Household)[];
 
 const NOT_SET = "Not set";
@@ -179,6 +182,18 @@ const PROPERTY_LABELS: Record<string, string> = {
   benefitYears: "Benefit duration",
   taxable: "Taxable benefits",
   age: "Age",
+  propertyId: "Property",
+  principalBalance: "Principal balance",
+  interestRate: "Interest rate",
+  monthlyPayment: "Monthly payment (P&I)",
+  nextPaymentMonth: "Next payment month",
+  nextPaymentYear: "Next payment year",
+  maturityMonth: "Maturity month",
+  maturityYear: "Maturity year",
+  monthlyEscrow: "Monthly escrow",
+  extraPrincipal: "Extra principal",
+  originalAmount: "Original loan amount",
+  originalTermYears: "Original term (years)",
 };
 
 const MONEY_KEYS = new Set([
@@ -198,6 +213,11 @@ const MONEY_KEYS = new Set([
   "cashValue",
   "premium",
   "monthlyBenefit",
+  "principalBalance",
+  "monthlyPayment",
+  "monthlyEscrow",
+  "extraPrincipal",
+  "originalAmount",
 ]);
 
 const PERCENT_KEYS = new Set([
@@ -208,6 +228,7 @@ const PERCENT_KEYS = new Set([
   "rentGrowthRate",
   "mortgageRate",
   "targetBracketRate",
+  "interestRate",
 ]);
 
 function stableStringify(value: unknown): string {
@@ -701,6 +722,10 @@ export function formatPlanChangeLabel(field: string): string {
       return "Deleted insurance";
     case "disability":
       return "Disability";
+    case "mortgages":
+      return "Mortgage analysis";
+    case "deletedMortgages":
+      return "Deleted mortgages";
     default:
       return field;
   }
@@ -907,6 +932,27 @@ export function detailPlanSnapshots(
       (p) => entityLabel(p, INSURANCE_KIND_LABELS[p.kind] || "Policy"),
     );
   }
+
+  if (hasOwn(nextHousehold, "mortgages")) {
+    diffEntityList<MortgageStatement>(
+      "mortgages",
+      hasOwn(prevHousehold, "mortgages") ? previous.household.mortgages : undefined,
+      next.household.mortgages ?? [],
+      out,
+      ctx,
+      (m) => entityLabel(m, "Mortgage"),
+    );
+  }
+  diffDeletedEntityList(
+    "deletedMortgages",
+    previous.household.deletedMortgages,
+    next.household.deletedMortgages,
+    prevHousehold,
+    nextHousehold,
+    out,
+    ctx,
+    "Mortgage",
+  );
 
   diffDeletedEntityList(
     "deletedInsurance",

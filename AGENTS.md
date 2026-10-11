@@ -329,8 +329,11 @@ safety net" above).
 The results page layout was signed off by the user. Keep it as is unless the
 user asks for a change:
 
-1. Analysis links: **Retirement | Survivorship | Disability | Long-term care**.
-   Survivorship and Long-term care show their own settings card under them.
+1. Analysis links: **Retirement | Survivorship | Disability | Long-term care |
+   Mortgage analysis**. Survivorship, Disability and Long-term care show their
+   own settings card under them. Mortgage analysis (added at the user's
+   request) skips the results tabs: it shows statement inputs and an
+   amortization table instead.
 2. Results tabs: **Main | Summary | Graphic view | Main in detail analysis**.
    Each tab shows only its own sections; Main is the default.
    - **Main**: the Assets, Income & Taxes tables (No conversion, then With

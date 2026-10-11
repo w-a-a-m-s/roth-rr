@@ -459,6 +459,7 @@ export interface Household {
   deletedBusinesses?: DeletedItem<Business>[];
   deletedExpenses?: DeletedItem<Expense>[];
   deletedInsurance?: DeletedItem<InsurancePolicy>[];
+  deletedMortgages?: DeletedItem<MortgageStatement>[];
   assumptions: Assumptions;
   optimizer: OptimizerConfig;
   /**
@@ -477,6 +478,45 @@ export interface Household {
    * Optional for older plans; `migrateHousehold` defaults it to `[]`.
    */
   insurance?: InsurancePolicy[];
+  /**
+   * Mortgages entered from a statement for the Mortgage analysis (an
+   * amortization table). They don't feed the projection: real estate keeps
+   * its own mortgage fields. Optional; `migrateHousehold` defaults it to `[]`.
+   */
+  mortgages?: MortgageStatement[];
+}
+
+/**
+ * What a mortgage statement says, enough to build an amortization table. The
+ * balance is the unpaid principal right before the next payment.
+ */
+export interface MortgageStatement {
+  id: string;
+  label: string;
+  /** The property it's on (`Household.realEstate`), for reference. */
+  propertyId?: string;
+  /** Unpaid principal balance on the statement (not the payoff amount). */
+  principalBalance: number;
+  /** Yearly interest rate (decimal). */
+  interestRate: number;
+  /**
+   * Monthly principal and interest, without escrow. 0 or missing means
+   * figure it from the balance, rate and maturity date.
+   */
+  monthlyPayment?: number;
+  /** Month (1 to 12) and year of the next payment due: row 1 of the table. */
+  nextPaymentMonth: number;
+  nextPaymentYear: number;
+  /** Month and year of the last scheduled payment, to check the table. */
+  maturityMonth?: number;
+  maturityYear?: number;
+  /** Escrow per month (taxes and insurance). Shown, never amortized. */
+  monthlyEscrow?: number;
+  /** Extra principal paid every month on top of the payment. */
+  extraPrincipal?: number;
+  /** For reference: the loan as first written. */
+  originalAmount?: number;
+  originalTermYears?: number;
 }
 
 /** One person becoming disabled at a given age (from January 1 of that year). */

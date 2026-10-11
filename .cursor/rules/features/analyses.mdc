@@ -1,6 +1,6 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care) and the survivorship death model
-globs: src/components/results/AnalysisTabs.tsx,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis) and the survivorship death model
+globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
 
@@ -23,6 +23,14 @@ conversion schedule always comes from the plan's strategy as-is.
   age in the first projection year). From January 1 of that year the
   person's salary and business income stop; their disability policies pay
   (see the insurance guide). Expenses don't change.
+
+- **Mortgage analysis**: not a projection. `MortgageAnalysis.tsx` edits
+  `household.mortgages` (statement fields) and shows `amortize()`
+  (`lib/engine/amortization.ts`): monthly interest = balance x rate / 12 to
+  the cent, payment left at 0 is worked out from the maturity date, a
+  payment on the maturity date clears cent rounding, extra principal shows
+  its savings. It never feeds `projectScenario`; real estate keeps its own
+  mortgage fields. ResultsView returns it before the tax tables load.
 
 ## Survivorship rules (`domain/survivorship.ts` + `projectScenario`)
 

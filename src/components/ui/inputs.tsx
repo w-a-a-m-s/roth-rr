@@ -373,6 +373,32 @@ export function PercentInput({
 }
 
 /**
+ * Interest rate input: stores a decimal, shows a percent to three places so
+ * rates like 6.875% survive (PercentInput rounds to one).
+ */
+export function RateInput({
+  value,
+  onChange,
+  id,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  id?: string;
+}) {
+  return (
+    <NumericInput
+      id={id}
+      suffix="%"
+      step={0.125}
+      min={0}
+      decimals={3}
+      value={Math.round(value * 100_000) / 1000}
+      onChange={(v) => onChange(Math.round((v ?? 0) * 1000) / 100_000)}
+    />
+  );
+}
+
+/**
  * Typed calendar year. Digits only; commits a value in [from, to] (the old
  * dropdown range). Yields `undefined` when cleared and `allowEmpty` is on.
  */
