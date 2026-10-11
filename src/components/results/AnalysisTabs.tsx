@@ -162,7 +162,8 @@ export function SurvivorshipControls({
                 `${formatCurrency(c.faceAmount)} death benefit pays ${formatCurrency(c.annualIncome / 12)}/mo (${formatPercent(c.rate)} a year)`,
             )
             .join("; ")}{" "}
-          for life from {death?.year != null ? death.year + 1 : ""}. The money is
+          for life from {death?.year != null ? death.year + 1 : ""}. The death
+          benefit lands in {death?.year} and shows in that year&apos;s assets. The money is
           invested at 8% a year; the payout rate comes from the age at death
           (5% under 59). Earnings come out first and are taxed as ordinary
           income.

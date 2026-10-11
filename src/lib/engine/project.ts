@@ -864,14 +864,21 @@ export function projectScenario(
     }
 
     // Insurance benefits, each only in its own analysis.
-    //  - Life (Survivorship): the death benefit lands January 1 of the year
-    //    after the death, grows 8% a year, and pays a fixed income for life
+    //  - Life (Survivorship): the death benefit lands in the year of death,
+    //    then from the next year grows 8% a year and pays a fixed income for life
     //    (guaranteed, so it keeps paying if the balance runs out). Like an
     //    annuity, earnings come out first and are taxed as ordinary income;
     //    the rest is a tax-free return of the death benefit.
     for (const claim of lifeClaims) {
-      if (calendarYear < claim.firstYear) continue;
+      if (calendarYear < claim.deathYear) continue;
       const key = lifeInsuranceKey(claim.policyId);
+      // The death benefit is paid in the year of death and shows in that
+      // year's assets; it's invested and starts paying the next year.
+      if (calendarYear === claim.deathYear) {
+        balances[key] = claim.faceAmount;
+        lifeBasis[key] = claim.faceAmount;
+        continue;
+      }
       if (balances[key] == null) {
         balances[key] = claim.faceAmount;
         lifeBasis[key] = claim.faceAmount;

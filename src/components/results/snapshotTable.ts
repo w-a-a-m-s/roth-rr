@@ -6,12 +6,21 @@ import {
   incomeLabel,
   lifeInsuranceBalanceKeys,
   lifeProceedsLabel,
+  insuranceKeyKind,
 } from "@/components/results/incomeLabels";
 
 /** How many years the snapshot shows, like the deck's slide. */
 export const SNAPSHOT_YEARS = 6;
 
 export type SnapshotTone = "plain" | "roth" | "tax" | "strong" | "surplus";
+
+export type SnapshotTint = "realEstate" | "business" | "life" | "disability" | "longTermCare";
+
+/** Tint for an income key, when it's an insurance benefit. */
+function insuranceTint(key: string): SnapshotTint | undefined {
+  const kind = insuranceKeyKind(key);
+  return kind ?? undefined;
+}
 
 /** Asset groups in the assets section, each with its own tint and total. */
 export type SnapshotAssetGroup = "retirement" | "regular" | "roth";
@@ -23,6 +32,11 @@ export interface SnapshotLine {
   tone: SnapshotTone;
   /** Assets section only: which group the line belongs to. */
   group?: SnapshotAssetGroup;
+  /**
+   * A line that gets its own color so it reads apart from its neighbors:
+   * real estate vs business equity, and each kind of insurance.
+   */
+  tint?: SnapshotTint;
   /** True for a group's total row. */
   subtotal?: boolean;
 }
@@ -120,6 +134,7 @@ function buildAssetLines(
   for (const key of lifeInsuranceBalanceKeys(scenario.rows)) {
     regular.push({
       key: `acc-${key}`,
+      tint: "life",
       label: lifeProceedsLabel(household, key),
       values: pick((r) => r.balances[key] ?? 0),
       tone: "plain",
@@ -133,6 +148,7 @@ function buildAssetLines(
     }
     regular.push({
       key: `re-${re.id}`,
+      tint: "realEstate",
       label: re.label ? `Real estate · ${re.label}` : "Real-estate equity",
       values: pick((r) => r.realEstateEquityById[re.id] ?? 0),
       tone: "plain",
@@ -142,6 +158,7 @@ function buildAssetLines(
   for (const biz of household.businesses ?? []) {
     regular.push({
       key: `biz-${biz.id}`,
+      tint: "business",
       label: biz.label ? `Business · ${biz.label}` : "Business equity",
       values: pick((r) => r.businessEquityById[biz.id] ?? 0),
       tone: "plain",
@@ -253,6 +270,7 @@ export function buildSnapshotTable(
       label: incomeLabel(household, key),
       values: pick((r) => r.incomeMonthly[key] ?? 0),
       tone: "plain",
+      tint: insuranceTint(key),
     }),
   );
 

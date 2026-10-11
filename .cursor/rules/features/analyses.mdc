@@ -60,6 +60,11 @@ next year:
 - expenses drop to `SURVIVOR_EXPENSE_SHARE` (70%) of the plan's amounts.
 Inheritance uses the final row's filing status.
 
+Survivorship, Disability and Long-term care show only the no-conversion
+scenario (`single` in ResultsView): one snapshot table, no No/With toggles,
+no conversion tax switch, and Summary shows `ScenarioMetrics` (the six totals)
+instead of Total impact. Retirement still compares the two.
+
 ## Long-term care rules (`domain/longTermCare.ts` + `projectScenario`)
 
 - One spouse or both. Each person in care has a start age (default 80) and a

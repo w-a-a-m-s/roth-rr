@@ -24,9 +24,9 @@ per-insured and household totals.
 
 ## Life (Survivorship)
 - In force: permanent always; term from `issueYear` for `termYears`.
-- On the insured's death (end of `death.year`), the face amount lands
-  January 1 of the next year as `balances["life:<id>"]` (inside
-  `afterTaxTotal`, so totals and inheritance include it), grows 8% a year
+- On the insured's death (end of `death.year`), the face amount lands that
+  same year as `balances["life:<id>"]` (inside `afterTaxTotal`, so totals and
+  inheritance include it). From the next year it grows 8% a year
   (`LIFE_INSURANCE_PROCEEDS_GROWTH`), and pays a fixed lifetime income of
   face x rate (`incomeMonthly["life:<id>"]`), even if the balance runs out.
 - Rate: Transamerica RILA Income Advantage with Step-Up, Single Life,
@@ -47,3 +47,8 @@ per-insured and household totals.
   cost) per month after the waiting period, for `benefitYears` (or
   lifetime), never past the stay. Key `ltci:<id>`, tax free.
 - Doesn't change the expense rules (70% / 0%) in the analyses guide.
+
+## Colors in the Assets, Income & Taxes tables
+`SnapshotLine.tint` gives lines their own row color (`TINT_ROW` in
+`ScenarioSnapshot.tsx`): life (proceeds and income) teal, disability peach,
+long-term care insurance mauve, real estate tan, business lavender.

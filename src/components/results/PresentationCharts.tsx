@@ -48,13 +48,16 @@ export function PresentationCharts({
   comparison,
   household,
   primaryId,
+  single = false,
 }: {
   comparison: Comparison;
   household: Household;
   primaryId: string;
+  /** Show only the no-conversion scenario (no toggle). */
+  single?: boolean;
 }) {
   const [tab, setTab] = useState<"baseline" | "roth">("baseline");
-  const scenario = tab === "baseline" ? comparison.baseline : comparison.roth;
+  const scenario = single || tab === "baseline" ? comparison.baseline : comparison.roth;
   const data = useMemo(
     () => buildPresentationData(scenario.rows, household, primaryId),
     [scenario.rows, household, primaryId],
@@ -149,7 +152,7 @@ export function PresentationCharts({
         <h3 className="m-0 text-[14.5px] font-bold text-foreground">
           Retirement analysis
         </h3>
-        <div className="inline-flex rounded-[9px] bg-segment p-[3px]">
+        {single ? null : <div className="inline-flex rounded-[9px] bg-segment p-[3px]">
           {(
             [
               ["baseline", "No conversion"],
@@ -169,7 +172,7 @@ export function PresentationCharts({
               {label}
             </button>
           ))}
-        </div>
+        </div>}
       </div>
 
       <div className="grid grid-cols-1 gap-3.5 xl:grid-cols-2">

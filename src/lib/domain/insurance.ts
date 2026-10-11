@@ -175,6 +175,8 @@ export interface LifeInsuranceClaim {
   policyId: string;
   /** First year the proceeds are invested and pay income (the year after the death). */
   firstYear: number;
+  /** Year of death: the death benefit lands (and shows in assets) that year. */
+  deathYear: number;
   faceAmount: number;
   /** Payout rate from the insured's age at death. */
   rate: number;
@@ -204,6 +206,7 @@ export function lifeInsuranceClaims(
     claims.push({
       policyId: policy.id,
       firstYear: death.year + 1,
+      deathYear: death.year,
       faceAmount: policy.faceAmount,
       rate,
       annualIncome: policy.faceAmount * rate,

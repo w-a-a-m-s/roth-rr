@@ -1,6 +1,6 @@
 'use client';
 
-import type { Comparison } from '@/lib/engine/types';
+import type { Comparison, ScenarioResult } from '@/lib/engine/types';
 import { formatCurrency, formatSignedCurrency } from '@/lib/format';
 import { totalImpact as totalImpactOf } from '@/lib/optimizer/score';
 
@@ -45,6 +45,39 @@ function Metric({
 					<div className="text-[13px] font-bold tabular-nums text-muted-2">{formatCurrency(roth)}</div>
 				</div>
 			</div>
+		</div>
+	);
+}
+
+/** One scenario's totals, for analyses that don't compare conversions. */
+export function ScenarioMetrics({
+	scenario,
+	rmdAge,
+}: {
+	scenario: ScenarioResult;
+	rmdAge?: number;
+}) {
+	const t = scenario.totals;
+	const rmdLabel = rmdAge != null ? String(rmdAge) : 'RMD';
+	const cards: { label: string; hint?: string; value: number }[] = [
+		{ label: `Taxes until ${rmdLabel}`, hint: 'Sum of taxes before the RMD age', value: t.taxesEarly },
+		{ label: `Taxes ${rmdLabel} and after`, hint: 'Sum of taxes from the RMD age onward', value: t.taxesLate },
+		{ label: 'Lifetime taxes', hint: 'Sum of taxes across the projection', value: t.taxesTotal },
+		{ label: `After-tax assets at ${rmdLabel}`, value: t.afterTaxAssetsAtRmd },
+		{ label: 'Inheritance (final year)', value: t.inheritanceFinal },
+		{ label: 'Total Medicare Part B', hint: 'Lifetime premiums incl. income-based IRMAA', value: t.medicareTotal },
+	];
+	return (
+		<div className="grid w-full grid-cols-1 gap-3.5 lg:grid-cols-3">
+			{cards.map(card => (
+				<div key={card.label} className="rounded-[14px] border border-border bg-white p-[17px]">
+					<div className="text-[15px] font-bold leading-tight text-foreground">{card.label}</div>
+					{card.hint ? <div className="mt-0.5 text-[11px] leading-snug text-muted-3">{card.hint}</div> : null}
+					<div className="mt-4 text-2xl font-extrabold leading-none tracking-[0.04em] tabular-nums text-foreground">
+						{formatCurrency(card.value)}
+					</div>
+				</div>
+			))}
 		</div>
 	);
 }

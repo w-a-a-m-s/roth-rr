@@ -9,7 +9,7 @@ import { calculate } from '@/lib/calculate';
 import { isHouseholdReady } from '@/lib/domain/household';
 import { primaryRmdAge } from '@/lib/domain/rmd';
 import { primaryPersonId } from '@/lib/engine/project';
-import { ComparisonMetrics, TotalImpact } from '@/components/results/ComparisonSummary';
+import { ComparisonMetrics, ScenarioMetrics, TotalImpact } from '@/components/results/ComparisonSummary';
 import { AssetsChart } from '@/components/results/AssetsChart';
 import { AfterTaxAssetsTimeline } from '@/components/results/AfterTaxAssetsTimeline';
 import { CashflowChart } from '@/components/results/CashflowChart';
@@ -107,7 +107,10 @@ export function ResultsView() {
 		);
 	}
 
-	const scenario = tab === 'baseline' ? comparison.baseline : comparison.roth;
+	// Survivorship, Disability and Long-term care show the plan without
+	// conversions only; Retirement compares the two.
+	const single = analysis !== 'retirement';
+	const scenario = single || tab === 'baseline' ? comparison.baseline : comparison.roth;
 	const rmdAge = primaryRmdAge(household);
 
 	return (
@@ -124,30 +127,37 @@ export function ResultsView() {
 			) : null}
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<ViewLinks view={view} onChange={setView} />
-				<ConversionTaxToggle />
+				{single ? null : <ConversionTaxToggle />}
 			</div>
 
 			{view === 'summary' ? (
 				<section className="flex flex-col gap-4">
-					<TotalImpact comparison={comparison} />
-					<ComparisonMetrics comparison={comparison} rmdAge={rmdAge} />
+					{single ? (
+						<ScenarioMetrics scenario={comparison.baseline} rmdAge={rmdAge} />
+					) : (
+						<>
+							<TotalImpact comparison={comparison} />
+							<ComparisonMetrics comparison={comparison} rmdAge={rmdAge} />
+						</>
+					)}
 					<AfterTaxAssetsTimeline
 						rothRows={comparison.roth.rows}
 						baselineRows={comparison.baseline.rows}
 						household={household}
 						refs={refs}
 						primaryId={primaryId}
+						single={single}
 					/>
 				</section>
 			) : null}
 
 			{view === 'graphic' ? (
 				<section className="flex flex-col gap-6">
-					<PresentationCharts comparison={comparison} household={household} primaryId={primaryId} />
+					<PresentationCharts comparison={comparison} household={household} primaryId={primaryId} single={single} />
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-wrap items-center justify-between gap-4">
 							<h3 className="m-0 text-[14.5px] font-bold text-foreground">Assets and cash flow</h3>
-							<ScenarioToggle tab={tab} onChange={setTab} />
+							{single ? null : <ScenarioToggle tab={tab} onChange={setTab} />}
 						</div>
 						<div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
 							<AssetsChart rows={scenario.rows} />
@@ -164,6 +174,7 @@ export function ResultsView() {
 						comparison={comparison}
 						household={household}
 						primaryId={primaryId}
+						single={single}
 					/>
 				</section>
 			) : null}
@@ -172,7 +183,7 @@ export function ResultsView() {
 				<section className="flex flex-col gap-3">
 					<div className="flex flex-wrap items-center justify-between gap-4">
 						<h3 className="m-0 text-[14.5px] font-bold text-foreground">Year-by-year</h3>
-						<ScenarioToggle tab={tab} onChange={setTab} />
+						{single ? null : <ScenarioToggle tab={tab} onChange={setTab} />}
 					</div>
 					<ProjectionTable scenario={scenario} household={household} primaryId={primaryId} />
 				</section>

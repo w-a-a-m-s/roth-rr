@@ -11,6 +11,7 @@ import {
   type SnapshotAssetGroup,
   type SnapshotLine,
   type SnapshotSection,
+  type SnapshotTint,
   type SnapshotTone,
 } from "@/components/results/snapshotTable";
 
@@ -41,7 +42,21 @@ const ASSET_GROUP_ROW: Record<
 /** The grand total under all three groups: the darkest shade, ruled above. */
 const ALL_ASSETS_ROW = "bg-[#C3D1E4] border-t-[3px] border-t-[#1B365D]";
 
+/**
+ * Lines that read apart from their neighbors: real estate and business
+ * equity in their own shades, and each kind of insurance in its own color
+ * (life a soft teal, disability a peach, long-term care a mauve).
+ */
+const TINT_ROW: Record<SnapshotTint, string> = {
+  realEstate: "bg-[#EFE3CC]",
+  business: "bg-[#E6E1F2]",
+  life: "bg-[#DCEFF2]",
+  disability: "bg-[#FBE6D4]",
+  longTermCare: "bg-[#F0DDEA]",
+};
+
 function lineRowClass(line: SnapshotLine, sectionRow: string): string {
+  if (line.tint && !line.subtotal) return TINT_ROW[line.tint];
   if (!line.group) return line.subtotal ? ALL_ASSETS_ROW : sectionRow;
   const tint = ASSET_GROUP_ROW[line.group];
   return line.subtotal ? `${tint.total} border-b-2 border-b-[#B8C4D4]` : tint.row;
@@ -70,10 +85,13 @@ export function ScenarioSnapshot({
   comparison,
   household,
   primaryId,
+  single = false,
 }: {
   comparison: Comparison;
   household: Household;
   primaryId: string;
+  /** Show only the no-conversion scenario. */
+  single?: boolean;
 }) {
   const allYears = comparison.baseline.rows.map((r) => r.calendarYear);
   const [startYear, setStartYear] = useState<number>(allYears[0] ?? 0);
@@ -113,13 +131,13 @@ export function ScenarioSnapshot({
         primaryId={primaryId}
         startYear={startYear}
       />
-      <SnapshotCard
+      {single ? null : <SnapshotCard
         label="With conversion"
         scenario={comparison.roth}
         household={household}
         primaryId={primaryId}
         startYear={startYear}
-      />
+      />}
     </div>
   );
 }

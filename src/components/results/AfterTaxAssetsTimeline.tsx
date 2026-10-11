@@ -59,12 +59,15 @@ export function AfterTaxAssetsTimeline({
   household,
   refs,
   primaryId,
+  single = false,
 }: {
   rothRows: ProjectionRow[];
   baselineRows: ProjectionRow[];
   household: Household;
   refs: ReferenceData;
   primaryId: string;
+  /** Only the no-conversion row (no With conversion or Impact rows). */
+  single?: boolean;
 }) {
   const primaryName =
     household.people.find((p) => p.id === primaryId)?.name?.trim() || "Age";
@@ -119,7 +122,7 @@ export function AfterTaxAssetsTimeline({
                 </td>
               ))}
             </tr>
-            <AmountRow
+            {single ? null : <AmountRow
               label="With conversion"
               points={points}
               value={(point) => point.withConversion}
@@ -127,7 +130,7 @@ export function AfterTaxAssetsTimeline({
               title={(point) =>
                 cellTitle(primaryName, point, "With conversion", point.withConversion)
               }
-            />
+            />}
             <AmountRow
               label="No conversion"
               points={points}
@@ -137,7 +140,7 @@ export function AfterTaxAssetsTimeline({
                 cellTitle(primaryName, point, "No conversion", point.noConversion)
               }
             />
-            <AmountRow
+            {single ? null : <AmountRow
               label="Impact"
               points={points}
               value={(point) => point.delta}
@@ -152,7 +155,7 @@ export function AfterTaxAssetsTimeline({
                 )
               }
               colorClass={(point) => deltaColor(point.delta)}
-            />
+            />}
           </tbody>
         </table>
       </DualScroll>

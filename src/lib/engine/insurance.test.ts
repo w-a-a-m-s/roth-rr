@@ -116,7 +116,7 @@ describe("life insurance payout table", () => {
 });
 
 describe("life insurance in Survivorship", () => {
-  // Alex passes at 80, the end of 2030. Proceeds start January 1, 2031.
+  // Alex passes at 80, the end of 2030. The death benefit lands in 2030; income starts in 2031.
   const options = { death: { personId: "a", deathAge: 80 } };
   const without = rows(couple(), options);
   const withLife = rows(couple([life()]), options);
@@ -131,6 +131,12 @@ describe("life insurance in Survivorship", () => {
   it("invests the death benefit at 8% and draws the income from it", () => {
     expect(at(withLife, 2031).balances[key]).toBeCloseTo(1_000_000 * 1.08 - 78_000, 4);
     expect(at(withLife, 2032).balances[key]).toBeCloseTo((1_000_000 * 1.08 - 78_000) * 1.08 - 78_000, 4);
+  });
+
+  it("shows the death benefit in assets in the year of death, with no income yet", () => {
+    expect(at(withLife, 2029).balances[key]).toBeUndefined();
+    expect(at(withLife, 2030).balances[key]).toBe(1_000_000);
+    expect(at(withLife, 2030).afterTaxTotal - at(without, 2030).afterTaxTotal).toBeCloseTo(1_000_000, 4);
   });
 
   it("counts the proceeds as after-tax assets", () => {
