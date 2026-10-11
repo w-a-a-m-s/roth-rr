@@ -13,6 +13,7 @@ import { lifeInsurancePayoutRate } from "@/lib/config/lifeInsurancePayout";
 import {
   disabilityBenefitMonths,
   lifeInsuranceClaims,
+  lifeInsuranceSummary,
   lifePolicyInForce,
   longTermCareBenefitMonths,
   resolveDisability,
@@ -282,5 +283,41 @@ describe("saved insurance", () => {
     expect(diPolicy.waitingDays).toBe(90);
     expect(diPolicy.benefitPeriod).toBe("age65");
     expect(diPolicy.occupation).toBe("own");
+  });
+});
+
+describe("life insurance summary", () => {
+  const h = couple([
+    life({ id: "w", label: "Whole", cashValue: 80_000, premium: 1000, premiumFrequency: "monthly" }),
+    life({ id: "t", label: "Term", policyType: "term", termYears: 20, issueYear: 2020, permanentType: undefined, faceAmount: 500_000, premium: 900, premiumFrequency: "annual" }),
+    life({ id: "old", label: "Old", policyType: "term", termYears: 10, issueYear: 2000, permanentType: undefined, faceAmount: 250_000, premium: 300, premiumFrequency: "annual" }),
+    life({ id: "s", label: "Sam's", insuredId: "b", faceAmount: 300_000 }),
+  ]);
+  // In 2026 Alex is 76 (7.4%) and Sam is 74 (7.2%).
+  const { groups, totals } = lifeInsuranceSummary(h, 2026);
+
+  it("groups policies by insured in plan order", () => {
+    expect(groups.map((g) => [g.name, g.age, g.payoutRate])).toEqual([
+      ["Alex", 76, 0.074],
+      ["Sam", 74, 0.072],
+    ]);
+    expect(groups[0].rows.map((r) => r.coverage)).toEqual(["Lifetime", "2020 to 2039", "Ended 2009"]);
+  });
+
+  it("lists an ended term policy but leaves it out of the totals", () => {
+    const old = groups[0].rows.find((r) => r.policyId === "old")!;
+    expect(old.inForce).toBe(false);
+    expect(old.annualIncome).toBe(0);
+    expect(groups[0].totals).toEqual({
+      faceAmount: 1_500_000,
+      cashValue: 80_000,
+      annualPremium: 12_900,
+      annualIncome: 1_500_000 * 0.074,
+    });
+  });
+
+  it("adds every insured into the household total", () => {
+    expect(totals.faceAmount).toBe(1_800_000);
+    expect(totals.annualIncome).toBeCloseTo(1_500_000 * 0.074 + 300_000 * 0.072, 6);
   });
 });

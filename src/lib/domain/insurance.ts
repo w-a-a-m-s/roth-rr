@@ -339,3 +339,127 @@ export function longTermCareBenefitMonths(
 export function longTermCareInsuranceKey(policyId: string): string {
   return `ltci:${policyId}`;
 }
+
+// --- Life insurance summary (by insured) -------------------------------------
+
+export interface LifeSummaryRow {
+  policyId: string;
+  label: string;
+  /** "Term, 20 years" or "Permanent, Whole life". */
+  type: string;
+  /** "Lifetime", "2026 to 2045", or "Ended 2019". */
+  coverage: string;
+  inForce: boolean;
+  faceAmount: number;
+  cashValue: number;
+  annualPremium: number;
+  /** Yearly survivor income if the insured passed in the summary year (0 when not in force). */
+  annualIncome: number;
+}
+
+export interface LifeSummaryTotals {
+  faceAmount: number;
+  cashValue: number;
+  annualPremium: number;
+  annualIncome: number;
+}
+
+export interface LifeSummaryGroup {
+  insuredId: string;
+  name: string;
+  /** Age in the summary year, or null without a birth year. */
+  age: number | null;
+  /** Payout rate for a death at that age. */
+  payoutRate: number | null;
+  rows: LifeSummaryRow[];
+  totals: LifeSummaryTotals;
+}
+
+const zeroTotals = (): LifeSummaryTotals => ({
+  faceAmount: 0,
+  cashValue: 0,
+  annualPremium: 0,
+  annualIncome: 0,
+});
+
+function addTotals(into: LifeSummaryTotals, row: LifeSummaryTotals) {
+  into.faceAmount += row.faceAmount;
+  into.cashValue += row.cashValue;
+  into.annualPremium += row.annualPremium;
+  into.annualIncome += row.annualIncome;
+}
+
+function coverageLabel(policy: LifeInsurancePolicy, year: number): string {
+  if (policy.policyType !== "term") return "Lifetime";
+  const end = termEndYear(policy);
+  if (end == null) return "Term";
+  if (end < year) return `Ended ${end}`;
+  return `${policy.issueYear} to ${end}`;
+}
+
+/**
+ * Every life policy grouped by the person it covers, people in plan order,
+ * with totals per person and for the household (in-force policies only). `annualIncome` is what the
+ * Survivorship analysis would pay the survivor each year if the insured
+ * passed in `year` (face x the payout rate for their age then).
+ */
+export function lifeInsuranceSummary(
+  household: Household,
+  year: number,
+): { groups: LifeSummaryGroup[]; totals: LifeSummaryTotals } {
+  const policies = lifePolicies(household);
+  const totals = zeroTotals();
+  const groups: LifeSummaryGroup[] = [];
+  const order = [
+    ...household.people.map((p) => p.id),
+    ...policies.map((p) => p.insuredId),
+  ].filter((id, i, all) => all.indexOf(id) === i);
+
+  for (const insuredId of order) {
+    const mine = policies.filter((p) => p.insuredId === insuredId);
+    if (mine.length === 0) continue;
+    const person = household.people.find((p) => p.id === insuredId);
+    const age =
+      person && Number.isFinite(person.birthYear) ? year - (person.birthYear as number) : null;
+    const payoutRate = age == null ? null : lifeInsurancePayoutRate(age);
+    const group: LifeSummaryGroup = {
+      insuredId,
+      name: person?.name?.trim() || "Not in the plan",
+      age,
+      payoutRate,
+      rows: [],
+      totals: zeroTotals(),
+    };
+    for (const policy of mine) {
+      const inForce = lifePolicyInForce(policy, year);
+      const faceAmount = Math.max(0, policy.faceAmount || 0);
+      const row: LifeSummaryRow = {
+        policyId: policy.id,
+        label: policy.label?.trim() || "Life insurance",
+        type:
+          policy.policyType === "term"
+            ? `Term, ${policy.termYears ?? DEFAULT_TERM_YEARS} years`
+            : `Permanent, ${PERMANENT_LIFE_TYPE_SHORT[policy.permanentType ?? "whole"]}`,
+        coverage: coverageLabel(policy, year),
+        inForce,
+        faceAmount,
+        cashValue: policy.policyType === "term" ? 0 : Math.max(0, policy.cashValue ?? 0),
+        annualPremium: annualPremium(policy),
+        annualIncome: inForce && payoutRate != null ? faceAmount * payoutRate : 0,
+      };
+      group.rows.push(row);
+      // A term policy that has ended is listed but doesn't count.
+      if (inForce) addTotals(group.totals, row);
+    }
+    addTotals(totals, group.totals);
+    groups.push(group);
+  }
+  return { groups, totals };
+}
+
+const PERMANENT_LIFE_TYPE_SHORT: Record<PermanentLifeType, string> = {
+  vul: "VUL",
+  iul: "IUL",
+  ul: "UL",
+  whole: "Whole life",
+};

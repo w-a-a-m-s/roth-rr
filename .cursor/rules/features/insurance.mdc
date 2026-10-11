@@ -1,6 +1,6 @@
 ---
 description: Insurance step (life, disability, long-term care policies) and how each pays in its analysis
-globs: src/components/wizard/steps/InsuranceStep.tsx,src/lib/domain/insurance.ts,src/lib/config/lifeInsurancePayout.ts,src/lib/engine/insurance.test.ts
+globs: src/components/wizard/steps/InsuranceStep.tsx,src/components/wizard/steps/LifeInsuranceSummary.tsx,src/lib/domain/insurance.ts,src/lib/config/lifeInsurancePayout.ts,src/lib/engine/insurance.test.ts
 alwaysApply: false
 ---
 
@@ -14,6 +14,13 @@ Wizard step 7 (Conversion is 8). Policies live in `household.insurance`
 `household.insurance`; `insurance.test.ts` pins that `calculate()` is
 identical with or without policies. Premiums and cash value are stored for
 reference only (not expenses, not assets).
+
+## Life insurance summary
+`LifeInsuranceSummary` (top of the Life section) is one table grouped by
+insured, built by `lifeInsuranceSummary(household, year)`: type, coverage,
+face, cash value, premium / yr, and the survivor income a death this year
+would pay. Ended term policies are listed greyed out and left out of the
+per-insured and household totals.
 
 ## Life (Survivorship)
 - In force: permanent always; term from `issueYear` for `termYears`.

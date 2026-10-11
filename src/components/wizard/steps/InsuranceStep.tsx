@@ -13,6 +13,7 @@ import {
 import { AddButton, EntityCard, ReadStat } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { uid } from "@/lib/id";
+import { LifeInsuranceSummary } from "@/components/wizard/steps/LifeInsuranceSummary";
 import { formatCurrency } from "@/lib/format";
 import type {
   DisabilityInsurancePolicy,
@@ -479,6 +480,7 @@ export function InsuranceStep() {
           })
         }
       >
+        <LifeInsuranceSummary household={household} />
         {lifePolicies(household).map((policy) => (
           <LifeCard
             key={policy.id}
