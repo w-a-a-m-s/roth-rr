@@ -51,6 +51,13 @@ export interface ProjectionRow {
   businessEquityById: Record<string, number>;
   /** Amount actually converted from tax-deferred to Roth this year. */
   conversion: number;
+  /**
+   * Tax on this year's conversion withheld from the converted dollars when
+   * the plan pays conversion tax from assets (0 when paid from income). The
+   * Roth receives `conversion - conversionTaxWithheld`; `annualTax` still
+   * includes it, but `netMonthlyIncome` and `surplus` don't pay it.
+   */
+  conversionTaxWithheld: number;
   /** Gross spendable monthly income (excludes Roth conversions). */
   totalMonthlyIncome: number;
   /**

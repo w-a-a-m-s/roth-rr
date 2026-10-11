@@ -366,7 +366,15 @@ export interface OptimizerConfig {
    * Missing means no cap.
    */
   maxMonthlyShortfall?: number;
+  /**
+   * Who pays the tax a conversion adds. `income` (the default when missing):
+   * the household pays it from that year's cash flow. `assets`: it's withheld
+   * from the converted dollars, so less lands in the Roth.
+   */
+  conversionTaxPaidFrom?: ConversionTaxPaidFrom;
 }
+
+export type ConversionTaxPaidFrom = "income" | "assets";
 
 /**
  * A named, self-contained plan. The whole object is one JSON blob - the unit we

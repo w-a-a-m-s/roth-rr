@@ -37,6 +37,22 @@ Conversion strategy heading sets it to `DEFAULT_MAX_MONTHLY_SHORTFALL` ($1,000)
 or clears it. Strategy scores and Minimum taxes go through the same cap
 (Minimum taxes searches uncapped, then is capped).
 
+## Conversion tax: paid from income or assets
+
+`optimizer.conversionTaxPaidFrom` (missing = `income`). Switch sits next to
+the results tabs (`ConversionTaxToggle` in `ResultsView.tsx`).
+
+- `income`: the year's tax lowers net income and surplus, as always.
+- `assets`: in `projectScenario` step 5b, the tax the conversion adds (the
+  year's tax minus the same year priced without the conversion) is withheld
+  from the converted dollars. The Roth gets the rest, `annualTax` is
+  unchanged, and `netMonthlyIncome` / `surplus` don't pay it. The row carries
+  `conversionTaxWithheld`, shown as Tax paid from conversion in the tables.
+- The shortfall cap reads `surplus`, so it allows bigger conversions under
+  `assets`. Surplus isn't banked into any account, so `assets` shows a lower
+  inheritance than `income` for the same schedule.
+- Rental passive-loss figures aren't re-priced for the no-conversion pass.
+
 ## Menu
 
 `ConversionStrategyMenu` sits above the plan Timeline on desktop, and in the

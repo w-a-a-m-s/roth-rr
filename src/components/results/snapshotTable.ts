@@ -254,6 +254,16 @@ export function buildSnapshotTable(
       values: pick((r) => r.monthlyTax),
       tone: "tax",
     },
+    ...(scenario.rows.some((r) => r.conversionTaxWithheld > 0)
+      ? [
+          {
+            key: "withheld",
+            label: "Tax paid from conversion",
+            values: pick((r) => r.conversionTaxWithheld / 12),
+            tone: "plain" as const,
+          },
+        ]
+      : []),
     {
       key: "net",
       label: "Net monthly income",

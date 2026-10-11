@@ -143,7 +143,9 @@ export function buildPresentationData(
     const deposits = Math.max(0, row.monthlyDeposits * 12);
     const need = Math.max(
       0,
-      (row.monthlyExpenses + row.monthlyTax) * 12 + deposits,
+      (row.monthlyExpenses + row.monthlyTax) * 12 -
+        row.conversionTaxWithheld +
+        deposits,
     );
 
     const income = zero();

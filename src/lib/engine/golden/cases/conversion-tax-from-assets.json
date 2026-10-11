@@ -1,0 +1,160 @@
+{
+  "name": "Conversion tax paid from assets",
+  "strategy": "manual",
+  "note": "Single FL retiree with a 403(b) and DROP converting about $57k to $76k a year. The conversion's tax is withheld from the converted dollars (conversionTaxPaidFrom: assets), so the Roth gets less and the household's cash flow doesn't pay it.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-ft429mz",
+        "label": "All",
+        "amount": 4167,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p-ng9k43m",
+        "name": "Michael",
+        "birthYear": 1961,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "acc-sendvj2",
+        "label": "Nationwide",
+        "ownerId": "p-ng9k43m",
+        "kind": "retirementTaxable",
+        "balance": 351000,
+        "growthRate": 0.05,
+        "retirementType": "403b",
+        "deposits": [
+          {
+            "id": "dep-r0j1g3r",
+            "label": "",
+            "amount": 100,
+            "frequency": "monthly",
+            "startYear": 2026,
+            "endYear": 2026
+          }
+        ]
+      },
+      {
+        "id": "acc-rfrurbz",
+        "label": "Sick Days (Bencor)",
+        "ownerId": "p-ng9k43m",
+        "kind": "retirementTaxable",
+        "balance": 5000,
+        "growthRate": 0.05,
+        "retirementType": "403b",
+        "deposits": []
+      },
+      {
+        "id": "acc-9qsgiqc",
+        "label": "DROP",
+        "ownerId": "p-ng9k43m",
+        "kind": "retirementTaxable",
+        "balance": 635570,
+        "growthRate": 0.05,
+        "retirementType": "drop",
+        "deposits": []
+      }
+    ],
+    "incomes": [
+      {
+        "id": "inc-ux0m87j",
+        "label": "FRS Pension",
+        "ownerId": "p-ng9k43m",
+        "kind": "pension",
+        "monthlyAmount": 6452,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "inc-sux541t",
+        "label": "Social Security",
+        "ownerId": "p-ng9k43m",
+        "kind": "socialSecurity",
+        "monthlyAmount": 3014,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "inc-qp0fhrj",
+        "label": "DROP withdrawal",
+        "ownerId": "p-ng9k43m",
+        "kind": "retirementDraw",
+        "monthlyAmount": 1667,
+        "growthRate": 0,
+        "taxability": "full",
+        "startYear": 2026,
+        "endYear": 2035,
+        "drawsFromAccountId": "acc-9qsgiqc"
+      },
+      {
+        "id": "inc-072i711",
+        "label": "Interest Income",
+        "ownerId": "p-ng9k43m",
+        "kind": "other",
+        "monthlyAmount": 1000,
+        "growthRate": 0,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "realEstateProfessional": false,
+    "deletedPeople": [],
+    "deletedAccounts": [],
+    "deletedIncomes": [],
+    "deletedRealEstate": [],
+    "deletedExpenses": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "allowOverConvertible": false,
+      "manualSchedule": [
+        0,
+        75540.85,
+        73334.25,
+        71083.52,
+        68787.77,
+        66446.1,
+        64057.6,
+        61621.34,
+        59136.34,
+        56601.65
+      ],
+      "conversionTaxPaidFrom": "assets"
+    },
+    "deletedBusinesses": [],
+    "businesses": []
+  },
+  "commit": "b06bd6f",
+  "commitDate": "2026-10-09T20:16:37+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 738168.58,
+      "medicareTotal": 125628,
+      "afterTaxAssetsAtRmd": 912297.77,
+      "inheritanceFinal": 901464.41
+    },
+    "roth": {
+      "taxesTotal": 768950.82,
+      "medicareTotal": 140232,
+      "afterTaxAssetsAtRmd": 1133725.96,
+      "inheritanceFinal": 1930323.23
+    },
+    "deltas": {
+      "taxesTotal": 30782.24,
+      "medicareTotal": 14604,
+      "afterTaxAssetsAtRmd": 221428.19,
+      "inheritanceFinal": 1028858.81
+    }
+  }
+}

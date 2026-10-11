@@ -321,6 +321,11 @@ export function migrateHousehold(household: Household): Household {
     if (cap != null && !(Number.isFinite(cap) && cap >= 0)) {
       delete legacy.optimizer.maxMonthlyShortfall;
     }
+    // Conversion tax is paid from income unless the plan says assets.
+    const paidFrom = legacy.optimizer.conversionTaxPaidFrom;
+    if (paidFrom != null && paidFrom !== "income" && paidFrom !== "assets") {
+      delete legacy.optimizer.conversionTaxPaidFrom;
+    }
   }
 
   return legacy;

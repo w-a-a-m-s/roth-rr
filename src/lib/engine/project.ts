@@ -539,6 +539,7 @@ export function projectScenario(
   // below would pull money out of the tax-deferred accounts (and tax it) with
   // nowhere to land, deflating every downstream asset/inheritance total.
   const hasConversions = conversionSchedule.some((amount) => amount > 0);
+  const conversionTaxPaidFrom = household.optimizer?.conversionTaxPaidFrom ?? "income";
   const existingRoth = household.accounts.find(
     (acc) => acc.kind === "rothTaxFree",
   );
@@ -835,94 +836,149 @@ export function projectScenario(
     }
 
     // 5) Deductions, taxable income, federal + state tax (incl. capital gains).
-    const deductions = computeDeductions(
-      fs,
-      livingIds,
-      ages,
-      federalOrdinaryGross,
-      federal,
-      rentalPal.allowedDepreciation,
-    );
-    const taxableIncome = Math.max(0, federalOrdinaryGross - deductions.total);
-    const federalBrackets = forFiling(
-      federal.brackets,
-      fs,
-      "federal brackets",
-    );
-    const federalOrdinaryTax = progressiveTax(taxableIncome, federalBrackets);
-    const federalTaxByBracket = progressiveTaxByBracket(
-      taxableIncome,
-      federalBrackets,
-    ).map((tax, bi) => ({
-      rate: federalBrackets[bi].rate,
-      tax,
-      floor: federalBrackets[bi].floor,
-      ceiling: federalBrackets[bi + 1]?.floor ?? null,
-    }));
-    const ltcgBrackets = forFiling(
-      federal.longTermCapitalGains,
-      fs,
-      "federal longTermCapitalGains",
-    );
-    const federalCapitalGainsTax = capitalGainsTaxStacked(
-      taxableIncome,
-      capitalGainsIncome,
-      ltcgBrackets,
-    );
-    const federalCapitalGainsTaxByBracket = capitalGainsTaxByBracket(
-      taxableIncome,
-      capitalGainsIncome,
-      ltcgBrackets,
-    ).map((tax, bi) => ({ rate: ltcgBrackets[bi].rate, tax }));
-    const federalAnnualTax = federalOrdinaryTax + federalCapitalGainsTax;
+    //    Wrapped so the same math can price the year without its conversion
+    //    when the conversion pays its own tax (see 5b).
+    const taxForYear = (
+      federalOrdinaryGross: number,
+      stateOrdinaryGross: number,
+    ) => {
+      const deductions = computeDeductions(
+        fs,
+        livingIds,
+        ages,
+        federalOrdinaryGross,
+        federal,
+        rentalPal.allowedDepreciation,
+      );
+      const taxableIncome = Math.max(0, federalOrdinaryGross - deductions.total);
+      const federalBrackets = forFiling(
+        federal.brackets,
+        fs,
+        "federal brackets",
+      );
+      const federalOrdinaryTax = progressiveTax(taxableIncome, federalBrackets);
+      const federalTaxByBracket = progressiveTaxByBracket(
+        taxableIncome,
+        federalBrackets,
+      ).map((tax, bi) => ({
+        rate: federalBrackets[bi].rate,
+        tax,
+        floor: federalBrackets[bi].floor,
+        ceiling: federalBrackets[bi + 1]?.floor ?? null,
+      }));
+      const ltcgBrackets = forFiling(
+        federal.longTermCapitalGains,
+        fs,
+        "federal longTermCapitalGains",
+      );
+      const federalCapitalGainsTax = capitalGainsTaxStacked(
+        taxableIncome,
+        capitalGainsIncome,
+        ltcgBrackets,
+      );
+      const federalCapitalGainsTaxByBracket = capitalGainsTaxByBracket(
+        taxableIncome,
+        capitalGainsIncome,
+        ltcgBrackets,
+      ).map((tax, bi) => ({ rate: ltcgBrackets[bi].rate, tax }));
+      const federalAnnualTax = federalOrdinaryTax + federalCapitalGainsTax;
 
-    const stateDeduction = state.hasIncomeTax ? stateDeductionTotal(state, fs) : 0;
-    const stateDeductions = state.hasIncomeTax
-      ? {
-          standard: forFiling(
-            state.standardDeduction,
-            fs,
-            "state standardDeduction",
-          ),
-          personalExemption: forFiling(
-            state.personalExemption,
-            fs,
-            "state personalExemption",
-          ),
-          total: stateDeduction,
-        }
-      : { standard: 0, personalExemption: 0, total: 0 };
-    const stateGrossTaxableIncome = stateOrdinaryGross;
-    const stateTaxableIncome = state.hasIncomeTax
-      ? Math.max(0, stateOrdinaryGross - stateDeduction)
-      : 0;
-    const stateBrackets = forFiling(state.brackets, fs, "state brackets");
-    const stateOrdinaryTax =
-      state.hasIncomeTax && !state.capitalGainsOnly
-        ? progressiveTax(stateTaxableIncome, stateBrackets)
+      const stateDeduction = state.hasIncomeTax ? stateDeductionTotal(state, fs) : 0;
+      const stateDeductions = state.hasIncomeTax
+        ? {
+            standard: forFiling(
+              state.standardDeduction,
+              fs,
+              "state standardDeduction",
+            ),
+            personalExemption: forFiling(
+              state.personalExemption,
+              fs,
+              "state personalExemption",
+            ),
+            total: stateDeduction,
+          }
+        : { standard: 0, personalExemption: 0, total: 0 };
+      const stateGrossTaxableIncome = stateOrdinaryGross;
+      const stateTaxableIncome = state.hasIncomeTax
+        ? Math.max(0, stateOrdinaryGross - stateDeduction)
         : 0;
-    const stateTaxByBracket =
-      state.hasIncomeTax && !state.capitalGainsOnly
-        ? progressiveTaxByBracket(stateTaxableIncome, stateBrackets).map(
-            (tax, bi) => ({ rate: stateBrackets[bi].rate, tax }),
-          )
-        : [];
-    const stateGainsTax = stateCapitalGainsTax(
-      state,
-      fs,
+      const stateBrackets = forFiling(state.brackets, fs, "state brackets");
+      const stateOrdinaryTax =
+        state.hasIncomeTax && !state.capitalGainsOnly
+          ? progressiveTax(stateTaxableIncome, stateBrackets)
+          : 0;
+      const stateTaxByBracket =
+        state.hasIncomeTax && !state.capitalGainsOnly
+          ? progressiveTaxByBracket(stateTaxableIncome, stateBrackets).map(
+              (tax, bi) => ({ rate: stateBrackets[bi].rate, tax }),
+            )
+          : [];
+      const stateGainsTax = stateCapitalGainsTax(
+        state,
+        fs,
+        stateTaxableIncome,
+        capitalGainsIncome,
+      );
+      // When gains are taxed as ordinary, they were stacked in stateGainsTax only
+      // (not double-counted in stateOrdinaryTax). Preferential/WA use CG brackets.
+      const stateAnnualTax = stateOrdinaryTax + stateGainsTax;
+      return {
+        deductions,
+        taxableIncome,
+        federalOrdinaryTax,
+        federalTaxByBracket,
+        federalCapitalGainsTax,
+        federalCapitalGainsTaxByBracket,
+        federalAnnualTax,
+        stateDeductions,
+        stateGrossTaxableIncome,
+        stateTaxableIncome,
+        stateTaxByBracket,
+        stateAnnualTax,
+        annualTax: federalAnnualTax + stateAnnualTax,
+      };
+    };
+    const {
+      deductions,
+      taxableIncome,
+      federalOrdinaryTax,
+      federalTaxByBracket,
+      federalCapitalGainsTax,
+      federalCapitalGainsTaxByBracket,
+      federalAnnualTax,
+      stateDeductions,
+      stateGrossTaxableIncome,
       stateTaxableIncome,
-      capitalGainsIncome,
-    );
-    // When gains are taxed as ordinary, they were stacked in stateGainsTax only
-    // (not double-counted in stateOrdinaryTax). Preferential/WA use CG brackets.
-    const stateAnnualTax = stateOrdinaryTax + stateGainsTax;
+      stateTaxByBracket,
+      stateAnnualTax,
+      annualTax,
+    } = taxForYear(federalOrdinaryGross, stateOrdinaryGross);
 
-    const annualTax = federalAnnualTax + stateAnnualTax;
+    // 5b) Conversion tax paid from assets: the tax the conversion adds this
+    //     year is withheld from the converted dollars, so the Roth gets the
+    //     rest and the household's cash flow doesn't pay it. The full
+    //     conversion is still taxable (withholding is part of the
+    //     distribution), so the year's tax is unchanged.
+    let conversionTaxWithheld = 0;
+    if (conversionTaxPaidFrom === "assets" && converted > 0) {
+      const withoutConversion = taxForYear(
+        Math.max(0, federalOrdinaryGross - converted),
+        stateOrdinaryGross > 0 ? Math.max(0, stateOrdinaryGross - converted) : 0,
+      );
+      conversionTaxWithheld = Math.min(
+        converted,
+        Math.max(0, annualTax - withoutConversion.annualTax),
+      );
+      if (targetRoth) balances[targetRoth.id] -= conversionTaxWithheld;
+    }
+
     const monthlyTax = annualTax / 12;
     const federalMonthlyTax = federalAnnualTax / 12;
     const stateMonthlyTax = stateAnnualTax / 12;
 
-    const netMonthlyIncome = totalMonthlyIncome - monthlyTax;
+    const netMonthlyIncome =
+      totalMonthlyIncome - (annualTax - conversionTaxWithheld) / 12;
     const grossTaxableIncome = federalOrdinaryGross;
     // Each expense grows from its start year (or year 0); yearly amounts are
     // spread to monthly. Out-of-range years are 0.
@@ -988,6 +1044,7 @@ export function projectScenario(
       rentalLossCarryforward: rentalPal.suspendedLoss,
       rentalLossCarryforwardById: { ...rentalPal.suspendedLossById },
       conversion: converted,
+      conversionTaxWithheld,
       totalMonthlyIncome,
       incomeMonthly,
       grossTaxableIncome,

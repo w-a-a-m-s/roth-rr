@@ -409,6 +409,28 @@ describe("migrateHousehold: maxMonthlyShortfall", () => {
   });
 });
 
+describe("migrateHousehold: conversionTaxPaidFrom", () => {
+  it("leaves it unset (paid from income) on plans that never had it", () => {
+    const out = migrateHousehold(household([], []));
+    expect(out.optimizer).not.toHaveProperty("conversionTaxPaidFrom");
+  });
+
+  it("keeps a saved choice", () => {
+    const h = household([], []);
+    h.optimizer.conversionTaxPaidFrom = "assets";
+    expect(migrateHousehold(h).optimizer.conversionTaxPaidFrom).toBe("assets");
+  });
+
+  it("drops an unknown value", () => {
+    const h = household([], []);
+    (h.optimizer as { conversionTaxPaidFrom?: unknown }).conversionTaxPaidFrom =
+      "cash";
+    expect(migrateHousehold(h).optimizer).not.toHaveProperty(
+      "conversionTaxPaidFrom",
+    );
+  });
+});
+
 describe("migrateHousehold: conversion strategy", () => {
   it("defaults a missing optimizer to manual", () => {
     const h = household([], []);

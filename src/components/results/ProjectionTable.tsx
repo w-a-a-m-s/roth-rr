@@ -613,6 +613,14 @@ function buildSections(
       value: (r) => r.monthlyTax,
     },
   ];
+  if (scenario.rows.some((r) => r.conversionTaxWithheld > 0)) {
+    taxes.push({
+      key: "conversionTaxWithheld",
+      label: "Tax paid from conversion",
+      unit: "yr",
+      value: (r) => r.conversionTaxWithheld,
+    });
+  }
 
   const netIncome: LineDef[] = [
     {

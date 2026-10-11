@@ -1791,3 +1791,51 @@ describe("DROP growth delay", () => {
     expect(rows[1].balances.ret).toBeCloseTo(33_075, 2);
   });
 });
+
+describe("conversion tax paid from assets", () => {
+  const years = projectionYears(SAMPLE_HOUSEHOLD);
+  const schedule = zeros(years).map((_, i) => (i < 3 ? 50_000 : 0));
+  const fromAssets: Household = {
+    ...SAMPLE_HOUSEHOLD,
+    optimizer: { ...SAMPLE_HOUSEHOLD.optimizer, conversionTaxPaidFrom: "assets" },
+  };
+  const none = projectScenario(SAMPLE_HOUSEHOLD, zeros(years));
+  const income = projectScenario(SAMPLE_HOUSEHOLD, schedule);
+  const assets = projectScenario(fromAssets, schedule);
+  const rothId = (rows: typeof income) =>
+    Object.keys(rows[0].balances).find(
+      (id) =>
+        id === "__implicit_roth__" ||
+        SAMPLE_HOUSEHOLD.accounts.some(
+          (a) => a.id === id && a.kind === "rothTaxFree",
+        ),
+    )!;
+
+  it("withholds the tax the conversion adds and leaves the year's tax alone", () => {
+    const added = income[0].annualTax - none[0].annualTax;
+    expect(added).toBeGreaterThan(0);
+    expect(income[0].conversionTaxWithheld).toBe(0);
+    expect(assets[0].conversionTaxWithheld).toBeCloseTo(added, 6);
+    expect(assets[0].annualTax).toBeCloseTo(income[0].annualTax, 6);
+  });
+
+  it("puts only the rest in the Roth and keeps the tax out of cash flow", () => {
+    const id = rothId(income);
+    const withheld = assets[0].conversionTaxWithheld;
+    expect(income[0].balances[id] - assets[0].balances[id]).toBeCloseTo(
+      withheld,
+      6,
+    );
+    expect(assets[0].surplus - income[0].surplus).toBeCloseTo(withheld / 12, 6);
+    expect(assets[0].netMonthlyIncome - income[0].netMonthlyIncome).toBeCloseTo(
+      withheld / 12,
+      6,
+    );
+  });
+
+  it("does nothing in years without a conversion", () => {
+    const rows = projectScenario(fromAssets, zeros(years));
+    expect(rows.every((r) => r.conversionTaxWithheld === 0)).toBe(true);
+    expect(rows.map((r) => r.surplus)).toEqual(none.map((r) => r.surplus));
+  });
+});

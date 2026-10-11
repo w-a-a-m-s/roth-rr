@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useHousehold } from '@/store/useScenario';
+import { useHousehold, useScenario } from '@/store/useScenario';
+import { usePlanAccess } from '@/components/plan/usePlanAccess';
+import type { ConversionTaxPaidFrom } from '@/lib/domain/types';
 import { useExternalData } from '@/store/useExternalData';
 import { calculate } from '@/lib/calculate';
 import { isHouseholdReady } from '@/lib/domain/household';
@@ -96,7 +98,10 @@ export function ResultsView() {
 			{analysis === 'longTermCare' && careSettings ? (
 				<LongTermCareControls household={household} settings={careSettings} />
 			) : null}
-			<ViewLinks view={view} onChange={setView} />
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<ViewLinks view={view} onChange={setView} />
+				<ConversionTaxToggle />
+			</div>
 
 			{view === 'summary' ? (
 				<section className="flex flex-col gap-4">
@@ -206,6 +211,40 @@ function ScenarioToggle({ tab, onChange }: { tab: 'baseline' | 'roth'; onChange:
 			>
 				With conversion
 			</button>
+		</div>
+	);
+}
+
+const TAX_PAID_FROM: { key: ConversionTaxPaidFrom; label: string; help: string }[] = [
+	{ key: 'income', label: 'Paid from income', help: "You pay the conversion's tax out of that year's income." },
+	{ key: 'assets', label: 'Paid from assets', help: "The conversion's tax is withheld from the converted money, so less lands in the Roth." },
+];
+
+/** Who pays the tax a conversion adds: the year's income, or the converted dollars. */
+function ConversionTaxToggle() {
+	const paidFrom = useHousehold().optimizer.conversionTaxPaidFrom ?? 'income';
+	const setOptimizer = useScenario(s => s.setOptimizer);
+	const { readOnly } = usePlanAccess();
+	return (
+		<div className="flex items-center gap-2">
+			<span className="text-[12.5px] font-semibold text-muted-2">Conversion tax</span>
+			<div role="group" aria-label="Conversion tax" className="inline-flex rounded-[9px] bg-segment p-[3px]">
+				{TAX_PAID_FROM.map(({ key, label, help }) => (
+					<button
+						key={key}
+						type="button"
+						title={help}
+						disabled={readOnly}
+						aria-pressed={paidFrom === key}
+						onClick={() => setOptimizer({ conversionTaxPaidFrom: key })}
+						className={`h-[30px] rounded-[7px] px-3.5 text-[12.5px] font-bold transition disabled:cursor-not-allowed ${
+							paidFrom === key ? 'bg-white text-foreground shadow-sm' : 'bg-transparent text-muted-2'
+						}`}
+					>
+						{label}
+					</button>
+				))}
+			</div>
 		</div>
 	);
 }
