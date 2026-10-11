@@ -225,6 +225,8 @@ export interface IncomeSource {
   businessId?: string;
 }
 
+export type PropertyUse = "investment" | "homestead";
+
 export interface RealEstate {
   id: string;
   label: string;
@@ -242,6 +244,11 @@ export interface RealEstate {
    * household's first retirement year).
    */
   growthStart?: GrowthStart;
+  /**
+   * Homestead (your home) or investment property. A homestead takes no
+   * depreciation deduction. Missing means investment property.
+   */
+  use?: PropertyUse;
   /** Useful life in years for straight-line depreciation of this property. */
   depreciationYears: number;
   /** Gross monthly rent (year 0). Omit/0 for a non-rental property. */

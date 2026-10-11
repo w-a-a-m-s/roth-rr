@@ -94,3 +94,13 @@ each tab shows only its own sections:
   for pin-to-top.
 The No conversion / With conversion toggle sits on Year-by-year and on the
 Assets and cash flow charts (shared state).
+
+## Jump to from today
+
+ResultsView runs the plan twice: the normal run (Summary totals) and a
+display run with `options.fromYear` = this year for Main, Graphic view and
+Year-by-year, so Jump to reaches back to today. Amounts, property and
+business values stay anchored to the plan start (before it they hold at
+today's values), conversions only run in plan years, so from the plan start
+on the display run matches the normal one (engine test pins it; mortgages
+amortize from the earlier year). The tables still open on the plan start.

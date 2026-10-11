@@ -86,15 +86,20 @@ export function ScenarioSnapshot({
   household,
   primaryId,
   single = false,
+  initialYear,
 }: {
   comparison: Comparison;
   household: Household;
   primaryId: string;
   /** Show only the no-conversion scenario. */
   single?: boolean;
+  /** Year the table opens on (the plan start); earlier years are a Jump away. */
+  initialYear?: number;
 }) {
   const allYears = comparison.baseline.rows.map((r) => r.calendarYear);
-  const [startYear, setStartYear] = useState<number>(allYears[0] ?? 0);
+  const [startYear, setStartYear] = useState<number>(
+    initialYear != null && allYears.includes(initialYear) ? initialYear : allYears[0] ?? 0,
+  );
 
   if (allYears.length === 0) return null;
   // Each year also shows the main client's age, so you can jump by either.

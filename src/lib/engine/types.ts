@@ -26,6 +26,13 @@ export interface ProjectionOptions {
   longTermCare?: LongTermCareSettings;
   /** Disability: one person becomes disabled at this age. */
   disability?: DisabilityEvent;
+  /**
+   * Start the projection no later than this year, to show the years before
+   * the plan start (Jump to from today). Amounts stay anchored to the plan
+   * start and conversions only run in plan years, so the years from the plan
+   * start on match a normal run (mortgages amortize from the earlier year).
+   */
+  fromYear?: number;
 }
 
 export interface ProjectionRow {

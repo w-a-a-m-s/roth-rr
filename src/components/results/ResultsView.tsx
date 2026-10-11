@@ -48,6 +48,16 @@ export function ResultsView() {
 		() => (ready && refsReady && analysis !== 'mortgage' ? calculate(household, refs, options) : null),
 		[household, ready, refsReady, refs, options, analysis],
 	);
+	// The tables and charts also show the years from today to the plan start
+	// (Jump to from today). Summary keeps the normal run, so its totals don't
+	// count the years before the plan.
+	const displayComparison = useMemo(
+		() =>
+			ready && refsReady && analysis !== 'mortgage'
+				? calculate(household, refs, { ...options, fromYear: new Date().getFullYear() })
+				: null,
+		[household, ready, refsReady, refs, options, analysis],
+	);
 	const [tab, setTab] = useState<'baseline' | 'roth'>('baseline');
 	// Clients land on Main (the tables); Summary, Graphic view and the
 	// year-by-year detail are tabs.
@@ -110,7 +120,8 @@ export function ResultsView() {
 	// Survivorship, Disability and Long-term care show the plan without
 	// conversions only; Retirement compares the two.
 	const single = analysis !== 'retirement';
-	const scenario = single || tab === 'baseline' ? comparison.baseline : comparison.roth;
+	const shown = displayComparison ?? comparison;
+	const scenario = single || tab === 'baseline' ? shown.baseline : shown.roth;
 	const rmdAge = primaryRmdAge(household);
 
 	return (
@@ -153,7 +164,7 @@ export function ResultsView() {
 
 			{view === 'graphic' ? (
 				<section className="flex flex-col gap-6">
-					<PresentationCharts comparison={comparison} household={household} primaryId={primaryId} single={single} />
+					<PresentationCharts comparison={shown} household={household} primaryId={primaryId} single={single} />
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-wrap items-center justify-between gap-4">
 							<h3 className="m-0 text-[14.5px] font-bold text-foreground">Assets and cash flow</h3>
@@ -171,7 +182,8 @@ export function ResultsView() {
 				<section className="flex flex-col gap-4">
 					<ScenarioSnapshot
 						key={comparison.baseline.rows[0]?.calendarYear}
-						comparison={comparison}
+						initialYear={comparison.baseline.rows[0]?.calendarYear}
+						comparison={shown}
 						household={household}
 						primaryId={primaryId}
 						single={single}

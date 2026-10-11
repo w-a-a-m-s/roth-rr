@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
+import { calculate } from "@/lib/calculate";
 import { SAMPLE_HOUSEHOLD } from "@/lib/config/sampleData";
 import { primaryRmdAge } from "@/lib/domain/rmd";
 import {
@@ -1879,5 +1880,80 @@ describe("shiftSchedule", () => {
     expect(shiftSchedule([1, 2, 3], 2040, 2038)).toEqual([0, 0, 1, 2, 3]);
     expect(shiftSchedule([0, 0, 1, 2, 3], 2038, 2040)).toEqual([1, 2, 3]);
     expect(shiftSchedule([1, 2], 2040, 2040)).toEqual([1, 2]);
+  });
+});
+
+describe("showing years before the plan start (fromYear)", () => {
+  const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: "2026-10-11" };
+  const h: Household = {
+    filingStatus: "mfj",
+    residenceState: "FL",
+    people: [
+      { id: "a", name: "A", birthYear: 1973, retirementYear: 2040 },
+      { id: "b", name: "B", birthYear: 1979, retirementYear: 2040 },
+    ],
+    mainPersonId: "a",
+    accounts: [
+      { id: "sep", label: "SEP", ownerId: "a", kind: "retirementTaxable", balance: 510_000, growthRate: 0.1, retirementType: "ira",
+        deposits: [{ id: "d", label: "SEP", amount: 1000, frequency: "monthly", startYear: 2026, endYear: 2040 }] },
+      { id: "brk", label: "Brokerage", ownerId: "a", kind: "investment", balance: 90_000, growthRate: 0.1, costBasis: 0 },
+      { id: "roth", label: "Roth", ownerId: "a", kind: "rothTaxFree", balance: 18_000, growthRate: 0.1 },
+    ],
+    incomes: [
+      { id: "ss", label: "SS", ownerId: "a", kind: "socialSecurity", monthlyAmount: 4000, growthRate: 0.02, taxability: "full", startYear: 2040 },
+    ],
+    realEstate: [
+      { id: "re", label: "Rental", purchaseYear: 2015, purchasePrice: 250_000, marketValue: 500_000, appreciationRate: 0.03, depreciationYears: 27.5, monthlyRent: 2500, monthlyOperatingExpenses: 1500 },
+    ],
+    expenses: [{ id: "e", label: "All", amount: 20_000, frequency: "monthly", growthRate: 0.02 }],
+    assumptions: { expenseGrowth: 0.02, finalAge: 90 },
+    optimizer: { strategy: "manual", manualSchedule: [100_000, 100_000, 100_000] },
+  };
+  const plain = calculate(h, refs);
+  const shown = calculate(h, refs, { fromYear: 2026 });
+
+  it("starts the tables in this year", () => {
+    expect(shown.roth.rows[0].calendarYear).toBe(2026);
+    expect(plain.roth.rows[0].calendarYear).toBe(2040);
+  });
+
+  it("matches the normal run from the plan start on", () => {
+    for (const [i, row] of plain.roth.rows.entries()) {
+      const same = shown.roth.rows[i + 14];
+      expect(same.calendarYear).toBe(row.calendarYear);
+      expect(same.conversion).toBeCloseTo(row.conversion, 4);
+      expect(same.annualTax).toBeCloseTo(row.annualTax, 2);
+      expect(same.retirementTotal).toBeCloseTo(row.retirementTotal, 2);
+      expect(same.afterTaxTotal).toBeCloseTo(row.afterTaxTotal, 2);
+      expect(same.realEstateEquity).toBeCloseTo(row.realEstateEquity, 2);
+      expect(same.monthlyExpenses).toBeCloseTo(row.monthlyExpenses, 4);
+    }
+  });
+});
+
+describe("homestead vs investment property", () => {
+  const plan = (use?: "homestead" | "investment"): Household => ({
+    filingStatus: "single",
+    residenceState: "FL",
+    people: [{ id: "p", name: "P", birthYear: 1960, retirementYear: 2026 }],
+    accounts: [],
+    incomes: [],
+    realEstate: [
+      { id: "h", label: "House", purchaseYear: 2020, purchasePrice: 275_000, marketValue: 400_000, appreciationRate: 0, depreciationYears: 27.5, monthlyRent: 2000, ...(use ? { use } : {}) },
+    ],
+    expenses: [],
+    assumptions: { expenseGrowth: 0, finalAge: 70 },
+    optimizer: { strategy: "manual", manualSchedule: [] },
+  });
+
+  it("depreciates investment property (the default)", () => {
+    expect(projectScenario(plan(), [])[0].deductions.depreciation).toBe(10_000);
+    expect(projectScenario(plan("investment"), [])[0].deductions.depreciation).toBe(10_000);
+  });
+
+  it("takes no depreciation deduction on a homestead", () => {
+    const rows = projectScenario(plan("homestead"), []);
+    expect(rows[0].deductions.depreciation).toBe(0);
+    expect(rows[0].grossTaxableIncome).toBe(24_000);
   });
 });

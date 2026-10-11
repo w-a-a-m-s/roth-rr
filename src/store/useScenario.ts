@@ -302,6 +302,10 @@ export function migrateHousehold(household: Household): Household {
     if (typeof re.activeParticipation !== "boolean") {
       re.activeParticipation = true;
     }
+    // Investment property unless the plan says homestead.
+    if (re.use != null && re.use !== "homestead" && re.use !== "investment") {
+      delete re.use;
+    }
     if (re.growthStart != null && !isGrowthStart(re.growthStart)) {
       delete re.growthStart;
     }

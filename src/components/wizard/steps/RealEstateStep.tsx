@@ -13,6 +13,7 @@ import {
 import { AddButton, EntityCard, ReadStat } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { GrowthStartToggle } from "@/components/ui/GrowthStartToggle";
+import { PropertyUseToggle } from "@/components/ui/PropertyUseToggle";
 import { StepTour } from "@/components/onboarding/StepTour";
 import {
   DEFAULT_DEPRECIATION_YEARS,
@@ -41,6 +42,7 @@ function PropertyFields({
 }) {
   const { updateRealEstate, removeRealEstate } = useScenario();
   const currentYear = new Date().getFullYear();
+  const homestead = re.use === "homestead";
 
   return (
     <EntityCard
@@ -55,6 +57,7 @@ function PropertyFields({
       }}
       summary={
         <>
+          <ReadStat label="Type" value={homestead ? "Homestead" : "Investment property"} />
           <ReadStat label="Market value" value={formatCurrency(re.marketValue)} />
           <ReadStat
             label="Appreciation"
@@ -92,6 +95,18 @@ function PropertyFields({
           <TextInput
             value={re.label}
             onChange={(label) => updateRealEstate(re.id, { label })}
+          />
+        </Field>
+        <Field
+          layout="row"
+          label="Property type"
+          help="Homestead is the home you live in: it isn't depreciated, so it takes no depreciation deduction. Investment property is depreciated over its useful life."
+        >
+          <PropertyUseToggle
+            value={homestead ? "homestead" : "investment"}
+            onChange={(use) =>
+              updateRealEstate(re.id, { use: use === "homestead" ? "homestead" : undefined })
+            }
           />
         </Field>
         <Field
@@ -158,6 +173,12 @@ function PropertyFields({
             }
           />
         </Field>
+        {homestead ? (
+          <p className="m-0 text-xs text-muted lg:pl-[calc(13.5rem+0.75rem)]">
+            A homestead takes no depreciation deduction.
+          </p>
+        ) : (
+          <>
         <Field
           layout="row"
           label="Depreciation years"
@@ -189,6 +210,8 @@ function PropertyFields({
             />
           </label>
         </Field>
+          </>
+        )}
         <Field
           layout="row"
           label="Monthly rent"

@@ -182,6 +182,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   benefitYears: "Benefit duration",
   taxable: "Taxable benefits",
   age: "Age",
+  use: "Property type",
   propertyId: "Property",
   principalBalance: "Principal balance",
   interestRate: "Interest rate",

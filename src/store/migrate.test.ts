@@ -884,3 +884,13 @@ describe("chosen projection start year", () => {
     expect(migrateHousehold({ ...h, assumptions: { ...h.assumptions, startYear: "soon" as unknown as number } }).assumptions.startYear).toBeUndefined();
   });
 });
+
+describe("property type", () => {
+  it("keeps homestead and drops an unknown type (investment property)", () => {
+    const h = household([], []);
+    const re = (use: unknown) => ({ id: "r", label: "R", purchaseYear: 2020, purchasePrice: 1, marketValue: 1, appreciationRate: 0, depreciationYears: 27.5, use }) as unknown as RealEstate;
+    expect(migrateHousehold({ ...h, realEstate: [re("homestead")] }).realEstate[0].use).toBe("homestead");
+    expect(migrateHousehold({ ...h, realEstate: [re("castle")] }).realEstate[0].use).toBeUndefined();
+  });
+});
+

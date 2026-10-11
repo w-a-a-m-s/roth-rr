@@ -209,7 +209,8 @@ export function businessValueForYear(
 ): number {
   const value = Number.isFinite(business.value) ? business.value : 0;
   const rate = Number.isFinite(business.growthRate) ? business.growthRate : 0;
-  return value * Math.pow(1 + rate, yearIndex + preStartYears);
+  // Never below today's value (years shown before the plan start).
+  return value * Math.pow(1 + rate, Math.max(0, yearIndex + preStartYears));
 }
 
 interface RealEstateYear {
@@ -261,7 +262,7 @@ function stepRealEstate(
       re.marketValue *
       Math.pow(
         1 + re.appreciationRate,
-        yearIndex + (preStartYearsById[re.id] ?? 0),
+        Math.max(0, rentYearIndex + (preStartYearsById[re.id] ?? 0)),
       );
     value += propValue;
 
@@ -307,6 +308,8 @@ function currentYearDepreciation(
   re: Household["realEstate"][number],
   calendarYear: number,
 ): number {
+  // Your home isn't depreciated; only investment property is.
+  if (re.use === "homestead") return 0;
   if (!(re.purchasePrice > 0) || !(re.depreciationYears > 0)) return 0;
   const yearsOwned = calendarYear - re.purchaseYear;
   if (yearsOwned < 0) return 0;
@@ -585,7 +588,7 @@ export function projectScenario(
   // (incomes, expenses, rent, care) stay anchored to the plan start, so every
   // year from the plan start on matches what a later death would show.
   const planStart = projectionStartYear(household);
-  const eventYears = [death?.year, disability?.year].filter(
+  const eventYears = [death?.year, disability?.year, options.fromYear].filter(
     (y): y is number => y != null,
   );
   const start = analysisStartYear(
@@ -657,14 +660,14 @@ export function projectScenario(
   for (const re of household.realEstate) {
     realEstatePreStartYears[re.id] =
       realEstateGrowthStart(re) === "planStart"
-        ? preStartGrowthYears(start, refs.asOfDate)
+        ? preStartGrowthYears(planStart, refs.asOfDate)
         : 0;
   }
   const businessPreStartYears: Record<string, number> = {};
   for (const biz of household.businesses ?? []) {
     businessPreStartYears[biz.id] =
       businessGrowthStart(biz) === "planStart"
-        ? preStartGrowthYears(start, refs.asOfDate)
+        ? preStartGrowthYears(planStart, refs.asOfDate)
         : 0;
   }
   const suspendedLossById: Record<string, number> = {};
@@ -1156,7 +1159,7 @@ export function projectScenario(
     for (const biz of household.businesses ?? []) {
       const value = businessValueForYear(
         biz,
-        i,
+        i - offset,
         businessPreStartYears[biz.id] ?? 0,
       );
       businessEquityById[biz.id] = value;
