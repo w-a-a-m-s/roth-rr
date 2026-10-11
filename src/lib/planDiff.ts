@@ -183,6 +183,11 @@ const PROPERTY_LABELS: Record<string, string> = {
   taxable: "Taxable benefits",
   age: "Age",
   use: "Property type",
+  loans: "Loans",
+  rate: "Interest rate",
+  creditLimit: "Credit limit",
+  drawEndYear: "Draw period ends",
+  repaymentYears: "Repayment years",
   propertyId: "Property",
   principalBalance: "Principal balance",
   interestRate: "Interest rate",
@@ -214,6 +219,7 @@ const MONEY_KEYS = new Set([
   "cashValue",
   "premium",
   "monthlyBenefit",
+  "creditLimit",
   "principalBalance",
   "monthlyPayment",
   "monthlyEscrow",
@@ -230,6 +236,7 @@ const PERCENT_KEYS = new Set([
   "mortgageRate",
   "targetBracketRate",
   "interestRate",
+  "rate",
 ]);
 
 function stableStringify(value: unknown): string {

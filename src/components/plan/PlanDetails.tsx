@@ -12,6 +12,7 @@ import {
   expenseYearsLabel,
 } from "@/lib/domain/household";
 import { primaryRmdAge } from "@/lib/domain/rmd";
+import { propertyLoanBalance } from "@/lib/domain/propertyLoans";
 import type {
   AccountKind,
   Household,
@@ -317,16 +318,16 @@ export function PlanDetails() {
                 label={re.label || "Property"}
                 value={formatCurrency(re.marketValue)}
               />
-              {(re.monthlyRent ?? 0) > 0 || (re.mortgageBalance ?? 0) > 0 ? (
+              {(re.monthlyRent ?? 0) > 0 || propertyLoanBalance(re) > 0 ? (
                 <p className="text-[11px] text-muted-3">
                   {(re.monthlyRent ?? 0) > 0
                     ? `${formatCurrency(re.monthlyRent ?? 0)}/mo rent`
                     : null}
-                  {(re.monthlyRent ?? 0) > 0 && (re.mortgageBalance ?? 0) > 0
+                  {(re.monthlyRent ?? 0) > 0 && propertyLoanBalance(re) > 0
                     ? " · "
                     : null}
-                  {(re.mortgageBalance ?? 0) > 0
-                    ? `${formatCurrency(re.mortgageBalance ?? 0)} mortgage`
+                  {propertyLoanBalance(re) > 0
+                    ? `${formatCurrency(propertyLoanBalance(re))} owed`
                     : null}
                 </p>
               ) : null}

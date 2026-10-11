@@ -19,6 +19,7 @@ import { DualScroll } from "@/components/results/DualScroll";
 import { amortize, type AmortizationResult } from "@/lib/engine/amortization";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { uid } from "@/lib/id";
+import { propertyLoans } from "@/lib/domain/propertyLoans";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTH_OPTIONS = MONTHS.map((label, i) => ({ value: String(i + 1), label }));
@@ -33,16 +34,22 @@ function nextMonth(): { month: number; year: number } {
   return month > 12 ? { month: 1, year: now.getFullYear() + 1 } : { month, year: now.getFullYear() };
 }
 
+/** A property's first mortgage with a balance, if any. */
+function firstMortgage(re: Household["realEstate"][number]) {
+  return propertyLoans(re).find((l) => l.kind === "mortgage" && l.balance > 0);
+}
+
 function blankMortgage(household: Household): MortgageStatement {
   const next = nextMonth();
-  const property = household.realEstate.find((re) => (re.mortgageBalance ?? 0) > 0);
+  const property = household.realEstate.find((re) => firstMortgage(re) != null);
+  const loan = property ? firstMortgage(property) : undefined;
   return {
     id: uid("mtg"),
     label: property?.label ?? "",
     propertyId: property?.id,
-    principalBalance: property?.mortgageBalance ?? 0,
-    interestRate: property?.mortgageRate ?? 0,
-    monthlyPayment: property?.mortgageMonthlyPayment ?? 0,
+    principalBalance: loan?.balance ?? 0,
+    interestRate: loan?.rate ?? 0,
+    monthlyPayment: loan?.monthlyPayment ?? 0,
     nextPaymentMonth: next.month,
     nextPaymentYear: next.year,
   };
@@ -149,9 +156,9 @@ function MortgageDetail({
       label: mortgage.label || re.label,
       ...(empty
         ? {
-            principalBalance: re.mortgageBalance ?? 0,
-            interestRate: re.mortgageRate ?? 0,
-            monthlyPayment: re.mortgageMonthlyPayment ?? 0,
+            principalBalance: firstMortgage(re)?.balance ?? 0,
+            interestRate: firstMortgage(re)?.rate ?? 0,
+            monthlyPayment: firstMortgage(re)?.monthlyPayment ?? 0,
           }
         : {}),
     });

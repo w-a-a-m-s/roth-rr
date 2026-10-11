@@ -40,6 +40,8 @@ import {
 } from "@/lib/domain/insurance";
 import { LIFE_INSURANCE_PROCEEDS_GROWTH } from "@/lib/config/lifeInsurancePayout";
 import { personRmdAge } from "@/lib/domain/rmd";
+import { DEFAULT_REPAYMENT_YEARS, propertyLoans } from "@/lib/domain/propertyLoans";
+import { levelPayment } from "@/lib/engine/amortization";
 import type {
   DeductionBreakdown,
   ProjectionOptions,
@@ -244,6 +246,8 @@ function stepRealEstate(
   mortgageBalances: Record<string, number>,
   preStartYearsById: Record<string, number>,
   rentYearIndex = yearIndex,
+  calendarYear = 0,
+  lineOfCreditPayments: Record<string, number> = {},
 ): RealEstateYear {
   const a = household.assumptions;
   let value = 0;
@@ -274,12 +278,36 @@ function stepRealEstate(
       12 *
       Math.pow(1 + a.expenseGrowth, rentYearIndex);
 
-    const bal = mortgageBalances[re.id] ?? 0;
-    const am =
-      bal > 0
-        ? amortizeYear(bal, re.mortgageRate ?? 0, re.mortgageMonthlyPayment ?? 0)
-        : { endBalance: 0, interest: 0, principal: 0 };
-    mortgageBalances[re.id] = am.endBalance;
+    // Each loan: a mortgage pays its set payment; a line of credit pays
+    // interest only through its draw period, then a level payment that
+    // clears it over the repayment term (worked out the year repayment starts).
+    const am = { endBalance: 0, interest: 0, principal: 0 };
+    for (const loan of propertyLoans(re)) {
+      const bal = mortgageBalances[loan.id] ?? 0;
+      if (!(bal > 0)) continue;
+      const rate = loan.rate ?? 0;
+      let payment = loan.monthlyPayment ?? 0;
+      if (loan.kind === "lineOfCredit") {
+        const drawing = loan.drawEndYear == null || calendarYear <= loan.drawEndYear;
+        if (drawing) {
+          payment = bal * (rate / 12);
+        } else {
+          if (lineOfCreditPayments[loan.id] == null) {
+            lineOfCreditPayments[loan.id] = levelPayment(
+              bal,
+              rate,
+              Math.max(1, loan.repaymentYears ?? DEFAULT_REPAYMENT_YEARS) * 12,
+            );
+          }
+          payment = lineOfCreditPayments[loan.id];
+        }
+      }
+      const year = amortizeYear(bal, rate, payment);
+      mortgageBalances[loan.id] = year.endBalance;
+      am.endBalance += year.endBalance;
+      am.interest += year.interest;
+      am.principal += year.principal;
+    }
     mortgage += am.endBalance;
 
     const cash = rentAnnual - expenseAnnual - (am.interest + am.principal);
@@ -652,8 +680,11 @@ export function projectScenario(
   }
 
   const mortgageBalances: Record<string, number> = {};
-  for (const re of household.realEstate)
-    mortgageBalances[re.id] = re.mortgageBalance ?? 0;
+  for (const re of household.realEstate) {
+    for (const loan of propertyLoans(re)) mortgageBalances[loan.id] = loan.balance ?? 0;
+  }
+  // A line of credit's repayment, fixed the year its draw period ends.
+  const lineOfCreditPayments: Record<string, number> = {};
   // Market values are entered as of today. A plan-start property appreciates
   // from then up to the plan start; a retirement one waits for the plan.
   const realEstatePreStartYears: Record<string, number> = {};
@@ -953,6 +984,8 @@ export function projectScenario(
       mortgageBalances,
       realEstatePreStartYears,
       i - offset,
+      calendarYear,
+      lineOfCreditPayments,
     );
     totalMonthlyIncome += realEstate.cashAnnual / 12;
     for (const [id, monthly] of Object.entries(realEstate.cashMonthlyById)) {

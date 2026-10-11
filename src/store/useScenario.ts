@@ -45,6 +45,7 @@ import {
 } from "@/lib/domain/household";
 import { isUsStateCode } from "@/lib/config/stateTax";
 import { projectionStartYear } from "@/lib/engine/project";
+import { isPropertyLoanKind } from "@/lib/domain/propertyLoans";
 import { shiftSchedule } from "@/lib/optimizer/shiftSchedule";
 import {
   DEFAULT_TERM_YEARS,
@@ -301,6 +302,35 @@ export function migrateHousehold(household: Household): Household {
     }
     if (typeof re.activeParticipation !== "boolean") {
       re.activeParticipation = true;
+    }
+    // Older plans had one mortgage in three fields; it becomes the first loan.
+    if (!Array.isArray(re.loans)) {
+      re.loans = (re.mortgageBalance ?? 0) > 0
+        ? [{
+            id: uid("loan"),
+            kind: "mortgage",
+            label: "Mortgage",
+            balance: re.mortgageBalance ?? 0,
+            rate: Number.isFinite(re.mortgageRate) ? (re.mortgageRate as number) : 0,
+            monthlyPayment: Number.isFinite(re.mortgageMonthlyPayment)
+              ? (re.mortgageMonthlyPayment as number)
+              : 0,
+          }]
+        : [];
+    }
+    delete re.mortgageBalance;
+    delete re.mortgageRate;
+    delete re.mortgageMonthlyPayment;
+    re.loans = re.loans.filter(
+      (loan) => loan && typeof loan.id === "string" && isPropertyLoanKind(loan.kind),
+    );
+    for (const loan of re.loans) {
+      if (typeof loan.label !== "string") loan.label = "";
+      if (!Number.isFinite(loan.balance)) loan.balance = 0;
+      if (!Number.isFinite(loan.rate)) loan.rate = 0;
+      for (const key of ["monthlyPayment", "creditLimit", "drawEndYear", "repaymentYears"] as const) {
+        if (loan[key] != null && !Number.isFinite(loan[key])) delete loan[key];
+      }
     }
     // Investment property unless the plan says homestead.
     if (re.use != null && re.use !== "homestead" && re.use !== "investment") {

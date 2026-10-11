@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import { calculate } from "@/lib/calculate";
+import { levelPayment } from "@/lib/engine/amortization";
 import { SAMPLE_HOUSEHOLD } from "@/lib/config/sampleData";
 import { primaryRmdAge } from "@/lib/domain/rmd";
 import {
@@ -1955,5 +1956,53 @@ describe("homestead vs investment property", () => {
     const rows = projectScenario(plan("homestead"), []);
     expect(rows[0].deductions.depreciation).toBe(0);
     expect(rows[0].grossTaxableIncome).toBe(24_000);
+  });
+});
+
+describe("property loans: mortgage and line of credit", () => {
+  const plan = (loans: Household["realEstate"][number]["loans"]): Household => ({
+    filingStatus: "single",
+    residenceState: "FL",
+    people: [{ id: "p", name: "P", birthYear: 1960, retirementYear: 2026 }],
+    accounts: [],
+    incomes: [],
+    realEstate: [
+      { id: "h", label: "House", purchaseYear: 2020, purchasePrice: 0, marketValue: 600_000, appreciationRate: 0, depreciationYears: 27.5, use: "homestead", loans },
+    ],
+    expenses: [],
+    assumptions: { expenseGrowth: 0, finalAge: 90 },
+    optimizer: { strategy: "manual", manualSchedule: [] },
+  });
+  const loc = { id: "loc", kind: "lineOfCredit" as const, label: "HELOC", balance: 50_000, rate: 0.08, drawEndYear: 2027, repaymentYears: 10 };
+  const mtg = { id: "m", kind: "mortgage" as const, label: "Mortgage", balance: 200_000, rate: 0.06, monthlyPayment: 1199.1 };
+
+  it("pays interest only on a line of credit through its draw period", () => {
+    const rows = projectScenario(plan([loc]), []);
+    expect(rows[0].mortgageBalance).toBeCloseTo(50_000, 6);
+    expect(rows[1].mortgageBalance).toBeCloseTo(50_000, 6);
+    // Interest only: 50,000 x 8% a year comes out of cash flow.
+    expect(rows[0].incomeMonthly["re:h"]).toBeCloseTo(-4000 / 12, 6);
+  });
+
+  it("then repays it with a level payment over the repayment years", () => {
+    const rows = projectScenario(plan([loc]), []);
+    const pay = levelPayment(50_000, 0.08, 120);
+    expect(rows[2].incomeMonthly["re:h"]).toBeCloseTo(-pay, 6);
+    expect(rows[2].mortgageBalance).toBeLessThan(50_000);
+    expect(rows[11].mortgageBalance).toBeCloseTo(0, 2);
+    expect(rows[12].incomeMonthly["re:h"]).toBeCloseTo(0, 6);
+  });
+
+  it("adds every loan into the property's debt and equity", () => {
+    const both = projectScenario(plan([mtg, loc]), [])[0];
+    const onlyMtg = projectScenario(plan([mtg]), [])[0];
+    expect(both.mortgageBalance).toBeCloseTo(onlyMtg.mortgageBalance + 50_000, 6);
+    expect(both.realEstateEquityById.h).toBeCloseTo(600_000 - both.mortgageBalance, 6);
+  });
+
+  it("treats an older plan's single mortgage exactly like a mortgage loan", () => {
+    const legacy = plan(undefined);
+    legacy.realEstate[0] = { ...legacy.realEstate[0], mortgageBalance: 200_000, mortgageRate: 0.06, mortgageMonthlyPayment: 1199.1 };
+    expect(projectScenario(legacy, [])).toEqual(projectScenario(plan([mtg]), []));
   });
 });

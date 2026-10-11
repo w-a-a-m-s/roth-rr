@@ -894,3 +894,25 @@ describe("property type", () => {
   });
 });
 
+describe("property loans", () => {
+  it("moves an older plan's mortgage fields into the loans list", () => {
+    const h = household([], []);
+    const re = { id: "r", label: "R", purchaseYear: 2020, purchasePrice: 1, marketValue: 1, appreciationRate: 0, depreciationYears: 27.5, mortgageBalance: 100_000, mortgageRate: 0.05, mortgageMonthlyPayment: 900 } as RealEstate;
+    const out = migrateHousehold({ ...h, realEstate: [re] }).realEstate[0];
+    expect(out.mortgageBalance).toBeUndefined();
+    expect(out.loans).toHaveLength(1);
+    expect(out.loans![0]).toMatchObject({ kind: "mortgage", balance: 100_000, rate: 0.05, monthlyPayment: 900 });
+  });
+
+  it("gives a property without a mortgage an empty list and drops bad loans", () => {
+    const h = household([], []);
+    const re = { id: "r", label: "R", purchaseYear: 2020, purchasePrice: 1, marketValue: 1, appreciationRate: 0, depreciationYears: 27.5 } as RealEstate;
+    expect(migrateHousehold({ ...h, realEstate: [re] }).realEstate[0].loans).toEqual([]);
+    const bad = { ...re, loans: [{ id: "x", kind: "boat" }, { id: "y", kind: "lineOfCredit", label: "L", balance: "a", rate: 0.07, drawEndYear: "z" }] } as unknown as RealEstate;
+    const loans = migrateHousehold({ ...h, realEstate: [bad] }).realEstate[0].loans!;
+    expect(loans.map((l) => l.id)).toEqual(["y"]);
+    expect(loans[0].balance).toBe(0);
+    expect(loans[0].drawEndYear).toBeUndefined();
+  });
+});
+

@@ -45,3 +45,16 @@ hour-based material participation, or grouping elections.
 - Year-by-year table: "Real-estate depreciation" is the allowed amount;
   "Real-estate loss carryforward" is the year-end suspended total (per-property
   children when there is more than one property).
+
+## Property loans
+
+Each property has `loans` (mortgages and lines of credit, `domain/propertyLoans.ts`).
+`propertyLoans(re)` also reads an older plan's single `mortgageBalance` /
+`mortgageRate` / `mortgageMonthlyPayment` as one mortgage, so golden cases
+with those fields keep their numbers; `migrateHousehold` moves them into
+`loans`. In `stepRealEstate` every loan amortizes monthly (`amortizeYear`):
+a mortgage at its payment; a line of credit at interest only through
+`drawEndYear` (missing: the whole plan), then a level payment over
+`repaymentYears` (default 20) fixed the year repayment starts. Interest from
+all loans is deducted against rent; the row's `mortgageBalance` is the sum.
+Homestead (`use`) takes no depreciation. Golden case: `property-loans.json`.
