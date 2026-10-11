@@ -8,7 +8,7 @@ import { useExternalData } from '@/store/useExternalData';
 import { calculate } from '@/lib/calculate';
 import { isHouseholdReady } from '@/lib/domain/household';
 import { primaryRmdAge } from '@/lib/domain/rmd';
-import { primaryPersonId } from '@/lib/engine/project';
+import { primaryPersonId, projectionStartYear } from '@/lib/engine/project';
 import { ComparisonMetrics, TotalImpact } from '@/components/results/ComparisonSummary';
 import { AssetsChart } from '@/components/results/AssetsChart';
 import { AfterTaxAssetsTimeline } from '@/components/results/AfterTaxAssetsTimeline';
@@ -17,7 +17,8 @@ import { ProjectionTable } from '@/components/results/ProjectionTable';
 import { ScenarioSnapshot } from '@/components/results/ScenarioSnapshot';
 import { PresentationCharts } from '@/components/results/PresentationCharts';
 import { LabsLoading } from '@/lib/common/client';
-import { AnalysisTabs, ComingSoon, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
+import { AnalysisTabs, DisabilityControls, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
+import { disabilityEvent } from '@/lib/domain/insurance';
 import { longTermCareSettings } from '@/lib/domain/longTermCare';
 import { survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
@@ -31,12 +32,17 @@ export function ResultsView() {
 	const analysis = useUI(s => s.analysis);
 	const deathEvent = useMemo(() => survivorshipEvent(household), [household]);
 	const careSettings = useMemo(() => longTermCareSettings(household), [household]);
+	const disabilitySetting = useMemo(
+		() => disabilityEvent(household, projectionStartYear(household)),
+		[household],
+	);
 	// Every analysis runs from the same plan; each one only adds its options.
 	const options = useMemo(() => {
 		if (analysis === 'survivorship' && deathEvent) return { death: deathEvent };
 		if (analysis === 'longTermCare' && careSettings) return { longTermCare: careSettings };
+		if (analysis === 'disability' && disabilitySetting) return { disability: disabilitySetting };
 		return {};
-	}, [analysis, deathEvent, careSettings]);
+	}, [analysis, deathEvent, careSettings, disabilitySetting]);
 	const comparison = useMemo(
 		() => (ready && refsReady ? calculate(household, refs, options) : null),
 		[household, ready, refsReady, refs, options],
@@ -65,11 +71,14 @@ export function ResultsView() {
 		);
 	}
 
-	if (analysis === 'disability') {
+	if (analysis === 'disability' && !disabilitySetting) {
 		return (
 			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
 				<AnalysisTabs />
-				<ComingSoon title="Disability" />
+				<div className="rounded-2xl border border-border bg-white p-6 text-center text-sm text-muted">
+					<p className="font-medium text-foreground">Disability needs a birth year</p>
+					<p className="mt-1">Enter a birth year in the Household step to see what happens if someone can&apos;t work.</p>
+				</div>
 			</div>
 		);
 	}
@@ -94,6 +103,9 @@ export function ResultsView() {
 			<AnalysisTabs />
 			{analysis === 'survivorship' && deathEvent ? (
 				<SurvivorshipControls household={household} event={deathEvent} />
+			) : null}
+			{analysis === 'disability' && disabilitySetting ? (
+				<DisabilityControls household={household} event={disabilitySetting} />
 			) : null}
 			{analysis === 'longTermCare' && careSettings ? (
 				<LongTermCareControls household={household} settings={careSettings} />

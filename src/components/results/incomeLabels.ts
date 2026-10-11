@@ -1,8 +1,40 @@
-import type { Household } from "@/lib/domain/types";
+import type { Household, InsuranceKind } from "@/lib/domain/types";
+import { insurancePolicy } from "@/lib/domain/insurance";
+
+const INSURANCE_INCOME_LABELS: Record<InsuranceKind, string> = {
+  life: "Income from life insurance",
+  disability: "Income from disability insurance",
+  longTermCare: "Long-term care insurance",
+};
+
+const INSURANCE_PREFIXES: Record<string, InsuranceKind> = {
+  "life:": "life",
+  "di:": "disability",
+  "ltci:": "longTermCare",
+};
+
+/** The policy behind a `life:` / `di:` / `ltci:` key, or null for any other key. */
+export function insuranceKeyKind(key: string): InsuranceKind | null {
+  for (const [prefix, kind] of Object.entries(INSURANCE_PREFIXES)) {
+    if (key.startsWith(prefix)) return kind;
+  }
+  return null;
+}
+
+/** "Income from life insurance · Term 20" for an insurance income or balance key. */
+export function insuranceLabel(household: Household, key: string): string {
+  const kind = insuranceKeyKind(key) ?? "life";
+  const base = INSURANCE_INCOME_LABELS[kind];
+  const policy = insurancePolicy(household, key.slice(key.indexOf(":") + 1));
+  if (!policy) return base;
+  const insured = household.people.find((p) => p.id === policy.insuredId)?.name?.trim();
+  const name = policy.label?.trim() || insured;
+  return name ? `${base} · ${name}` : base;
+}
 
 /**
  * Display label for an income key in the results: an income id, `rmd:<account>`
- * or `re:<property>`. Social Security also names whose benefit it is, unless
+ * `re:<property>`, or an insurance benefit (`life:`, `di:`, `ltci:`). Social Security also names whose benefit it is, unless
  * the label already does.
  */
 export function incomeLabel(household: Household, key: string): string {
@@ -14,6 +46,7 @@ export function incomeLabel(household: Household, key: string): string {
     const re = household.realEstate.find((r) => r.id === key.slice(3));
     return re ? `Real estate · ${re.label}` : "Real estate";
   }
+  if (insuranceKeyKind(key)) return insuranceLabel(household, key);
   const income = household.incomes.find((i) => i.id === key);
   if (!income) return key;
   const label = income.label || "Income";
@@ -41,4 +74,26 @@ export function careMonthly(expenseMonthly: Record<string, number>): number {
     if (key.startsWith("ltc:")) total += value;
   }
   return total;
+}
+
+/** `life:` balance keys that hold anything in some row (Survivorship proceeds). */
+export function lifeInsuranceBalanceKeys(
+  rows: { balances: Record<string, number> }[],
+): string[] {
+  const keys: string[] = [];
+  for (const row of rows) {
+    for (const [key, value] of Object.entries(row.balances)) {
+      if (!key.startsWith("life:") || value === 0 || keys.includes(key)) continue;
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
+/** Display label for a life insurance proceeds balance. */
+export function lifeProceedsLabel(household: Household, key: string): string {
+  return insuranceLabel(household, key).replace(
+    "Income from life insurance",
+    "Life insurance proceeds",
+  );
 }

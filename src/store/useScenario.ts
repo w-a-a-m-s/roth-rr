@@ -6,6 +6,8 @@ import type {
   Assumptions,
   DeathEvent,
   DeletedItem,
+  DisabilityEvent,
+  InsurancePolicy,
   LongTermCareSettings,
   Business,
   Deposit,
@@ -41,6 +43,18 @@ import {
   maxPeople,
 } from "@/lib/domain/household";
 import { isUsStateCode } from "@/lib/config/stateTax";
+import {
+  DEFAULT_TERM_YEARS,
+  DEFAULT_WAITING_DAYS,
+  isDisabilityBenefitPeriod,
+  isDisabilityOccupation,
+  isInsuranceWaitingDays,
+  isLifePolicyType,
+  isLongTermCareBenefitYears,
+  isLongTermCarePolicyType,
+  isPermanentLifeType,
+  isPremiumFrequency,
+} from "@/lib/domain/insurance";
 import { isFilingStatus } from "@/lib/config/filingStatus";
 import { uid } from "@/lib/id";
 import { pickHydrateActiveId, readPlanIdFromWindow } from "@/lib/planUrl";
@@ -150,6 +164,21 @@ export function migrateHousehold(household: Household): Household {
   legacy.deletedBusinesses = normalizeDeletedList(legacy.deletedBusinesses);
   legacy.deletedExpenses = normalizeDeletedList(legacy.deletedExpenses);
   for (const entry of legacy.deletedExpenses ?? []) healExpense(entry.item);
+  legacy.deletedInsurance = normalizeDeletedList(legacy.deletedInsurance);
+  if (!Array.isArray(legacy.insurance)) legacy.insurance = [];
+  legacy.insurance = legacy.insurance.filter(isInsuranceShaped);
+  for (const policy of legacy.insurance) healInsurance(policy);
+  legacy.deletedInsurance = legacy.deletedInsurance.filter((e) =>
+    isInsuranceShaped(e.item),
+  );
+  for (const entry of legacy.deletedInsurance) healInsurance(entry.item);
+  if (
+    legacy.disability != null &&
+    (typeof legacy.disability.personId !== "string" ||
+      !Number.isFinite(legacy.disability.age))
+  ) {
+    delete legacy.disability;
+  }
   for (const entry of legacy.deletedAccounts ?? []) {
     healAccountJoint(entry.item, legacy.filingStatus);
     healRetirementType(entry.item);
@@ -331,13 +360,60 @@ export function migrateHousehold(household: Household): Household {
   return legacy;
 }
 
+/** A saved policy needs an id and a known kind; anything else is dropped. */
+function isInsuranceShaped(raw: unknown): raw is InsurancePolicy {
+  if (!raw || typeof raw !== "object") return false;
+  const rec = raw as Record<string, unknown>;
+  return (
+    typeof rec.id === "string" &&
+    (rec.kind === "life" || rec.kind === "disability" || rec.kind === "longTermCare")
+  );
+}
+
+/** Fill missing or bad policy fields with safe defaults. */
+function healInsurance(policy: InsurancePolicy) {
+  if (typeof policy.label !== "string") policy.label = "";
+  if (typeof policy.insuredId !== "string") policy.insuredId = "";
+  const money = (v: unknown) => (Number.isFinite(v) ? (v as number) : 0);
+  if (policy.kind === "life") {
+    if (!isLifePolicyType(policy.policyType)) policy.policyType = "term";
+    policy.faceAmount = money(policy.faceAmount);
+    if (policy.cashValue != null) policy.cashValue = money(policy.cashValue);
+    if (policy.premium != null) policy.premium = money(policy.premium);
+    if (!isPremiumFrequency(policy.premiumFrequency)) policy.premiumFrequency = "monthly";
+    if (policy.policyType === "term") {
+      if (!(Number.isFinite(policy.termYears) && (policy.termYears as number) > 0)) {
+        policy.termYears = DEFAULT_TERM_YEARS;
+      }
+      if (!Number.isFinite(policy.issueYear)) policy.issueYear = new Date().getFullYear();
+      delete policy.permanentType;
+    } else {
+      if (!isPermanentLifeType(policy.permanentType)) policy.permanentType = "whole";
+      delete policy.termYears;
+      delete policy.issueYear;
+    }
+    return;
+  }
+  policy.monthlyBenefit = money(policy.monthlyBenefit);
+  if (!isInsuranceWaitingDays(policy.waitingDays)) policy.waitingDays = DEFAULT_WAITING_DAYS;
+  if (policy.kind === "disability") {
+    if (!isDisabilityOccupation(policy.occupation)) policy.occupation = "own";
+    if (!isDisabilityBenefitPeriod(policy.benefitPeriod)) policy.benefitPeriod = "age65";
+    if (typeof policy.taxable !== "boolean") delete policy.taxable;
+    return;
+  }
+  if (!isLongTermCarePolicyType(policy.policyType)) policy.policyType = "traditional";
+  if (!isLongTermCareBenefitYears(policy.benefitYears)) policy.benefitYears = 3;
+}
+
 type ListKey =
   | "people"
   | "accounts"
   | "incomes"
   | "realEstate"
   | "businesses"
-  | "expenses";
+  | "expenses"
+  | "insurance";
 
 /** Live list key paired with its soft-delete trash list. */
 type SoftDeleteKey = ListKey;
@@ -349,6 +425,7 @@ const DELETED_KEY: Record<SoftDeleteKey, keyof Household> = {
   realEstate: "deletedRealEstate",
   businesses: "deletedBusinesses",
   expenses: "deletedExpenses",
+  insurance: "deletedInsurance",
 };
 
 /**
@@ -415,6 +492,10 @@ function savedListIdsFromHousehold(household: Household): SavedListIds {
     expenses: new Set([
       ...household.expenses.map((e) => e.id),
       ...(household.deletedExpenses ?? []).map((e) => e.item.id),
+    ]),
+    insurance: new Set([
+      ...(household.insurance ?? []).map((p) => p.id),
+      ...(household.deletedInsurance ?? []).map((e) => e.item.id),
     ]),
   };
 }
@@ -574,6 +655,13 @@ interface ScenarioState {
   setSurvivorship: (event: DeathEvent) => void;
   /** Long-term care analysis settings. */
   setLongTermCare: (settings: LongTermCareSettings) => void;
+  /** Disability analysis: who becomes disabled and at what age. */
+  setDisability: (event: DisabilityEvent) => void;
+  addInsurance: (policy: InsurancePolicy) => void;
+  updateInsurance: (id: string, patch: Partial<InsurancePolicy>) => void;
+  removeInsurance: (id: string) => void;
+  restoreInsurance: (id: string) => void;
+  discardDeletedInsurance: (id: string) => void;
 }
 
 export const useScenario = create<ScenarioState>()((set, get) => {
@@ -1156,6 +1244,7 @@ export const useScenario = create<ScenarioState>()((set, get) => {
             realEstate: new Set<string>(),
             businesses: new Set<string>(),
             expenses: new Set<string>(),
+            insurance: new Set<string>(),
           } satisfies SavedListIds);
         const keptPeople = new Set(next.people.map((p) => p.id));
         const keptAccounts = new Set(next.accounts.map((a) => a.id));
@@ -1295,6 +1384,13 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       })),
     setSurvivorship: (event) =>
       editActive((h) => ({ ...h, survivorship: { ...event } })),
+    setDisability: (event) =>
+      editActive((h) => ({ ...h, disability: { ...event } })),
+    addInsurance: (policy) => addTo("insurance", policy),
+    updateInsurance: (id, patch) => patchIn("insurance", id, patch),
+    removeInsurance: (id) => softDeleteIn("insurance", id),
+    restoreInsurance: (id) => restoreIn("insurance", id),
+    discardDeletedInsurance: (id) => discardDeletedIn("insurance", id),
     setLongTermCare: (settings) =>
       editActive((h) => ({
         ...h,

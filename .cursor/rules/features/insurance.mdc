@@ -1,0 +1,42 @@
+---
+description: Insurance step (life, disability, long-term care policies) and how each pays in its analysis
+globs: src/components/wizard/steps/InsuranceStep.tsx,src/lib/domain/insurance.ts,src/lib/config/lifeInsurancePayout.ts,src/lib/engine/insurance.test.ts
+alwaysApply: false
+---
+
+# Insurance
+
+Wizard step 7 (Conversion is 8). Policies live in `household.insurance`
+(one list, `kind` = `life` | `disability` | `longTermCare`, soft-deleted to
+`deletedInsurance`). `migrateHousehold` heals every field.
+
+**A policy only pays in its own analysis.** Retirement never reads
+`household.insurance`; `insurance.test.ts` pins that `calculate()` is
+identical with or without policies. Premiums and cash value are stored for
+reference only (not expenses, not assets).
+
+## Life (Survivorship)
+- In force: permanent always; term from `issueYear` for `termYears`.
+- On the insured's death (end of `death.year`), the face amount lands
+  January 1 of the next year as `balances["life:<id>"]` (inside
+  `afterTaxTotal`, so totals and inheritance include it), grows 8% a year
+  (`LIFE_INSURANCE_PROCEEDS_GROWTH`), and pays a fixed lifetime income of
+  face x rate (`incomeMonthly["life:<id>"]`), even if the balance runs out.
+- Rate: Transamerica RILA Income Advantage with Step-Up, Single Life,
+  "Immediate Payout %" by the insured's age at death
+  (`config/lifeInsurancePayout.ts`). Under 59: 5%. Past 86: the 86 rate.
+- Tax: annuity LIFO. Earnings (balance over remaining basis) come out first
+  as ordinary income; the rest returns basis tax free.
+
+## Disability (Disability analysis)
+- Occupation definition is descriptive only.
+- Pays `monthlyBenefit` for months [waiting, end) counted from January 1 of
+  the disability year. Waiting 30/60/90/180 days = 1/2/3/6 months, 365 = 12,
+  730 = 24. End: 2/5/10 years after the wait, or January 1 of the year the
+  insured turns 65 / 67. Key `di:<id>`. Tax free unless `taxable`.
+
+## Long-term care (Long-term care analysis)
+- For each care stay of the insured: pays min(benefit, that year's care
+  cost) per month after the waiting period, for `benefitYears` (or
+  lifetime), never past the stay. Key `ltci:<id>`, tax free.
+- Doesn't change the expense rules (70% / 0%) in the analyses guide.

@@ -12,7 +12,12 @@ import {
   expenseYearsLabel,
 } from "@/lib/domain/household";
 import { primaryRmdAge } from "@/lib/domain/rmd";
-import type { AccountKind, Household, IncomeKind } from "@/lib/domain/types";
+import type {
+  AccountKind,
+  Household,
+  IncomeKind,
+  InsuranceKind,
+} from "@/lib/domain/types";
 import {
   depositAmountLabel,
   depositYearsLabel,
@@ -52,6 +57,12 @@ const INCOME_KIND_LABELS: Record<IncomeKind, string> = {
   rothWithdrawal: "Roth withdrawal",
   afterTaxWithdrawal: "After-tax withdrawal",
   other: "Other",
+};
+
+const INSURANCE_KIND_LABELS: Record<InsuranceKind, string> = {
+  life: "Life insurance",
+  disability: "Disability insurance",
+  longTermCare: "Long-term care insurance",
 };
 
 function Section({
@@ -355,6 +366,32 @@ export function PlanDetails() {
               />
             );
           })
+        )}
+      </Section>
+
+      <Section title="Insurance" stepId="insurance" readOnly={readOnly}>
+        {(household.insurance ?? []).length === 0 ? (
+          <Empty>No policies added</Empty>
+        ) : (
+          (household.insurance ?? []).map((policy) => (
+            <Row
+              key={policy.id}
+              label={
+                <>
+                  {policy.label || INSURANCE_KIND_LABELS[policy.kind]}{" "}
+                  <span className="text-[11px] text-muted-3">
+                    ({household.people.find((p) => p.id === policy.insuredId)?.name?.trim() ||
+                      INSURANCE_KIND_LABELS[policy.kind]})
+                  </span>
+                </>
+              }
+              value={
+                policy.kind === "life"
+                  ? formatCurrency(policy.faceAmount)
+                  : `${formatCurrency(policy.monthlyBenefit)}/mo`
+              }
+            />
+          ))
         )}
       </Section>
 

@@ -10,7 +10,12 @@ import {
   federalBracketLabel,
   federalBracketsTitle,
 } from "@/components/results/bracketLabels";
-import { expenseLabel, incomeLabel } from "@/components/results/incomeLabels";
+import {
+  expenseLabel,
+  incomeLabel,
+  lifeInsuranceBalanceKeys,
+  lifeProceedsLabel,
+} from "@/components/results/incomeLabels";
 import { useTopScrollbar } from "@/components/results/useTopScrollbar";
 
 function findScrollParent(el: HTMLElement | null): HTMLElement | null {
@@ -248,6 +253,10 @@ function buildExpenseChildren(
   }));
 }
 
+function nonEmpty<T>(list: T[]): T[] | undefined {
+  return list.length > 0 ? list : undefined;
+}
+
 function buildAssetLines(
   scenario: ScenarioResult,
   household: Household
@@ -299,7 +308,15 @@ function buildAssetLines(
       label: "After-tax",
       unit: "sum",
       value: (r) => r.afterTaxTotal,
-      children: accountChildren(afterTaxAccounts),
+      children: nonEmpty([
+        ...(accountChildren(afterTaxAccounts) ?? []),
+        ...lifeInsuranceBalanceKeys(scenario.rows).map((key) => ({
+          key: `acc-${key}`,
+          label: lifeProceedsLabel(household, key),
+          unit: "sum" as const,
+          value: (r: Row) => r.balances[key] ?? 0,
+        })),
+      ]),
     });
   }
 

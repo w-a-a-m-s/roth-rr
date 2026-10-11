@@ -1,7 +1,12 @@
 import { accountsInDisplayOrder } from "@/lib/domain/household";
 import type { Household } from "@/lib/domain/types";
 import type { ProjectionRow, ScenarioResult } from "@/lib/engine/types";
-import { careMonthly, incomeLabel } from "@/components/results/incomeLabels";
+import {
+  careMonthly,
+  incomeLabel,
+  lifeInsuranceBalanceKeys,
+  lifeProceedsLabel,
+} from "@/components/results/incomeLabels";
 
 /** How many years the snapshot shows, like the deck's slide. */
 export const SNAPSHOT_YEARS = 6;
@@ -111,6 +116,16 @@ function buildAssetLines(
   const regular = accounts
     .filter((acc) => AFTER_TAX_KINDS.has(acc.kind))
     .map((acc) => accountLine(acc, "regular"));
+  // Survivorship: life insurance proceeds sit with the after-tax money.
+  for (const key of lifeInsuranceBalanceKeys(scenario.rows)) {
+    regular.push({
+      key: `acc-${key}`,
+      label: lifeProceedsLabel(household, key),
+      values: pick((r) => r.balances[key] ?? 0),
+      tone: "plain",
+      group: "regular",
+    });
+  }
   // One row per property, so each one's equity reads on its own.
   for (const re of household.realEstate) {
     if (!scenario.rows.some((r) => (r.realEstateEquityById[re.id] ?? 0) !== 0)) {

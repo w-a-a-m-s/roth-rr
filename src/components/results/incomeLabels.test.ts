@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Household } from "@/lib/domain/types";
 import modernSample from "@/lib/engine/golden/cases/modern-sample.json";
-import { incomeLabel } from "./incomeLabels";
+import { incomeLabel, lifeProceedsLabel } from "./incomeLabels";
 
 const base = modernSample.household as unknown as Household;
 const withSs = (label: string): Household => ({
@@ -26,5 +26,19 @@ describe("incomeLabel", () => {
     expect(incomeLabel(h, "pen")).toBe("Pension");
     expect(incomeLabel(h, "rmd:drop-s1")).toBe("RMD · DROP (David)");
     expect(incomeLabel(h, "nope")).toBe("nope");
+  });
+
+  it("names insurance benefits by kind and policy (or the insured)", () => {
+    const h: Household = {
+      ...base,
+      insurance: [
+        { id: "l1", kind: "life", label: "", insuredId: "p1", policyType: "permanent", faceAmount: 1 },
+        { id: "d1", kind: "disability", label: "Group LTD", insuredId: "p1", occupation: "own", monthlyBenefit: 1, waitingDays: 90, benefitPeriod: "age65" },
+      ],
+    };
+    expect(incomeLabel(h, "life:l1")).toBe("Income from life insurance · David");
+    expect(lifeProceedsLabel(h, "life:l1")).toBe("Life insurance proceeds · David");
+    expect(incomeLabel(h, "di:d1")).toBe("Income from disability insurance · Group LTD");
+    expect(incomeLabel(h, "ltci:gone")).toBe("Long-term care insurance");
   });
 });

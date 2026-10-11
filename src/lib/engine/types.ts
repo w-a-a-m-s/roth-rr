@@ -13,6 +13,7 @@ export interface StateDeductionBreakdown {
 
 import type {
   DeathEvent,
+  DisabilityEvent,
   FilingStatus,
   LongTermCareSettings,
 } from "@/lib/domain/types";
@@ -23,6 +24,8 @@ export interface ProjectionOptions {
   death?: DeathEvent;
   /** Long-term care: who's in care, when, and what it costs. */
   longTermCare?: LongTermCareSettings;
+  /** Disability: one person becomes disabled at this age. */
+  disability?: DisabilityEvent;
 }
 
 export interface ProjectionRow {
@@ -34,7 +37,10 @@ export interface ProjectionRow {
   livingIds: string[];
   /** Filing status used for this year's tax (single after a spouse passes). */
   filingStatus: FilingStatus;
-  /** End-of-year balance per account (keyed by account id). */
+  /**
+   * End-of-year balance per account (keyed by account id). Survivorship adds
+   * `life:<policyId>` for life insurance proceeds (counted in `afterTaxTotal`).
+   */
   balances: Record<string, number>;
   retirementTotal: number;
   rothTotal: number;
@@ -62,8 +68,9 @@ export interface ProjectionRow {
   totalMonthlyIncome: number;
   /**
    * Per-source monthly income that sums to `totalMonthlyIncome`. Keys are income
-   * ids, `rmd:<accountId>` for RMD draws, and `re:<propertyId>` for real-estate
-   * cash flow.
+   * ids, `rmd:<accountId>` for RMD draws, `re:<propertyId>` for real-estate
+   * cash flow, and `life:` / `di:` / `ltci:<policyId>` for insurance benefits
+   * in their analyses.
    */
   incomeMonthly: Record<string, number>;
   /** Federal ordinary gross taxable income (excludes capital gains). */

@@ -458,6 +458,7 @@ export interface Household {
   deletedRealEstate?: DeletedItem<RealEstate>[];
   deletedBusinesses?: DeletedItem<Business>[];
   deletedExpenses?: DeletedItem<Expense>[];
+  deletedInsurance?: DeletedItem<InsurancePolicy>[];
   assumptions: Assumptions;
   optimizer: OptimizerConfig;
   /**
@@ -468,7 +469,99 @@ export interface Household {
   survivorship?: DeathEvent;
   /** Settings for the Long-term care analysis. Optional, with defaults. */
   longTermCare?: LongTermCareSettings;
+  /** Settings for the Disability analysis. Optional, with defaults. */
+  disability?: DisabilityEvent;
+  /**
+   * Life, disability and long-term care policies. They only pay in their own
+   * analysis (Survivorship, Disability, Long-term care), never in Retirement.
+   * Optional for older plans; `migrateHousehold` defaults it to `[]`.
+   */
+  insurance?: InsurancePolicy[];
 }
+
+/** One person becoming disabled at a given age (from January 1 of that year). */
+export interface DisabilityEvent {
+  personId: string;
+  age: number;
+}
+
+export type InsuranceKind = "life" | "disability" | "longTermCare";
+
+/** Term covers a set number of years; permanent covers the whole life. */
+export type LifePolicyType = "term" | "permanent";
+
+/** Kinds of permanent life insurance. */
+export type PermanentLifeType = "vul" | "iul" | "ul" | "whole";
+
+export type PremiumFrequency = "monthly" | "annual";
+
+/** How a disability policy defines "disabled". */
+export type DisabilityOccupation = "own" | "modified" | "any";
+
+/**
+ * Waiting (elimination) period before a disability or long-term care policy
+ * starts paying, in days. 365 is one year, 730 is two.
+ */
+export type InsuranceWaitingDays = 30 | 60 | 90 | 180 | 365 | 730;
+
+/** How long a disability policy pays: a number of years, or until an age. */
+export type DisabilityBenefitPeriod = "2y" | "5y" | "10y" | "age65" | "age67";
+
+export type LongTermCarePolicyType = "traditional" | "hybrid" | "annuity";
+
+/** Years a long-term care policy pays, or for as long as care lasts. */
+export type LongTermCareBenefitYears = 2 | 3 | 4 | 5 | 6 | "lifetime";
+
+interface InsuranceBase {
+  id: string;
+  label: string;
+  /** The person the policy covers. */
+  insuredId: string;
+}
+
+export interface LifeInsurancePolicy extends InsuranceBase {
+  kind: "life";
+  policyType: LifePolicyType;
+  /** Term only: years of coverage, counted from `issueYear`. */
+  termYears?: number;
+  /** Term only: first year of coverage. Missing means the year it was added. */
+  issueYear?: number;
+  /** Permanent only. */
+  permanentType?: PermanentLifeType;
+  /** Death benefit. */
+  faceAmount: number;
+  /** Cash value today. For reference; it doesn't change the projection. */
+  cashValue?: number;
+  /** Premium per `premiumFrequency`. For reference; it isn't a plan expense. */
+  premium?: number;
+  premiumFrequency?: PremiumFrequency;
+}
+
+export interface DisabilityInsurancePolicy extends InsuranceBase {
+  kind: "disability";
+  occupation: DisabilityOccupation;
+  monthlyBenefit: number;
+  waitingDays: InsuranceWaitingDays;
+  benefitPeriod: DisabilityBenefitPeriod;
+  /**
+   * True when benefits are taxable (an employer paid the premiums). Missing
+   * means tax free (you paid the premiums with after-tax dollars).
+   */
+  taxable?: boolean;
+}
+
+export interface LongTermCarePolicy extends InsuranceBase {
+  kind: "longTermCare";
+  policyType: LongTermCarePolicyType;
+  monthlyBenefit: number;
+  waitingDays: InsuranceWaitingDays;
+  benefitYears: LongTermCareBenefitYears;
+}
+
+export type InsurancePolicy =
+  | LifeInsurancePolicy
+  | DisabilityInsurancePolicy
+  | LongTermCarePolicy;
 
 /** Home care or a nursing home, priced per person per month in today's dollars. */
 export type CareType = "home" | "nursing";

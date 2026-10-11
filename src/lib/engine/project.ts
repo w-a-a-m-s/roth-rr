@@ -27,6 +27,18 @@ import {
   incomesStoppedByDeath,
   resolveDeath,
 } from "@/lib/domain/survivorship";
+import {
+  disabilityBenefitMonths,
+  disabilityInsuranceKey,
+  disabilityPolicies,
+  lifeInsuranceClaims,
+  lifeInsuranceKey,
+  longTermCareBenefitMonths,
+  longTermCareInsuranceKey,
+  longTermCarePolicies,
+  resolveDisability,
+} from "@/lib/domain/insurance";
+import { LIFE_INSURANCE_PROCEEDS_GROWTH } from "@/lib/config/lifeInsurancePayout";
 import { personRmdAge } from "@/lib/domain/rmd";
 import type {
   DeductionBreakdown,
@@ -525,6 +537,16 @@ export function projectScenario(
   const death = resolveDeath(household, options.death);
   // Long-term care analysis: care costs per person and lower regular spending.
   const care = resolveLongTermCare(household, options.longTermCare);
+  // Disability analysis: one person can't work from January 1 of this year.
+  const disability = resolveDisability(household, options.disability);
+  const disabledPerson = disability
+    ? household.people.find((p) => p.id === disability.personId)
+    : undefined;
+  // Insurance only pays in its own analysis. Survivorship: each in-force life
+  // policy on the person who passes becomes invested proceeds paying a fixed
+  // lifetime income. Their balance and remaining basis live here.
+  const lifeClaims = lifeInsuranceClaims(household, death);
+  const lifeBasis: Record<string, number> = {};
   const federal = refs.federalTax;
   const state = getStateTaxTable(
     refs.stateIncomeTax,
@@ -634,6 +656,14 @@ export function projectScenario(
       calendarYear,
       start,
     );
+    // A disabled person's salary and business income stop.
+    if (disability && calendarYear >= disability.year) {
+      for (const income of household.incomes) {
+        if (income.ownerId !== disability.personId) continue;
+        if (income.kind !== "salary" && income.kind !== "business") continue;
+        stoppedIncomes.add(income.id);
+      }
+    }
 
     // 1) Grow balances. Starting balances are January 1 of the first projection
     //    year, so year 0 gets a full year of returns before withdrawals, except
@@ -789,6 +819,75 @@ export function projectScenario(
       incomeMonthly[`rmd:${acc.id}`] = rmdMonthly;
       federalOrdinaryGross += rmdAnnual;
       stateOrdinaryGross += rmdAnnual;
+    }
+
+    // Insurance benefits, each only in its own analysis.
+    //  - Life (Survivorship): the death benefit lands January 1 of the year
+    //    after the death, grows 8% a year, and pays a fixed income for life
+    //    (guaranteed, so it keeps paying if the balance runs out). Like an
+    //    annuity, earnings come out first and are taxed as ordinary income;
+    //    the rest is a tax-free return of the death benefit.
+    for (const claim of lifeClaims) {
+      if (calendarYear < claim.firstYear) continue;
+      const key = lifeInsuranceKey(claim.policyId);
+      if (balances[key] == null) {
+        balances[key] = claim.faceAmount;
+        lifeBasis[key] = claim.faceAmount;
+      }
+      balances[key] *= 1 + LIFE_INSURANCE_PROCEEDS_GROWTH;
+      const balBefore = Math.max(0, balances[key]);
+      const basis = lifeBasis[key] ?? 0;
+      const income = claim.annualIncome;
+      const taxable =
+        basis <= 0 ? income : Math.min(income, Math.max(0, balBefore - basis));
+      lifeBasis[key] = Math.max(0, basis - (income - taxable));
+      balances[key] = balBefore - Math.min(balBefore, income);
+      totalMonthlyIncome += income / 12;
+      incomeMonthly[key] = income / 12;
+      federalOrdinaryGross += taxable;
+      stateOrdinaryGross += taxable;
+    }
+    //  - Disability: the disabled person's policies pay after the waiting
+    //    period for the benefit period. Tax free unless the policy says
+    //    an employer paid the premiums.
+    if (disability && disabledPerson && Number.isFinite(disabledPerson.birthYear)) {
+      for (const policy of disabilityPolicies(household)) {
+        if (policy.insuredId !== disability.personId) continue;
+        const months = disabilityBenefitMonths(
+          policy,
+          disabledPerson.birthYear as number,
+          disability.year,
+          calendarYear,
+        );
+        const annual = Math.max(0, policy.monthlyBenefit) * months;
+        if (annual <= 0) continue;
+        totalMonthlyIncome += annual / 12;
+        incomeMonthly[disabilityInsuranceKey(policy.id)] = annual / 12;
+        if (!policy.taxable) continue;
+        federalOrdinaryGross += annual;
+        stateOrdinaryGross += annual;
+      }
+    }
+    //  - Long-term care: a policy on someone in care pays its monthly benefit
+    //    (up to that month's care cost) after the waiting period, for its
+    //    benefit years or while care lasts. Tax free.
+    const careYearCosts = careForYear(care, calendarYear, start).costMonthlyById;
+    for (const stay of care?.stays ?? []) {
+      const cost = careYearCosts[stay.personId] ?? 0;
+      if (cost <= 0) continue;
+      for (const policy of longTermCarePolicies(household)) {
+        if (policy.insuredId !== stay.personId) continue;
+        const months = longTermCareBenefitMonths(
+          policy,
+          stay.firstYear,
+          stay.lastYear,
+          calendarYear,
+        );
+        const annual = Math.min(Math.max(0, policy.monthlyBenefit), cost) * months;
+        if (annual <= 0) continue;
+        totalMonthlyIncome += annual / 12;
+        incomeMonthly[longTermCareInsuranceKey(policy.id)] = annual / 12;
+      }
     }
 
     // Roth conversions are taxable income in the year converted.
@@ -1023,6 +1122,10 @@ export function projectScenario(
       else if (acc.kind === "rothTaxFree") rothTotal += balances[acc.id];
       else if (AFTER_TAX_KINDS.includes(acc.kind))
         afterTaxTotal += balances[acc.id];
+    }
+    // Life insurance proceeds are after-tax money too.
+    for (const claim of lifeClaims) {
+      afterTaxTotal += balances[lifeInsuranceKey(claim.policyId)] ?? 0;
     }
 
     rows.push({

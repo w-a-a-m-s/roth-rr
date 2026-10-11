@@ -4,9 +4,19 @@ import type { ReactNode } from "react";
 import type {
   CarePeriod,
   DeathEvent,
+  DisabilityEvent,
   Household,
   LongTermCareSettings,
 } from "@/lib/domain/types";
+import {
+  DISABILITY_BENEFIT_PERIOD_LABELS,
+  INSURANCE_WAITING_LABELS,
+  disabilityPolicies,
+  lifeInsuranceClaims,
+  longTermCareBenefitLabel,
+  longTermCarePolicies,
+  resolveDisability,
+} from "@/lib/domain/insurance";
 import { PercentInput, Select } from "@/components/ui/inputs";
 import {
   CARE_EXPENSE_SHARE,
@@ -85,6 +95,10 @@ export function SurvivorshipControls({
     start + projectionYears(household) - 1,
   );
   const name = (p?: { name?: string }) => p?.name?.trim() || "Spouse";
+  const claims = lifeInsuranceClaims(household, death);
+  const lifeCovered = (household.insurance ?? []).some(
+    (p) => p.kind === "life" && p.insuredId === event.personId && p.faceAmount > 0,
+  );
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-5 py-4">
@@ -125,6 +139,26 @@ export function SurvivorshipControls({
           {Math.round(SURVIVOR_EXPENSE_SHARE * 100)}% of what you spent together.
         </p>
       ) : null}
+      {claims.length > 0 ? (
+        <p className="m-0 rounded-lg bg-accent-soft px-3 py-2 text-[13px] leading-relaxed text-foreground">
+          <strong>Income from life insurance:</strong>{" "}
+          {claims
+            .map(
+              (c) =>
+                `${formatCurrency(c.faceAmount)} death benefit pays ${formatCurrency(c.annualIncome / 12)}/mo (${formatPercent(c.rate)} a year)`,
+            )
+            .join("; ")}{" "}
+          for life from {death?.year != null ? death.year + 1 : ""}. The money is
+          invested at 8% a year; the payout rate comes from the age at death
+          (5% under 59). Earnings come out first and are taxed as ordinary
+          income.
+        </p>
+      ) : death && lifeCovered ? (
+        <p className="m-0 rounded-lg bg-card px-3 py-2 text-[13px] leading-relaxed text-muted">
+          {name(person)}&apos;s term life insurance has ended by {death.year}, so
+          it doesn&apos;t pay.
+        </p>
+      ) : null}
       {ss ? (
         <p
           className={`m-0 rounded-lg px-3 py-2 text-[13px] leading-relaxed ${
@@ -155,14 +189,71 @@ export function SurvivorshipControls({
   );
 }
 
-/** Placeholder for analyses we haven't built yet. */
-export function ComingSoon({ title }: { title: string }) {
+/** Who becomes disabled and at what age, for the Disability analysis. */
+export function DisabilityControls({
+  household,
+  event,
+}: {
+  household: Household;
+  event: DisabilityEvent;
+}) {
+  const setDisability = useScenario((s) => s.setDisability);
+  const person = household.people.find((p) => p.id === event.personId);
+  const start = projectionStartYear(household);
+  const ageNow = person?.birthYear != null ? start - person.birthYear : 50;
+  const ages = Array.from({ length: Math.max(1, 111 - ageNow) }, (_, i) => ageNow + i);
+  const disability = resolveDisability(household, event);
+  const policies = disabilityPolicies(household).filter((p) => p.insuredId === event.personId);
+  const name = (p?: { name?: string }) => p?.name?.trim() || "Person";
+
   return (
-    <div className="rounded-2xl border border-border bg-white p-8 text-center">
-      <p className="m-0 font-serif text-[21px] font-medium text-foreground">{title}</p>
-      <p className="mt-2 text-sm text-muted">
-        This analysis is on its way. It will run from the same plan as Retirement.
-      </p>
+    <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-5 py-4">
+      <div className="flex flex-wrap items-end gap-3">
+        <Control id="disability-person" label="Who's disabled" width="w-[180px]">
+          <Select
+            id="disability-person"
+            value={event.personId}
+            onChange={(personId) => {
+              const next = household.people.find((p) => p.id === personId);
+              const age = next?.birthYear != null ? start - next.birthYear : event.age;
+              setDisability({ personId, age: Math.max(age, event.age) });
+            }}
+            options={household.people.map((p) => ({ value: p.id, label: name(p) }))}
+          />
+        </Control>
+        <Control id="disability-age" label="From age" width="w-[104px]">
+          <Select
+            id="disability-age"
+            value={String(event.age)}
+            onChange={(v) => setDisability({ ...event, age: Number(v) })}
+            options={ages.map((a) => ({ value: String(a), label: String(a) }))}
+          />
+        </Control>
+      </div>
+      {disability ? (
+        <p className="m-0 text-[13px] leading-relaxed text-muted">
+          {name(person)} becomes disabled on January 1, {disability.year}, and
+          can&apos;t work from then on: {name(person)}&apos;s salary and business
+          income stop. Everything else, including expenses, stays the same.
+        </p>
+      ) : null}
+      {policies.length > 0 ? (
+        <p className="m-0 rounded-lg bg-accent-soft px-3 py-2 text-[13px] leading-relaxed text-foreground">
+          <strong>Income from disability insurance:</strong>{" "}
+          {policies
+            .map(
+              (p) =>
+                `${formatCurrency(p.monthlyBenefit)}/mo after a ${INSURANCE_WAITING_LABELS[p.waitingDays]} waiting period, ${DISABILITY_BENEFIT_PERIOD_LABELS[p.benefitPeriod].toLowerCase()}${p.taxable ? " (taxable)" : " (tax free)"}`,
+            )
+            .join("; ")}
+          . It only pays in this analysis.
+        </p>
+      ) : (
+        <p className="m-0 rounded-lg bg-card px-3 py-2 text-[13px] leading-relaxed text-muted">
+          {name(person)} has no disability insurance. Add a policy in the
+          Insurance step to see its income here.
+        </p>
+      )}
     </div>
   );
 }
@@ -200,8 +291,17 @@ export function LongTermCareControls({
       ],
     });
 
+  const policies = longTermCarePolicies(household).filter((p) => inCare.includes(p.insuredId));
+
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-5 py-4">
+      <p className="m-0 rounded-lg bg-accent-soft px-3 py-2 text-[13px] leading-relaxed text-foreground">
+        <strong>Note:</strong> while one spouse is in long-term care, the
+        spouse who isn&apos;t has their expenses adjusted to{" "}
+        {Math.round(CARE_EXPENSE_SHARE * 100)}% of what you spent before care.
+        When both spouses are in long-term care, all expenses besides the care
+        itself are removed.
+      </p>
       <div className="flex flex-wrap items-end gap-3">
         <Control id="ltc-who" label="Who's in care" width="w-[180px]">
           <Select
@@ -272,6 +372,19 @@ export function LongTermCareControls({
           "Care length defaults to 3 years for men and 5 for women (set in Household).",
         ].join(" ")}
       </p>
+      {policies.length > 0 ? (
+        <p className="m-0 rounded-lg bg-card px-3 py-2 text-[13px] leading-relaxed text-muted">
+          <strong className="text-foreground">Long-term care insurance:</strong>{" "}
+          {policies
+            .map(
+              (p) =>
+                `${name(p.insuredId)}'s policy pays up to ${formatCurrency(p.monthlyBenefit)}/mo after ${INSURANCE_WAITING_LABELS[p.waitingDays]} of care, for ${longTermCareBenefitLabel(p.benefitYears).toLowerCase()}`,
+            )
+            .join("; ")}
+          . Benefits never pay more than the care costs, never outlast the care,
+          and are tax free. They show as their own income line.
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { insuranceKeyKind } from "@/components/results/incomeLabels";
 import type { Household, IncomeKind } from "@/lib/domain/types";
 import type { ProjectionRow } from "@/lib/engine/types";
 
@@ -56,6 +57,7 @@ export function incomeCategory(
 ): IncomeCategory {
   if (key.startsWith("rmd:")) return "rmd";
   if (key.startsWith("re:")) return "other";
+  if (insuranceKeyKind(key)) return "other";
   const income = household.incomes.find((i) => i.id === key);
   return income ? KIND_CATEGORY[income.kind] : "other";
 }

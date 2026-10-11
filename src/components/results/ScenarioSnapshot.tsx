@@ -79,7 +79,14 @@ export function ScenarioSnapshot({
   const [startYear, setStartYear] = useState<number>(allYears[0] ?? 0);
 
   if (allYears.length === 0) return null;
-  const startOptions = allYears.map((y) => ({ value: String(y), label: String(y) }));
+  // Each year also shows the main client's age, so you can jump by either.
+  const startOptions = comparison.baseline.rows.map((r) => {
+    const age = r.ages[primaryId];
+    return {
+      value: String(r.calendarYear),
+      label: Number.isFinite(age) ? `${r.calendarYear} · age ${age}` : String(r.calendarYear),
+    };
+  });
 
   return (
     <div className="flex flex-col gap-3">
@@ -89,7 +96,7 @@ export function ScenarioSnapshot({
         </h3>
         <div className="flex items-center gap-2 text-[12.5px] font-semibold text-muted-2">
           <label htmlFor="snapshot-start">Jump to</label>
-          <span className="w-[104px]">
+          <span className="w-[140px]">
             <Select
               id="snapshot-start"
               value={String(startYear)}

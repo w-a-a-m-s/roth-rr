@@ -7,6 +7,8 @@ import type {
   DeletedItem,
   Deposit,
   Expense,
+  InsuranceKind,
+  InsurancePolicy,
   Household,
   IncomeKind,
   IncomeSource,
@@ -67,9 +69,18 @@ const HOUSEHOLD_KEYS = [
   "optimizer",
   "survivorship",
   "longTermCare",
+  "insurance",
+  "deletedInsurance",
+  "disability",
 ] as const satisfies readonly (keyof Household)[];
 
 const NOT_SET = "Not set";
+
+const INSURANCE_KIND_LABELS: Record<InsuranceKind, string> = {
+  life: "Life insurance",
+  disability: "Disability insurance",
+  longTermCare: "Long-term care insurance",
+};
 
 const ACCOUNT_KIND_LABELS: Record<AccountKind, string> = {
   retirementTaxable: "Taxable retirement",
@@ -152,6 +163,22 @@ const PROPERTY_LABELS: Record<string, string> = {
   careType: "Care type",
   inflation: "Care cost inflation",
   periods: "Care periods",
+  insuredId: "Insured",
+  policyType: "Policy type",
+  termYears: "Term (years)",
+  issueYear: "Coverage starts",
+  permanentType: "Permanent type",
+  faceAmount: "Face amount",
+  cashValue: "Cash value",
+  premium: "Premium",
+  premiumFrequency: "Premium paid",
+  occupation: "Definition of disability",
+  monthlyBenefit: "Monthly benefit",
+  waitingDays: "Waiting period",
+  benefitPeriod: "Benefits paid until",
+  benefitYears: "Benefit duration",
+  taxable: "Taxable benefits",
+  age: "Age",
 };
 
 const MONEY_KEYS = new Set([
@@ -167,6 +194,10 @@ const MONEY_KEYS = new Set([
   "mortgageBalance",
   "mortgageMonthlyPayment",
   "convertAmount",
+  "faceAmount",
+  "cashValue",
+  "premium",
+  "monthlyBenefit",
 ]);
 
 const PERCENT_KEYS = new Set([
@@ -247,7 +278,10 @@ function formatScalar(
       ? `${US_STATE_LABELS[code]} (${code})`
       : value;
   }
-  if (key === "mainPersonId" && typeof value === "string") {
+  if (
+    (key === "mainPersonId" || key === "insuredId") &&
+    typeof value === "string"
+  ) {
     return (
       personName(ctx.next, value) ||
       personName(ctx.previous, value) ||
@@ -661,6 +695,12 @@ export function formatPlanChangeLabel(field: string): string {
       return "Survivorship";
     case "longTermCare":
       return "Long-term care";
+    case "insurance":
+      return "Insurance";
+    case "deletedInsurance":
+      return "Deleted insurance";
+    case "disability":
+      return "Disability";
     default:
       return field;
   }
@@ -857,6 +897,27 @@ export function detailPlanSnapshots(
     ctx,
     "Business",
   );
+  if (hasOwn(nextHousehold, "insurance")) {
+    diffEntityList<InsurancePolicy>(
+      "insurance",
+      hasOwn(prevHousehold, "insurance") ? previous.household.insurance : undefined,
+      next.household.insurance ?? [],
+      out,
+      ctx,
+      (p) => entityLabel(p, INSURANCE_KIND_LABELS[p.kind] || "Policy"),
+    );
+  }
+
+  diffDeletedEntityList(
+    "deletedInsurance",
+    previous.household.deletedInsurance,
+    next.household.deletedInsurance,
+    prevHousehold,
+    nextHousehold,
+    out,
+    ctx,
+    "Policy",
+  );
   diffDeletedEntityList(
     "deletedExpenses",
     previous.household.deletedExpenses,
@@ -891,6 +952,20 @@ export function detailPlanSnapshots(
       formatPlanChangeLabel("survivorship"),
       prevSurv,
       next.household.survivorship as unknown as Record<string, unknown>,
+      out,
+      ctx,
+    );
+  }
+
+  if (hasOwn(nextHousehold, "disability") && next.household.disability) {
+    const prevDisability =
+      hasOwn(prevHousehold, "disability") && prevHousehold.disability != null
+        ? (prevHousehold.disability as unknown as Record<string, unknown>)
+        : null;
+    diffRecordFields(
+      formatPlanChangeLabel("disability"),
+      prevDisability,
+      next.household.disability as unknown as Record<string, unknown>,
       out,
       ctx,
     );
