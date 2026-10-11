@@ -46,19 +46,15 @@ hour-based material participation, or grouping elections.
   "Real-estate loss carryforward" is the year-end suspended total (per-property
   children when there is more than one property).
 
-## Mortgages and lines of credit
+## Property loans
 
-A property carries any number of loans in `RealEstate.loans`
-(`PropertyLoan`, helpers in `lib/domain/propertyLoans.ts`). Each is a
-**mortgage** (balance, rate, monthly P&I payment) or a **line of credit**
-(amount drawn, rate, optional credit limit, draw period end year, repayment
-years, default 20). A line of credit pays interest only through its draw
-period (for the whole plan when no end year is set), then a level payment,
-fixed the year repayment starts, clears it over the repayment term. No further
-draws are assumed. Every loan's interest is deductible against rent; the row's
-`mortgageBalance` is the total owed across all loans.
-
-Older plans stored one mortgage in `mortgageBalance` / `mortgageRate` /
-`mortgageMonthlyPayment`. `propertyLoans` reads those as one mortgage
-(id `<property id>:mortgage`), and `migrateHousehold` moves them into `loans`
-and drops the flat fields.
+Each property has `loans` (mortgages and lines of credit, `domain/propertyLoans.ts`).
+`propertyLoans(re)` also reads an older plan's single `mortgageBalance` /
+`mortgageRate` / `mortgageMonthlyPayment` as one mortgage, so golden cases
+with those fields keep their numbers; `migrateHousehold` moves them into
+`loans`. In `stepRealEstate` every loan amortizes monthly (`amortizeYear`):
+a mortgage at its payment; a line of credit at interest only through
+`drawEndYear` (missing: the whole plan), then a level payment over
+`repaymentYears` (default 20) fixed the year repayment starts. Interest from
+all loans is deducted against rent; the row's `mortgageBalance` is the sum.
+Homestead (`use`) takes no depreciation. Golden case: `property-loans.json`.

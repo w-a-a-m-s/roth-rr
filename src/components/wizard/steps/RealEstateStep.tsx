@@ -7,6 +7,7 @@ import {
   MoneyInput,
   NumberField,
   PercentInput,
+  RateInput,
   TextInput,
   YearSelect,
 } from "@/components/ui/inputs";
@@ -22,19 +23,19 @@ import {
 } from "@/lib/config/defaults";
 import { uid } from "@/lib/id";
 import { formatCurrency, formatPercent } from "@/lib/format";
-import type { RealEstate } from "@/lib/domain/types";
+import type { PropertyLoan, RealEstate } from "@/lib/domain/types";
 import {
-  GROWTH_START_LABELS,
-  realEstateGrowthStart,
-} from "@/lib/domain/household";
-import { REAL_ESTATE_TOUR_STEPS } from "@/lib/onboarding/realEstateTour";
-import {
+  DEFAULT_REPAYMENT_YEARS,
   PROPERTY_LOAN_LABELS,
   loanMonthlyPaymentToday,
   propertyLoanBalance,
   propertyLoans,
 } from "@/lib/domain/propertyLoans";
-import { PropertyLoansEditor } from "@/components/wizard/steps/PropertyLoansEditor";
+import {
+  GROWTH_START_LABELS,
+  realEstateGrowthStart,
+} from "@/lib/domain/household";
+import { REAL_ESTATE_TOUR_STEPS } from "@/lib/onboarding/realEstateTour";
 
 function PropertyFields({
   re,
@@ -83,16 +84,20 @@ function PropertyFields({
             label="Monthly operating expenses"
             value={formatCurrency(re.monthlyOperatingExpenses ?? 0)}
           />
-          {loans.length === 0 && (
-            <ReadStat label="Loans" value="None" />
-          )}
-          {loans.map((loan) => (
-            <ReadStat
-              key={loan.id}
-              label={loan.label || PROPERTY_LOAN_LABELS[loan.kind]}
-              value={`${formatCurrency(loan.balance)} at ${formatPercent(loan.rate)}, ${formatCurrency(loanMonthlyPaymentToday(loan))} / mo`}
-            />
-          ))}
+          <ReadStat
+            label={loans.length === 1 ? PROPERTY_LOAN_LABELS[loans[0].kind] : "Loans"}
+            value={
+              loans.length === 0
+                ? "None"
+                : formatCurrency(propertyLoanBalance(re))
+            }
+          />
+          <ReadStat
+            label="Loan payments"
+            value={`${formatCurrency(
+              loans.reduce((sum, loan) => sum + loanMonthlyPaymentToday(loan), 0),
+            )} / mo`}
+          />
         </>
       }
     >
@@ -254,10 +259,7 @@ function PropertyFields({
             }
           />
         </Field>
-        <PropertyLoansEditor
-          re={re}
-          onChange={(patch) => updateRealEstate(re.id, patch)}
-        />
+        <LoansEditor re={re} />
         <p className="m-0 text-xs text-muted lg:pl-[calc(13.5rem+0.75rem)]">
           Starting equity:{" "}
           {formatCurrency(
@@ -266,6 +268,136 @@ function PropertyFields({
         </p>
       </div>
     </EntityCard>
+  );
+}
+
+/** The mortgages and lines of credit on one property. */
+function LoansEditor({ re }: { re: RealEstate }) {
+  const { updateRealEstate } = useScenario();
+  const currentYear = new Date().getFullYear();
+  const loans = propertyLoans(re);
+  // Writing the list retires the older single-mortgage fields.
+  const setLoans = (next: PropertyLoan[]) =>
+    updateRealEstate(re.id, {
+      loans: next,
+      mortgageBalance: undefined,
+      mortgageRate: undefined,
+      mortgageMonthlyPayment: undefined,
+    });
+  const update = (id: string, patch: Partial<PropertyLoan>) =>
+    setLoans(loans.map((loan) => (loan.id === id ? { ...loan, ...patch } : loan)));
+  const add = (kind: PropertyLoan["kind"]) =>
+    setLoans([
+      ...loans,
+      kind === "mortgage"
+        ? { id: uid("loan"), kind, label: "Mortgage", balance: 0, rate: 0, monthlyPayment: 0 }
+        : {
+            id: uid("loan"),
+            kind,
+            label: "Line of credit",
+            balance: 0,
+            rate: 0,
+            creditLimit: 0,
+            drawEndYear: currentYear + 9,
+            repaymentYears: DEFAULT_REPAYMENT_YEARS,
+          },
+    ]);
+
+  return (
+    <div className="flex flex-col gap-2 rounded-[12px] border border-border bg-white p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-[13px] font-bold text-foreground">Loans</span>
+        <div className="flex gap-2">
+          <AddButton label="Add mortgage" shortLabel="Mortgage" onClick={() => add("mortgage")} />
+          <AddButton label="Add line of credit" shortLabel="Line of credit" onClick={() => add("lineOfCredit")} />
+        </div>
+      </div>
+      {loans.length === 0 ? (
+        <p className="m-0 text-xs text-muted">No mortgage or line of credit: owned free and clear.</p>
+      ) : null}
+      {loans.map((loan) => (
+        <div key={loan.id} className="flex flex-col gap-2 rounded-[10px] bg-surface-muted p-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[12.5px] font-bold text-foreground">
+              {PROPERTY_LOAN_LABELS[loan.kind]}
+            </span>
+            <button
+              type="button"
+              onClick={() => setLoans(loans.filter((l) => l.id !== loan.id))}
+              className="border-0 bg-transparent p-0 text-xs font-bold text-danger"
+            >
+              Remove
+            </button>
+          </div>
+          <Field layout="row" label="Label">
+            <TextInput value={loan.label} onChange={(label) => update(loan.id, { label })} />
+          </Field>
+          <Field
+            layout="row"
+            label={loan.kind === "mortgage" ? "Balance" : "Amount drawn"}
+            help={
+              loan.kind === "mortgage"
+                ? "Principal still owed today. Each month the payment covers interest first; the rest pays down the balance."
+                : "What you owe on the line of credit today."
+            }
+          >
+            <MoneyInput value={loan.balance} onChange={(balance) => update(loan.id, { balance })} />
+          </Field>
+          <Field layout="row" label="Interest rate" help="Yearly rate. Interest is charged monthly on what's owed.">
+            <RateInput value={loan.rate} onChange={(rate) => update(loan.id, { rate })} />
+          </Field>
+          {loan.kind === "mortgage" ? (
+            <Field
+              layout="row"
+              label="Monthly payment"
+              help="Principal and interest each month, without escrow. Payments stop once the loan is paid off."
+            >
+              <MoneyInput
+                value={loan.monthlyPayment ?? 0}
+                onChange={(monthlyPayment) => update(loan.id, { monthlyPayment })}
+              />
+            </Field>
+          ) : (
+            <>
+              <Field layout="row" label="Credit limit" help="For reference: the most you can draw.">
+                <MoneyInput
+                  value={loan.creditLimit ?? 0}
+                  onChange={(creditLimit) => update(loan.id, { creditLimit })}
+                />
+              </Field>
+              <Field
+                layout="row"
+                label="Draw period ends"
+                help="You pay interest only through this year. Leave empty to pay interest only for the whole plan."
+                hint={`Interest only now: ${formatCurrency(loanMonthlyPaymentToday(loan))} / mo`}
+              >
+                <YearSelect
+                  value={loan.drawEndYear}
+                  allowEmpty
+                  from={currentYear}
+                  to={2100}
+                  onChange={(drawEndYear) => update(loan.id, { drawEndYear })}
+                />
+              </Field>
+              <Field
+                layout="row"
+                label="Repayment years"
+                help="After the draw period, a level monthly payment pays it off over this many years."
+              >
+                <NumberField
+                  value={loan.repaymentYears ?? DEFAULT_REPAYMENT_YEARS}
+                  min={1}
+                  step={1}
+                  onChange={(repaymentYears) =>
+                    update(loan.id, { repaymentYears: Math.max(1, Math.round(repaymentYears)) })
+                  }
+                />
+              </Field>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -289,7 +421,7 @@ export function RealEstateStep() {
         targets={{ "add-property": addButtonRef }}
       />
       <div className="rounded-[9px] border border-warning-border bg-warning-bg px-3 py-2 text-xs font-semibold text-warning">
-        Add investment properties here. Do not include your primary residence.
+        Add your home (as a Homestead) and investment properties, with any mortgage or line of credit on each.
       </div>
       <Field
         label="Real estate professional"

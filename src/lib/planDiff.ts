@@ -14,18 +14,12 @@ import type {
   IncomeKind,
   IncomeSource,
   Person,
-  PropertyLoan,
   RealEstate,
   Business,
   RetirementAccountType,
   UsStateCode,
 } from "@/lib/domain/types";
 import { STRATEGY_LABELS } from "@/lib/optimizer/labels";
-import {
-  DEFAULT_REPAYMENT_YEARS,
-  PROPERTY_LOAN_LABELS,
-  propertyLoans,
-} from "@/lib/domain/propertyLoans";
 import {
   JOINT_OWNER_VALUE,
   DISABILITY_COVERAGE_LABELS,
@@ -189,6 +183,11 @@ const PROPERTY_LABELS: Record<string, string> = {
   taxable: "Taxable benefits",
   age: "Age",
   use: "Property type",
+  loans: "Loans",
+  rate: "Interest rate",
+  creditLimit: "Credit limit",
+  drawEndYear: "Draw period ends",
+  repaymentYears: "Repayment years",
   propertyId: "Property",
   principalBalance: "Principal balance",
   interestRate: "Interest rate",
@@ -220,6 +219,7 @@ const MONEY_KEYS = new Set([
   "cashValue",
   "premium",
   "monthlyBenefit",
+  "creditLimit",
   "principalBalance",
   "monthlyPayment",
   "monthlyEscrow",
@@ -236,6 +236,7 @@ const PERCENT_KEYS = new Set([
   "mortgageRate",
   "targetBracketRate",
   "interestRate",
+  "rate",
 ]);
 
 function stableStringify(value: unknown): string {
@@ -271,16 +272,6 @@ function accountFieldsForDiff(account: Account): Record<string, unknown> {
   delete fields.deposits;
   delete fields.joint;
   fields.ownerId = account.joint ? JOINT_OWNER_VALUE : account.ownerId;
-  return fields;
-}
-
-/** Loans are diffed on their own (`diffPropertyLoans`). */
-function realEstateFieldsForDiff(re: RealEstate): Record<string, unknown> {
-  const fields: Record<string, unknown> = { ...re };
-  delete fields.loans;
-  delete fields.mortgageBalance;
-  delete fields.mortgageRate;
-  delete fields.mortgageMonthlyPayment;
   return fields;
 }
 
@@ -528,57 +519,6 @@ function diffManualSchedule(
       beforeMissing ? NOT_SET : formatCurrency(beforeVal!),
       formatCurrency(afterVal),
     );
-  }
-}
-
-function loanSummary(loan: PropertyLoan): string {
-  const parts = [
-    `${PROPERTY_LOAN_LABELS[loan.kind]} ${formatCurrency(loan.balance)} at ${formatPercent(loan.rate)}`,
-  ];
-  if (loan.kind === "mortgage") {
-    parts.push(`${formatCurrency(loan.monthlyPayment ?? 0)} / mo`);
-  }
-  if (loan.kind === "lineOfCredit" && loan.drawEndYear != null) {
-    parts.push(
-      `draws to ${loan.drawEndYear}, repaid over ${loan.repaymentYears ?? DEFAULT_REPAYMENT_YEARS} yrs`,
-    );
-  }
-  return parts.join(", ");
-}
-
-/**
- * A property's mortgages and lines of credit, diffed by id like deposits.
- * An older plan's single mortgage reads as one loan, so moving it into the
- * list isn't reported as a change.
- */
-function diffPropertyLoans(
-  previousList: RealEstate[] | undefined,
-  nextList: RealEstate[],
-  out: PlanFieldChange[],
-): void {
-  if (!previousList) return;
-  const section = formatPlanChangeLabel("realEstate");
-  const prevById = new Map(previousList.map((re) => [re.id, re]));
-
-  for (const re of nextList) {
-    const prevRe = prevById.get(re.id);
-    if (!prevRe) continue;
-    const prevLoans = new Map(propertyLoans(prevRe).map((l) => [l.id, l]));
-    const nextLoans = new Map(propertyLoans(re).map((l) => [l.id, l]));
-    const name = entityLabel(re, "Property");
-    const property = (loan: PropertyLoan) =>
-      `${name} · ${loan.label?.trim() || PROPERTY_LOAN_LABELS[loan.kind]}`;
-
-    for (const [id, loan] of nextLoans) {
-      const before = prevLoans.get(id);
-      const after = loanSummary(loan);
-      if (before && loanSummary(before) === after) continue;
-      pushChange(out, section, property(loan), before ? loanSummary(before) : NOT_SET, after);
-    }
-    for (const [id, loan] of prevLoans) {
-      if (nextLoans.has(id)) continue;
-      pushChange(out, section, property(loan), loanSummary(loan), "Removed");
-    }
   }
 }
 
@@ -911,14 +851,6 @@ export function detailPlanSnapshots(
       out,
       ctx,
       (r) => entityLabel(r, "Property"),
-      realEstateFieldsForDiff,
-    );
-    diffPropertyLoans(
-      hasOwn(prevHousehold, "realEstate")
-        ? previous.household.realEstate
-        : undefined,
-      next.household.realEstate ?? [],
-      out,
     );
   }
 

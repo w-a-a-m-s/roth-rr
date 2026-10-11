@@ -2,7 +2,6 @@
 
 import { Fragment, type ReactNode } from "react";
 import { STEP_INDEX } from "@/components/plan/steps";
-import { propertyLoanBalance } from "@/lib/domain/propertyLoans";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
 import { FILING_STATUS_LABELS } from "@/lib/config/defaults";
 import { US_STATE_LABELS } from "@/lib/config/stateTax";
@@ -13,6 +12,7 @@ import {
   expenseYearsLabel,
 } from "@/lib/domain/household";
 import { primaryRmdAge } from "@/lib/domain/rmd";
+import { propertyLoanBalance } from "@/lib/domain/propertyLoans";
 import type {
   AccountKind,
   Household,
@@ -312,26 +312,27 @@ export function PlanDetails() {
         {household.realEstate.length === 0 ? (
           <Empty>No properties added</Empty>
         ) : (
-          household.realEstate.map((re) => {
-            const owed = propertyLoanBalance(re);
-            return (
+          household.realEstate.map((re) => (
             <div key={re.id} className="flex flex-col">
               <Row
                 label={re.label || "Property"}
                 value={formatCurrency(re.marketValue)}
               />
-              {(re.monthlyRent ?? 0) > 0 || owed > 0 ? (
+              {(re.monthlyRent ?? 0) > 0 || propertyLoanBalance(re) > 0 ? (
                 <p className="text-[11px] text-muted-3">
                   {(re.monthlyRent ?? 0) > 0
                     ? `${formatCurrency(re.monthlyRent ?? 0)}/mo rent`
                     : null}
-                  {(re.monthlyRent ?? 0) > 0 && owed > 0 ? " · " : null}
-                  {owed > 0 ? `${formatCurrency(owed)} owed` : null}
+                  {(re.monthlyRent ?? 0) > 0 && propertyLoanBalance(re) > 0
+                    ? " · "
+                    : null}
+                  {propertyLoanBalance(re) > 0
+                    ? `${formatCurrency(propertyLoanBalance(re))} owed`
+                    : null}
                 </p>
               ) : null}
             </div>
-            );
-          })
+          ))
         )}
       </Section>
 
