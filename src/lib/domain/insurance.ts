@@ -235,7 +235,10 @@ function monthsInYear(firstYear: number, from: number, to: number, year: number)
   return Math.max(0, hi - lo);
 }
 
-/** Default Disability setting: the main person, at their age in the first projection year. */
+/**
+ * Default Disability setting: the main person, at their age in `startYear`
+ * (the app passes this year, so the default is "disabled now").
+ */
 export function defaultDisabilityEvent(
   household: Household,
   startYear: number,

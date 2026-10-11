@@ -8,7 +8,7 @@ import { useExternalData } from '@/store/useExternalData';
 import { calculate } from '@/lib/calculate';
 import { isHouseholdReady } from '@/lib/domain/household';
 import { primaryRmdAge } from '@/lib/domain/rmd';
-import { primaryPersonId, projectionStartYear } from '@/lib/engine/project';
+import { primaryPersonId } from '@/lib/engine/project';
 import { ComparisonMetrics, TotalImpact } from '@/components/results/ComparisonSummary';
 import { AssetsChart } from '@/components/results/AssetsChart';
 import { AfterTaxAssetsTimeline } from '@/components/results/AfterTaxAssetsTimeline';
@@ -34,7 +34,7 @@ export function ResultsView() {
 	const deathEvent = useMemo(() => survivorshipEvent(household), [household]);
 	const careSettings = useMemo(() => longTermCareSettings(household), [household]);
 	const disabilitySetting = useMemo(
-		() => disabilityEvent(household, projectionStartYear(household)),
+		() => disabilityEvent(household, new Date().getFullYear()),
 		[household],
 	);
 	// Every analysis runs from the same plan; each one only adds its options.

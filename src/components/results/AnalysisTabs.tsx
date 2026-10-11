@@ -126,13 +126,16 @@ export function SurvivorshipControls({
           </span>
         </div>
         <div className="flex flex-col gap-1 text-[12.5px] font-semibold text-muted-2">
-          <label htmlFor="survivorship-age">At age</label>
-          <span className="w-[104px]">
+          <label htmlFor="survivorship-age">Passes in</label>
+          <span className="w-[150px]">
             <Select
               id="survivorship-age"
               value={String(event.deathAge)}
               onChange={(v) => setSurvivorship({ ...event, deathAge: Number(v) })}
-              options={ages.map((a) => ({ value: String(a), label: String(a) }))}
+              options={ages.map((a) => ({
+                value: String(a),
+                label: person?.birthYear != null ? `${person.birthYear + a} · age ${a}` : `Age ${a}`,
+              }))}
             />
           </span>
         </div>
@@ -211,7 +214,10 @@ export function DisabilityControls({
   const setDisability = useScenario((s) => s.setDisability);
   const person = household.people.find((p) => p.id === event.personId);
   const start = projectionStartYear(household);
-  const ageNow = person?.birthYear != null ? start - person.birthYear : 50;
+  // A disability can start any year from today on, before retirement too: the
+  // projection then starts that year.
+  const thisYear = new Date().getFullYear();
+  const ageNow = person?.birthYear != null ? thisYear - person.birthYear : 50;
   const ages = Array.from({ length: Math.max(1, 111 - ageNow) }, (_, i) => ageNow + i);
   const disability = resolveDisability(household, event);
   const policies = disabilityPolicies(household).filter((p) => p.insuredId === event.personId);
@@ -226,23 +232,29 @@ export function DisabilityControls({
             value={event.personId}
             onChange={(personId) => {
               const next = household.people.find((p) => p.id === personId);
-              const age = next?.birthYear != null ? start - next.birthYear : event.age;
+              const age = next?.birthYear != null ? thisYear - next.birthYear : event.age;
               setDisability({ personId, age: Math.max(age, event.age) });
             }}
             options={household.people.map((p) => ({ value: p.id, label: name(p) }))}
           />
         </Control>
-        <Control id="disability-age" label="From age" width="w-[104px]">
+        <Control id="disability-age" label="Disabled from" width="w-[150px]">
           <Select
             id="disability-age"
             value={String(event.age)}
             onChange={(v) => setDisability({ ...event, age: Number(v) })}
-            options={ages.map((a) => ({ value: String(a), label: String(a) }))}
+            options={ages.map((a) => ({
+              value: String(a),
+              label: person?.birthYear != null ? `${person.birthYear + a} · age ${a}` : `Age ${a}`,
+            }))}
           />
         </Control>
       </div>
       {disability ? (
         <p className="m-0 text-[13px] leading-relaxed text-muted">
+          {disability.year < start
+            ? `This is before the plan starts in ${start}, so the projection starts in ${disability.year}. `
+            : ""}
           {name(person)} becomes disabled on January 1, {disability.year}, and
           can&apos;t work from then on: {name(person)}&apos;s salary and business
           income stop. Everything else, including expenses, stays the same.

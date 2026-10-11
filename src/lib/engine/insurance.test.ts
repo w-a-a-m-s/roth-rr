@@ -321,3 +321,30 @@ describe("life insurance summary", () => {
     expect(totals.annualIncome).toBeCloseTo(1_500_000 * 0.074 + 300_000 * 0.072, 6);
   });
 });
+
+describe("a disability before the plan starts", () => {
+  // Wren (born 1970) works until retiring in 2036; the plan starts in 2036.
+  const h: Household = {
+    ...worker([di({ benefitPeriod: "age65" })]),
+    people: [{ id: "w", name: "Wren", birthYear: 1970, retirementYear: 2036 }],
+  };
+  // Disabled at 58, January 1, 2028.
+  const r = rows(h, { disability: { personId: "w", age: 58 } });
+  const at = (y: number) => r.find((x) => x.calendarYear === y)!;
+
+  it("starts the projection in the year of the disability", () => {
+    expect(r[0].calendarYear).toBe(2028);
+    expect(r.length).toBe(projectionYears(h) + 8);
+  });
+
+  it("stops the salary and pays the policy until 65", () => {
+    expect(at(2028).incomeMonthly.pay).toBeUndefined();
+    expect(at(2028).incomeMonthly["di:di1"]).toBeCloseTo((5000 * 9) / 12, 6);
+    expect(at(2034).incomeMonthly["di:di1"]).toBe(5000);
+    expect(at(2035).incomeMonthly["di:di1"]).toBeUndefined();
+  });
+
+  it("leaves Retirement starting at the plan start", () => {
+    expect(rows(h)[0].calendarYear).toBe(2036);
+  });
+});

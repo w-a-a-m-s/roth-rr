@@ -19,8 +19,8 @@ conversion schedule always comes from the plan's strategy as-is.
   (saved `household.longTermCare`, healed on read; default: main person, home
   care, 3%, starting at 80).
 - **Disability**: `options.disability` = `disabilityEvent(household, start)`
-  (saved `household.disability`, person + age; default: main person at their
-  age in the first projection year). From January 1 of that year the
+  (saved `household.disability`, person + age; default: main person
+  disabled this year). It can start before the plan start, like Survivorship. From January 1 of that year the
   person's salary and business income stop; their disability policies pay
   (see the insurance guide). Expenses don't change.
 
@@ -34,9 +34,10 @@ conversion schedule always comes from the plan's strategy as-is.
 
 ## Survivorship rules (`domain/survivorship.ts` + `projectScenario`)
 
-A death can be any age from today on. When it comes before the plan start
-(first retirement year), `analysisStartYear` starts the projection in the
-year of death (never before `asOfDate`'s year) and runs to the same final
+A death (and, in Disability, a disability) can be any year from today on;
+the lists read "2028 · age 55". When the event comes before the plan start
+(first retirement year), `analysisStartYear` starts the projection in that
+year (never before `asOfDate`'s year) and runs to the same final
 age. Start-year amounts (incomes, expenses, rent, care) stay anchored to the
 plan start: before it they hold at the entered amount. The conversion
 schedule is per plan year, so earlier years convert nothing. Accounts,

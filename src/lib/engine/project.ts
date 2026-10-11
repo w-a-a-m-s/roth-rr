@@ -83,19 +83,19 @@ const AFTER_TAX_KINDS: Account["kind"][] = [
 ];
 
 /**
- * First year an analysis projects. Normally the plan start; Survivorship with
- * a death before it starts in the year of death, but never before the year of
- * `asOfDate` (today in the app).
+ * First year an analysis projects. Normally the plan start; an analysis whose
+ * event (a death, a disability) comes before it starts in the event's year,
+ * but never before the year of `asOfDate` (today in the app).
  */
 export function analysisStartYear(
   household: Household,
-  death: { year: number } | null,
+  eventYear: number | null | undefined,
   asOfDate?: string,
 ): number {
   const planStart = projectionStartYear(household);
-  if (!death || !(death.year < planStart)) return planStart;
+  if (eventYear == null || !(eventYear < planStart)) return planStart;
   const today = asOfDate ? Number(asOfDate.slice(0, 4)) : NaN;
-  return Number.isFinite(today) ? Math.min(planStart, Math.max(death.year, today)) : death.year;
+  return Number.isFinite(today) ? Math.min(planStart, Math.max(eventYear, today)) : eventYear;
 }
 
 /** Projection start = the earliest retirement year across the household. */
@@ -569,13 +569,20 @@ export function projectScenario(
     refs.stateIncomeTax,
     household.residenceState ?? "FL",
   );
-  // The plan starts at the first retirement year. Survivorship can start
-  // earlier: a death before then starts the projection in the year of death
-  // (never before today). Amounts the plan states in start-year dollars
+  // The plan starts at the first retirement year. Survivorship and
+  // Disability can start earlier: a death or disability before then starts
+  // the projection in that year (never before today). Amounts the plan states in start-year dollars
   // (incomes, expenses, rent, care) stay anchored to the plan start, so every
   // year from the plan start on matches what a later death would show.
   const planStart = projectionStartYear(household);
-  const start = analysisStartYear(household, death, refs.asOfDate);
+  const eventYears = [death?.year, disability?.year].filter(
+    (y): y is number => y != null,
+  );
+  const start = analysisStartYear(
+    household,
+    eventYears.length > 0 ? Math.min(...eventYears) : null,
+    refs.asOfDate,
+  );
   const offset = planStart - start;
   const years = projectionYears(household) + offset;
 
