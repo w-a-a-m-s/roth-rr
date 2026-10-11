@@ -22,6 +22,7 @@ const SECTION_STYLE: Record<
   assets: { head: "bg-[#1B365D]", row: "bg-[#E8EEF6]", rule: "border-t-[3px] border-t-[#14243D]" },
   income: { head: "bg-[#20784F]", row: "bg-[#E7F2EC]", rule: "border-t-[3px] border-t-[#14243D]" },
   cashflow: { head: "bg-[#B85C38]", row: "bg-[#F7EAE3]", rule: "border-t-[3px] border-t-[#7A3B22]" },
+  conversionTax: { head: "bg-[#5B4B8A]", row: "bg-[#EFEBF7]", rule: "border-t-[3px] border-t-[#3B2F5E]" },
 };
 
 /**

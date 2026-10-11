@@ -178,3 +178,30 @@ describe("buildSnapshotTable", () => {
     );
   });
 });
+
+describe("tax paid from conversion section", () => {
+  const assets: Household = {
+    ...household,
+    optimizer: { ...household.optimizer, conversionTaxPaidFrom: "assets" },
+  };
+  const build = (h: Household) => {
+    const c = calculate(h);
+    return buildSnapshotTable(c.roth, h, primaryId, firstYear);
+  };
+
+  it("sits right after Cash flow with monthly and annual lines", () => {
+    const t = build(assets);
+    const keys = t.sections.map((s) => s.key);
+    expect(keys.indexOf("conversionTax")).toBe(keys.indexOf("cashflow") + 1);
+    const [monthly, annual] = t.sections.find((s) => s.key === "conversionTax")!
+      .lines;
+    expect(annual.values.some((v) => v > 0)).toBe(true);
+    annual.values.forEach((v, i) => expect(monthly.values[i]).toBeCloseTo(v / 12, 6));
+  });
+
+  it("is hidden when conversion tax is paid from income", () => {
+    expect(build(household).sections.map((s) => s.key)).not.toContain(
+      "conversionTax",
+    );
+  });
+});

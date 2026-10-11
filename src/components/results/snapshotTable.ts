@@ -23,7 +23,7 @@ export interface SnapshotLine {
 }
 
 export interface SnapshotSection {
-  key: "assets" | "income" | "cashflow";
+  key: "assets" | "income" | "cashflow" | "conversionTax";
   title: string;
   lines: SnapshotLine[];
 }
@@ -254,16 +254,6 @@ export function buildSnapshotTable(
       values: pick((r) => r.monthlyTax),
       tone: "tax",
     },
-    ...(scenario.rows.some((r) => r.conversionTaxWithheld > 0)
-      ? [
-          {
-            key: "withheld",
-            label: "Tax paid from conversion",
-            values: pick((r) => r.conversionTaxWithheld / 12),
-            tone: "plain" as const,
-          },
-        ]
-      : []),
     {
       key: "net",
       label: "Net monthly income",
@@ -300,6 +290,33 @@ export function buildSnapshotTable(
     tone: "surplus",
   });
 
+  // Conversion tax paid from assets gets its own section under Cash flow,
+  // monthly and yearly, only when some year withholds it.
+  const conversionTaxSections: SnapshotSection[] = scenario.rows.some(
+    (r) => r.conversionTaxWithheld > 0,
+  )
+    ? [
+        {
+          key: "conversionTax",
+          title: "Tax paid from conversion",
+          lines: [
+            {
+              key: "withheldMonthly",
+              label: "Monthly",
+              values: pick((r) => r.conversionTaxWithheld / 12),
+              tone: "plain",
+            },
+            {
+              key: "withheldAnnual",
+              label: "Annual",
+              values: pick((r) => r.conversionTaxWithheld),
+              tone: "plain",
+            },
+          ],
+        },
+      ]
+    : [];
+
   return {
     years: pick((r) => r.calendarYear),
     ages,
@@ -307,6 +324,7 @@ export function buildSnapshotTable(
       { key: "assets", title: "Assets", lines: assetLines },
       { key: "income", title: "Income", lines: incomeLines },
       { key: "cashflow", title: "Cash flow", lines: cashLines },
+      ...conversionTaxSections,
     ],
   };
 }
