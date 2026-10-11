@@ -309,12 +309,16 @@ function stepRealEstate(
       am.principal += year.principal;
     }
     mortgage += am.endBalance;
+    equityById[re.id] = propValue - am.endBalance;
 
-    const cash = rentAnnual - expenseAnnual - (am.interest + am.principal);
+    // A homestead's loans pay down and its equity counts, but their payments
+    // and interest stay out of income, cash flow and taxable rental income.
+    const loanCost = re.use === "homestead" ? { interest: 0, principal: 0 } : am;
+    const cash =
+      rentAnnual - expenseAnnual - (loanCost.interest + loanCost.principal);
     cashAnnual += cash;
     cashMonthlyById[re.id] = cash / 12;
-    equityById[re.id] = propValue - am.endBalance;
-    const taxableBeforeDep = rentAnnual - expenseAnnual - am.interest;
+    const taxableBeforeDep = rentAnnual - expenseAnnual - loanCost.interest;
     taxableAnnual += taxableBeforeDep;
     taxableBeforeDepById[re.id] = taxableBeforeDep;
     isRentalById[re.id] = rentAnnual > 0;

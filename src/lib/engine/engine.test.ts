@@ -1960,14 +1960,17 @@ describe("homestead vs investment property", () => {
 });
 
 describe("property loans: mortgage and line of credit", () => {
-  const plan = (loans: Household["realEstate"][number]["loans"]): Household => ({
+  const plan = (
+    loans: Household["realEstate"][number]["loans"],
+    use: "homestead" | "investment" = "investment",
+  ): Household => ({
     filingStatus: "single",
     residenceState: "FL",
     people: [{ id: "p", name: "P", birthYear: 1960, retirementYear: 2026 }],
     accounts: [],
     incomes: [],
     realEstate: [
-      { id: "h", label: "House", purchaseYear: 2020, purchasePrice: 0, marketValue: 600_000, appreciationRate: 0, depreciationYears: 27.5, use: "homestead", loans },
+      { id: "h", label: "House", purchaseYear: 2020, purchasePrice: 0, marketValue: 600_000, appreciationRate: 0, depreciationYears: 27.5, use, loans },
     ],
     expenses: [],
     assumptions: { expenseGrowth: 0, finalAge: 90 },
@@ -1998,6 +2001,15 @@ describe("property loans: mortgage and line of credit", () => {
     const onlyMtg = projectScenario(plan([mtg]), [])[0];
     expect(both.mortgageBalance).toBeCloseTo(onlyMtg.mortgageBalance + 50_000, 6);
     expect(both.realEstateEquityById.h).toBeCloseTo(600_000 - both.mortgageBalance, 6);
+  });
+
+  it("keeps a homestead's loan payments out of income and taxable income", () => {
+    const rows = projectScenario(plan([mtg, loc], "homestead"), []);
+    expect(rows[0].incomeMonthly["re:h"] ?? 0).toBe(0);
+    expect(rows[0].grossTaxableIncome).toBe(0);
+    // The loans still pay down, so equity grows.
+    expect(rows[1].mortgageBalance).toBeLessThan(rows[0].mortgageBalance);
+    expect(rows[0].realEstateEquityById.h).toBeCloseTo(600_000 - rows[0].mortgageBalance, 6);
   });
 
   it("treats an older plan's single mortgage exactly like a mortgage loan", () => {
