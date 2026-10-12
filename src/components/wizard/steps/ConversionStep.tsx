@@ -14,6 +14,7 @@ import {
   conversionYears,
   convertibleTotal,
   roundCents,
+  setScheduleYearCapped,
   spreadConversionEvenly,
 } from "@/lib/optimizer/util";
 import { formatCurrency } from "@/lib/format";
@@ -65,15 +66,17 @@ export function ConversionStep() {
 
   /** Edit a single year; becomes a custom (manual) schedule. */
   const setYear = (index: number, value: number) => {
-    const next = [...schedule];
     if (allowOverConvertible) {
+      const next = [...schedule];
       next[index] = roundCents(Math.max(0, value));
-    } else {
-      const others = scheduledTotal - next[index];
-      const headroom = Math.max(0, convertible - others);
-      next[index] = roundCents(Math.min(Math.max(0, value), headroom));
+      setOptimizer({ strategy: "manual", manualSchedule: next });
+      return;
     }
-    setOptimizer({ strategy: "manual", manualSchedule: next });
+    // The typed year wins; other years are trimmed to stay under the cap.
+    setOptimizer({
+      strategy: "manual",
+      manualSchedule: setScheduleYearCapped(schedule, index, value, convertible),
+    });
   };
 
   const setAllowOverConvertible = (allow: boolean) => {
