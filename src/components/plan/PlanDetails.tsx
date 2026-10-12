@@ -405,12 +405,6 @@ export function PlanDetails() {
               : STRATEGY_LABELS[opt.strategy]
           }
         />
-        {opt.oneTimeConversion && opt.oneTimeConversion.amount > 0 ? (
-          <Row
-            label={`One-time conversion (${opt.oneTimeConversion.year})`}
-            value={formatCurrency(opt.oneTimeConversion.amount)}
-          />
-        ) : null}
         <ManualSchedule
           schedule={buildConversionSchedule(household, refs).slice(
             0,

@@ -4,7 +4,6 @@ import type { Comparison } from "@/lib/engine/types";
 import { projectionYears } from "@/lib/engine/project";
 import {
   comparisonFrom,
-  runRothScenario,
   runScenario,
 } from "@/lib/engine/runScenario";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
@@ -94,9 +93,7 @@ export function scoreConversionStrategies(
       },
     };
     const schedule = buildConversionSchedule(scored, refs);
-    // Same Roth run as the results (with any one-time conversion), so the
-    // menu's impact matches what the plan shows.
-    const roth = runRothScenario(
+    const roth = runScenario(
       household,
       schedule,
       "With Roth conversion",

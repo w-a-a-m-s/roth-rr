@@ -53,30 +53,6 @@ the results tabs (`ConversionTaxToggle` in `ResultsView.tsx`).
   inheritance than `income` for the same schedule.
 - Rental passive-loss figures aren't re-priced for the no-conversion pass.
 
-## One-time conversion before the plan starts
-
-`optimizer.oneTimeConversion` (`{ year, amount }`, optional) is one extra
-conversion in a year before the projection starts, e.g. today while still
-working. The user asked that it leave every strategy as it was, so:
-
-- Strategies, their schedules, the baseline, and the projection start don't
-  read it. Only the Roth scenario does, through `runRothScenario` in
-  `runScenario.ts` (used by `compareScenarios` and the menu scores).
-- `runRothScenario` projects from `min(start, year)` with
-  `ProjectionOptions.oneTimeConversion`, so `projectScenario` converts it in
-  its own pre-plan year with the normal cascade and tax (step 5b withholds
-  under `assets`). The rows are then trimmed back to the normal start, which
-  match a normal run from there on. The trimmed years add only their tax
-  minus the same years with no conversion, as early taxes.
-- `activeOneTimeConversion` ignores it when the amount isn't positive, the
-  year is at or after the projection start, or the year is before
-  `refs.asOfDate`'s year (balances entered today already include it).
-- UI: the "One-time conversion in {year}" field on the Conversion step,
-  shown only while today is before the projection start. It shows the
-  extra tax. Plan details lists it as its own row.
-- IRMAA lookback doesn't see the trimmed years (matters only if someone is
-  63 or older at the conversion).
-
 ## Menu
 
 `ConversionStrategyMenu` sits above the plan Timeline on desktop, and in the
@@ -98,7 +74,6 @@ is the selected rate; all three rates are precomputed.
 - `manual` with no schedule stays `manual` (engine spreads convertible evenly).
 - Explicit `manualSchedule` stays `manual`.
 - Missing `targetBracketRate` on `fillBracket` → `0.22`.
-- `oneTimeConversion` without a finite year and a positive amount is dropped.
 
 ## Gotchas
 

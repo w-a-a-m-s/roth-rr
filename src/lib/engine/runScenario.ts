@@ -1,4 +1,4 @@
-import type { Household, OneTimeConversion } from "@/lib/domain/types";
+import type { Household } from "@/lib/domain/types";
 import { primaryRmdAge } from "@/lib/domain/rmd";
 import type {
   Comparison,
@@ -7,12 +7,7 @@ import type {
   ScenarioResult,
   ScenarioTotals,
 } from "@/lib/engine/types";
-import {
-  primaryPersonId,
-  projectionStartYear,
-  projectScenario,
-  scenarioStartYear,
-} from "@/lib/engine/project";
+import { primaryPersonId, projectScenario } from "@/lib/engine/project";
 import { depositPrincipalThrough } from "@/lib/engine/deposits";
 import { progressiveTax } from "@/lib/engine/tax";
 import type { FederalTaxYear } from "@/lib/config/federalTax";
@@ -221,90 +216,6 @@ export function runScenario(
   };
 }
 
-/**
- * The plan's one-time conversion when it still applies: a positive amount in
- * a year before the projection starts, and not already past (balances are
- * entered today, so a conversion in an earlier year is already in them).
- */
-export function activeOneTimeConversion(
-  household: Household,
-  asOfDate?: string,
-): OneTimeConversion | null {
-  const conversion = household.optimizer?.oneTimeConversion;
-  if (!conversion) return null;
-  const { year, amount } = conversion;
-  if (!Number.isFinite(year) || !Number.isFinite(amount) || amount <= 0) return null;
-  if (!(year < projectionStartYear(household))) return null;
-  const today = asOfDate ? Number(asOfDate.slice(0, 4)) : NaN;
-  if (Number.isFinite(today) && year < today) return null;
-  return { year, amount };
-}
-
-function sumTaxes(rows: ProjectionRow[], beforeYear: number) {
-  let federal = 0;
-  let state = 0;
-  for (const row of rows) {
-    if (row.calendarYear >= beforeYear) break;
-    federal += row.federalAnnualTax;
-    state += row.stateAnnualTax;
-  }
-  return { federal, state };
-}
-
-/**
- * The Roth-conversion scenario: `conversionSchedule` from the strategy, plus
- * the plan's one-time conversion before the projection starts. The one-time
- * conversion runs in its own year (the projection reaches back to it), and
- * the rows are trimmed back to the normal start so they line up with the
- * baseline. The years trimmed off add only the tax the conversion caused.
- */
-export function runRothScenario(
-  household: Household,
-  conversionSchedule: number[],
-  label: string,
-  refs: ReferenceData = FALLBACK_REFERENCE_DATA,
-  options: ProjectionOptions = {},
-): ScenarioResult {
-  const oneTime = activeOneTimeConversion(household, refs.asOfDate);
-  if (!oneTime) {
-    return runScenario(household, conversionSchedule, label, refs, options);
-  }
-  const start = scenarioStartYear(household, options, refs.asOfDate);
-  const fromYear = Math.min(start, oneTime.year);
-  const rows = projectScenario(household, conversionSchedule, refs, {
-    ...options,
-    fromYear,
-    oneTimeConversion: oneTime,
-  });
-  const shown = rows.filter((row) => row.calendarYear >= start);
-  const totals = computeTotals(household, shown, refs);
-  if (shown.length === rows.length) {
-    return { label, rows: shown, conversionSchedule, totals };
-  }
-
-  // Price the hidden years against the same years with no conversion.
-  const without = projectScenario(household, [], refs, { ...options, fromYear });
-  const withTax = sumTaxes(rows, start);
-  const withoutTax = sumTaxes(without, start);
-  const federalTax = withTax.federal - withoutTax.federal;
-  const stateTax = withTax.state - withoutTax.state;
-  const converted = rows.find((r) => r.calendarYear === oneTime.year)?.conversion ?? 0;
-  // Before the plan starts everyone is below their RMD age: early taxes.
-  totals.federalTaxesEarly += federalTax;
-  totals.stateTaxesEarly += stateTax;
-  totals.taxesEarly += federalTax + stateTax;
-  totals.federalTaxesTotal += federalTax;
-  totals.stateTaxesTotal += stateTax;
-  totals.taxesTotal += federalTax + stateTax;
-  return {
-    label,
-    rows: shown,
-    conversionSchedule,
-    totals,
-    oneTimeConversion: { year: oneTime.year, converted, federalTax, stateTax },
-  };
-}
-
 /** Deltas between an already-run baseline and Roth scenario. */
 export function comparisonFrom(
   baseline: ScenarioResult,
@@ -349,7 +260,7 @@ export function compareScenarios(
     refs,
     options,
   );
-  const roth = runRothScenario(
+  const roth = runScenario(
     household,
     conversionSchedule,
     "With Roth conversion",

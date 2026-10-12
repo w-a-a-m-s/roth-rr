@@ -16,7 +16,6 @@ import type {
   DisabilityEvent,
   FilingStatus,
   LongTermCareSettings,
-  OneTimeConversion,
 } from "@/lib/domain/types";
 
 /** Extra inputs for an analysis other than plain Retirement. */
@@ -34,11 +33,6 @@ export interface ProjectionOptions {
    * start on match a normal run (mortgages amortize from the earlier year).
    */
   fromYear?: number;
-  /**
-   * Roth scenario only: convert this amount in a year before the plan start.
-   * It runs only when the projection reaches that year (see `fromYear`).
-   */
-  oneTimeConversion?: OneTimeConversion;
 }
 
 export interface ProjectionRow {
@@ -183,20 +177,6 @@ export interface ScenarioResult {
   rows: ProjectionRow[];
   conversionSchedule: number[];
   totals: ScenarioTotals;
-  /**
-   * The plan's one-time conversion before the projection starts, when it ran
-   * in a year these rows don't show. Its tax is already in `totals`.
-   */
-  oneTimeConversion?: OneTimeConversionResult;
-}
-
-export interface OneTimeConversionResult {
-  year: number;
-  /** Dollars actually moved out of tax-deferred accounts. */
-  converted: number;
-  /** Extra federal and state tax that year because of the conversion. */
-  federalTax: number;
-  stateTax: number;
 }
 
 export interface Comparison {
