@@ -419,9 +419,23 @@ export interface OptimizerConfig {
    * from the converted dollars, so less lands in the Roth.
    */
   conversionTaxPaidFrom?: ConversionTaxPaidFrom;
+  /**
+   * Extra conversions in years before the projection starts (from today,
+   * while still working), one entry per year. They sit on top of the
+   * strategy: every strategy and its schedule stay exactly as they are, and
+   * only the Roth scenario carries them. An entry is ignored once its year is
+   * past or the projection already starts in it.
+   */
+  earlyConversions?: EarlyConversion[];
 }
 
 export type ConversionTaxPaidFrom = "income" | "assets";
+
+/** A Roth conversion of `amount` dollars in calendar `year`. */
+export interface EarlyConversion {
+  year: number;
+  amount: number;
+}
 
 /**
  * A named, self-contained plan. The whole object is one JSON blob - the unit we

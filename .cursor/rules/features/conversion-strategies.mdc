@@ -53,6 +53,32 @@ the results tabs (`ConversionTaxToggle` in `ResultsView.tsx`).
   inheritance than `income` for the same schedule.
 - Rental passive-loss figures aren't re-priced for the no-conversion pass.
 
+## Conversions before the plan starts (early conversions)
+
+`optimizer.earlyConversions` (`{ year, amount }[]`, optional, one per year)
+are extra conversions in the years from today up to the projection start,
+e.g. 2026 and 2027 while still working. The user asked that they leave every
+strategy and number as it was, so:
+
+- Strategies, their schedules, the baseline, and the projection start don't
+  read them. Only the Roth scenario does, through `runRothScenario` in
+  `runScenario.ts` (used by `compareScenarios` and the menu scores).
+- `runRothScenario` projects from the earliest early year with
+  `ProjectionOptions.earlyConversions`, so `projectScenario` converts each in
+  its own pre-plan year with the normal cascade and tax (step 5b withholds
+  under `assets`). The rows are then trimmed back to the normal start, which
+  match a normal run from there on. The trimmed years add only their tax
+  minus the same years with no conversion, as early taxes.
+- `activeEarlyConversions` skips an entry when the amount isn't positive, the
+  year is at or after the projection start, or the year is before
+  `refs.asOfDate`'s year (balances entered today already include it).
+- UI: the Conversion step's per-year list shows the years from today to the
+  start first, with a note of the extra tax. Editing them never switches the
+  strategy to manual, and the scheduled total covers only the strategy's
+  years. Plan details lists each as its own row.
+- IRMAA lookback doesn't see the trimmed years (matters only if someone is
+  63 or older at the conversion).
+
 ## Menu
 
 `ConversionStrategyMenu` sits above the plan Timeline on desktop, and in the
@@ -74,6 +100,8 @@ is the selected rate; all three rates are precomputed.
 - `manual` with no schedule stays `manual` (engine spreads convertible evenly).
 - Explicit `manualSchedule` stays `manual`.
 - Missing `targetBracketRate` on `fillBracket` → `0.22`.
+- `earlyConversions` keeps only entries with a finite year and a positive
+  amount, one per year; an empty list is dropped.
 
 ## Gotchas
 

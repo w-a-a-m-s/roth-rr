@@ -16,6 +16,7 @@ import type {
   DisabilityEvent,
   FilingStatus,
   LongTermCareSettings,
+  EarlyConversion,
 } from "@/lib/domain/types";
 
 /** Extra inputs for an analysis other than plain Retirement. */
@@ -33,6 +34,11 @@ export interface ProjectionOptions {
    * start on match a normal run (mortgages amortize from the earlier year).
    */
   fromYear?: number;
+  /**
+   * Roth scenario only: conversions in years before the plan start. Each runs
+   * only when the projection reaches its year (see `fromYear`).
+   */
+  earlyConversions?: EarlyConversion[];
 }
 
 export interface ProjectionRow {
@@ -177,6 +183,19 @@ export interface ScenarioResult {
   rows: ProjectionRow[];
   conversionSchedule: number[];
   totals: ScenarioTotals;
+  /**
+   * The plan's conversions before the projection starts, when they ran in
+   * years these rows don't show. Their tax is already in `totals`.
+   */
+  earlyConversions?: EarlyConversionResult;
+}
+
+export interface EarlyConversionResult {
+  /** Dollars actually moved out of tax-deferred accounts, per year. */
+  convertedByYear: Record<number, number>;
+  /** Extra federal and state tax in those years because of the conversions. */
+  federalTax: number;
+  stateTax: number;
 }
 
 export interface Comparison {

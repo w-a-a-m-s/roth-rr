@@ -33,35 +33,6 @@ export function spreadConversionEvenly(
 }
 
 /**
- * Set one year of a schedule to `value`, keeping the total at or under
- * `convertible`. The edited year wins: when the total would go over, later
- * years are trimmed first (last year first), then earlier ones. The edited
- * year itself is only lowered when it alone exceeds `convertible`.
- */
-export function setScheduleYearCapped(
-  schedule: number[],
-  index: number,
-  value: number,
-  convertible: number,
-): number[] {
-  const cap = Math.max(0, convertible);
-  const next = schedule.map((v) => Math.max(0, v));
-  next[index] = roundCents(Math.min(Math.max(0, value), cap));
-  let excess = next.reduce((sum, v) => sum + v, 0) - cap;
-  const order = [
-    ...next.map((_, i) => i).filter((i) => i > index).reverse(),
-    ...next.map((_, i) => i).filter((i) => i < index).reverse(),
-  ];
-  for (const i of order) {
-    if (excess <= 0.005) break;
-    const cut = Math.min(next[i], excess);
-    next[i] = roundCents(next[i] - cut);
-    excess -= cut;
-  }
-  return next;
-}
-
-/**
  * True when the plan has an explicit per-year schedule (including an all-zero
  * one). Missing or empty means "not set yet" and should default to converting
  * the full convertible balance.

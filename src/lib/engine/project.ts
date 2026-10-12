@@ -104,6 +104,27 @@ export function analysisStartYear(
   return Number.isFinite(today) ? Math.min(planStart, Math.max(eventYear, today)) : eventYear;
 }
 
+/**
+ * First calendar year `projectScenario` projects for these options: the plan
+ * start, or earlier for a death, disability, or `fromYear` before it.
+ */
+export function scenarioStartYear(
+  household: Household,
+  options: ProjectionOptions = {},
+  asOfDate?: string,
+): number {
+  const death = resolveDeath(household, options.death);
+  const disability = resolveDisability(household, options.disability);
+  const eventYears = [death?.year, disability?.year, options.fromYear].filter(
+    (y): y is number => y != null,
+  );
+  return analysisStartYear(
+    household,
+    eventYears.length > 0 ? Math.min(...eventYears) : null,
+    asOfDate,
+  );
+}
+
 /** The earliest retirement year across the household (the default start). */
 export function retirementStartYear(household: Household): number {
   return Math.min(...household.people.map((p) => p.retirementYear ?? NaN));
@@ -633,14 +654,7 @@ export function projectScenario(
   // (incomes, expenses, rent, care) stay anchored to the plan start, so every
   // year from the plan start on matches what a later death would show.
   const planStart = projectionStartYear(household);
-  const eventYears = [death?.year, disability?.year, options.fromYear].filter(
-    (y): y is number => y != null,
-  );
-  const start = analysisStartYear(
-    household,
-    eventYears.length > 0 ? Math.min(...eventYears) : null,
-    refs.asOfDate,
-  );
+  const start = scenarioStartYear(household, options, refs.asOfDate);
   const offset = planStart - start;
   const years = projectionYears(household) + offset;
 
@@ -649,7 +663,10 @@ export function projectScenario(
   // converted dollars can never be silently dropped: without it the cascade
   // below would pull money out of the tax-deferred accounts (and tax it) with
   // nowhere to land, deflating every downstream asset/inheritance total.
-  const hasConversions = conversionSchedule.some((amount) => amount > 0);
+  const early = options.earlyConversions ?? [];
+  const hasConversions =
+    conversionSchedule.some((amount) => amount > 0) ||
+    early.some((c) => c.amount > 0);
   const conversionTaxPaidFrom = household.optimizer?.conversionTaxPaidFrom ?? "income";
   const existingRoth = household.accounts.find(
     (acc) => acc.kind === "rothTaxFree",
@@ -800,8 +817,12 @@ export function projectScenario(
     }
 
     // 3) Roth conversions: cascade out of tax-deferred accounts into Roth.
-    // The schedule is per plan year; years before the plan start convert nothing.
-    let toConvert = (i >= offset ? conversionSchedule[i - offset] : 0) ?? 0;
+    // The schedule is per plan year; years before the plan start convert only
+    // the plan's early conversion for that year, if any.
+    let toConvert =
+      (i >= offset
+        ? conversionSchedule[i - offset]
+        : early.find((c) => c.year === calendarYear)?.amount) ?? 0;
     let converted = 0;
     for (const acc of retirementAccounts) {
       if (toConvert <= 0) break;

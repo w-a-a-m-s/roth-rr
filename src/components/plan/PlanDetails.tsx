@@ -405,6 +405,13 @@ export function PlanDetails() {
               : STRATEGY_LABELS[opt.strategy]
           }
         />
+        {(opt.earlyConversions ?? []).map((c) => (
+          <Row
+            key={c.year}
+            label={`Conversion in ${c.year} (before the plan starts)`}
+            value={formatCurrency(c.amount)}
+          />
+        ))}
         <ManualSchedule
           schedule={buildConversionSchedule(household, refs).slice(
             0,

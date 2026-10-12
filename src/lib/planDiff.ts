@@ -158,6 +158,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   manualSchedule: "Manual schedule",
   targetBracketRate: "Target bracket",
   convertAmount: "Amount to convert",
+  earlyConversions: "Conversions before the plan starts",
   deletedAt: "Deleted at",
   personId: "Person who passes",
   deathAge: "Age at death",

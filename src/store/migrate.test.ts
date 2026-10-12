@@ -431,6 +431,45 @@ describe("migrateHousehold: conversionTaxPaidFrom", () => {
   });
 });
 
+describe("migrateHousehold: earlyConversions", () => {
+  it("leaves them unset on plans that never had them", () => {
+    const out = migrateHousehold(household([], []));
+    expect(out.optimizer).not.toHaveProperty("earlyConversions");
+  });
+
+  it("keeps saved early conversions", () => {
+    const h = household([], []);
+    h.optimizer.earlyConversions = [
+      { year: 2026, amount: 50_000 },
+      { year: 2027, amount: 20_000 },
+    ];
+    expect(migrateHousehold(h).optimizer.earlyConversions).toEqual([
+      { year: 2026, amount: 50_000 },
+      { year: 2027, amount: 20_000 },
+    ]);
+  });
+
+  it("drops entries without a year or a positive amount, and repeats", () => {
+    const h = household([], []);
+    (h.optimizer as { earlyConversions?: unknown }).earlyConversions = [
+      { year: 2026, amount: 0 },
+      { amount: 5 },
+      "x",
+      { year: 2027, amount: 10 },
+      { year: 2027, amount: 99 },
+    ];
+    expect(migrateHousehold(h).optimizer.earlyConversions).toEqual([
+      { year: 2027, amount: 10 },
+    ]);
+  });
+
+  it("drops the field when nothing valid is left", () => {
+    const h = household([], []);
+    (h.optimizer as { earlyConversions?: unknown }).earlyConversions = "x";
+    expect(migrateHousehold(h).optimizer).not.toHaveProperty("earlyConversions");
+  });
+});
+
 describe("migrateHousehold: conversion strategy", () => {
   it("defaults a missing optimizer to manual", () => {
     const h = household([], []);

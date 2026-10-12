@@ -406,6 +406,21 @@ export function migrateHousehold(household: Household): Household {
     if (paidFrom != null && paidFrom !== "income" && paidFrom !== "assets") {
       delete legacy.optimizer.conversionTaxPaidFrom;
     }
+    // Early conversions are optional: keep only entries with a year and a
+    // positive amount, one per year.
+    const early = legacy.optimizer.earlyConversions;
+    if (early != null) {
+      const seen = new Set<number>();
+      const kept = (Array.isArray(early) ? early : []).filter((c) => {
+        if (c == null || typeof c !== "object") return false;
+        if (!Number.isFinite(c.year) || !Number.isFinite(c.amount)) return false;
+        if (c.amount <= 0 || seen.has(c.year)) return false;
+        seen.add(c.year);
+        return true;
+      });
+      if (kept.length > 0) legacy.optimizer.earlyConversions = kept;
+      else delete legacy.optimizer.earlyConversions;
+    }
   }
 
   return legacy;
