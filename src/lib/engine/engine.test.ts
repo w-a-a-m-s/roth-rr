@@ -2097,6 +2097,23 @@ describe("early conversions before the plan starts", () => {
     expect(early.convertedByYear).toEqual({ [year]: 30_000, [year + 1]: 20_000 });
   });
 
+  it("is never filled by a strategy: only amounts the user typed run", () => {
+    const strategies = [
+      "manual",
+      "even",
+      "immediate",
+      "fillBracket",
+      "irmaa",
+      "depleteByRmd",
+    ] as const;
+    for (const strategy of strategies) {
+      const h: Household = { ...base, optimizer: { ...base.optimizer, strategy } };
+      const result = calculate(h, refs);
+      expect(result.roth.earlyConversions).toBeUndefined();
+      expect(result.roth.rows[0].calendarYear).toBe(start);
+    }
+  });
+
   it("is ignored in or after the plan start, or once its year is past", () => {
     const plain = calculate(base, refs);
     const atStart: Household = {

@@ -60,6 +60,9 @@ are extra conversions in the years from today up to the projection start,
 e.g. 2026 and 2027 while still working. The user asked that they leave every
 strategy and number as it was, so:
 
+- **Manual only (user rule).** No strategy, Spread evenly, or default ever
+  fills the years before the plan start. They hold only amounts the user
+  typed. The engine test "is never filled by a strategy" pins this.
 - Strategies, their schedules, the baseline, and the projection start don't
   read them. Only the Roth scenario does, through `runRothScenario` in
   `runScenario.ts` (used by `compareScenarios` and the menu scores).
