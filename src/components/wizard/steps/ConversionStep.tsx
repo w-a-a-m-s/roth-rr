@@ -4,11 +4,11 @@ import { useMemo, useRef } from "react";
 import { useHousehold, useScenario } from "@/store/useScenario";
 import { useExternalData } from "@/store/useExternalData";
 import { Field } from "@/components/ui/Field";
-import { MoneyInput } from "@/components/ui/inputs";
+import { MoneyInput, YearSelect } from "@/components/ui/inputs";
 import { StepTour } from "@/components/onboarding/StepTour";
 import { ConversionEmptyNotice } from "@/components/wizard/steps/ConversionEmptyNotice";
 import { isConversionEmpty } from "@/lib/engine/conversionEmpty";
-import { projectionStartYear } from "@/lib/engine/project";
+import { projectionStartYear, retirementStartYear } from "@/lib/engine/project";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import {
   conversionYears,
@@ -22,11 +22,13 @@ import { findPlanModalPrimaryAction } from "@/lib/onboarding/householdTour";
 
 export function ConversionStep() {
   const household = useHousehold();
-  const { setOptimizer } = useScenario();
+  const { setOptimizer, setProjectionStart } = useScenario();
   const refs = useExternalData((s) => s.refs);
 
   const years = conversionYears(household);
   const start = projectionStartYear(household);
+  const retirementStart = retirementStartYear(household);
+  const currentYear = new Date().getFullYear();
   const convertible = convertibleTotal(household, refs.asOfDate);
   const allowOverConvertible = household.optimizer.allowOverConvertible === true;
 
@@ -105,6 +107,43 @@ export function ConversionStep() {
           "create-plan": findPlanModalPrimaryAction,
         }}
       />
+
+      <Field
+        label="Conversions start"
+        help="The first year a conversion can happen. Pick this year to convert from today, before retirement. This is the same setting as Projection starts on the Household step, so the whole projection starts in this year too."
+        hint={
+          household.assumptions.startYear != null
+            ? Number.isFinite(retirementStart)
+              ? `Retirement year is ${retirementStart}. Clear to use it.`
+              : undefined
+            : "Retirement year (default)"
+        }
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-[140px] shrink-0">
+            <YearSelect
+              id="conversion-start-year"
+              value={household.assumptions.startYear}
+              allowEmpty
+              from={currentYear}
+              to={2100}
+              placeholder={
+                Number.isFinite(retirementStart) ? String(retirementStart) : "Year"
+              }
+              onChange={(year) => setProjectionStart(year)}
+            />
+          </div>
+          {start !== currentYear ? (
+            <button
+              type="button"
+              onClick={() => setProjectionStart(currentYear)}
+              className="cursor-pointer border-0 bg-transparent p-0 text-xs font-bold text-accent"
+            >
+              Convert from today ({currentYear})
+            </button>
+          ) : null}
+        </div>
+      </Field>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div ref={amountToConvertRef}>
