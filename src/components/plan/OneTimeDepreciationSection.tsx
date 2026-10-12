@@ -140,6 +140,17 @@ export function OneTimeDepreciationSection({ readOnly }: { readOnly: boolean }) 
           ))
         )}
       </div>
+      <div className="mt-2 text-[11.5px] leading-snug text-muted-2">
+        <p className="m-0">Eligible taxpayers include:</p>
+        <ul className="m-0 mt-1 list-disc pl-4">
+          <li>Individuals with a sole proprietorship (Schedule C)</li>
+          <li>Individuals with rental real estate (Schedule E)</li>
+          <li>
+            Partnerships, multi-member LLCs, S corporations, and C corporations
+            (with the deduction flowing through to owners where applicable)
+          </li>
+        </ul>
+      </div>
 
       <Modal
         open={draft != null}
