@@ -43,7 +43,7 @@ export interface SnapshotLine {
 }
 
 export interface SnapshotSection {
-  key: "assets" | "income" | "cashflow" | "conversionTax";
+  key: "assets" | "income" | "cashflow" | "conversionTax" | "depreciation";
   title: string;
   lines: SnapshotLine[];
 }
@@ -352,6 +352,27 @@ export function buildSnapshotTable(
       ]
     : [];
 
+  // One-time 100% depreciation: one line per asset in its year, shown only
+  // when a year in this window has some.
+  const depreciationLines: SnapshotLine[] = (household.oneTimeDepreciation ?? [])
+    .map((d) => ({
+      key: `dep-${d.id}`,
+      label: `${d.label || "Asset"} (${d.year})`,
+      values: pick((r) => r.oneTimeDepreciationById[d.id] ?? 0),
+      tone: "plain" as const,
+    }))
+    .filter((line) => line.values.some((v) => v !== 0));
+  const depreciationSections: SnapshotSection[] =
+    depreciationLines.length > 0
+      ? [
+          {
+            key: "depreciation",
+            title: "100% depreciation (off taxable income)",
+            lines: depreciationLines,
+          },
+        ]
+      : [];
+
   return {
     years: pick((r) => r.calendarYear),
     ages,
@@ -360,6 +381,7 @@ export function buildSnapshotTable(
       { key: "income", title: "Income", lines: incomeLines },
       { key: "cashflow", title: "Cash flow", lines: cashLines },
       ...conversionTaxSections,
+      ...depreciationSections,
     ],
   };
 }

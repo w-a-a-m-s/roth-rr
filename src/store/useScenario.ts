@@ -5,6 +5,7 @@ import type {
   Account,
   Assumptions,
   DeathEvent,
+  OneTimeDepreciation,
   DeletedItem,
   DisabilityEvent,
   InsurancePolicy,
@@ -346,6 +347,24 @@ export function migrateHousehold(household: Household): Household {
   }
   if (typeof legacy.realEstateProfessional !== "boolean") {
     legacy.realEstateProfessional = false;
+  }
+  // One-time depreciation is optional: keep only entries with an id, a year
+  // and a positive amount; drop the list when nothing valid is left.
+  if (legacy.oneTimeDepreciation != null) {
+    const kept = (
+      Array.isArray(legacy.oneTimeDepreciation) ? legacy.oneTimeDepreciation : []
+    ).filter(
+      (d) =>
+        d != null &&
+        typeof d === "object" &&
+        typeof d.id === "string" &&
+        Number.isFinite(d.year) &&
+        Number.isFinite(d.amount) &&
+        d.amount > 0,
+    );
+    for (const d of kept) if (typeof d.label !== "string") d.label = "";
+    if (kept.length > 0) legacy.oneTimeDepreciation = kept;
+    else delete legacy.oneTimeDepreciation;
   }
   if (!Array.isArray(legacy.businesses)) legacy.businesses = [];
   const healBusiness = (biz: Business) => {
@@ -768,6 +787,8 @@ interface ScenarioState {
   setOptimizer: (patch: Partial<OptimizerConfig>) => void;
   /** Survivorship analysis: which spouse passes and at what age. */
   setSurvivorship: (event: DeathEvent) => void;
+  /** Replace the plan's one-time 100% depreciation entries. */
+  setOneTimeDepreciation: (entries: OneTimeDepreciation[]) => void;
   /** Long-term care analysis settings. */
   setLongTermCare: (settings: LongTermCareSettings) => void;
   /** Disability analysis: who becomes disabled and at what age. */
@@ -1521,6 +1542,13 @@ export const useScenario = create<ScenarioState>()((set, get) => {
         ...h,
         optimizer: { ...h.optimizer, ...patch },
       })),
+    setOneTimeDepreciation: (entries) =>
+      editActive((h) => {
+        const next = { ...h };
+        if (entries.length > 0) next.oneTimeDepreciation = entries;
+        else delete next.oneTimeDepreciation;
+        return next;
+      }),
     setSurvivorship: (event) =>
       editActive((h) => ({ ...h, survivorship: { ...event } })),
     setDisability: (event) =>

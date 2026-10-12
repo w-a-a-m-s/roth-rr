@@ -431,6 +431,32 @@ describe("migrateHousehold: conversionTaxPaidFrom", () => {
   });
 });
 
+describe("migrateHousehold: oneTimeDepreciation", () => {
+  it("leaves it unset on plans that never had it", () => {
+    expect(migrateHousehold(household([], []))).not.toHaveProperty("oneTimeDepreciation");
+  });
+
+  it("keeps valid entries and drops broken ones", () => {
+    const h = household([], []);
+    (h as { oneTimeDepreciation?: unknown }).oneTimeDepreciation = [
+      { id: "d1", label: "Truck", amount: 60_000, year: 2027 },
+      { id: "d2", label: "Bad", amount: 0, year: 2027 },
+      { id: "d3", amount: 5_000, year: 2028 },
+      "x",
+    ];
+    expect(migrateHousehold(h).oneTimeDepreciation).toEqual([
+      { id: "d1", label: "Truck", amount: 60_000, year: 2027 },
+      { id: "d3", label: "", amount: 5_000, year: 2028 },
+    ]);
+  });
+
+  it("drops the field when nothing valid is left", () => {
+    const h = household([], []);
+    (h as { oneTimeDepreciation?: unknown }).oneTimeDepreciation = "x";
+    expect(migrateHousehold(h)).not.toHaveProperty("oneTimeDepreciation");
+  });
+});
+
 describe("migrateHousehold: earlyConversions", () => {
   it("leaves them unset on plans that never had them", () => {
     const out = migrateHousehold(household([], []));

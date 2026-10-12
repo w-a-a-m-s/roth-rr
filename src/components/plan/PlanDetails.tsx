@@ -3,6 +3,7 @@
 import { Fragment, type ReactNode } from "react";
 import { STEP_INDEX } from "@/components/plan/steps";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
+import { OneTimeDepreciationSection } from "@/components/plan/OneTimeDepreciationSection";
 import { FILING_STATUS_LABELS } from "@/lib/config/defaults";
 import { US_STATE_LABELS } from "@/lib/config/stateTax";
 import {
@@ -369,6 +370,8 @@ export function PlanDetails() {
           })
         )}
       </Section>
+
+      <OneTimeDepreciationSection readOnly={readOnly} />
 
       <Section title="Insurance" stepId="insurance" readOnly={readOnly}>
         {(household.insurance ?? []).length === 0 ? (

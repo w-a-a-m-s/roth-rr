@@ -2,12 +2,16 @@ export interface DeductionBreakdown {
   standard: number;
   senior: number;
   depreciation: number;
+  /** One-time 100% depreciation entered on the plan for this year. */
+  oneTimeDepreciation: number;
   total: number;
 }
 
 export interface StateDeductionBreakdown {
   standard: number;
   personalExemption: number;
+  /** One-time 100% depreciation entered on the plan for this year. */
+  oneTimeDepreciation: number;
   total: number;
 }
 
@@ -155,6 +159,8 @@ export interface ProjectionRow {
   rentalLossCarryforward: number;
   /** Year-end suspended rental passive loss per property. */
   rentalLossCarryforwardById: Record<string, number>;
+  /** One-time 100% depreciation this year, keyed by entry id. */
+  oneTimeDepreciationById: Record<string, number>;
   surplus: number;
 }
 

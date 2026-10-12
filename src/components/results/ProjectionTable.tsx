@@ -367,6 +367,28 @@ function buildSections(
   const hasReDepreciation = scenario.rows.some(
     (r) => r.deductions.depreciation !== 0
   );
+  const hasOneTimeDepreciation = scenario.rows.some(
+    (r) => r.deductions.oneTimeDepreciation !== 0
+  );
+  const depreciationEntries = household.oneTimeDepreciation ?? [];
+  const oneTimeDepreciationLine = (
+    key: string,
+    value: (r: Row) => number
+  ): LineDef => ({
+    key,
+    label: "100% depreciation",
+    unit: "yr",
+    value,
+    children:
+      depreciationEntries.length > 1
+        ? depreciationEntries.map((d) => ({
+            key: `${key}-${d.id}`,
+            label: `${d.label || "Asset"} (${d.year})`,
+            unit: "yr" as const,
+            value: (r: Row) => r.oneTimeDepreciationById[d.id] ?? 0,
+          }))
+        : undefined,
+  });
   const hasReCarryforward = scenario.rows.some(
     (r) => r.rentalLossCarryforward !== 0
   );
@@ -475,6 +497,14 @@ function buildSections(
       unit: "yr",
       value: (r) => r.deductions.depreciation,
     });
+  }
+  if (hasOneTimeDepreciation) {
+    deductions.push(
+      oneTimeDepreciationLine(
+        "oneTimeDepreciation",
+        (r) => r.deductions.oneTimeDepreciation
+      )
+    );
   }
   if (hasReCarryforward) {
     const props = household.realEstate;
@@ -588,6 +618,14 @@ function buildSections(
       unit: "yr",
       value: (r) => r.stateDeductions.personalExemption,
     },
+    ...(scenario.rows.some((r) => r.stateDeductions.oneTimeDepreciation !== 0)
+      ? [
+          oneTimeDepreciationLine(
+            "stateOneTimeDepreciation",
+            (r) => r.stateDeductions.oneTimeDepreciation
+          ),
+        ]
+      : []),
     {
       key: "stateTaxableYearly",
       label: "Taxable income after deduction",

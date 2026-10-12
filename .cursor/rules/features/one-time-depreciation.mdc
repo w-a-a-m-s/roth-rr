@@ -1,0 +1,39 @@
+---
+description: One-time 100% (bonus) depreciation entries that reduce a year's taxable income
+globs: src/lib/domain/types.ts,src/lib/engine/project.ts,src/components/plan/OneTimeDepreciationSection.tsx,src/components/plan/PlanDetails.tsx,src/components/results/ProjectionTable.tsx,src/components/results/snapshotTable.ts,src/store/useScenario.ts
+alwaysApply: false
+---
+
+# One-time 100% depreciation
+
+`household.oneTimeDepreciation` (optional list of `{ id, label, amount, year }`)
+is entered from the plan summary on the left (One-time depreciation, Add),
+not from a wizard step. Several entries are allowed, in the same or
+different years.
+
+## Engine
+
+In each entry's year `projectScenario` deducts the full amount from federal
+taxable income (`deductions.oneTimeDepreciation`, part of
+`deductions.total`) and from state taxable income
+(`stateDeductions.oneTimeDepreciation`, part of `stateDeductions.total`).
+Per entry amounts are on the row as `oneTimeDepreciationById`. Both
+scenarios get it.
+
+- Taxable income never goes below 0; an excess is not carried forward (no
+  NOL).
+- It's a deduction, not lower gross income, so Medicare MAGI (IRMAA) and the
+  senior deduction phase-out don't change. Same pattern as rental
+  depreciation.
+- The lower tax raises that year's surplus, which isn't banked, so assets and
+  inheritance don't move.
+
+## UI
+
+- Main: a "100% depreciation" section after Cash flow, one line per asset,
+  shown only when a year in the window has some.
+- Main in detail analysis: "100% depreciation" under Deductions and State
+  deductions, with one child per asset when there are several.
+
+`migrateHousehold` keeps only entries with an id, a year and a positive
+amount. Golden case: `one-time-depreciation.json`.

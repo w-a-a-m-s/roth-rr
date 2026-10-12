@@ -431,6 +431,15 @@ export interface OptimizerConfig {
 
 export type ConversionTaxPaidFrom = "income" | "assets";
 
+/** An asset written off in full (100% depreciation) in one year. */
+export interface OneTimeDepreciation {
+  id: string;
+  /** Asset name. */
+  label: string;
+  amount: number;
+  year: number;
+}
+
 /** A Roth conversion of `amount` dollars in calendar `year`. */
 export interface EarlyConversion {
   year: number;
@@ -504,6 +513,12 @@ export interface Household {
    * to `[]` and the engine treats a missing list as empty.
    */
   businesses?: Business[];
+  /**
+   * One-time 100% (bonus) depreciation: each entry deducts its full amount
+   * from that year's federal and state taxable income. Optional; missing
+   * means none.
+   */
+  oneTimeDepreciation?: OneTimeDepreciation[];
   /** Itemized household expenses; each grows by its own rate. */
   expenses: Expense[];
   /**

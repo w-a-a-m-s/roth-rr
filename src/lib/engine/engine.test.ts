@@ -2127,3 +2127,50 @@ describe("early conversions before the plan starts", () => {
     );
   });
 });
+
+describe("one-time 100% depreciation", () => {
+  const refs = FALLBACK_REFERENCE_DATA;
+  const base: Household = { ...SAMPLE_HOUSEHOLD, residenceState: "CA" };
+  const start = projectionStartYear(base);
+  const withDep: Household = {
+    ...base,
+    oneTimeDepreciation: [
+      { id: "d1", label: "Truck", amount: 20_000, year: start + 1 },
+      { id: "d2", label: "Equipment", amount: 10_000, year: start + 1 },
+    ],
+  };
+
+  it("deducts the full amount from that year's federal and state taxable income", () => {
+    const plain = projectScenario(base, [], refs);
+    const rows = projectScenario(withDep, [], refs);
+    const year = rows[1];
+    expect(year.deductions.oneTimeDepreciation).toBe(30_000);
+    expect(year.oneTimeDepreciationById).toEqual({ d1: 20_000, d2: 10_000 });
+    expect(year.taxableIncome).toBeCloseTo(Math.max(0, plain[1].taxableIncome - 30_000), 6);
+    expect(year.stateDeductions.oneTimeDepreciation).toBe(30_000);
+    expect(year.stateTaxableIncome).toBeCloseTo(
+      Math.max(0, plain[1].stateTaxableIncome - 30_000),
+      6,
+    );
+    expect(year.annualTax).toBeLessThan(plain[1].annualTax);
+  });
+
+  it("leaves every other year alone", () => {
+    const plain = projectScenario(base, [], refs);
+    const rows = projectScenario(withDep, [], refs);
+    for (const i of [0, 2, 3]) {
+      expect(rows[i].deductions.oneTimeDepreciation).toBe(0);
+      expect(rows[i].annualTax).toBeCloseTo(plain[i].annualTax, 6);
+    }
+  });
+
+  it("never takes taxable income below zero", () => {
+    const huge: Household = {
+      ...base,
+      oneTimeDepreciation: [{ id: "big", label: "Plant", amount: 50_000_000, year: start }],
+    };
+    const row = projectScenario(huge, [], refs)[0];
+    expect(row.taxableIncome).toBe(0);
+    expect(row.stateTaxableIncome).toBe(0);
+  });
+});

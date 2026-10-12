@@ -7,6 +7,7 @@ import type {
   DeletedItem,
   Deposit,
   Expense,
+  OneTimeDepreciation,
   InsuranceKind,
   InsurancePolicy,
   MortgageStatement,
@@ -60,6 +61,7 @@ const HOUSEHOLD_KEYS = [
   "realEstate",
   "businesses",
   "expenses",
+  "oneTimeDepreciation",
   "deletedPeople",
   "deletedAccounts",
   "deletedIncomes",
@@ -150,6 +152,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   activeParticipation: "Active participation",
   realEstateProfessional: "Real estate professional",
   amount: "Amount",
+  year: "Year",
   frequency: "Frequency",
   expenseGrowth: "Expense growth",
   finalAge: "Final age",
@@ -705,6 +708,8 @@ export function formatPlanChangeLabel(field: string): string {
       return "Business equity";
     case "expenses":
       return "Expenses";
+    case "oneTimeDepreciation":
+      return "One-time depreciation";
     case "deletedPeople":
       return "Deleted people";
     case "deletedAccounts":
@@ -865,6 +870,19 @@ export function detailPlanSnapshots(
       out,
       ctx,
       (b) => entityLabel(b, "Business"),
+    );
+  }
+
+  if (hasOwn(nextHousehold, "oneTimeDepreciation")) {
+    diffEntityList<OneTimeDepreciation>(
+      "oneTimeDepreciation",
+      hasOwn(prevHousehold, "oneTimeDepreciation")
+        ? previous.household.oneTimeDepreciation
+        : undefined,
+      next.household.oneTimeDepreciation ?? [],
+      out,
+      ctx,
+      (d) => entityLabel(d, "Asset"),
     );
   }
 

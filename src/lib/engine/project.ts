@@ -556,6 +556,7 @@ function computeDeductions(
   grossTaxableIncome: number,
   federal: FederalTaxYear,
   allowedDepreciation: number,
+  oneTimeDepreciation: number,
 ): DeductionBreakdown {
   const standard = forFiling(
     federal.standardDeduction,
@@ -577,7 +578,14 @@ function computeDeductions(
   }
 
   const depreciation = Math.max(0, allowedDepreciation);
-  return { standard, senior, depreciation, total: standard + senior + depreciation };
+  const oneTime = Math.max(0, oneTimeDepreciation);
+  return {
+    standard,
+    senior,
+    depreciation,
+    oneTimeDepreciation: oneTime,
+    total: standard + senior + depreciation + oneTime,
+  };
 }
 
 function stateDeductionTotal(
@@ -1062,6 +1070,19 @@ export function projectScenario(
     federalOrdinaryGross += rentalPal.rentalInOrdinary;
     stateOrdinaryGross += rentalPal.rentalInOrdinary;
 
+    // One-time 100% depreciation: each entry deducts its full amount in its
+    // year from federal and state taxable income (never below zero; any
+    // excess is not carried forward).
+    const oneTimeDepreciationById: Record<string, number> = {};
+    let oneTimeDepreciation = 0;
+    for (const entry of household.oneTimeDepreciation ?? []) {
+      if (entry.year !== calendarYear) continue;
+      const amount = Math.max(0, entry.amount);
+      if (!(amount > 0)) continue;
+      oneTimeDepreciationById[entry.id] = amount;
+      oneTimeDepreciation += amount;
+    }
+
     // States that only tax capital gains (WA) ignore ordinary income.
     if (state.capitalGainsOnly || !state.hasIncomeTax) {
       stateOrdinaryGross = 0;
@@ -1081,6 +1102,7 @@ export function projectScenario(
         federalOrdinaryGross,
         federal,
         rentalPal.allowedDepreciation,
+        oneTimeDepreciation,
       );
       const taxableIncome = Math.max(0, federalOrdinaryGross - deductions.total);
       const federalBrackets = forFiling(
@@ -1115,7 +1137,9 @@ export function projectScenario(
       ).map((tax, bi) => ({ rate: ltcgBrackets[bi].rate, tax }));
       const federalAnnualTax = federalOrdinaryTax + federalCapitalGainsTax;
 
-      const stateDeduction = state.hasIncomeTax ? stateDeductionTotal(state, fs) : 0;
+      const stateDeduction = state.hasIncomeTax
+        ? stateDeductionTotal(state, fs) + oneTimeDepreciation
+        : 0;
       const stateDeductions = state.hasIncomeTax
         ? {
             standard: forFiling(
@@ -1128,9 +1152,10 @@ export function projectScenario(
               fs,
               "state personalExemption",
             ),
+            oneTimeDepreciation,
             total: stateDeduction,
           }
-        : { standard: 0, personalExemption: 0, total: 0 };
+        : { standard: 0, personalExemption: 0, oneTimeDepreciation: 0, total: 0 };
       const stateGrossTaxableIncome = stateOrdinaryGross;
       const stateTaxableIncome = state.hasIncomeTax
         ? Math.max(0, stateOrdinaryGross - stateDeduction)
@@ -1285,6 +1310,7 @@ export function projectScenario(
       businessEquityById,
       rentalLossCarryforward: rentalPal.suspendedLoss,
       rentalLossCarryforwardById: { ...rentalPal.suspendedLossById },
+      oneTimeDepreciationById,
       conversion: converted,
       conversionTaxWithheld,
       totalMonthlyIncome,
