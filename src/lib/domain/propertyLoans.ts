@@ -91,3 +91,8 @@ export function propertyMortgageStatements(
   }
   return out;
 }
+
+/** Expense key for an investment property's loan payments in a projection row. */
+export function loanExpenseKey(propertyId: string): string {
+  return `loan:${propertyId}`;
+}

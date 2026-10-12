@@ -58,3 +58,13 @@ a mortgage at its payment; a line of credit at interest only through
 `repaymentYears` (default 20) fixed the year repayment starts. Interest from
 all loans is deducted against rent; the row's `mortgageBalance` is the sum.
 Homestead (`use`) takes no depreciation. Golden case: `property-loans.json`.
+
+## Where loan payments show
+
+- **Investment property:** the property's income line (`re:<id>`) is rent
+  less operating expenses. Its loan payments (interest and principal) are an
+  expense line, `loan:<id>` in `expenseMonthly` ("Mortgage · <label>"), not
+  scaled by the survivor expense share. Interest is still deducted against
+  rent for tax.
+- **Homestead:** loans pay down and equity counts, but payments and interest
+  reach neither income, expenses nor taxable income.

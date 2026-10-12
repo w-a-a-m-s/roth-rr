@@ -40,7 +40,11 @@ import {
 } from "@/lib/domain/insurance";
 import { LIFE_INSURANCE_PROCEEDS_GROWTH } from "@/lib/config/lifeInsurancePayout";
 import { personRmdAge } from "@/lib/domain/rmd";
-import { DEFAULT_REPAYMENT_YEARS, propertyLoans } from "@/lib/domain/propertyLoans";
+import {
+  DEFAULT_REPAYMENT_YEARS,
+  loanExpenseKey,
+  propertyLoans,
+} from "@/lib/domain/propertyLoans";
 import { levelPayment } from "@/lib/engine/amortization";
 import type {
   DeductionBreakdown,
@@ -220,12 +224,17 @@ interface RealEstateYear {
   value: number;
   /** Remaining mortgage principal across all properties. */
   mortgage: number;
-  /** Spendable cash flow (rent - operating expenses - mortgage payment). */
+  /** Rental cash flow before loan payments (rent - operating expenses). */
   cashAnnual: number;
   /** Taxable rental income (rent - operating expenses - mortgage interest). */
   taxableAnnual: number;
   /** Per-property monthly cash flow (sums to `cashAnnual / 12`). */
   cashMonthlyById: Record<string, number>;
+  /**
+   * Per investment property: monthly loan payments (interest and principal),
+   * paid as an expense. A homestead's loans aren't counted.
+   */
+  loanPaymentMonthlyById: Record<string, number>;
   /** Per-property equity (value − mortgage); sums to `value - mortgage`. */
   equityById: Record<string, number>;
   /** Per-property rental net before depreciation (rent − opex − interest). */
@@ -255,6 +264,7 @@ function stepRealEstate(
   let cashAnnual = 0;
   let taxableAnnual = 0;
   const cashMonthlyById: Record<string, number> = {};
+  const loanPaymentMonthlyById: Record<string, number> = {};
   const equityById: Record<string, number> = {};
   const taxableBeforeDepById: Record<string, number> = {};
   const isRentalById: Record<string, boolean> = {};
@@ -312,12 +322,14 @@ function stepRealEstate(
     equityById[re.id] = propValue - am.endBalance;
 
     // A homestead's loans pay down and its equity counts, but their payments
-    // and interest stay out of income, cash flow and taxable rental income.
+    // and interest stay out of income, expenses and taxable rental income.
+    // An investment property's payments are an expense, not less rent.
     const loanCost = re.use === "homestead" ? { interest: 0, principal: 0 } : am;
-    const cash =
-      rentAnnual - expenseAnnual - (loanCost.interest + loanCost.principal);
+    const cash = rentAnnual - expenseAnnual;
     cashAnnual += cash;
     cashMonthlyById[re.id] = cash / 12;
+    const payment = loanCost.interest + loanCost.principal;
+    if (payment > 0) loanPaymentMonthlyById[re.id] = payment / 12;
     const taxableBeforeDep = rentAnnual - expenseAnnual - loanCost.interest;
     taxableAnnual += taxableBeforeDep;
     taxableBeforeDepById[re.id] = taxableBeforeDep;
@@ -330,6 +342,7 @@ function stepRealEstate(
     cashAnnual,
     taxableAnnual,
     cashMonthlyById,
+    loanPaymentMonthlyById,
     equityById,
     taxableBeforeDepById,
     isRentalById,
@@ -1187,6 +1200,12 @@ export function projectScenario(
     for (const [personId, cost] of Object.entries(careYear.costMonthlyById)) {
       expenseMonthly[careExpenseKey(personId)] = cost;
       monthlyExpenses += cost;
+    }
+    // Investment property loan payments (not scaled after a death: the loan
+    // is still owed in full).
+    for (const [id, payment] of Object.entries(realEstate.loanPaymentMonthlyById)) {
+      expenseMonthly[loanExpenseKey(id)] = payment;
+      monthlyExpenses += payment;
     }
 
     // 6) Business equity grows like real estate: year 0 is the January 1

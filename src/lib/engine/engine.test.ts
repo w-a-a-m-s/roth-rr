@@ -1983,17 +1983,17 @@ describe("property loans: mortgage and line of credit", () => {
     const rows = projectScenario(plan([loc]), []);
     expect(rows[0].mortgageBalance).toBeCloseTo(50_000, 6);
     expect(rows[1].mortgageBalance).toBeCloseTo(50_000, 6);
-    // Interest only: 50,000 x 8% a year comes out of cash flow.
-    expect(rows[0].incomeMonthly["re:h"]).toBeCloseTo(-4000 / 12, 6);
+    // Interest only: 50,000 x 8% a year, paid as an expense.
+    expect(rows[0].expenseMonthly["loan:h"]).toBeCloseTo(4000 / 12, 6);
   });
 
   it("then repays it with a level payment over the repayment years", () => {
     const rows = projectScenario(plan([loc]), []);
     const pay = levelPayment(50_000, 0.08, 120);
-    expect(rows[2].incomeMonthly["re:h"]).toBeCloseTo(-pay, 6);
+    expect(rows[2].expenseMonthly["loan:h"]).toBeCloseTo(pay, 6);
     expect(rows[2].mortgageBalance).toBeLessThan(50_000);
     expect(rows[11].mortgageBalance).toBeCloseTo(0, 2);
-    expect(rows[12].incomeMonthly["re:h"]).toBeCloseTo(0, 6);
+    expect(rows[12].expenseMonthly["loan:h"] ?? 0).toBeCloseTo(0, 6);
   });
 
   it("adds every loan into the property's debt and equity", () => {
@@ -2003,9 +2003,19 @@ describe("property loans: mortgage and line of credit", () => {
     expect(both.realEstateEquityById.h).toBeCloseTo(600_000 - both.mortgageBalance, 6);
   });
 
+  it("pays an investment property's loans as an expense, leaving rent less operating costs as its income", () => {
+    const h = plan([mtg]);
+    Object.assign(h.realEstate[0], { monthlyRent: 3000, monthlyOperatingExpenses: 500 });
+    const row = projectScenario(h, [])[0];
+    expect(row.incomeMonthly["re:h"]).toBeCloseTo(2500, 6);
+    expect(row.expenseMonthly["loan:h"]).toBeCloseTo(1199.1, 6);
+    expect(row.monthlyExpenses).toBeCloseTo(1199.1, 6);
+  });
+
   it("keeps a homestead's loan payments out of income and taxable income", () => {
     const rows = projectScenario(plan([mtg, loc], "homestead"), []);
     expect(rows[0].incomeMonthly["re:h"] ?? 0).toBe(0);
+    expect(rows[0].expenseMonthly["loan:h"]).toBeUndefined();
     expect(rows[0].grossTaxableIncome).toBe(0);
     // The loans still pay down, so equity grows.
     expect(rows[1].mortgageBalance).toBeLessThan(rows[0].mortgageBalance);

@@ -1,5 +1,6 @@
 import type { Household, InsuranceKind } from "@/lib/domain/types";
 import { insurancePolicy } from "@/lib/domain/insurance";
+import { propertyLoans } from "@/lib/domain/propertyLoans";
 
 const INSURANCE_INCOME_LABELS: Record<InsuranceKind, string> = {
   life: "Income from life insurance",
@@ -58,8 +59,17 @@ export function incomeLabel(household: Household, key: string): string {
   return `${label} · ${owner}`;
 }
 
-/** Display label for an expense key: an expense id, or `ltc:<person>` care. */
+/**
+ * Display label for an expense key: an expense id, `ltc:<person>` care, or
+ * `loan:<property>` loan payments.
+ */
 export function expenseLabel(household: Household, key: string): string {
+  if (key.startsWith("loan:")) {
+    const re = household.realEstate.find((r) => r.id === key.slice(5));
+    const loans = re ? propertyLoans(re) : [];
+    const kind = loans.length > 0 && loans.every((l) => l.kind === "lineOfCredit") ? "Line of credit" : "Mortgage";
+    return re?.label?.trim() ? `${kind} · ${re.label.trim()}` : kind;
+  }
   if (key.startsWith("ltc:")) {
     const name = household.people.find((p) => p.id === key.slice(4))?.name?.trim();
     return name ? `Long-term care · ${name}` : "Long-term care";
