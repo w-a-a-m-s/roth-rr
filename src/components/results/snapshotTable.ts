@@ -355,6 +355,7 @@ export function buildSnapshotTable(
   // One-time 100% depreciation: one line per asset in its year, shown only
   // when a year in this window has some.
   const depreciationLines: SnapshotLine[] = (household.oneTimeDepreciation ?? [])
+    .filter((d) => !d.hidden)
     .map((d) => ({
       key: `dep-${d.id}`,
       label: `${d.label || "Asset"} (${d.year})`,

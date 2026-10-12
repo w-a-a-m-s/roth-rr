@@ -2173,4 +2173,23 @@ describe("one-time 100% depreciation", () => {
     expect(row.taxableIncome).toBe(0);
     expect(row.stateTaxableIncome).toBe(0);
   });
+
+  it("skips a hidden entry and keeps the shown ones", () => {
+    const oneHidden: Household = {
+      ...withDep,
+      oneTimeDepreciation: withDep.oneTimeDepreciation!.map((d) =>
+        d.id === "d1" ? { ...d, hidden: true } : d,
+      ),
+    };
+    const year = projectScenario(oneHidden, [], refs)[1];
+    expect(year.deductions.oneTimeDepreciation).toBe(10_000);
+    expect(year.stateDeductions.oneTimeDepreciation).toBe(10_000);
+    expect(year.oneTimeDepreciationById).toEqual({ d2: 10_000 });
+
+    const allHidden: Household = {
+      ...withDep,
+      oneTimeDepreciation: withDep.oneTimeDepreciation!.map((d) => ({ ...d, hidden: true })),
+    };
+    expect(calculate(allHidden, refs).roth.totals).toEqual(calculate(base, refs).roth.totals);
+  });
 });

@@ -9,7 +9,9 @@ alwaysApply: false
 `household.oneTimeDepreciation` (optional list of `{ id, label, amount, year }`)
 is entered from the plan summary on the left (One-time depreciation, Add),
 not from a wizard step. Several entries are allowed, in the same or
-different years.
+different years. Each entry has Show / Hide: a hidden entry (`hidden: true`)
+stays in the plan, dimmed in the list, but the engine skips it and the
+results tables leave it out.
 
 ## Engine
 
@@ -36,4 +38,4 @@ scenarios get it.
   deductions, with one child per asset when there are several.
 
 `migrateHousehold` keeps only entries with an id, a year and a positive
-amount. Golden case: `one-time-depreciation.json`.
+amount, and drops a `hidden` that isn't `true`. Golden case: `one-time-depreciation.json`.

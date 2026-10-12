@@ -1076,6 +1076,7 @@ export function projectScenario(
     const oneTimeDepreciationById: Record<string, number> = {};
     let oneTimeDepreciation = 0;
     for (const entry of household.oneTimeDepreciation ?? []) {
+      if (entry.hidden) continue;
       if (entry.year !== calendarYear) continue;
       const amount = Math.max(0, entry.amount);
       if (!(amount > 0)) continue;

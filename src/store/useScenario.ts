@@ -362,7 +362,10 @@ export function migrateHousehold(household: Household): Household {
         Number.isFinite(d.amount) &&
         d.amount > 0,
     );
-    for (const d of kept) if (typeof d.label !== "string") d.label = "";
+    for (const d of kept) {
+      if (typeof d.label !== "string") d.label = "";
+      if (d.hidden !== true) delete d.hidden;
+    }
     if (kept.length > 0) legacy.oneTimeDepreciation = kept;
     else delete legacy.oneTimeDepreciation;
   }

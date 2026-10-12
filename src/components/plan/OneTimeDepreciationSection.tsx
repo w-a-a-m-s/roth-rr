@@ -49,6 +49,8 @@ export function OneTimeDepreciationSection({ readOnly }: { readOnly: boolean }) 
       amount: draft.amount,
       year: draft.year,
     };
+    const existing = entries.find((e) => e.id === draft.id);
+    if (existing?.hidden) entry.hidden = true;
     const next = draft.id
       ? entries.map((e) => (e.id === draft.id ? entry : e))
       : [...entries, entry];
@@ -56,6 +58,18 @@ export function OneTimeDepreciationSection({ readOnly }: { readOnly: boolean }) 
     setOneTimeDepreciation(next);
     setDraft(null);
   };
+
+  // Hiding keeps the entry but takes it out of the taxes and the results.
+  const toggleHidden = (id: string) =>
+    setOneTimeDepreciation(
+      entries.map((e) => {
+        if (e.id !== id) return e;
+        const next = { ...e };
+        if (e.hidden) delete next.hidden;
+        else next.hidden = true;
+        return next;
+      }),
+    );
 
   const remove = (id: string) =>
     setOneTimeDepreciation(entries.filter((e) => e.id !== id));
@@ -81,9 +95,13 @@ export function OneTimeDepreciationSection({ readOnly }: { readOnly: boolean }) 
           <p className="text-[12.5px] text-muted-3">No 100% depreciation added</p>
         ) : (
           entries.map((entry) => (
-            <div key={entry.id} className="flex items-baseline justify-between gap-2">
+            <div
+              key={entry.id}
+              className={`flex items-baseline justify-between gap-2${entry.hidden ? " opacity-50" : ""}`}
+            >
               <span className="truncate text-[12.5px] text-muted">
                 {entry.label || "Asset"} ({entry.year})
+                {entry.hidden ? " (hidden)" : ""}
               </span>
               <span className="flex shrink-0 items-baseline gap-2">
                 <span className="text-[12.5px] font-semibold tabular-nums text-foreground">
@@ -91,6 +109,15 @@ export function OneTimeDepreciationSection({ readOnly }: { readOnly: boolean }) 
                 </span>
                 {readOnly ? null : (
                   <>
+                    <button
+                      type="button"
+                      onClick={() => toggleHidden(entry.id)}
+                      aria-pressed={!entry.hidden}
+                      aria-label={`${entry.hidden ? "Show" : "Hide"} ${entry.label || "asset"}`}
+                      className="border-0 bg-transparent p-0 text-[11px] font-bold text-accent"
+                    >
+                      {entry.hidden ? "Show" : "Hide"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => openEdit(entry)}

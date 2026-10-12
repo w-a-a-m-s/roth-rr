@@ -450,6 +450,18 @@ describe("migrateHousehold: oneTimeDepreciation", () => {
     ]);
   });
 
+  it("keeps a hidden flag and drops a broken one", () => {
+    const h = household([], []);
+    (h as { oneTimeDepreciation?: unknown }).oneTimeDepreciation = [
+      { id: "d1", label: "Truck", amount: 60_000, year: 2027, hidden: true },
+      { id: "d2", label: "Roof", amount: 5_000, year: 2028, hidden: "yes" },
+    ];
+    expect(migrateHousehold(h).oneTimeDepreciation).toEqual([
+      { id: "d1", label: "Truck", amount: 60_000, year: 2027, hidden: true },
+      { id: "d2", label: "Roof", amount: 5_000, year: 2028 },
+    ]);
+  });
+
   it("drops the field when nothing valid is left", () => {
     const h = household([], []);
     (h as { oneTimeDepreciation?: unknown }).oneTimeDepreciation = "x";

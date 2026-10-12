@@ -370,7 +370,9 @@ function buildSections(
   const hasOneTimeDepreciation = scenario.rows.some(
     (r) => r.deductions.oneTimeDepreciation !== 0
   );
-  const depreciationEntries = household.oneTimeDepreciation ?? [];
+  const depreciationEntries = (household.oneTimeDepreciation ?? []).filter(
+    (d) => !d.hidden
+  );
   const oneTimeDepreciationLine = (
     key: string,
     value: (r: Row) => number

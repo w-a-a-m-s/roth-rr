@@ -438,6 +438,11 @@ export interface OneTimeDepreciation {
   label: string;
   amount: number;
   year: number;
+  /**
+   * Hidden from the plan: the entry is kept but deducts nothing and doesn't
+   * show in the results. Missing means shown.
+   */
+  hidden?: boolean;
 }
 
 /** A Roth conversion of `amount` dollars in calendar `year`. */
