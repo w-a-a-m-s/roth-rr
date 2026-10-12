@@ -234,3 +234,75 @@ describe("years before retirement are manual only", () => {
     expect(buildConversionSchedule(h).slice(0, 3)).toEqual([10_000, 20_000, 30_000]);
   });
 });
+
+describe("typed pre-retirement conversions over the convertible total", () => {
+  const early: Household = {
+    filingStatus: "single",
+    residenceState: "FL",
+    people: [{ id: "p", name: "P", birthYear: 1968, retirementYear: 2030 }],
+    accounts: [
+      { id: "ira", label: "IRA", ownerId: "p", kind: "retirementTaxable", balance: 800_000, growthRate: 0.05 },
+      { id: "roth", label: "Roth", ownerId: "p", kind: "rothTaxFree", balance: 0, growthRate: 0.05 },
+    ],
+    incomes: [],
+    realEstate: [],
+    expenses: [],
+    // The plan starts in 2028; the strategy starts at retirement (2030).
+    assumptions: { expenseGrowth: 0.02, finalAge: 90, startYear: 2028 },
+    optimizer: { strategy: "even" },
+  } as Household;
+  const typed = [
+    { year: 2027, amount: 300_000 },
+    { year: 2028, amount: 200_000 },
+  ];
+
+  for (const strategy of ["even", "fillBracket", "irmaa", "depleteByRmd", "immediate"] as const) {
+    it(`${strategy}: keeps the typed years and trims from the latest year`, () => {
+      const plain: Household = {
+        ...early,
+        optimizer: { strategy, targetBracketRate: 0.24 },
+      };
+      const withTyped: Household = {
+        ...plain,
+        optimizer: { ...plain.optimizer, earlyConversions: typed },
+      };
+      const before = buildConversionSchedule(plain);
+      const after = buildConversionSchedule(withTyped);
+      // 2028 is index 0 of the plan; 2027 is before the plan starts.
+      expect(after[0]).toBe(200_000);
+      expect(after[1]).toBe(0);
+      const convertible = convertibleTotal(withTyped);
+      const total = 300_000 + after.reduce((sum, v) => sum + v, 0);
+      expect(total).toBeLessThanOrEqual(convertible + 0.01);
+      // Never above the strategy's own amount for a year (its limit).
+      for (let i = 2; i < after.length; i++) {
+        expect(after[i]).toBeLessThanOrEqual(before[i] + 0.001);
+      }
+      // Trimmed from the end: once a year is cut, every later year is 0.
+      const firstCut = after.findIndex((v, i) => i >= 2 && v < before[i] - 0.001);
+      if (firstCut >= 0) {
+        expect(after.slice(firstCut + 1).every((v) => v === 0)).toBe(true);
+      }
+      // Even converts the whole convertible total, so it must be trimmed to
+      // exactly fit.
+      if (strategy === "even") {
+        expect(firstCut).toBeGreaterThanOrEqual(2);
+        expect(total).toBeCloseTo(convertible, 1);
+      }
+    });
+  }
+
+  it("leaves a manual schedule and over-convertible plans as entered", () => {
+    const manual: Household = {
+      ...early,
+      optimizer: { strategy: "manual", manualSchedule: [0, 0, 900_000], earlyConversions: typed },
+    };
+    expect(buildConversionSchedule(manual).slice(0, 3)).toEqual([200_000, 0, 900_000]);
+    const over: Household = {
+      ...early,
+      optimizer: { strategy: "even", allowOverConvertible: true, earlyConversions: typed },
+    };
+    const plainOver = buildConversionSchedule({ ...over, optimizer: { strategy: "even", allowOverConvertible: true } });
+    expect(buildConversionSchedule(over).slice(2)).toEqual(plainOver.slice(2));
+  });
+});

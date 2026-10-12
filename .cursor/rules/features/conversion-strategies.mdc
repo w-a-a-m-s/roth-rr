@@ -66,6 +66,17 @@ guard. Only amounts the user typed (a manual schedule, or the early
 conversion rows) convert there. Tests: "years before retirement are manual
 only" in `strategies.test.ts`.
 
+Typed years: every year from today up to `strategyStartYear` (retirement,
+or the plan start if later) is a typed row on the Conversion step, stored in
+`optimizer.earlyConversions` whether it falls before the plan start or
+inside it. `buildConversionSchedule` (`fitTypedConversions`) puts the
+in-plan ones into the schedule (they win over a manual value there). When
+typed amounts plus the strategy's exceed `convertibleTotal`, the strategy's
+amounts are lowered from the latest year back; lowering keeps each year
+inside its strategy's limit. Manual schedules and `allowOverConvertible`
+plans are left as entered. Tests: "typed pre-retirement conversions over the
+convertible total" in `strategies.test.ts`.
+
 ## Conversions before the plan starts (early conversions)
 
 `optimizer.earlyConversions` (`{ year, amount }[]`, optional, one per year)

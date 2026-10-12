@@ -8,7 +8,7 @@ import { MoneyInput } from "@/components/ui/inputs";
 import { StepTour } from "@/components/onboarding/StepTour";
 import { ConversionEmptyNotice } from "@/components/wizard/steps/ConversionEmptyNotice";
 import { isConversionEmpty } from "@/lib/engine/conversionEmpty";
-import { projectionStartYear } from "@/lib/engine/project";
+import { projectionStartYear, strategyStartYear } from "@/lib/engine/project";
 import { runRothScenario } from "@/lib/engine/runScenario";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import {
@@ -31,17 +31,22 @@ export function ConversionStep() {
   const start = projectionStartYear(household);
   const convertible = convertibleTotal(household, refs.asOfDate);
   const allowOverConvertible = household.optimizer.allowOverConvertible === true;
-  // Years from today up to the plan start. Conversions there sit on top of
-  // the strategy and leave its schedule (the years from `start`) untouched.
+  // Years from today up to the strategy's first year (retirement, or the
+  // plan start if later) are manual only: they hold what the user typed and
+  // the strategy never fills them.
   const currentYear = new Date().getFullYear();
+  const strategyYear = strategyStartYear(household);
   const earlyYears = Array.from(
-    { length: Math.max(0, start - currentYear) },
+    { length: Math.max(0, strategyYear - currentYear) },
     (_, i) => currentYear + i,
   );
+  const isManual = household.optimizer.strategy === "manual";
   const earlyConversions = household.optimizer.earlyConversions ?? [];
-  const earlyAmount = (year: number) =>
+  const typedBeforeStart = (year: number) =>
     earlyConversions.find((c) => c.year === year)?.amount ?? 0;
-  const hasEarly = earlyYears.some((year) => earlyAmount(year) > 0);
+  const hasEarly = earlyYears.some(
+    (year) => year < start && typedBeforeStart(year) > 0,
+  );
 
   const totalConvertibleRef = useRef<HTMLDivElement>(null);
   const amountToConvertRef = useRef<HTMLDivElement>(null);
@@ -65,30 +70,45 @@ export function ConversionStep() {
     return <ConversionEmptyNotice household={household} />;
   }
 
-  const scheduledTotal = schedule.reduce((sum, v) => sum + v, 0);
+  // From the plan start on, the schedule already holds the typed amounts.
+  const earlyAmount = (year: number) =>
+    year >= start ? (schedule[year - start] ?? 0) : typedBeforeStart(year);
+  const preStartTotal = earlyYears
+    .filter((year) => year < start)
+    .reduce((sum, year) => sum + typedBeforeStart(year), 0);
+  const typedTotal = earlyYears.reduce((sum, year) => sum + earlyAmount(year), 0);
+  const first = Math.min(strategyStartIndex(household), years);
+  const scheduledTotal = preStartTotal + schedule.reduce((sum, v) => sum + v, 0);
   const remaining = convertible - scheduledTotal;
   const overConvertible = scheduledTotal > convertible + 0.5;
 
-  /** Edit a year before the plan starts. The strategy stays as it is. */
+  /** Edit a year before the strategy starts. The strategy stays as it is. */
   const setEarlyYear = (year: number, value: number) => {
     const amount = roundCents(Math.max(0, value));
     const others = earlyConversions.filter((c) => c.year !== year);
     const next = amount > 0 ? [...others, { year, amount }] : others;
     next.sort((a, b) => a.year - b.year);
-    setOptimizer({ earlyConversions: next.length > 0 ? next : undefined });
+    const patch: Parameters<typeof setOptimizer>[0] = {
+      earlyConversions: next.length > 0 ? next : undefined,
+    };
+    // A manual schedule's own value for that year would show again once the
+    // typed amount is cleared: drop it so the typed amount is the only one.
+    const index = year - start;
+    const manual = household.optimizer.manualSchedule;
+    if (isManual && manual && index >= 0 && index < manual.length) {
+      patch.manualSchedule = manual.map((v, i) => (i === index ? 0 : v));
+    }
+    setOptimizer(patch);
   };
   const earlyTax = early ? early.federalTax + early.stateTax : 0;
 
   /**
-   * Spread `total` evenly from the first retirement year. Years before it are
-   * manual only: they keep whatever the user typed and count toward the total.
+   * Spread `total` evenly from the strategy's first year. Years before it are
+   * manual only: they keep what the user typed, which counts toward the total.
    */
-  const first = Math.min(strategyStartIndex(household), years);
   const spreadFromRetirement = (total: number, cap: number) => {
-    const typed = schedule.slice(0, first);
-    const typedTotal = typed.reduce((sum, v) => sum + v, 0);
     return [
-      ...typed,
+      ...new Array<number>(first).fill(0),
       ...spreadConversionEvenly(
         Math.max(0, total - typedTotal),
         years - first,
@@ -110,7 +130,8 @@ export function ConversionStep() {
 
   /** Edit a single year; becomes a custom (manual) schedule. */
   const setYear = (index: number, value: number) => {
-    const next = [...schedule];
+    // Typed years before the strategy live in `earlyConversions`.
+    const next = schedule.map((v, i) => (i < first ? 0 : v));
     if (allowOverConvertible) {
       next[index] = roundCents(Math.max(0, value));
     } else {
@@ -276,12 +297,13 @@ export function ConversionStep() {
           ))}
           {earlyYears.length > 0 ? (
             <p className="m-0 max-w-[260px] text-[11px] leading-tight text-muted">
-              {early
-                ? `Before the plan starts in ${start}: adds about ${formatCurrency(earlyTax, true)} of tax. The years from ${start} stay as they are.`
-                : `Optional, before the plan starts in ${start}. The years from ${start} stay as they are.`}
+              {`Before ${strategyYear}: only what you enter here converts. If it adds up to more than can be converted, the strategy converts less, starting from its last years.`}
+              {early && start > currentYear
+                ? ` Years before ${start} add about ${formatCurrency(earlyTax, true)} of tax.`
+                : ""}
             </p>
           ) : null}
-          {schedule.map((amount, i) => (
+          {schedule.map((amount, i) => (i < first ? null : (
             <div key={i} className="flex items-center gap-3">
               <label
                 htmlFor={`conversion-year-${start + i}`}
@@ -300,7 +322,7 @@ export function ConversionStep() {
                 />
               </div>
             </div>
-          ))}
+          )))}
         </div>
 
         <div className="flex items-baseline justify-between border-t border-[color-mix(in_srgb,var(--accent)_20%,#fff)] pt-2">

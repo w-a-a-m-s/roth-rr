@@ -6,7 +6,7 @@ import {
 import {
   projectionStartYear,
   projectionYears,
-  retirementStartYear,
+  strategyStartYear,
 } from "@/lib/engine/project";
 
 export { conversionYears, convertibleTotal };
@@ -53,9 +53,9 @@ export function hasManualConversionSchedule(household: Household): boolean {
  */
 export function strategyStartIndex(household: Household): number {
   const start = projectionStartYear(household);
-  const retirement = retirementStartYear(household);
-  if (!Number.isFinite(start) || !Number.isFinite(retirement)) return 0;
-  return Math.max(0, retirement - start);
+  const first = strategyStartYear(household);
+  if (!Number.isFinite(start) || !Number.isFinite(first)) return 0;
+  return Math.max(0, first - start);
 }
 
 /**

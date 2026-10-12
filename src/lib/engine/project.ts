@@ -141,6 +141,15 @@ export function projectionStartYear(household: Household): number {
 }
 
 /**
+ * First calendar year a conversion strategy may fill: the projection start or
+ * the first retirement year, whichever is later. Years before it are manual
+ * only (amounts the user typed).
+ */
+export function strategyStartYear(household: Household): number {
+  return Math.max(projectionStartYear(household), retirementStartYear(household));
+}
+
+/**
  * The "main" person, who drives the projection horizon and the RMD-age
  * snapshot. An explicit `household.mainPersonId` wins; otherwise we fall back to
  * the person who retires first (ties broken by list order).

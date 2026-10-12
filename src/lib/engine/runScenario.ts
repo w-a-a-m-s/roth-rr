@@ -12,6 +12,7 @@ import {
   projectionStartYear,
   projectScenario,
   scenarioStartYear,
+  strategyStartYear,
 } from "@/lib/engine/project";
 import { depositPrincipalThrough } from "@/lib/engine/deposits";
 import { progressiveTax } from "@/lib/engine/tax";
@@ -222,25 +223,38 @@ export function runScenario(
 }
 
 /**
- * The plan's early conversions that still apply: positive amounts in years
- * before the projection starts, and not already past (balances are entered
- * today, so a conversion in an earlier year is already in them).
+ * Conversions the user typed for the years before the strategy's first year
+ * (see `strategyStartYear`): positive amounts, not already past (balances
+ * are entered today, so a conversion in an earlier year is already in them).
+ */
+export function typedEarlyConversions(
+  household: Household,
+  asOfDate?: string,
+): EarlyConversion[] {
+  const end = strategyStartYear(household);
+  const today = asOfDate ? Number(asOfDate.slice(0, 4)) : NaN;
+  const typed: EarlyConversion[] = [];
+  for (const conversion of household.optimizer?.earlyConversions ?? []) {
+    const { year, amount } = conversion;
+    if (!Number.isFinite(year) || !Number.isFinite(amount) || amount <= 0) continue;
+    if (!(year < end)) continue;
+    if (Number.isFinite(today) && year < today) continue;
+    typed.push({ year, amount });
+  }
+  return typed;
+}
+
+/**
+ * The typed early conversions in years before the projection starts. The
+ * Roth run reaches back to convert them (years from the start on are in the
+ * conversion schedule instead).
  */
 export function activeEarlyConversions(
   household: Household,
   asOfDate?: string,
 ): EarlyConversion[] {
   const start = projectionStartYear(household);
-  const today = asOfDate ? Number(asOfDate.slice(0, 4)) : NaN;
-  const active: EarlyConversion[] = [];
-  for (const conversion of household.optimizer?.earlyConversions ?? []) {
-    const { year, amount } = conversion;
-    if (!Number.isFinite(year) || !Number.isFinite(amount) || amount <= 0) continue;
-    if (!(year < start)) continue;
-    if (Number.isFinite(today) && year < today) continue;
-    active.push({ year, amount });
-  }
-  return active;
+  return typedEarlyConversions(household, asOfDate).filter((c) => c.year < start);
 }
 
 function sumTaxes(rows: ProjectionRow[], beforeYear: number) {

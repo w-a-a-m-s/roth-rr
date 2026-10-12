@@ -405,7 +405,10 @@ export function PlanDetails() {
               : STRATEGY_LABELS[opt.strategy]
           }
         />
-        {(opt.earlyConversions ?? []).map((c) => (
+        {(opt.earlyConversions ?? [])
+          // Years from the plan start on show in the schedule below.
+          .filter((c) => c.year < projectionStartYear(household))
+          .map((c) => (
           <Row
             key={c.year}
             label={`Conversion in ${c.year} (before the plan starts)`}
