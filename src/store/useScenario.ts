@@ -406,6 +406,20 @@ export function migrateHousehold(household: Household): Household {
     if (paidFrom != null && paidFrom !== "income" && paidFrom !== "assets") {
       delete legacy.optimizer.conversionTaxPaidFrom;
     }
+    // The one-time conversion is optional: drop it unless it's a year and a
+    // positive amount.
+    const oneTime = legacy.optimizer.oneTimeConversion;
+    if (
+      oneTime != null &&
+      !(
+        typeof oneTime === "object" &&
+        Number.isFinite(oneTime.year) &&
+        Number.isFinite(oneTime.amount) &&
+        oneTime.amount > 0
+      )
+    ) {
+      delete legacy.optimizer.oneTimeConversion;
+    }
   }
 
   return legacy;

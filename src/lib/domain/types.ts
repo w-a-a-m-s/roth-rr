@@ -419,9 +419,22 @@ export interface OptimizerConfig {
    * from the converted dollars, so less lands in the Roth.
    */
   conversionTaxPaidFrom?: ConversionTaxPaidFrom;
+  /**
+   * One extra conversion in a year before the projection starts (today, while
+   * still working). It sits on top of the strategy: every strategy and its
+   * schedule stay exactly as they are, and only the Roth scenario carries it.
+   * Ignored once its year is past or the projection already covers it.
+   */
+  oneTimeConversion?: OneTimeConversion;
 }
 
 export type ConversionTaxPaidFrom = "income" | "assets";
+
+/** A single Roth conversion of `amount` dollars in calendar `year`. */
+export interface OneTimeConversion {
+  year: number;
+  amount: number;
+}
 
 /**
  * A named, self-contained plan. The whole object is one JSON blob - the unit we

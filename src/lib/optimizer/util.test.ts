@@ -5,7 +5,6 @@ import {
   defaultConversionSchedule,
   hasManualConversionSchedule,
   roundCents,
-  setScheduleYearCapped,
   spreadConversionEvenly,
 } from "@/lib/optimizer/util";
 import { manualSchedule } from "@/lib/optimizer/strategies/manual";
@@ -128,33 +127,5 @@ describe("default conversion when amount is unset", () => {
     const h = householdWithConvertible(100_000);
     h.optimizer.manualSchedule = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     expect(manualSchedule(h).slice(0, 9)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
-  });
-});
-
-describe("setScheduleYearCapped", () => {
-  it("sets the year when the total stays under the cap", () => {
-    expect(setScheduleYearCapped([0, 50_000, 50_000], 0, 40_000, 200_000)).toEqual([
-      40_000, 50_000, 50_000,
-    ]);
-  });
-
-  it("keeps the typed year and trims later years when the schedule is already over the cap", () => {
-    // A fill-bracket schedule can total more than the convertible amount.
-    // Typing into the first year must not snap it back to 0.
-    const next = setScheduleYearCapped([0, 300_000, 300_000], 0, 100_000, 500_000);
-    expect(next).toEqual([100_000, 300_000, 100_000]);
-    expect(next.reduce((sum, v) => sum + v, 0)).toBe(500_000);
-  });
-
-  it("trims earlier years only after every later year is used up", () => {
-    expect(setScheduleYearCapped([200_000, 100_000, 0], 1, 250_000, 300_000)).toEqual([
-      50_000, 250_000, 0,
-    ]);
-  });
-
-  it("caps the typed year at the convertible total", () => {
-    expect(setScheduleYearCapped([10_000, 10_000], 0, 900_000, 100_000)).toEqual([
-      100_000, 0,
-    ]);
   });
 });

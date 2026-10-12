@@ -2028,3 +2028,71 @@ describe("property loans: mortgage and line of credit", () => {
     expect(projectScenario(legacy, [])).toEqual(projectScenario(plan([mtg]), []));
   });
 });
+
+describe("one-time conversion before the plan starts", () => {
+  const refs = FALLBACK_REFERENCE_DATA;
+  const base: Household = {
+    ...SAMPLE_HOUSEHOLD,
+    optimizer: { ...SAMPLE_HOUSEHOLD.optimizer, strategy: "manual", manualSchedule: [] },
+  };
+  const start = projectionStartYear(base);
+  const year = start - 2;
+  const withOneTime: Household = {
+    ...base,
+    optimizer: { ...base.optimizer, oneTimeConversion: { year, amount: 50_000 } },
+  };
+
+  it("leaves the baseline, the start year and the strategy schedule alone", () => {
+    const before = calculate(base, refs);
+    const after = calculate(withOneTime, refs);
+    expect(after.baseline.totals).toEqual(before.baseline.totals);
+    expect(after.roth.rows[0].calendarYear).toBe(start);
+    expect(after.roth.rows).toHaveLength(before.roth.rows.length);
+    expect(after.roth.conversionSchedule).toEqual(before.roth.conversionSchedule);
+  });
+
+  it("converts in its own year and adds only that conversion's tax", () => {
+    const fromYear = { fromYear: year };
+    const without = projectScenario(base, [], refs, fromYear)[0];
+    const withIt = projectScenario(base, [], refs, {
+      ...fromYear,
+      oneTimeConversion: { year, amount: 50_000 },
+    })[0];
+    expect(withIt.calendarYear).toBe(year);
+    expect(withIt.conversion).toBe(50_000);
+    const federalTax = withIt.federalAnnualTax - without.federalAnnualTax;
+    const stateTax = withIt.stateAnnualTax - without.stateAnnualTax;
+    expect(federalTax).toBeGreaterThan(0);
+
+    const plain = runScenario(base, [], "plain", refs);
+    const after = calculate(withOneTime, refs);
+    const oneTime = after.roth.oneTimeConversion!;
+    expect(oneTime.year).toBe(year);
+    expect(oneTime.converted).toBe(50_000);
+    expect(oneTime.federalTax).toBeCloseTo(federalTax, 6);
+    expect(oneTime.stateTax).toBeCloseTo(stateTax, 6);
+    // Lifetime taxes: the rows shown (from the plan start) plus the
+    // conversion year's extra tax.
+    const shownTax = after.roth.rows.reduce((sum, r) => sum + r.annualTax, 0);
+    expect(after.roth.totals.taxesTotal).toBeCloseTo(
+      shownTax + federalTax + stateTax,
+      6,
+    );
+    // Moved from tax-deferred into the Roth before the plan starts.
+    expect(after.roth.rows[0].retirementTotal).toBeLessThan(plain.rows[0].retirementTotal);
+    expect(after.roth.rows[0].rothTotal).toBeGreaterThan(plain.rows[0].rothTotal);
+  });
+
+  it("is ignored in or after the plan start, or once its year is past", () => {
+    const plain = calculate(base, refs);
+    const atStart: Household = {
+      ...base,
+      optimizer: { ...base.optimizer, oneTimeConversion: { year: start, amount: 50_000 } },
+    };
+    expect(calculate(atStart, refs).roth.totals).toEqual(plain.roth.totals);
+    const pastRefs = { ...refs, asOfDate: `${year + 1}-03-01` };
+    expect(calculate(withOneTime, pastRefs).roth.totals).toEqual(
+      calculate(base, pastRefs).roth.totals,
+    );
+  });
+});

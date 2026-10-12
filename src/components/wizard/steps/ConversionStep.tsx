@@ -4,17 +4,17 @@ import { useMemo, useRef } from "react";
 import { useHousehold, useScenario } from "@/store/useScenario";
 import { useExternalData } from "@/store/useExternalData";
 import { Field } from "@/components/ui/Field";
-import { MoneyInput, YearSelect } from "@/components/ui/inputs";
+import { MoneyInput } from "@/components/ui/inputs";
 import { StepTour } from "@/components/onboarding/StepTour";
 import { ConversionEmptyNotice } from "@/components/wizard/steps/ConversionEmptyNotice";
 import { isConversionEmpty } from "@/lib/engine/conversionEmpty";
-import { projectionStartYear, retirementStartYear } from "@/lib/engine/project";
+import { projectionStartYear } from "@/lib/engine/project";
+import { runRothScenario } from "@/lib/engine/runScenario";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import {
   conversionYears,
   convertibleTotal,
   roundCents,
-  setScheduleYearCapped,
   spreadConversionEvenly,
 } from "@/lib/optimizer/util";
 import { formatCurrency } from "@/lib/format";
@@ -23,15 +23,19 @@ import { findPlanModalPrimaryAction } from "@/lib/onboarding/householdTour";
 
 export function ConversionStep() {
   const household = useHousehold();
-  const { setOptimizer, setProjectionStart } = useScenario();
+  const { setOptimizer } = useScenario();
   const refs = useExternalData((s) => s.refs);
 
   const years = conversionYears(household);
   const start = projectionStartYear(household);
-  const retirementStart = retirementStartYear(household);
-  const currentYear = new Date().getFullYear();
   const convertible = convertibleTotal(household, refs.asOfDate);
   const allowOverConvertible = household.optimizer.allowOverConvertible === true;
+  // One extra conversion this year, before the projection starts. It sits on
+  // top of the strategy and leaves the per-year schedule below untouched.
+  const currentYear = new Date().getFullYear();
+  const showOneTime = currentYear < start;
+  const oneTime = household.optimizer.oneTimeConversion;
+  const oneTimeAmount = oneTime?.year === currentYear ? oneTime.amount : 0;
 
   const totalConvertibleRef = useRef<HTMLDivElement>(null);
   const amountToConvertRef = useRef<HTMLDivElement>(null);
@@ -44,6 +48,12 @@ export function ConversionStep() {
     return Array.from({ length: years }, (_, i) => full[i] ?? 0);
   }, [household, refs, years]);
 
+  const oneTimeResult = useMemo(() => {
+    if (!showOneTime || oneTimeAmount <= 0) return undefined;
+    return runRothScenario(household, [], "One-time conversion", refs)
+      .oneTimeConversion;
+  }, [household, refs, showOneTime, oneTimeAmount]);
+
   if (isConversionEmpty(household)) {
     // Tour stays unseen until they return with a convertible amount.
     return <ConversionEmptyNotice household={household} />;
@@ -52,6 +62,23 @@ export function ConversionStep() {
   const scheduledTotal = schedule.reduce((sum, v) => sum + v, 0);
   const remaining = convertible - scheduledTotal;
   const overConvertible = scheduledTotal > convertible + 0.5;
+
+  const setOneTimeAmount = (value: number) => {
+    const amount = roundCents(Math.max(0, value));
+    setOptimizer({
+      oneTimeConversion: amount > 0 ? { year: currentYear, amount } : undefined,
+    });
+  };
+
+  const oneTimeTax = oneTimeResult
+    ? oneTimeResult.federalTax + oneTimeResult.stateTax
+    : 0;
+  const oneTimeHint =
+    oneTimeResult == null
+      ? `Converted in ${currentYear}, before the plan starts in ${start}. The schedule below doesn't change.`
+      : oneTimeResult.converted + 0.005 < oneTimeAmount
+        ? `Only ${formatCurrency(oneTimeResult.converted, true)} can be converted in ${currentYear}. Adds about ${formatCurrency(oneTimeTax, true)} of tax.`
+        : `Adds about ${formatCurrency(oneTimeTax, true)} of tax in ${currentYear}. The schedule below doesn't change.`;
 
   /** Spread this total across the conversion years as a manual schedule. */
   const spreadEvenly = (total: number) => {
@@ -66,17 +93,15 @@ export function ConversionStep() {
 
   /** Edit a single year; becomes a custom (manual) schedule. */
   const setYear = (index: number, value: number) => {
+    const next = [...schedule];
     if (allowOverConvertible) {
-      const next = [...schedule];
       next[index] = roundCents(Math.max(0, value));
-      setOptimizer({ strategy: "manual", manualSchedule: next });
-      return;
+    } else {
+      const others = scheduledTotal - next[index];
+      const headroom = Math.max(0, convertible - others);
+      next[index] = roundCents(Math.min(Math.max(0, value), headroom));
     }
-    // The typed year wins; other years are trimmed to stay under the cap.
-    setOptimizer({
-      strategy: "manual",
-      manualSchedule: setScheduleYearCapped(schedule, index, value, convertible),
-    });
+    setOptimizer({ strategy: "manual", manualSchedule: next });
   };
 
   const setAllowOverConvertible = (allow: boolean) => {
@@ -111,42 +136,24 @@ export function ConversionStep() {
         }}
       />
 
-      <Field
-        label="Conversions start"
-        help="The first year a conversion can happen. Pick this year to convert from today, before retirement. This is the same setting as Projection starts on the Household step, so the whole projection starts in this year too."
-        hint={
-          household.assumptions.startYear != null
-            ? Number.isFinite(retirementStart)
-              ? `Retirement year is ${retirementStart}. Clear to use it.`
-              : undefined
-            : "Retirement year (default)"
-        }
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-[140px] shrink-0">
-            <YearSelect
-              id="conversion-start-year"
-              value={household.assumptions.startYear}
-              allowEmpty
-              from={currentYear}
-              to={2100}
-              placeholder={
-                Number.isFinite(retirementStart) ? String(retirementStart) : "Year"
-              }
-              onChange={(year) => setProjectionStart(year)}
+      {showOneTime ? (
+        <Field
+          label={`One-time conversion in ${currentYear}`}
+          help={`An extra Roth conversion this year, before the plan starts in ${start}. It's added on top of the conversion strategy, which stays as it is. Its tax is counted in ${currentYear} and included in lifetime taxes.`}
+          hint={oneTimeHint}
+        >
+          <div className="w-[180px]">
+            <MoneyInput
+              id="one-time-conversion"
+              value={oneTimeAmount || undefined}
+              placeholder="0.00"
+              step={0.01}
+              decimals={2}
+              onChange={setOneTimeAmount}
             />
           </div>
-          {start !== currentYear ? (
-            <button
-              type="button"
-              onClick={() => setProjectionStart(currentYear)}
-              className="cursor-pointer border-0 bg-transparent p-0 text-xs font-bold text-accent"
-            >
-              Convert from today ({currentYear})
-            </button>
-          ) : null}
-        </div>
-      </Field>
+        </Field>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div ref={amountToConvertRef}>

@@ -431,6 +431,30 @@ describe("migrateHousehold: conversionTaxPaidFrom", () => {
   });
 });
 
+describe("migrateHousehold: oneTimeConversion", () => {
+  it("leaves it unset on plans that never had it", () => {
+    const out = migrateHousehold(household([], []));
+    expect(out.optimizer).not.toHaveProperty("oneTimeConversion");
+  });
+
+  it("keeps a saved one-time conversion", () => {
+    const h = household([], []);
+    h.optimizer.oneTimeConversion = { year: 2026, amount: 50_000 };
+    expect(migrateHousehold(h).optimizer.oneTimeConversion).toEqual({
+      year: 2026,
+      amount: 50_000,
+    });
+  });
+
+  it("drops one without a year or a positive amount", () => {
+    for (const bad of [{ year: 2026, amount: 0 }, { amount: 5 }, "x"]) {
+      const h = household([], []);
+      (h.optimizer as { oneTimeConversion?: unknown }).oneTimeConversion = bad;
+      expect(migrateHousehold(h).optimizer).not.toHaveProperty("oneTimeConversion");
+    }
+  });
+});
+
 describe("migrateHousehold: conversion strategy", () => {
   it("defaults a missing optimizer to manual", () => {
     const h = household([], []);
