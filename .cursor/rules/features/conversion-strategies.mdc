@@ -53,6 +53,19 @@ the results tabs (`ConversionTaxToggle` in `ResultsView.tsx`).
   inheritance than `income` for the same schedule.
 - Rental passive-loss figures aren't re-priced for the no-conversion pass.
 
+## Years before retirement are manual only (user rule)
+
+No strategy converts before the first retirement year
+(`retirementStartYear`), even when the projection starts earlier
+("Projection starts" on the Household step). `strategyStartIndex` in
+`optimizer/util.ts` is that year's index. Every strategy leaves the years
+before it at 0 (depleteByRmd still grows and draws there), minTax never
+searches them, the default even split and Spread evenly start at it, and
+`buildConversionSchedule` clears them for any strategy but manual as a final
+guard. Only amounts the user typed (a manual schedule, or the early
+conversion rows) convert there. Tests: "years before retirement are manual
+only" in `strategies.test.ts`.
+
 ## Conversions before the plan starts (early conversions)
 
 `optimizer.earlyConversions` (`{ year, amount }[]`, optional, one per year)

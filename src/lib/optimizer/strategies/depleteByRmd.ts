@@ -12,7 +12,11 @@ import {
 import {
   projectionStartYear,
 } from "@/lib/engine/project";
-import { padToProjection, roundCents } from "@/lib/optimizer/util";
+import {
+  padToProjection,
+  roundCents,
+  strategyStartIndex,
+} from "@/lib/optimizer/util";
 
 function growthRate(account: Account): number {
   return Number.isFinite(account.growthRate)
@@ -54,6 +58,9 @@ export function depleteByRmdSchedule(
   }
 
   const window: number[] = [];
+  // Years before retirement are manual only: balances still grow and pay
+  // draws there, but nothing converts.
+  const first = strategyStartIndex(household);
 
   for (let i = 0; i < years; i++) {
     const calendarYear = start + i;
@@ -81,7 +88,7 @@ export function depleteByRmdSchedule(
     }
 
     const yearsLeft = years - i;
-    let toConvert = yearsLeft > 0 ? available / yearsLeft : 0;
+    let toConvert = i >= first && yearsLeft > 0 ? available / yearsLeft : 0;
     let converted = 0;
     for (const acc of retirementAccounts) {
       if (toConvert <= 0) break;

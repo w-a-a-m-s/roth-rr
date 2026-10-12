@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Household } from "@/lib/domain/types";
+import { buildConversionSchedule } from "@/lib/optimizer";
 import { FALLBACK_FEDERAL_TAX } from "@/lib/config/federalTax";
 import { FALLBACK_MEDICARE_PART_B } from "@/lib/config/medicare";
 import { forFiling } from "@/lib/config/filingStatus";
@@ -179,5 +180,57 @@ describe("depleteByRmdSchedule", () => {
     const years = conversionYears(h);
     expect(schedule[0]).toBe(roundCents((100_000 * 1.05) / years));
     expect(schedule.slice(0, years).every((v) => v > 0)).toBe(true);
+  });
+});
+
+describe("years before retirement are manual only", () => {
+  // Projection starts two years before the only person retires.
+  const early: Household = {
+    filingStatus: "single",
+    residenceState: "FL",
+    people: [{ id: "p", name: "P", birthYear: 1968, retirementYear: 2030 }],
+    accounts: [
+      { id: "ira", label: "IRA", ownerId: "p", kind: "retirementTaxable", balance: 800_000, growthRate: 0.05 },
+      { id: "roth", label: "Roth", ownerId: "p", kind: "rothTaxFree", balance: 0, growthRate: 0.05 },
+    ],
+    incomes: [
+      { id: "sal", label: "Salary", ownerId: "p", kind: "salary", monthlyAmount: 6000, growthRate: 0, taxability: "full", endYear: 2029 },
+    ],
+    realEstate: [],
+    expenses: [],
+    assumptions: { expenseGrowth: 0.02, finalAge: 90, startYear: 2028 },
+    optimizer: { strategy: "even" },
+  } as Household;
+
+  it("no strategy converts before the first retirement year", () => {
+    const strategies = [
+      "even",
+      "immediate",
+      "fillBracket",
+      "irmaa",
+      "depleteByRmd",
+      "minTax",
+    ] as const;
+    for (const strategy of strategies) {
+      const h = { ...early, optimizer: { strategy, targetBracketRate: 0.24 as const } };
+      const schedule = buildConversionSchedule(h);
+      expect(schedule.slice(0, 2), strategy).toEqual([0, 0]);
+      expect(schedule.slice(2).some((v) => v > 0), strategy).toBe(true);
+    }
+  });
+
+  it("the default even split starts at retirement", () => {
+    const h: Household = { ...early, optimizer: { strategy: "manual" } };
+    const schedule = buildConversionSchedule(h);
+    expect(schedule.slice(0, 2)).toEqual([0, 0]);
+    expect(schedule[2]).toBeGreaterThan(0);
+  });
+
+  it("a manual schedule keeps what the user typed before retirement", () => {
+    const h: Household = {
+      ...early,
+      optimizer: { strategy: "manual", manualSchedule: [10_000, 20_000, 30_000] },
+    };
+    expect(buildConversionSchedule(h).slice(0, 3)).toEqual([10_000, 20_000, 30_000]);
   });
 });

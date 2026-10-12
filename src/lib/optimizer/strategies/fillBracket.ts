@@ -5,7 +5,11 @@ import { conversionYears } from "@/lib/engine/convertible";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import type { ReferenceData } from "@/lib/externalData/types";
 import { resolveBracketRate } from "@/lib/optimizer/labels";
-import { padToProjection, roundCents } from "@/lib/optimizer/util";
+import {
+  padToProjection,
+  roundCents,
+  strategyStartIndex,
+} from "@/lib/optimizer/util";
 
 /**
  * Taxable-income ceiling that stays inside `rate`: the next bracket's floor.
@@ -39,8 +43,10 @@ export function fillBracketSchedule(
   const rate = resolveBracketRate(household.optimizer.targetBracketRate);
   const ceiling = bracketFillCeiling(brackets, rate);
   const years = conversionYears(household);
+  const first = strategyStartIndex(household);
 
-  const window = rows.slice(0, years).map((row) => {
+  const window = rows.slice(0, years).map((row, i) => {
+    if (i < first) return 0;
     if (!Number.isFinite(ceiling)) return 0;
     // Stay strictly below the next bracket's inclusive floor.
     const room = ceiling - row.taxableIncome - 0.01;

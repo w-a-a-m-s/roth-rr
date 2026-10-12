@@ -16,6 +16,7 @@ import {
   convertibleTotal,
   roundCents,
   spreadConversionEvenly,
+  strategyStartIndex,
 } from "@/lib/optimizer/util";
 import { formatCurrency } from "@/lib/format";
 import { CONVERSION_TOUR_STEPS } from "@/lib/onboarding/conversionTour";
@@ -78,6 +79,24 @@ export function ConversionStep() {
   };
   const earlyTax = early ? early.federalTax + early.stateTax : 0;
 
+  /**
+   * Spread `total` evenly from the first retirement year. Years before it are
+   * manual only: they keep whatever the user typed and count toward the total.
+   */
+  const first = Math.min(strategyStartIndex(household), years);
+  const spreadFromRetirement = (total: number, cap: number) => {
+    const typed = schedule.slice(0, first);
+    const typedTotal = typed.reduce((sum, v) => sum + v, 0);
+    return [
+      ...typed,
+      ...spreadConversionEvenly(
+        Math.max(0, total - typedTotal),
+        years - first,
+        Math.max(0, cap - typedTotal),
+      ),
+    ];
+  };
+
   /** Spread this total across the conversion years as a manual schedule. */
   const spreadEvenly = (total: number) => {
     const amount = Math.max(0, total);
@@ -85,7 +104,7 @@ export function ConversionStep() {
     setOptimizer({
       strategy: "manual",
       convertAmount: undefined,
-      manualSchedule: spreadConversionEvenly(amount, years, cap),
+      manualSchedule: spreadFromRetirement(amount, cap),
     });
   };
 
@@ -108,9 +127,8 @@ export function ConversionStep() {
         allowOverConvertible: false,
         strategy: "manual",
         convertAmount: undefined,
-        manualSchedule: spreadConversionEvenly(
+        manualSchedule: spreadFromRetirement(
           Math.min(scheduledTotal, convertible),
-          years,
           convertible,
         ),
       });

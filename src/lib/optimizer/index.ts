@@ -9,6 +9,7 @@ import { depleteByRmdSchedule } from "@/lib/optimizer/strategies/depleteByRmd";
 import { manualSchedule } from "@/lib/optimizer/strategies/manual";
 import { minTaxSchedule } from "@/lib/optimizer/strategies/minTax";
 import { capConversionsToShortfall } from "@/lib/optimizer/shortfall";
+import { clearBeforeRetirement } from "@/lib/optimizer/util";
 
 /**
  * Resolve the household's optimizer config into a concrete per-year conversion
@@ -21,7 +22,13 @@ export function buildConversionSchedule(
   household: Household,
   refs: ReferenceData = FALLBACK_REFERENCE_DATA,
 ): number[] {
-  const schedule = strategySchedule(household, refs);
+  // Years before the first retirement year are manual only: a strategy never
+  // converts there, only amounts the user typed into a manual schedule.
+  const raw = strategySchedule(household, refs);
+  const schedule =
+    household.optimizer.strategy === "manual"
+      ? raw
+      : clearBeforeRetirement(household, raw);
   const limit = household.optimizer.maxMonthlyShortfall;
   if (limit == null) return schedule;
   return capConversionsToShortfall(household, schedule, limit, refs);

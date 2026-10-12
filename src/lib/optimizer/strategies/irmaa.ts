@@ -9,6 +9,7 @@ import {
   conversionTarget,
   padToProjection,
   roundCents,
+  strategyStartIndex,
 } from "@/lib/optimizer/util";
 
 /**
@@ -49,7 +50,10 @@ export function irmaaSchedule(
   const years = conversionYears(household);
   const uncapped = conversionTarget(household, refs.asOfDate);
 
-  const window = rows.slice(0, years).map((row) => {
+  const first = strategyStartIndex(household);
+
+  const window = rows.slice(0, years).map((row, i) => {
+    if (i < first) return 0;
     const magi = row.grossTaxableIncome + row.capitalGainsIncome;
     const room = irmaaHeadroom(magi, tiers);
     if (!Number.isFinite(room)) return uncapped;

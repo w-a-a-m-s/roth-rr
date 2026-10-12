@@ -3,7 +3,11 @@ import {
   conversionYears,
   convertibleTotal,
 } from "@/lib/engine/convertible";
-import { projectionYears } from "@/lib/engine/project";
+import {
+  projectionStartYear,
+  projectionYears,
+  retirementStartYear,
+} from "@/lib/engine/project";
 
 export { conversionYears, convertibleTotal };
 
@@ -43,16 +47,45 @@ export function hasManualConversionSchedule(household: Household): boolean {
 }
 
 /**
+ * Index of the first projection year a strategy may convert in: the first
+ * retirement year. Years before it (a projection that starts before
+ * retirement) are manual only: no strategy, default or even spread fills them.
+ */
+export function strategyStartIndex(household: Household): number {
+  const start = projectionStartYear(household);
+  const retirement = retirementStartYear(household);
+  if (!Number.isFinite(start) || !Number.isFinite(retirement)) return 0;
+  return Math.max(0, retirement - start);
+}
+
+/**
+ * Spread `total` evenly across the conversion years from the first
+ * retirement year, with zeros in front for the years before it.
+ */
+export function spreadFromRetirement(
+  household: Household,
+  total: number,
+  cap: number,
+): number[] {
+  const years = conversionYears(household);
+  const first = Math.min(strategyStartIndex(household), years);
+  return [
+    ...new Array<number>(first).fill(0),
+    ...spreadConversionEvenly(total, years - first, cap),
+  ];
+}
+
+/**
  * Per-year conversion amounts for the conversion window. When the user has not
- * entered a schedule, defaults to the full convertible total spread evenly.
+ * entered a schedule, defaults to the full convertible total spread evenly
+ * from the first retirement year.
  */
 export function defaultConversionSchedule(
   household: Household,
   asOfDate?: string,
 ): number[] {
-  const years = conversionYears(household);
   const convertible = convertibleTotal(household, asOfDate);
-  return spreadConversionEvenly(convertible, years, convertible);
+  return spreadFromRetirement(household, convertible, convertible);
 }
 
 /**
@@ -82,4 +115,13 @@ export function padToProjection(
   return Array.from({ length: n }, (_, i) =>
     Math.max(0, windowAmounts[i] ?? 0),
   );
+}
+
+/** Zero every year before the first retirement year (manual-only years). */
+export function clearBeforeRetirement(
+  household: Household,
+  schedule: number[],
+): number[] {
+  const first = strategyStartIndex(household);
+  return schedule.map((amount, i) => (i < first ? 0 : amount));
 }

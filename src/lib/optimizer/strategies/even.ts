@@ -1,24 +1,25 @@
 import type { Household } from "@/lib/domain/types";
 import {
   conversionTarget,
-  conversionYears,
   convertibleTotal,
   padToProjection,
-  spreadConversionEvenly,
+  spreadFromRetirement,
 } from "@/lib/optimizer/util";
 
-/** Spread the conversion target evenly across the pre-RMD window. */
+/**
+ * Spread the conversion target evenly across the pre-RMD window, from the
+ * first retirement year.
+ */
 export function evenSchedule(
   household: Household,
   asOfDate?: string,
 ): number[] {
-  const years = conversionYears(household);
   const target = conversionTarget(household, asOfDate);
   const convertible = convertibleTotal(household, asOfDate);
   const cap =
     household.optimizer.allowOverConvertible === true ? target : convertible;
   return padToProjection(
     household,
-    spreadConversionEvenly(target, years, cap),
+    spreadFromRetirement(household, target, cap),
   );
 }

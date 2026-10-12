@@ -9,7 +9,7 @@ import { evenSchedule } from "@/lib/optimizer/strategies/even";
 import { fillBracketSchedule } from "@/lib/optimizer/strategies/fillBracket";
 import { immediateSchedule } from "@/lib/optimizer/strategies/immediate";
 import { irmaaSchedule } from "@/lib/optimizer/strategies/irmaa";
-import { padToProjection } from "@/lib/optimizer/util";
+import { padToProjection, strategyStartIndex } from "@/lib/optimizer/util";
 
 /** Smallest step the year-by-year search tries, in dollars. */
 const MIN_STEP = 500;
@@ -99,7 +99,8 @@ function searchMinTax(household: Household, refs: ReferenceData): number[] {
   while (step >= MIN_STEP) {
     for (let pass = 0; pass < MAX_PASSES; pass++) {
       let improved = false;
-      for (let i = 0; i < years; i++) {
+      // Years before retirement are manual only: never search them.
+      for (let i = strategyStartIndex(household); i < years; i++) {
         for (const delta of [step, -step]) {
           const amount = Math.max(0, Math.round(best[i] + delta));
           if (amount === best[i]) continue;
