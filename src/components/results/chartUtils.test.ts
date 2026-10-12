@@ -3,6 +3,8 @@ import {
   chartTooltipProps,
   formatAxisCurrency,
   formatSignedAxisCurrency,
+  surplusLabel,
+  tooltipCurrencyFormatter,
 } from "./chartUtils";
 
 describe("formatSignedAxisCurrency", () => {
@@ -30,5 +32,26 @@ describe("chartTooltipProps", () => {
     const props = chartTooltipProps(10, { idleLastPoint: false });
     expect(props).not.toHaveProperty("defaultIndex");
     expect(props).not.toHaveProperty("active");
+  });
+});
+
+describe("surplusLabel", () => {
+  it("says Surplus when no year is negative", () => {
+    expect(surplusLabel([0, 120, 5])).toBe("Surplus");
+    expect(surplusLabel([])).toBe("Surplus");
+  });
+
+  it("says Shortfall when every year is negative", () => {
+    expect(surplusLabel([-1, -500])).toBe("Shortfall");
+  });
+
+  it("says both when the years are mixed", () => {
+    expect(surplusLabel([200, -50])).toBe("Surplus / shortfall");
+  });
+
+  it("names a tooltip point by its own sign", () => {
+    expect(tooltipCurrencyFormatter(-1200, "Surplus / shortfall")[1]).toBe("Shortfall");
+    expect(tooltipCurrencyFormatter(300, "Surplus / shortfall")[1]).toBe("Surplus");
+    expect(tooltipCurrencyFormatter(300, "Net income")[1]).toBe("Net income");
   });
 });

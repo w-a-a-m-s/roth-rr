@@ -26,13 +26,30 @@ export function formatSignedAxisCurrency(value: number): string {
 }
 
 /** Recharts Tooltip formatter: currency value + series name. */
+const SURPLUS_LABELS = new Set(["Surplus", "Shortfall", "Surplus / shortfall"]);
+
+/**
+ * Label for a surplus line: "Surplus" when every value is zero or more,
+ * "Shortfall" when every value is negative, otherwise both.
+ */
+export function surplusLabel(values: readonly number[]): string {
+  if (values.length > 0 && values.every((v) => v < 0)) return "Shortfall";
+  if (values.some((v) => v < 0)) return "Surplus / shortfall";
+  return "Surplus";
+}
+
 export function tooltipCurrencyFormatter(
   value: number | string | ReadonlyArray<number | string> | undefined,
   name: number | string | undefined,
 ): [string, string] {
   const raw = Array.isArray(value) ? value[0] : value;
   const n = typeof raw === "number" ? raw : Number(raw);
-  return [formatCurrency(Number.isFinite(n) ? n : 0), String(name ?? "")];
+  const amount = Number.isFinite(n) ? n : 0;
+  // A surplus point names itself by its own sign.
+  const label = SURPLUS_LABELS.has(String(name))
+    ? surplusLabel([amount])
+    : String(name ?? "");
+  return [formatCurrency(amount), label];
 }
 
 export function totalAssets(row: ProjectionRow): number {

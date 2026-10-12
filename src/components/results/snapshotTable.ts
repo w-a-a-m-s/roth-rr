@@ -8,6 +8,7 @@ import {
   lifeProceedsLabel,
   insuranceKeyKind,
 } from "@/components/results/incomeLabels";
+import { surplusLabel } from "@/components/results/chartUtils";
 
 /** How many years the snapshot shows, like the deck's slide. */
 export const SNAPSHOT_YEARS = 6;
@@ -316,10 +317,11 @@ export function buildSnapshotTable(
       tone: "plain",
     });
   }
+  const surplusValues = pick((r) => r.surplus);
   cashLines.push({
     key: "surplus",
-    label: "Surplus",
-    values: pick((r) => r.surplus),
+    label: surplusLabel(surplusValues),
+    values: surplusValues,
     tone: "surplus",
   });
 

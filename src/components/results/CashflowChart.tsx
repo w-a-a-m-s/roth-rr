@@ -15,6 +15,7 @@ import {
   CASHFLOW_SERIES,
   CHART_CHROME,
   formatAxisCurrency,
+  surplusLabel,
 } from "@/components/results/chartUtils";
 import { useIdleChartTooltip } from "@/components/results/useIdleChartTooltip";
 
@@ -45,7 +46,10 @@ export function CashflowChart({ rows }: { rows: ProjectionRow[] }) {
   // Most plans have no deposits: skip the flat zero line and its toggle.
   const series = useMemo(() => {
     const hasDeposits = rows.some((row) => row.monthlyDeposits !== 0);
-    return CASHFLOW_SERIES.filter((s) => hasDeposits || s.key !== "deposits");
+    const surplus = surplusLabel(rows.map((row) => row.surplus));
+    return CASHFLOW_SERIES.filter(
+      (s) => hasDeposits || s.key !== "deposits",
+    ).map((s) => (s.key === "surplus" ? { ...s, label: surplus } : s));
   }, [rows]);
 
   const { chartKey, onMouseLeave, tooltipProps } = useIdleChartTooltip(

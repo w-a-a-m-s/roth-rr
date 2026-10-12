@@ -17,6 +17,7 @@ import {
   lifeProceedsLabel,
 } from "@/components/results/incomeLabels";
 import { useTopScrollbar } from "@/components/results/useTopScrollbar";
+import { surplusLabel } from "@/components/results/chartUtils";
 
 function findScrollParent(el: HTMLElement | null): HTMLElement | null {
   let node = el?.parentElement ?? null;
@@ -788,13 +789,14 @@ function buildSections(
       lines: deposits,
     });
   }
+  const surplusTitle = surplusLabel(scenario.rows.map((r) => r.surplus));
   sections.push({
     key: "surplus",
-    title: "Surplus",
+    title: surplusTitle,
     lines: [
       {
         key: "surplus",
-        label: "Surplus",
+        label: surplusTitle,
         unit: "mo",
         value: (r) => r.surplus,
         signed: true,
