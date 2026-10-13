@@ -3,12 +3,15 @@
 import { useMemo, useState } from 'react';
 import { useHousehold, useScenario } from '@/store/useScenario';
 import { usePlanAccess } from '@/components/plan/usePlanAccess';
-import type { ConversionTaxPaidFrom } from '@/lib/domain/types';
+import type { ConversionTaxPaidFrom, DeathEvent, Household, LongTermCareSettings } from '@/lib/domain/types';
 import { useExternalData } from '@/store/useExternalData';
 import { calculate } from '@/lib/calculate';
 import { isHouseholdReady } from '@/lib/domain/household';
 import { primaryRmdAge } from '@/lib/domain/rmd';
-import { primaryPersonId } from '@/lib/engine/project';
+import { primaryPersonId, retirementStartYear } from '@/lib/engine/project';
+import type { Comparison } from '@/lib/engine/types';
+import { DisplayFromToggle } from '@/components/results/DisplayFromToggle';
+import { scenarioFrom, snapshotFromYear, type SnapshotFrom } from '@/components/results/snapshotTable';
 import { ComparisonMetrics, ScenarioMetrics, TotalImpact } from '@/components/results/ComparisonSummary';
 import { AssetsChart } from '@/components/results/AssetsChart';
 import { AfterTaxAssetsTimeline } from '@/components/results/AfterTaxAssetsTimeline';
@@ -21,8 +24,8 @@ import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
 import { LifeInsuranceSummary } from '@/components/wizard/steps/LifeInsuranceSummary';
 import { AnalysisTabs, DisabilityControls, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
 import { disabilityEvent } from '@/lib/domain/insurance';
-import { longTermCareSettings } from '@/lib/domain/longTermCare';
-import { survivorshipEvent } from '@/lib/domain/survivorship';
+import { longTermCareSettings, resolveLongTermCare } from '@/lib/domain/longTermCare';
+import { resolveDeath, survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
 
 export function ResultsView() {
@@ -63,6 +66,9 @@ export function ResultsView() {
 	// Clients land on Main (the tables); Summary, Graphic view and the
 	// year-by-year detail are tabs.
 	const [view, setView] = useState<ResultsViewKey>('main');
+	// From today / From the analysis's milestone: one choice for Main, Graphic
+	// view and the year-by-year table.
+	const [from, setFrom] = useState<SnapshotFrom>('today');
 	const primaryId = primaryPersonId(household);
 
 	// Mortgage analysis is an amortization table from a statement, not a
@@ -122,7 +128,19 @@ export function ResultsView() {
 	// conversions only; Retirement compares the two.
 	const single = analysis !== 'retirement';
 	const shown = displayComparison ?? comparison;
-	const scenario = single || tab === 'baseline' ? shown.baseline : shown.roth;
+	const todayYear = refs.asOfDate ? Number(refs.asOfDate.slice(0, 4)) : new Date().getFullYear();
+	const milestone = displayMilestone(household, analysis, deathEvent, careSettings);
+	const fromYear = snapshotFromYear(
+		shown.baseline.rows.map(r => r.calendarYear),
+		from === 'today' ? todayYear : milestone.year,
+	);
+	const fromToggle = <DisplayFromToggle value={from} onChange={setFrom} milestoneLabel={milestone.label} />;
+	const visible: Comparison = {
+		...shown,
+		baseline: scenarioFrom(shown.baseline, fromYear),
+		roth: scenarioFrom(shown.roth, fromYear),
+	};
+	const scenario = single || tab === 'baseline' ? visible.baseline : visible.roth;
 	const rmdAge = primaryRmdAge(household);
 
 	return (
@@ -168,7 +186,8 @@ export function ResultsView() {
 
 			{view === 'graphic' ? (
 				<section className="flex flex-col gap-6">
-					<PresentationCharts comparison={shown} household={household} primaryId={primaryId} single={single} />
+					<div className="flex justify-end">{fromToggle}</div>
+					<PresentationCharts comparison={visible} household={household} primaryId={primaryId} single={single} />
 					<div className="flex flex-col gap-4">
 						<div className="flex flex-wrap items-center justify-between gap-4">
 							<h3 className="m-0 text-[14.5px] font-bold text-foreground">Assets and cash flow</h3>
@@ -191,6 +210,10 @@ export function ResultsView() {
 						household={household}
 						primaryId={primaryId}
 						single={single}
+						from={from}
+						fromYear={fromYear}
+						onFromChange={setFrom}
+						milestoneLabel={milestone.label}
 					/>
 				</section>
 			) : null}
@@ -199,13 +222,39 @@ export function ResultsView() {
 				<section className="flex flex-col gap-3">
 					<div className="flex flex-wrap items-center justify-between gap-4">
 						<h3 className="m-0 text-[14.5px] font-bold text-foreground">Year-by-year</h3>
-						{single ? null : <ScenarioToggle tab={tab} onChange={setTab} />}
+						<div className="flex flex-wrap items-center gap-3">
+							{fromToggle}
+							{single ? null : <ScenarioToggle tab={tab} onChange={setTab} />}
+						</div>
 					</div>
 					<ProjectionTable scenario={scenario} household={household} primaryId={primaryId} />
 				</section>
 			) : null}
 		</div>
 	);
+}
+
+/**
+ * The year "From <milestone>" starts at: the death in Survivorship, the first
+ * year of care in Long-term care, otherwise the first retirement year.
+ */
+function displayMilestone(
+	household: Household,
+	analysis: string,
+	death: DeathEvent | null,
+	care: LongTermCareSettings | null,
+): { label: string; year: number } {
+	if (analysis === 'survivorship') {
+		const resolved = resolveDeath(household, death);
+		if (resolved) return { label: 'From death', year: resolved.year };
+	}
+	if (analysis === 'longTermCare') {
+		const stays = resolveLongTermCare(household, care)?.stays ?? [];
+		if (stays.length > 0) {
+			return { label: 'From long-term care', year: Math.min(...stays.map(s => s.firstYear)) };
+		}
+	}
+	return { label: 'From retirement year', year: retirementStartYear(household) };
 }
 
 type ResultsViewKey = 'main' | 'summary' | 'graphic' | 'detail';

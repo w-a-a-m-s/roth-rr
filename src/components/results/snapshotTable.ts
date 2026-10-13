@@ -63,28 +63,28 @@ const AFTER_TAX_KINDS = new Set<string>(AFTER_TAX_ACCOUNT_KINDS);
 /** The engine's stand-in Roth when a converting plan has no Roth account. */
 const IMPLICIT_ROTH_ID = "__implicit_roth__";
 
-export type SnapshotFrom = "today" | "retirement";
-
-export const SNAPSHOT_FROM_LABELS: Record<SnapshotFrom, string> = {
-  today: "From today",
-  retirement: "From retirement year",
-};
+/**
+ * Where the results start: today, or the analysis's milestone (retirement,
+ * the death in Survivorship, the start of care in Long-term care).
+ */
+export type SnapshotFrom = "today" | "milestone";
 
 /**
- * First year the Main tables show: this year, or the household's first
- * retirement year. Clamped to the projection, so a plan that starts later
- * than today opens on its first year.
+ * First year shown for a wanted start year, clamped to the projection: a
+ * plan that starts later opens on its first year, and a milestone past the
+ * last year shows the last one.
  */
-export function snapshotFromYear(
-  years: number[],
-  from: SnapshotFrom,
-  todayYear: number,
-  retirementYear: number,
-): number {
-  if (years.length === 0) return todayYear;
-  const wanted = from === "today" ? todayYear : retirementYear;
+export function snapshotFromYear(years: number[], wanted: number): number {
+  if (years.length === 0) return wanted;
   if (!Number.isFinite(wanted) || wanted <= years[0]) return years[0];
   return years.find((y) => y >= wanted) ?? years[years.length - 1];
+}
+
+/** The scenario with only the years from `fromYear` on, for display. */
+export function scenarioFrom(scenario: ScenarioResult, fromYear: number): ScenarioResult {
+  const rows = scenario.rows.filter((r) => r.calendarYear >= fromYear);
+  if (rows.length === scenario.rows.length) return scenario;
+  return { ...scenario, rows };
 }
 
 /** Window rows: `count` years starting at `startYear` (clamped to the projection). */

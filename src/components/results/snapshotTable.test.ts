@@ -5,6 +5,7 @@ import { primaryPersonId } from "@/lib/engine/project";
 import modernSample from "@/lib/engine/golden/cases/modern-sample.json";
 import {
   buildSnapshotTable,
+  scenarioFrom,
   snapshotFromYear,
   snapshotRows,
 } from "./snapshotTable";
@@ -213,15 +214,29 @@ describe("tax paid from conversion section", () => {
 describe("snapshotFromYear", () => {
   const years = [2026, 2027, 2028, 2029, 2030, 2031];
 
-  it("starts at this year or the retirement year", () => {
-    expect(snapshotFromYear(years, "today", 2027, 2030)).toBe(2027);
-    expect(snapshotFromYear(years, "retirement", 2027, 2030)).toBe(2030);
+  it("starts at the wanted year", () => {
+    expect(snapshotFromYear(years, 2027)).toBe(2027);
+    expect(snapshotFromYear(years, 2030)).toBe(2030);
   });
 
   it("clamps to the projection", () => {
     // A plan that starts after today opens on its first year.
-    expect(snapshotFromYear(years, "today", 2024, 2030)).toBe(2026);
-    expect(snapshotFromYear(years, "retirement", 2027, 2040)).toBe(2031);
-    expect(snapshotFromYear(years, "retirement", 2027, NaN)).toBe(2026);
+    expect(snapshotFromYear(years, 2024)).toBe(2026);
+    expect(snapshotFromYear(years, 2040)).toBe(2031);
+    expect(snapshotFromYear(years, NaN)).toBe(2026);
+  });
+});
+
+describe("scenarioFrom", () => {
+  it("keeps only the years from the first shown year", () => {
+    const trimmed = scenarioFrom(comparison.baseline, firstYear + 2);
+    expect(trimmed.rows[0].calendarYear).toBe(firstYear + 2);
+    expect(trimmed.rows.length).toBe(comparison.baseline.rows.length - 2);
+    // Totals are the full run's: only the displayed years change.
+    expect(trimmed.totals).toBe(comparison.baseline.totals);
+  });
+
+  it("returns the scenario as is when nothing is hidden", () => {
+    expect(scenarioFrom(comparison.baseline, firstYear)).toBe(comparison.baseline);
   });
 });

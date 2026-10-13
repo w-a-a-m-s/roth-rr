@@ -6,12 +6,9 @@ import type { Comparison, ScenarioResult } from "@/lib/engine/types";
 import { Select } from "@/components/ui/inputs";
 import { formatCurrency } from "@/lib/format";
 import { DualScroll } from "@/components/results/DualScroll";
-import { retirementStartYear } from "@/lib/engine/project";
-import { useExternalData } from "@/store/useExternalData";
+import { DisplayFromToggle } from "@/components/results/DisplayFromToggle";
 import {
-  SNAPSHOT_FROM_LABELS,
   buildSnapshotTable,
-  snapshotFromYear,
   type SnapshotFrom,
   type SnapshotAssetGroup,
   type SnapshotLine,
@@ -93,6 +90,10 @@ export function ScenarioSnapshot({
   primaryId,
   single = false,
   initialYear,
+  from,
+  fromYear,
+  onFromChange,
+  milestoneLabel,
 }: {
   comparison: Comparison;
   household: Household;
@@ -101,17 +102,14 @@ export function ScenarioSnapshot({
   single?: boolean;
   /** Year the table opens on (the plan start); earlier years are a Jump away. */
   initialYear?: number;
+  /** From today / From retirement year, shared with the other results tabs. */
+  from: SnapshotFrom;
+  /** First year shown for `from`; earlier years are hidden. */
+  fromYear: number;
+  onFromChange: (from: SnapshotFrom) => void;
+  milestoneLabel: string;
 }) {
-  const asOfDate = useExternalData((s) => s.refs.asOfDate);
-  const todayYear = asOfDate ? Number(asOfDate.slice(0, 4)) : new Date().getFullYear();
   const allYears = comparison.baseline.rows.map((r) => r.calendarYear);
-  const [from, setFrom] = useState<SnapshotFrom>("today");
-  const fromYear = snapshotFromYear(
-    allYears,
-    from,
-    todayYear,
-    retirementStartYear(household),
-  );
   const [jumpYear, setJumpYear] = useState<number>(
     initialYear != null && allYears.includes(initialYear) ? initialYear : allYears[0] ?? 0,
   );
@@ -145,34 +143,14 @@ export function ScenarioSnapshot({
               />
             </span>
           </div>
-          <div
-            role="radiogroup"
-            aria-label="Display from"
-            className="flex rounded-[9px] border border-border-2 bg-surface-muted p-0.5"
-          >
-            {(Object.keys(SNAPSHOT_FROM_LABELS) as SnapshotFrom[]).map((option) => {
-              const on = option === from;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => {
-                    setFrom(option);
-                    setJumpYear(allYears[0] ?? 0);
-                  }}
-                  className={`whitespace-nowrap rounded-[7px] px-2.5 py-1 transition ${
-                    on
-                      ? "bg-white font-semibold text-foreground shadow-sm"
-                      : "text-muted hover:text-foreground"
-                  }`}
-                >
-                  {SNAPSHOT_FROM_LABELS[option]}
-                </button>
-              );
-            })}
-          </div>
+          <DisplayFromToggle
+            milestoneLabel={milestoneLabel}
+            value={from}
+            onChange={(option) => {
+              onFromChange(option);
+              setJumpYear(allYears[0] ?? 0);
+            }}
+          />
         </div>
       </div>
       <SnapshotCard
