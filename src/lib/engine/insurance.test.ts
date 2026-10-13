@@ -10,6 +10,7 @@ import type { ProjectionOptions } from "@/lib/engine/types";
 import { projectScenario, projectionYears } from "@/lib/engine/project";
 import { calculate } from "@/lib/calculate";
 import { lifeInsurancePayoutRate } from "@/lib/config/lifeInsurancePayout";
+import { SOCIAL_SECURITY_TAXABLE_PCT } from "@/lib/config/federalTax";
 import {
   disabilityBenefitMonths,
   lifeInsuranceClaims,
@@ -261,8 +262,19 @@ describe("long-term care insurance", () => {
   it("is tax free and leaves expenses as they were", () => {
     const without = rows(couple(), options);
     const r = rows(couple([ltc()]), options);
-    expect(at(r, 2031).grossTaxableIncome).toBe(at(without, 2031).grossTaxableIncome);
-    expect(at(r, 2031).monthlyExpenses).toBe(at(without, 2031).monthlyExpenses);
+    const year = at(r, 2031);
+    // Taxable income is Social Security, the RMD and the IRA withdrawal
+    // covering the short year: none of the benefit.
+    const taxableMonthly =
+      year.incomeMonthly.ss * SOCIAL_SECURITY_TAXABLE_PCT +
+      (year.incomeMonthly["rmd:ira"] ?? 0) +
+      (year.incomeMonthly["draw:ira"] ?? 0);
+    expect(year.grossTaxableIncome).toBeCloseTo(taxableMonthly * 12, 6);
+    expect(year.monthlyExpenses).toBe(at(without, 2031).monthlyExpenses);
+    // The benefit means less comes out of the IRA to pay for care.
+    expect(year.incomeMonthly["draw:ira"] ?? 0).toBeLessThan(
+      at(without, 2031).incomeMonthly["draw:ira"],
+    );
   });
 });
 

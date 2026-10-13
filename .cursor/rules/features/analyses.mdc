@@ -63,6 +63,19 @@ next year:
 - expenses drop to `SURVIVOR_EXPENSE_SHARE` (70%) of the plan's amounts.
 Inheritance uses the final row's filing status.
 
+## Living off the accounts once an event happens (`projectScenario` 5c)
+
+Survivorship (from the year after the death) and Long-term care (from the
+first care year) cover every short year from then on out of the accounts,
+so the surplus lands at 0 until they run dry. Order: after-tax accounts
+(gains vs basis taxed as LTCG), then tax-deferred (ordinary income), then
+Roth. Never business or real estate; life insurance proceeds keep paying
+only their fixed income. The draw is grossed up for the tax it adds (fixed
+point on `priceYear`); the rental-loss allowance keeps its pre-draw MAGI.
+Each take is an income line `draw:<accountId>` (`eventWithdrawalKey`,
+labelled "Withdrawal · <account>", charted as Withdrawals from assets).
+No early-withdrawal penalty is modelled. Disability doesn't draw (yet).
+
 Survivorship, Disability and Long-term care show only the no-conversion
 scenario (`single` in ResultsView): one snapshot table, no No/With toggles,
 no conversion tax switch, and Summary shows `ScenarioMetrics` (the six totals)

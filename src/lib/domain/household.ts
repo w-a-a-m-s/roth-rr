@@ -391,6 +391,14 @@ function disabilityPayoutShare(
   return (share * (12 - waitingMonths)) / 12;
 }
 
+/**
+ * Income key for what Survivorship or Long-term care draws from an account
+ * to cover a short year once the event happens (`draw:<accountId>`).
+ */
+export function eventWithdrawalKey(accountId: string): string {
+  return `draw:${accountId}`;
+}
+
 /** Whether an income kind withdraws from (and depletes) a specific account. */
 export function isWithdrawalIncome(kind: IncomeKind): boolean {
   return kind in WITHDRAWAL_SOURCE_KINDS;

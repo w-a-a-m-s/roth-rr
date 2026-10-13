@@ -56,6 +56,7 @@ export function incomeCategory(
   key: string,
 ): IncomeCategory {
   if (key.startsWith("rmd:")) return "rmd";
+  if (key.startsWith("draw:")) return "withdrawals";
   if (key.startsWith("re:")) return "other";
   if (insuranceKeyKind(key)) return "other";
   const income = household.incomes.find((i) => i.id === key);

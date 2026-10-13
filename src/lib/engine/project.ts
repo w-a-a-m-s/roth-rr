@@ -11,6 +11,7 @@ import {
   realEstateGrowthStart,
   businessGrowthStart,
   expenseMonthlyForYear,
+  eventWithdrawalKey,
   incomeMonthlyForYear,
   isIncomeActive,
   isWithdrawalIncome,
@@ -762,6 +763,48 @@ export function projectScenario(
   let priorYearEndBalances: Record<string, number> = { ...balances };
   const firstYearGrowth = firstYearGrowthFraction(start, refs.asOfDate);
 
+  // Survivorship and Long-term care: from the year the event takes effect
+  // (the year after a death, the first year of care) a short year is covered
+  // from the accounts, after-tax first, then tax-deferred, then Roth.
+  const careStart =
+    care && care.stays.length > 0
+      ? Math.min(...care.stays.map((stay) => stay.firstYear))
+      : null;
+  const eventFundsShortfall = (calendarYear: number) =>
+    (death != null && calendarYear > death.year) ||
+    (careStart != null && calendarYear >= careStart);
+  const drawOrder = [
+    ...accounts.filter((acc) => AFTER_TAX_KINDS.includes(acc.kind)),
+    ...accounts.filter((acc) => acc.kind === "retirementTaxable"),
+    ...accounts.filter((acc) => acc.kind === "rothTaxFree"),
+  ];
+  /**
+   * Take `amount` from the accounts in draw order, capped at what's there:
+   * each account's take, the taxable ordinary income (tax-deferred) and the
+   * gains realized (after-tax, against remaining basis).
+   */
+  const planEventDraws = (amount: number) => {
+    const takes: Record<string, number> = {};
+    let left = amount;
+    let total = 0;
+    let ordinary = 0;
+    let gains = 0;
+    for (const acc of drawOrder) {
+      if (left <= 0) break;
+      const bal = Math.max(0, balances[acc.id]);
+      const take = Math.min(bal, left);
+      if (take <= 0) continue;
+      takes[acc.id] = take;
+      left -= take;
+      total += take;
+      if (acc.kind === "retirementTaxable") ordinary += take;
+      if (basisRemaining[acc.id] != null) {
+        gains += take * Math.max(0, 1 - basisRemaining[acc.id] / bal);
+      }
+    }
+    return { takes, total, ordinary, gains };
+  };
+
   const rows: ProjectionRow[] = [];
 
   for (let i = 0; i < years; i++) {
@@ -1095,6 +1138,7 @@ export function projectScenario(
     const taxForYear = (
       federalOrdinaryGross: number,
       stateOrdinaryGross: number,
+      capitalGainsIncome: number,
     ) => {
       const deductions = computeDeductions(
         fs,
@@ -1197,49 +1241,8 @@ export function projectScenario(
         annualTax: federalAnnualTax + stateAnnualTax,
       };
     };
-    const {
-      deductions,
-      taxableIncome,
-      federalOrdinaryTax,
-      federalTaxByBracket,
-      federalCapitalGainsTax,
-      federalCapitalGainsTaxByBracket,
-      federalAnnualTax,
-      stateDeductions,
-      stateGrossTaxableIncome,
-      stateTaxableIncome,
-      stateTaxByBracket,
-      stateAnnualTax,
-      annualTax,
-    } = taxForYear(federalOrdinaryGross, stateOrdinaryGross);
-
-    // 5b) Conversion tax paid from assets: the tax the conversion adds this
-    //     year is withheld from the converted dollars, so the Roth gets the
-    //     rest and the household's cash flow doesn't pay it. The full
-    //     conversion is still taxable (withholding is part of the
-    //     distribution), so the year's tax is unchanged.
-    let conversionTaxWithheld = 0;
-    if (conversionTaxPaidFrom === "assets" && converted > 0) {
-      const withoutConversion = taxForYear(
-        Math.max(0, federalOrdinaryGross - converted),
-        stateOrdinaryGross > 0 ? Math.max(0, stateOrdinaryGross - converted) : 0,
-      );
-      conversionTaxWithheld = Math.min(
-        converted,
-        Math.max(0, annualTax - withoutConversion.annualTax),
-      );
-      if (targetRoth) balances[targetRoth.id] -= conversionTaxWithheld;
-    }
-
-    const monthlyTax = annualTax / 12;
-    const federalMonthlyTax = federalAnnualTax / 12;
-    const stateMonthlyTax = stateAnnualTax / 12;
-
-    const netMonthlyIncome =
-      totalMonthlyIncome - (annualTax - conversionTaxWithheld) / 12;
-    const grossTaxableIncome = federalOrdinaryGross;
-    // Each expense grows from its start year (or year 0); yearly amounts are
-    // spread to monthly. Out-of-range years are 0.
+    // Expenses for the year. Each grows from its start year (or year 0);
+    // yearly amounts are spread to monthly. Out-of-range years are 0.
     // Survivorship: after a death the household spends a set share of what
     // the couple did.
     const careYear = careForYear(care, calendarYear, planStart);
@@ -1263,6 +1266,100 @@ export function projectScenario(
       expenseMonthly[loanExpenseKey(id)] = payment;
       monthlyExpenses += payment;
     }
+
+    // The year's tax with `extraOrdinary` / `extraGains` on top, and the part
+    // of it withheld from the conversion.
+    // 5b) Conversion tax paid from assets: the tax the conversion adds this
+    //     year is withheld from the converted dollars, so the Roth gets the
+    //     rest and the household's cash flow doesn't pay it. The full
+    //     conversion is still taxable (withholding is part of the
+    //     distribution), so the year's tax is unchanged.
+    const stateTaxesOrdinary = state.hasIncomeTax && !state.capitalGainsOnly;
+    const priceYear = (extraOrdinary: number, extraGains: number) => {
+      const fed = federalOrdinaryGross + extraOrdinary;
+      const st = stateTaxesOrdinary ? stateOrdinaryGross + extraOrdinary : 0;
+      const gains = capitalGainsIncome + extraGains;
+      const taxes = taxForYear(fed, st, gains);
+      if (conversionTaxPaidFrom !== "assets" || converted <= 0) {
+        return { taxes, withheld: 0 };
+      }
+      const withoutConversion = taxForYear(
+        Math.max(0, fed - converted),
+        st > 0 ? Math.max(0, st - converted) : 0,
+        gains,
+      );
+      const withheld = Math.min(
+        converted,
+        Math.max(0, taxes.annualTax - withoutConversion.annualTax),
+      );
+      return { taxes, withheld };
+    };
+    let priced = priceYear(0, 0);
+
+    // 5c) Survivorship and Long-term care: once the event happens, a year
+    //     that comes up short is covered from the household's investment and
+    //     retirement accounts (never business or real estate), grossed up
+    //     for the tax the withdrawals add. The rental-loss allowance keeps
+    //     the MAGI it had before these withdrawals.
+    if (eventFundsShortfall(calendarYear)) {
+      const outflow = (monthlyExpenses + monthlyDeposits) * 12;
+      const cashTax = (p: typeof priced) => p.taxes.annualTax - p.withheld;
+      const baseTax = cashTax(priced);
+      const gap = outflow - (totalMonthlyIncome * 12 - baseTax);
+      if (gap > 0.005) {
+        let target = gap;
+        let plan = planEventDraws(target);
+        for (let k = 0; k < 50; k++) {
+          // Ran out of money to draw: take everything that's left.
+          if (plan.total < target - 0.005) break;
+          const next =
+            gap + cashTax(priceYear(plan.ordinary, plan.gains)) - baseTax;
+          if (Math.abs(next - target) < 0.005) break;
+          target = next;
+          plan = planEventDraws(target);
+        }
+        for (const [accId, take] of Object.entries(plan.takes)) {
+          const balBefore = Math.max(0, balances[accId]);
+          if (basisRemaining[accId] != null && balBefore > 0) {
+            const basis = basisRemaining[accId];
+            basisRemaining[accId] = Math.max(0, basis - take * (basis / balBefore));
+          }
+          balances[accId] = balBefore - take;
+          incomeMonthly[eventWithdrawalKey(accId)] = take / 12;
+          totalMonthlyIncome += take / 12;
+        }
+        federalOrdinaryGross += plan.ordinary;
+        if (stateTaxesOrdinary) stateOrdinaryGross += plan.ordinary;
+        capitalGainsIncome += plan.gains;
+        priced = priceYear(0, 0);
+      }
+    }
+
+    const {
+      deductions,
+      taxableIncome,
+      federalOrdinaryTax,
+      federalTaxByBracket,
+      federalCapitalGainsTax,
+      federalCapitalGainsTaxByBracket,
+      federalAnnualTax,
+      stateDeductions,
+      stateGrossTaxableIncome,
+      stateTaxableIncome,
+      stateTaxByBracket,
+      stateAnnualTax,
+      annualTax,
+    } = priced.taxes;
+    const conversionTaxWithheld = priced.withheld;
+    if (targetRoth) balances[targetRoth.id] -= conversionTaxWithheld;
+
+    const monthlyTax = annualTax / 12;
+    const federalMonthlyTax = federalAnnualTax / 12;
+    const stateMonthlyTax = stateAnnualTax / 12;
+
+    const netMonthlyIncome =
+      totalMonthlyIncome - (annualTax - conversionTaxWithheld) / 12;
+    const grossTaxableIncome = federalOrdinaryGross;
 
     // 6) Business equity grows like real estate: year 0 is the January 1
     //    value (grown from today for a plan-start business).
