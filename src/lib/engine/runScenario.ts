@@ -11,6 +11,7 @@ import {
   primaryPersonId,
   projectionStartYear,
   projectScenario,
+  retirementStartYear,
   scenarioStartYear,
   strategyStartYear,
 } from "@/lib/engine/project";
@@ -159,15 +160,24 @@ function computeTotals(
   const primaryId = primaryPersonId(household);
   const federal = refs.federalTax;
 
+  const retirement = retirementStartYear(household);
+
   let taxesEarly = 0;
   let taxesLate = 0;
   let federalTaxesEarly = 0;
   let federalTaxesLate = 0;
   let stateTaxesEarly = 0;
   let stateTaxesLate = 0;
+  let federalTaxesTotal = 0;
+  let stateTaxesTotal = 0;
   for (const row of rows) {
+    federalTaxesTotal += row.federalAnnualTax;
+    stateTaxesTotal += row.stateAnnualTax;
     // No known RMD age → treat all years as pre-RMD for the early/late split.
     if (rmdAge == null || row.ages[primaryId] < rmdAge) {
+      // Taxes until the RMD age count from retirement, whatever year the
+      // plan starts in. Earlier years are only in the lifetime total.
+      if (row.calendarYear < retirement) continue;
       taxesEarly += row.annualTax;
       federalTaxesEarly += row.federalAnnualTax;
       stateTaxesEarly += row.stateAnnualTax;
@@ -187,13 +197,13 @@ function computeTotals(
   return {
     taxesEarly,
     taxesLate,
-    taxesTotal: taxesEarly + taxesLate,
+    taxesTotal: federalTaxesTotal + stateTaxesTotal,
     federalTaxesEarly,
     federalTaxesLate,
-    federalTaxesTotal: federalTaxesEarly + federalTaxesLate,
+    federalTaxesTotal,
     stateTaxesEarly,
     stateTaxesLate,
-    stateTaxesTotal: stateTaxesEarly + stateTaxesLate,
+    stateTaxesTotal,
     medicareTotal: medicareTotal(household, rows, refs.medicare),
     afterTaxAssetsAtRmd: inheritanceValue(
       household,
@@ -261,11 +271,16 @@ export function activeEarlyConversions(
   return typedEarlyConversions(household, asOfDate).filter((c) => c.year < start);
 }
 
-function sumTaxes(rows: ProjectionRow[], beforeYear: number) {
+function sumTaxes(
+  rows: ProjectionRow[],
+  beforeYear: number,
+  fromYear = -Infinity,
+) {
   let federal = 0;
   let state = 0;
   for (const row of rows) {
     if (row.calendarYear >= beforeYear) break;
+    if (row.calendarYear < fromYear) continue;
     federal += row.federalAnnualTax;
     state += row.stateAnnualTax;
   }
@@ -314,10 +329,16 @@ export function runRothScenario(
     if (row.calendarYear >= start) break;
     convertedByYear[row.calendarYear] = row.conversion;
   }
-  // Before the plan starts everyone is below their RMD age: early taxes.
-  totals.federalTaxesEarly += federalTax;
-  totals.stateTaxesEarly += stateTax;
-  totals.taxesEarly += federalTax + stateTax;
+  // Before the plan starts everyone is below their RMD age: the hidden years
+  // from retirement on are early taxes (earlier ones are lifetime only).
+  const retirement = retirementStartYear(household);
+  const withEarly = sumTaxes(rows, start, retirement);
+  const withoutEarly = sumTaxes(without, start, retirement);
+  const earlyFederal = withEarly.federal - withoutEarly.federal;
+  const earlyState = withEarly.state - withoutEarly.state;
+  totals.federalTaxesEarly += earlyFederal;
+  totals.stateTaxesEarly += earlyState;
+  totals.taxesEarly += earlyFederal + earlyState;
   totals.federalTaxesTotal += federalTax;
   totals.stateTaxesTotal += stateTax;
   totals.taxesTotal += federalTax + stateTax;

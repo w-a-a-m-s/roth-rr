@@ -170,7 +170,7 @@ export interface ProjectionRow {
 }
 
 export interface ScenarioTotals {
-  /** Total combined (federal+state) taxes before the RMD age. */
+  /** Total combined (federal+state) taxes from retirement until the RMD age. */
   taxesEarly: number;
   /** Total combined taxes from the RMD age onward. */
   taxesLate: number;

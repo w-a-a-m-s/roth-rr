@@ -67,7 +67,7 @@ export function ScenarioMetrics({
 		{ label: 'Total Medicare Part B', hint: 'Lifetime premiums incl. income-based IRMAA', value: t.medicareTotal },
 	];
 	const splitCards: { label: string; hint?: string; value: number }[] = [
-		{ label: `Taxes until ${rmdLabel}`, hint: 'Sum of taxes before the RMD age', value: t.taxesEarly },
+		{ label: `Taxes until ${rmdLabel}`, hint: 'Sum of taxes from retirement until the RMD age', value: t.taxesEarly },
 		{ label: `Taxes ${rmdLabel} and after`, hint: 'Sum of taxes from the RMD age onward', value: t.taxesLate },
 	];
 	return (
@@ -185,8 +185,8 @@ export function ComparisonMetrics({ comparison, rmdAge }: { comparison: Comparis
 					label={`Taxes until ${rmdLabel}`}
 					hint={
 						rmdAge != null
-							? `Sum of taxes before the RMD age (${rmdAge})`
-							: "Sum of taxes before the RMD age"
+							? `Sum of taxes from retirement until the RMD age (${rmdAge})`
+							: "Sum of taxes from retirement until the RMD age"
 					}
 					baseline={baseline.totals.taxesEarly}
 					roth={roth.totals.taxesEarly}

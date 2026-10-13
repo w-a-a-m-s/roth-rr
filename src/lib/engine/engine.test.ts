@@ -13,7 +13,11 @@ import {
 } from "@/lib/engine/project";
 import { shiftSchedule } from "@/lib/optimizer/shiftSchedule";
 import type { Deposit, Household } from "@/lib/domain/types";
-import { afterTaxAssets, runScenario } from "@/lib/engine/runScenario";
+import {
+  afterTaxAssets,
+  runRothScenario,
+  runScenario,
+} from "@/lib/engine/runScenario";
 import {
   capitalGainsTaxByBracket,
   capitalGainsTaxStacked,
@@ -2277,5 +2281,48 @@ describe("one-time 100% depreciation", () => {
       oneTimeDepreciation: withDep.oneTimeDepreciation!.map((d) => ({ ...d, hidden: true })),
     };
     expect(calculate(allHidden, refs).roth.totals).toEqual(calculate(base, refs).roth.totals);
+  });
+});
+
+describe("taxes until the RMD age count from retirement", () => {
+  const rmdAge = primaryRmdAge(SAMPLE_HOUSEHOLD)!;
+  const earlyFrom = (rows: { calendarYear: number; ages: Record<string, number>; annualTax: number }[]) =>
+    rows
+      .filter((r) => r.calendarYear >= 2030 && r.ages.p1 < rmdAge)
+      .reduce((sum, r) => sum + r.annualTax, 0);
+
+  it("skips the years before retirement when the plan starts earlier", () => {
+    const h = structuredClone(SAMPLE_HOUSEHOLD);
+    h.assumptions = { ...h.assumptions, startYear: 2026 };
+    const result = runScenario(h, zeros(projectionYears(h)), "baseline");
+    const preRetirement = result.rows
+      .filter((r) => r.calendarYear < 2030)
+      .reduce((sum, r) => sum + r.annualTax, 0);
+    expect(preRetirement).toBeGreaterThan(0);
+    expect(result.totals.taxesEarly).toBeCloseTo(earlyFrom(result.rows), 2);
+    // Lifetime taxes still count every projected year.
+    const all = result.rows.reduce((sum, r) => sum + r.annualTax, 0);
+    expect(result.totals.taxesTotal).toBeCloseTo(all, 2);
+    expect(result.totals.taxesEarly + result.totals.taxesLate).toBeCloseTo(
+      all - preRetirement,
+      2,
+    );
+  });
+
+  it("leaves a pre-retirement early conversion's tax out of taxes until the RMD age", () => {
+    const h = structuredClone(SAMPLE_HOUSEHOLD);
+    h.optimizer = {
+      ...h.optimizer,
+      earlyConversions: [{ year: 2028, amount: 50_000 }],
+    };
+    const roth = runRothScenario(h, zeros(projectionYears(h)), "roth");
+    const early = roth.earlyConversions!;
+    expect(early.federalTax + early.stateTax).toBeGreaterThan(0);
+    expect(roth.totals.taxesEarly).toBeCloseTo(earlyFrom(roth.rows), 2);
+    const shown = roth.rows.reduce((sum, r) => sum + r.annualTax, 0);
+    expect(roth.totals.taxesTotal).toBeCloseTo(
+      shown + early.federalTax + early.stateTax,
+      2,
+    );
   });
 });
