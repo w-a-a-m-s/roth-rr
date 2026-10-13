@@ -30,6 +30,8 @@ import type {
 } from "@/lib/domain/types";
 import {
   AFTER_TAX_ACCOUNT_KINDS,
+  hasCostBasis,
+  returnsBasisFirst,
   DEFAULT_RETIREMENT_ACCOUNT_TYPE,
   JOINT_OWNER_VALUE,
   RETIREMENT_ACCOUNT_TYPES,
@@ -59,6 +61,7 @@ const GROWTH_HELP: Record<AccountKind, string> = {
   annuity: "Annual growth rate for this annuity balance.",
   cd: "Annual interest rate earned on this certificate of deposit.",
   savings: "Annual interest rate earned on this cash / savings account.",
+  dppMlp: "Annual return for this DPP / MLP holding.",
 };
 
 const KIND_LABELS: Record<AccountKind, string> = {
@@ -68,6 +71,7 @@ const KIND_LABELS: Record<AccountKind, string> = {
   annuity: "Annuity",
   cd: "CD",
   savings: "Savings / money market",
+  dppMlp: "DPP / MLP",
 };
 
 const FREQUENCY_OPTIONS: { value: DepositFrequency; label: string }[] = [
@@ -106,7 +110,7 @@ const ACCOUNT_GROUPS: {
   },
   {
     title: "After-tax accounts",
-    description: "Brokerage, annuity, CDs and savings - tracked with cost basis.",
+    description: "Brokerage, annuity, CDs, savings and DPP / MLP, tracked with cost basis.",
     kinds: AFTER_TAX_ACCOUNT_KINDS,
     addKind: "investment",
     addLabel: "Add after-tax account",
@@ -342,7 +346,7 @@ function AccountFields({
 }) {
   const household = useHousehold();
   const { updateAccount, removeAccount } = useScenario();
-  const hasCostBasis = account.kind === "investment" || account.kind === "annuity";
+  const showCostBasis = hasCostBasis(account.kind);
   const ownerName = accountOwnerLabel(
     account,
     household.people,
@@ -448,10 +452,14 @@ function AccountFields({
             onChange={(balance) => updateAccount(account.id, { balance })}
           />
         </Field>
-        {hasCostBasis ? (
+        {showCostBasis ? (
           <Field
             label="Cost basis"
-            hint="Return of basis is tax-free; the rest of each withdrawal is taxed as long-term capital gains. Also used for inheritance valuation."
+            hint={
+              returnsBasisFirst(account.kind)
+                ? "Distributions come back as tax-free return of capital until the basis is used up, then they're taxed as long-term capital gains. Also used for inheritance valuation."
+                : "Return of basis is tax-free; the rest of each withdrawal is taxed as long-term capital gains. Also used for inheritance valuation."
+            }
           >
             <MoneyInput
               value={account.costBasis ?? 0}
@@ -544,7 +552,7 @@ function Group({
                   ...(addKind === "retirementTaxable"
                     ? { retirementType: DEFAULT_RETIREMENT_ACCOUNT_TYPE }
                     : {}),
-                  ...(addKind === "investment" || addKind === "annuity"
+                  ...(hasCostBasis(addKind)
                     ? { costBasis: 0 }
                     : {}),
                 });

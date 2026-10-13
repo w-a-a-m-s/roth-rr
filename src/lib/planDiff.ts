@@ -94,6 +94,7 @@ const ACCOUNT_KIND_LABELS: Record<AccountKind, string> = {
   annuity: "Annuity",
   cd: "CD",
   savings: "Savings",
+  dppMlp: "DPP / MLP",
 };
 
 const INCOME_KIND_LABELS: Record<IncomeKind, string> = {

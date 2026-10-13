@@ -7,7 +7,7 @@ alwaysApply: false
 # Joint after-tax accounts
 
 Married plans can mark an after-tax account (`investment`, `annuity`, `cd`,
-`savings`) as owned by both people. IRAs and Roths stay single-owner: they
+`savings`, `dppMlp`) as owned by both people. IRAs and Roths stay single-owner: they
 cannot legally be joint, and `ownerId` drives RMDs and conversion eligibility.
 
 ## Model

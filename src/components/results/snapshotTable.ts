@@ -1,4 +1,7 @@
-import { accountsInDisplayOrder } from "@/lib/domain/household";
+import {
+  AFTER_TAX_ACCOUNT_KINDS,
+  accountsInDisplayOrder,
+} from "@/lib/domain/household";
 import type { Household } from "@/lib/domain/types";
 import type { ProjectionRow, ScenarioResult } from "@/lib/engine/types";
 import {
@@ -55,7 +58,7 @@ export interface SnapshotTable {
   sections: SnapshotSection[];
 }
 
-const AFTER_TAX_KINDS = new Set(["investment", "annuity", "cd", "savings"]);
+const AFTER_TAX_KINDS = new Set<string>(AFTER_TAX_ACCOUNT_KINDS);
 
 /** The engine's stand-in Roth when a converting plan has no Roth account. */
 const IMPLICIT_ROTH_ID = "__implicit_roth__";

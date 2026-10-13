@@ -232,6 +232,47 @@ describe("state income tax and capital gains", () => {
     expect(rows2[0].grossTaxableIncome).toBeCloseTo(20_000 * 12, 2);
   });
 
+  it("DPP / MLP distributions return basis first, then are taxed as gains", () => {
+    const h = structuredClone(SAMPLE_HOUSEHOLD);
+    h.residenceState = "FL";
+    h.accounts = [
+      {
+        id: "mlp",
+        label: "MLP units",
+        ownerId: "p1",
+        kind: "dppMlp",
+        balance: 200_000,
+        costBasis: 25_000,
+        growthRate: 0,
+      },
+    ];
+    h.incomes = [
+      {
+        id: "wd",
+        label: "MLP distributions",
+        ownerId: "p1",
+        kind: "afterTaxWithdrawal",
+        monthlyAmount: 10_000 / 12,
+        growthRate: 0,
+        taxability: "taxFree",
+        drawsFromAccountId: "mlp",
+      },
+    ];
+    h.realEstate = [];
+    h.expenses = [];
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    // $25k of basis covers the first two $10k distributions tax free and
+    // half of the third. After that every dollar is a gain. A brokerage with
+    // the same 12.5% basis would have realized $8,750 of gain each year.
+    expect(rows[0].capitalGainsIncome).toBeCloseTo(0, 2);
+    expect(rows[1].capitalGainsIncome).toBeCloseTo(0, 2);
+    expect(rows[2].capitalGainsIncome).toBeCloseTo(5_000, 2);
+    expect(rows[3].capitalGainsIncome).toBeCloseTo(10_000, 2);
+    expect(rows[3].balances.mlp).toBeCloseTo(160_000, 2);
+    // It's an after-tax account: it counts in the after-tax total.
+    expect(rows[0].afterTaxTotal).toBeCloseTo(190_000, 2);
+  });
+
   it("grows the after-tax account before withdrawing, then taxes the gain as LTCG", () => {
     // $2M @ 8.8% earns $176k; a $175k withdrawal should leave the account
     // about $1k higher, not shrink it. Cost basis $1M, so only the embedded

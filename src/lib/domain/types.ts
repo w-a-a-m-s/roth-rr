@@ -82,7 +82,8 @@ export type AccountKind =
   | "investment" // taxable brokerage - has cost basis
   | "annuity" // annuity - has cost basis
   | "cd" // certificates of deposit
-  | "savings"; // savings & money market
+  | "savings" // savings & money market
+  | "dppMlp"; // DPP / MLP units - has cost basis, distributions return basis first
 
 /** Subtype of a tax-deferred retirement account. DROP delays growth (see engine). */
 export type RetirementAccountType =
@@ -138,7 +139,7 @@ export interface Account {
    */
   retirementType?: RetirementAccountType;
   balance: number;
-  /** For investment/annuity: basis subtracted when computing inheritance. */
+  /** For investment/annuity/DPP-MLP: basis subtracted when computing inheritance. */
   costBasis?: number;
   /** Annual growth (decimal, e.g. 0.05). Required per account. */
   growthRate: number;

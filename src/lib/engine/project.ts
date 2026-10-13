@@ -18,6 +18,8 @@ import {
   isIncomeActive,
   isJointAccount,
   isWithdrawalIncome,
+  returnsBasisFirst,
+  AFTER_TAX_ACCOUNT_KINDS,
 } from "@/lib/domain/household";
 import {
   careExpenseKey,
@@ -88,12 +90,24 @@ import {
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import type { ReferenceData } from "@/lib/externalData/types";
 
-const AFTER_TAX_KINDS: Account["kind"][] = [
-  "investment",
-  "annuity",
-  "cd",
-  "savings",
-];
+const AFTER_TAX_KINDS: Account["kind"][] = AFTER_TAX_ACCOUNT_KINDS;
+
+/**
+ * The tax-free part of taking `take` from an after-tax account holding
+ * `balance` with `basis` left. DPP / MLP distributions return basis first;
+ * every other kind splits the take pro rata between basis and gain.
+ */
+export function basisReturned(
+  kind: Account["kind"],
+  take: number,
+  balance: number,
+  basis: number,
+): number {
+  if (take <= 0 || basis <= 0) return 0;
+  if (returnsBasisFirst(kind)) return Math.min(take, basis);
+  if (balance <= 0) return 0;
+  return take * Math.min(1, basis / balance);
+}
 
 /**
  * First year an analysis projects. Normally the plan start; an analysis whose
@@ -819,7 +833,7 @@ export function projectScenario(
       total += take;
       if (acc.kind === "retirementTaxable") ordinary += take;
       if (basisRemaining[acc.id] != null) {
-        gains += take * Math.max(0, 1 - basisRemaining[acc.id] / bal);
+        gains += take - basisReturned(acc.kind, take, bal, basisRemaining[acc.id]);
       }
     }
     return { takes, total, ordinary, gains };
@@ -913,9 +927,10 @@ export function projectScenario(
       const take = Math.min(balBefore, Math.max(0, withdraw));
       if (income.kind === "afterTaxWithdrawal" && take > 0 && balBefore > 0) {
         const basis = basisRemaining[accId] ?? 0;
-        const gainFrac = Math.max(0, 1 - basis / balBefore);
-        capitalGainsIncome += take * gainFrac;
-        basisRemaining[accId] = Math.max(0, basis - take * (basis / balBefore));
+        const kind = accounts.find((a) => a.id === accId)?.kind ?? "investment";
+        const returned = basisReturned(kind, take, balBefore, basis);
+        capitalGainsIncome += take - returned;
+        basisRemaining[accId] = Math.max(0, basis - returned);
       }
       balances[accId] -= take;
       withdrawalTaken[income.id] = take;
@@ -930,9 +945,9 @@ export function projectScenario(
       if (acc.kind === "retirementTaxable") eventOrdinary += income;
       if (basisRemaining[accId] != null) {
         const basis = basisRemaining[accId];
-        const basisShare = balBefore > 0 ? basis / balBefore : 0;
-        capitalGainsIncome += income - take * basisShare;
-        basisRemaining[accId] = Math.max(0, basis - take * basisShare);
+        const returned = basisReturned(acc.kind, take, balBefore, basis);
+        capitalGainsIncome += income - returned;
+        basisRemaining[accId] = Math.max(0, basis - returned);
       }
       balances[accId] = balBefore - take;
     }
@@ -1398,7 +1413,11 @@ export function projectScenario(
           const balBefore = Math.max(0, balances[accId]);
           if (basisRemaining[accId] != null && balBefore > 0) {
             const basis = basisRemaining[accId];
-            basisRemaining[accId] = Math.max(0, basis - take * (basis / balBefore));
+            const kind = accounts.find((a) => a.id === accId)!.kind;
+            basisRemaining[accId] = Math.max(
+              0,
+              basis - basisReturned(kind, take, balBefore, basis),
+            );
           }
           balances[accId] = balBefore - take;
           incomeMonthly[eventTopUpKey(accId)] = take / 12;

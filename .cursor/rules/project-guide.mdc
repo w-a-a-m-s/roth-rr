@@ -48,6 +48,11 @@ Use this guide for UI, product features, and the index below.
 - Magic-link send does not create an Auth.js user. `createUser` runs only
   after they click the link. Login / register screen switches must not reset
   the email step.
+- After-tax account kinds live in one list, `AFTER_TAX_ACCOUNT_KINDS`
+  (`household.ts`). Engine, results tables, and the wizard all read it; don't
+  re-declare it. `dppMlp` (DPP / MLP) has a cost basis like a brokerage, but
+  its draws return basis first (`returnsBasisFirst`, `basisReturned` in
+  `project.ts`): tax free until the basis is gone, then long-term gains.
 - Medicare Part B premiums (`medicareTotal` in `runScenario.ts`) count a
   living person from age 67 or their retirement year, whichever is later
   (`paysMedicarePartB`), not from 65. The timeline's "Medicare enrollment

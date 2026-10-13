@@ -35,7 +35,28 @@ export const AFTER_TAX_ACCOUNT_KINDS: AccountKind[] = [
   "annuity",
   "cd",
   "savings",
+  "dppMlp",
 ];
+
+/** After-tax kinds that carry a cost basis the user enters. */
+export const COST_BASIS_ACCOUNT_KINDS: AccountKind[] = [
+  "investment",
+  "annuity",
+  "dppMlp",
+];
+
+export function hasCostBasis(kind: AccountKind): boolean {
+  return COST_BASIS_ACCOUNT_KINDS.includes(kind);
+}
+
+/**
+ * DPP / MLP distributions are mostly return of capital: they cut basis
+ * tax-free until it's gone, and only then are taxed as gains. Every other
+ * after-tax account splits each withdrawal pro rata between basis and gain.
+ */
+export function returnsBasisFirst(kind: AccountKind): boolean {
+  return kind === "dppMlp";
+}
 
 export const RETIREMENT_ACCOUNT_TYPES: RetirementAccountType[] = [
   "401k",

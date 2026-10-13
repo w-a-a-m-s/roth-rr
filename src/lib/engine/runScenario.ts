@@ -15,7 +15,10 @@ import {
   strategyStartYear,
 } from "@/lib/engine/project";
 import { depositPrincipalThrough } from "@/lib/engine/deposits";
-import { contributionAccounts } from "@/lib/domain/household";
+import {
+  AFTER_TAX_ACCOUNT_KINDS,
+  contributionAccounts,
+} from "@/lib/domain/household";
 import { progressiveTax } from "@/lib/engine/tax";
 import type { FederalTaxYear } from "@/lib/config/federalTax";
 import type { MedicarePartBYear } from "@/lib/config/medicare";
@@ -29,7 +32,7 @@ import { forFiling } from "@/lib/config/filingStatus";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import type { ReferenceData } from "@/lib/externalData/types";
 
-const AFTER_TAX_KINDS = new Set(["investment", "annuity", "cd", "savings"]);
+const AFTER_TAX_KINDS = new Set<string>(AFTER_TAX_ACCOUNT_KINDS);
 
 /**
  * Cost basis across after-tax accounts as of `throughYear`. Deposits are paid

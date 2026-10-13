@@ -1,7 +1,10 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState } from "react";
-import { accountsInDisplayOrder } from "@/lib/domain/household";
+import {
+  AFTER_TAX_ACCOUNT_KINDS,
+  accountsInDisplayOrder,
+} from "@/lib/domain/household";
 import { personRmdAge } from "@/lib/domain/rmd";
 import type { Household } from "@/lib/domain/types";
 import type { ScenarioResult } from "@/lib/engine/types";
@@ -127,7 +130,7 @@ const UNIT_LABEL: Record<Unit, string> = {
   none: "",
 };
 
-const AFTER_TAX_KINDS = new Set(["investment", "annuity", "cd", "savings"]);
+const AFTER_TAX_KINDS = new Set<string>(AFTER_TAX_ACCOUNT_KINDS);
 
 function formatValue(line: LineDef, row: Row, primaryId: string): string {
   const v = line.value(row, primaryId);

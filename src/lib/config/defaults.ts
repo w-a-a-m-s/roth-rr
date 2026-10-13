@@ -30,6 +30,7 @@ export const DEFAULT_ACCOUNT_GROWTH: Record<AccountKind, number> = {
   annuity: 0,
   cd: 0,
   savings: 0,
+  dppMlp: 0,
 };
 
 /**
