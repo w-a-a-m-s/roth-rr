@@ -48,6 +48,10 @@ Use this guide for UI, product features, and the index below.
 - Magic-link send does not create an Auth.js user. `createUser` runs only
   after they click the link. Login / register screen switches must not reset
   the email step.
+- Medicare Part B premiums (`medicareTotal` in `runScenario.ts`) count a
+  living person from age 67 or their retirement year, whichever is later
+  (`paysMedicarePartB`), not from 65. The timeline's "Medicare enrollment
+  (65)" milestone is just the enrollment date.
 
 ## Feature index
 

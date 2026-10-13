@@ -20,9 +20,9 @@ import { progressiveTax } from "@/lib/engine/tax";
 import type { FederalTaxYear } from "@/lib/config/federalTax";
 import type { MedicarePartBYear } from "@/lib/config/medicare";
 import {
-  MEDICARE_ELIGIBILITY_AGE,
   MEDICARE_IRMAA_LOOKBACK_YEARS,
   medicarePartBMonthlyPremium,
+  paysMedicarePartB,
 } from "@/lib/config/medicare";
 import { getStateTaxTable, type StateIncomeTaxYear } from "@/lib/config/stateTax";
 import { forFiling } from "@/lib/config/filingStatus";
@@ -132,8 +132,8 @@ function medicareTotal(
   let total = 0;
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const enrolled = row.livingIds.filter(
-      (id) => row.ages[id] >= MEDICARE_ELIGIBILITY_AGE,
+    const enrolled = household.people.filter(
+      (p) => row.livingIds.includes(p.id) && paysMedicarePartB(p, row.calendarYear),
     ).length;
     if (enrolled === 0) continue;
     const lookback = rows[Math.max(0, i - MEDICARE_IRMAA_LOOKBACK_YEARS)];

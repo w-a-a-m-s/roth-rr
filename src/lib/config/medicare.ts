@@ -44,8 +44,28 @@ export const FALLBACK_MEDICARE_PART_B: MedicarePartBYear =
  */
 export const CURRENT_MEDICARE_PART_B = FALLBACK_MEDICARE_PART_B;
 
-/** Age at which Medicare Part B enrollment (and premiums) begin. */
-export const MEDICARE_ELIGIBILITY_AGE = 65;
+/**
+ * Age from which the plan counts Part B premiums. Someone still working past
+ * it waits until they retire (see `paysMedicarePartB`).
+ */
+export const MEDICARE_PREMIUM_START_AGE = 67;
+
+/**
+ * Whether a person pays Part B premiums in `calendarYear`: from age 67 or
+ * their retirement year, whichever comes later. With no retirement year, from
+ * 67.
+ */
+export function paysMedicarePartB(
+  person: { birthYear?: number; retirementYear?: number },
+  calendarYear: number,
+): boolean {
+  if (!Number.isFinite(person.birthYear)) return false;
+  if (calendarYear - (person.birthYear as number) < MEDICARE_PREMIUM_START_AGE) return false;
+  if (Number.isFinite(person.retirementYear) && calendarYear < (person.retirementYear as number)) {
+    return false;
+  }
+  return true;
+}
 
 /** IRMAA is based on the MAGI reported on the tax return from two years prior. */
 export const MEDICARE_IRMAA_LOOKBACK_YEARS = 2;
