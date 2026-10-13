@@ -59,7 +59,8 @@ Use this guide for UI, product features, and the index below.
 - Results Main, Graphic view and Main in detail analysis share one "From
   today | From <milestone>" toggle (`DisplayFromToggle`, state in
   `ResultsView`). The milestone is the death year in Survivorship, the first
-  care year in Long-term care, otherwise the first retirement year
+  care year in Long-term care, the disability year in Disability, otherwise
+  the first retirement year
   (`displayMilestone`). It only hides earlier years (`scenarioFrom`); totals
   and Summary are unchanged. On Main it sits under Jump to.
 - "Taxes until <RMD age>" (`taxesEarly` in `computeTotals`, `runScenario.ts`)

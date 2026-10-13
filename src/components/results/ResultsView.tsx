@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useHousehold, useScenario } from '@/store/useScenario';
 import { usePlanAccess } from '@/components/plan/usePlanAccess';
-import type { ConversionTaxPaidFrom, DeathEvent, Household, LongTermCareSettings } from '@/lib/domain/types';
+import type { ConversionTaxPaidFrom, DeathEvent, DisabilityEvent, Household, LongTermCareSettings } from '@/lib/domain/types';
 import { useExternalData } from '@/store/useExternalData';
 import { calculate } from '@/lib/calculate';
 import { isHouseholdReady } from '@/lib/domain/household';
@@ -23,7 +23,7 @@ import { LabsLoading } from '@/lib/common/client';
 import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
 import { LifeInsuranceSummary } from '@/components/wizard/steps/LifeInsuranceSummary';
 import { AnalysisTabs, DisabilityControls, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
-import { disabilityEvent } from '@/lib/domain/insurance';
+import { disabilityEvent, resolveDisability } from '@/lib/domain/insurance';
 import { longTermCareSettings, resolveLongTermCare } from '@/lib/domain/longTermCare';
 import { resolveDeath, survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
@@ -129,7 +129,7 @@ export function ResultsView() {
 	const single = analysis !== 'retirement';
 	const shown = displayComparison ?? comparison;
 	const todayYear = refs.asOfDate ? Number(refs.asOfDate.slice(0, 4)) : new Date().getFullYear();
-	const milestone = displayMilestone(household, analysis, deathEvent, careSettings);
+	const milestone = displayMilestone(household, analysis, deathEvent, careSettings, disabilitySetting);
 	const fromYear = snapshotFromYear(
 		shown.baseline.rows.map(r => r.calendarYear),
 		from === 'today' ? todayYear : milestone.year,
@@ -236,14 +236,20 @@ export function ResultsView() {
 
 /**
  * The year "From <milestone>" starts at: the death in Survivorship, the first
- * year of care in Long-term care, otherwise the first retirement year.
+ * year of care in Long-term care, the disability in Disability, otherwise the
+ * first retirement year.
  */
 function displayMilestone(
 	household: Household,
 	analysis: string,
 	death: DeathEvent | null,
 	care: LongTermCareSettings | null,
+	disability: DisabilityEvent | null,
 ): { label: string; year: number } {
+	if (analysis === 'disability') {
+		const resolved = resolveDisability(household, disability);
+		if (resolved) return { label: 'From disability', year: resolved.year };
+	}
 	if (analysis === 'survivorship') {
 		const resolved = resolveDeath(household, death);
 		if (resolved) return { label: 'From death', year: resolved.year };
