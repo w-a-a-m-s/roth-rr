@@ -175,15 +175,15 @@ describe("joint after-tax accounts", () => {
     expect(accountOwnerLabel(account, people, "single")).toBe("Alex");
   });
 
-  it("defaults a joint deposit end year to the later retirement year", () => {
+  it("ends a joint account's deposits the year before the later retirement", () => {
     const people = [
       { ...complete("p1", "Alex"), retirementYear: 2028 },
       { ...complete("p2", "Sam"), retirementYear: 2032 },
     ];
     const joint = afterTaxAccount(people, "p1", true);
-    expect(accountDepositEndYear(joint, people, "mfj")).toBe(2032);
+    expect(accountDepositEndYear(joint, people, "mfj")).toBe(2031);
     expect(accountDepositEndYear({ ...joint, joint: false }, people, "mfj")).toBe(
-      2028,
+      2027,
     );
   });
 });

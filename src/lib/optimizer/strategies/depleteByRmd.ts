@@ -1,5 +1,9 @@
 import type { Account, Household } from "@/lib/domain/types";
-import { incomeMonthlyForYear, isIncomeActive } from "@/lib/domain/household";
+import {
+  contributionAccounts,
+  incomeMonthlyForYear,
+  isIncomeActive,
+} from "@/lib/domain/household";
 import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
 import { personRmdAge } from "@/lib/domain/rmd";
 import {
@@ -49,7 +53,7 @@ export function depleteByRmdSchedule(
   const years = conversionYears(household);
   if (!Number.isFinite(start) || years < 1) return padToProjection(household, []);
 
-  const retirementAccounts = household.accounts.filter(
+  const retirementAccounts = contributionAccounts(household).filter(
     (acc) => acc.kind === "retirementTaxable",
   );
   const balances: Record<string, number> = {};

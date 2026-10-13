@@ -285,10 +285,6 @@ export function accountOwnerLabel(
   return people.find((p) => p.id === account.ownerId)?.name || "Person";
 }
 
-/**
- * Default deposit end year: the account owner's retirement year, or the later
- * of the two when the account is joint (contributions while either is working).
- */
 /** Drop `joint` when the account kind or filing status cannot support it. */
 export function healAccountJoint(
   account: Account,
@@ -299,6 +295,12 @@ export function healAccountJoint(
   }
 }
 
+/**
+ * Last year anyone pays into the account: the year before its owner retires,
+ * or before the later of the two retires when the account is joint
+ * (contributions while either is working). New deposits default to it as
+ * their end year, and no deposit pays in after it.
+ */
 export function accountDepositEndYear(
   account: Pick<Account, "ownerId" | "joint" | "kind">,
   people: Person[],
@@ -309,7 +311,31 @@ export function accountDepositEndYear(
     : [people.find((p) => p.id === account.ownerId)?.retirementYear];
   const known = years.filter((y): y is number => Number.isFinite(y));
   if (known.length === 0) return undefined;
-  return Math.max(...known);
+  return Math.max(...known) - 1;
+}
+
+/**
+ * The plan's accounts with every deposit stopped once its owner retires
+ * (`accountDepositEndYear`). A deposit that would only start after that is
+ * dropped. Every engine path that reads deposits uses these accounts.
+ */
+export function contributionAccounts(household: Household): Account[] {
+  return household.accounts.map((acc) => {
+    const deposits = acc.deposits ?? [];
+    if (deposits.length === 0) return acc;
+    const last = accountDepositEndYear(acc, household.people, household.filingStatus);
+    if (last == null) return acc;
+    return {
+      ...acc,
+      deposits: deposits
+        .filter((d) => !(d.startYear > last))
+        .map((d) =>
+          d.frequency === "oneTime" || (d.endYear != null && d.endYear <= last)
+            ? d
+            : { ...d, endYear: last },
+        ),
+    };
+  });
 }
 
 /** Pension kinds, the incomes that carry a life-only / survivorship choice. */

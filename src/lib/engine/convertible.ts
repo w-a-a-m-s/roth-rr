@@ -1,6 +1,7 @@
 import type { Account, Household } from "@/lib/domain/types";
 import {
   accountGrowsInYear,
+  contributionAccounts,
   incomeMonthlyForYear,
   isIncomeActive,
 } from "@/lib/domain/household";
@@ -78,7 +79,7 @@ export function convertibleTotal(
   const years = conversionYears(household);
   if (!Number.isFinite(start) || years < 1) return 0;
 
-  const retirementAccounts = household.accounts.filter(
+  const retirementAccounts = contributionAccounts(household).filter(
     (acc) => acc.kind === "retirementTaxable",
   );
   const balances: Record<string, number> = {};

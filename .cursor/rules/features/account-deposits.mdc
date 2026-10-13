@@ -33,6 +33,18 @@ compounding exponent: a deposit in year `Y` lands on January 1 of `Y + 1`, so it
 grows for `start - Y - 1` years. Keep those two in sync or the boundary year
 double-counts (or loses) a year of growth.
 
+## Deposits stop at retirement
+
+No deposit pays in from its owner's retirement year on (joint after-tax
+account: the later of the two), whatever `endYear` says.
+`accountDepositEndYear` is that last year (retirement year - 1) and the
+default end year for new deposits; `contributionAccounts(household)` clamps
+every deposit to it. All deposit readers (`project.ts`, `convertible.ts`,
+`depleteByRmd.ts`, `runScenario.ts`) take accounts from it, never
+`household.accounts`. Survivorship also stops the deceased's own accounts'
+deposits after the death; a joint account keeps going until the survivor
+retires.
+
 ## Tax treatment follows the account kind
 
 | Account kind | Deposit effect |
@@ -76,6 +88,7 @@ series, both hidden when every year is zero.
 - A one-time deposit ignores `endYear` and only ever pays in `startYear`.
 - Open-ended deposits (no `endYear`) are bounded by the caller's `throughYear`
   in `deposits.ts`, so nothing loops forever.
-- New deposits default `endYear` to the account owner's retirement year. On a
-  joint after-tax account that is the later of the two people (see
-  `accountDepositEndYear`). Existing deposits keep the year the user set.
+- New deposits default `endYear` to the year before the account owner
+  retires. On a joint after-tax account that is the later of the two people
+  (see `accountDepositEndYear`). Existing deposits keep the year the user
+  set, but the engine still stops them at retirement.

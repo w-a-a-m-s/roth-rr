@@ -135,26 +135,26 @@
     "deletedBusinesses": [],
     "businesses": []
   },
-  "commit": "b06bd6f",
-  "commitDate": "2026-10-09T20:16:37+00:00",
+  "commit": "e1ae705",
+  "commitDate": "2026-10-13T15:14:53+00:00",
   "expected": {
     "baseline": {
-      "taxesTotal": 738168.58,
+      "taxesTotal": 738146.24,
       "medicareTotal": 125628,
-      "afterTaxAssetsAtRmd": 912297.77,
-      "inheritanceFinal": 901464.41
+      "afterTaxAssetsAtRmd": 911114,
+      "inheritanceFinal": 900295.41
     },
     "roth": {
-      "taxesTotal": 768950.82,
+      "taxesTotal": 768986.61,
       "medicareTotal": 140232,
-      "afterTaxAssetsAtRmd": 1133725.96,
-      "inheritanceFinal": 1930323.23
+      "afterTaxAssetsAtRmd": 1132504.61,
+      "inheritanceFinal": 1929117.12
     },
     "deltas": {
-      "taxesTotal": 30782.24,
+      "taxesTotal": 30840.37,
       "medicareTotal": 14604,
-      "afterTaxAssetsAtRmd": 221428.19,
-      "inheritanceFinal": 1028858.81
+      "afterTaxAssetsAtRmd": 221390.61,
+      "inheritanceFinal": 1028821.7
     }
   }
 }

@@ -1221,8 +1221,9 @@ describe("withdrawals cannot overdraw or invent phantom income", () => {
 
 describe("deposits into accounts", () => {
   /**
-   * One person retiring in 2030 (so the projection starts in 2030), one
-   * account, no income and no expenses. Deposits are the only moving part.
+   * One person still working until 2040, with the projection starting in
+   * 2030, one account, no income and no expenses. Deposits are the only
+   * moving part (they stop once the person retires).
    */
   function depositHousehold(
     account: Partial<Household["accounts"][number]> & {
@@ -1232,7 +1233,7 @@ describe("deposits into accounts", () => {
     return {
       filingStatus: "single",
       residenceState: "FL",
-      people: [{ id: "p1", name: "Pat", birthYear: 1970, retirementYear: 2030 }],
+      people: [{ id: "p1", name: "Pat", birthYear: 1970, retirementYear: 2040 }],
       accounts: [
         {
           id: "acc",
@@ -1248,7 +1249,7 @@ describe("deposits into accounts", () => {
       incomes: [],
       realEstate: [],
       expenses: [],
-      assumptions: { expenseGrowth: 0, finalAge: 62 },
+      assumptions: { expenseGrowth: 0, finalAge: 62, startYear: 2030 },
       optimizer: { strategy: "manual", manualSchedule: [] },
     };
   }
@@ -1260,6 +1261,24 @@ describe("deposits into accounts", () => {
     frequency: "monthly",
     startYear: 2030,
     ...over,
+  });
+
+  it("stops every deposit once its owner retires", () => {
+    // Runs through 2045 as entered, but Pat retires in 2040.
+    const household = depositHousehold({
+      balance: 0,
+      deposits: [
+        deposit({ frequency: "yearly", amount: 10_000, endYear: 2045 }),
+        deposit({ id: "late", frequency: "oneTime", amount: 5_000, startYear: 2041 }),
+      ],
+    });
+    household.assumptions.finalAge = 75;
+    const rows = projectScenario(household, zeros(projectionYears(household)));
+    const at = (year: number) => rows.find((r) => r.calendarYear === year)!;
+    expect(at(2039).depositMonthly.dep * 12).toBeCloseTo(10_000, 6);
+    expect(at(2040).monthlyDeposits).toBe(0);
+    expect(at(2041).monthlyDeposits).toBe(0);
+    expect(at(2044).balances.acc).toBeCloseTo(100_000, 6);
   });
 
   it("adds a monthly deposit at 12x the amount, after that year's growth", () => {

@@ -119,6 +119,33 @@ describe("withdrawals once an event happens", () => {
     expect(draws(at(r, 2038)).length).toBeGreaterThan(0);
   });
 
+  it("stops the deceased's own contributions, but not a joint account's while the survivor works", () => {
+    const working = couple({
+      people: [
+        { id: "a", name: "Alex", birthYear: 1960, retirementYear: 2036, sex: "male" },
+        { id: "b", name: "Sam", birthYear: 1962, retirementYear: 2034, sex: "female" },
+      ],
+      assumptions: { expenseGrowth: 0, finalAge: 90, startYear: 2026 },
+      accounts: [
+        { id: "ira", label: "IRA", ownerId: "a", kind: "retirementTaxable", balance: 300_000, growthRate: 0, retirementType: "ira",
+          deposits: [{ id: "sep", label: "SEP", amount: 1_000, frequency: "monthly", startYear: 2026, endYear: 2040 }] },
+        { id: "brk", label: "Brokerage", ownerId: "a", kind: "investment", balance: 50_000, growthRate: 0, costBasis: 0, joint: true,
+          deposits: [{ id: "save", label: "Savings", amount: 500, frequency: "monthly", startYear: 2026 }] },
+      ],
+    });
+    const r = rows(working, death);
+    expect(at(r, 2030).depositMonthly.sep).toBe(1_000);
+    expect(at(r, 2031).depositMonthly.sep).toBeUndefined();
+    // Sam keeps saving into the joint account until retiring in 2034.
+    expect(at(r, 2033).depositMonthly.save).toBe(500);
+    expect(at(r, 2034).depositMonthly.save).toBeUndefined();
+    // Without a death, both stop the year Alex (the later one) retires.
+    const plain = rows(working);
+    expect(at(plain, 2035).depositMonthly.sep).toBe(1_000);
+    expect(at(plain, 2035).depositMonthly.save).toBe(500);
+    expect(at(plain, 2036).monthlyDeposits).toBe(0);
+  });
+
   it("draws nothing in a year the income already covers", () => {
     const rich = couple({
       incomes: [

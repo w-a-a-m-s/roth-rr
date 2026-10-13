@@ -15,6 +15,7 @@ import {
   strategyStartYear,
 } from "@/lib/engine/project";
 import { depositPrincipalThrough } from "@/lib/engine/deposits";
+import { contributionAccounts } from "@/lib/domain/household";
 import { progressiveTax } from "@/lib/engine/tax";
 import type { FederalTaxYear } from "@/lib/config/federalTax";
 import type { MedicarePartBYear } from "@/lib/config/medicare";
@@ -36,7 +37,7 @@ const AFTER_TAX_KINDS = new Set(["investment", "annuity", "cd", "savings"]);
  * taxed again as a gain when the estate is valued.
  */
 function afterTaxCostBasis(household: Household, throughYear: number): number {
-  return household.accounts
+  return contributionAccounts(household)
     .filter((a) => AFTER_TAX_KINDS.has(a.kind))
     .reduce(
       (sum, a) =>

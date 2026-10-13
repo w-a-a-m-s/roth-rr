@@ -79,7 +79,7 @@ const FREQUENCY_OPTIONS: { value: DepositFrequency; label: string }[] = [
 const depositField = "min-w-[7rem] flex-1";
 
 const DEPOSITS_HELP =
-  "Money you pay into this account. Deposits dated before your plan starts (the first retirement year) build up the opening balance instead of showing in the plan's cash flow. From the start year on, a deposit comes out of that year's income, just like an expense.";
+  "Money you pay into this account. Deposits dated before your plan starts (the first retirement year) build up the opening balance instead of showing in the plan's cash flow. From the start year on, a deposit comes out of that year's income, just like an expense. Deposits stop once the owner retires (on a joint account, once you both have), whatever end year you set.";
 
 const ACCOUNT_GROUPS: {
   title: string;
@@ -268,7 +268,7 @@ function Deposits({ account }: { account: Account }) {
   const currentYear = new Date().getFullYear();
   const start = projectionStartYear(household);
   const planStartYear = Number.isFinite(start) ? start : null;
-  const ownerRetirementYear = accountDepositEndYear(
+  const depositEndYear = accountDepositEndYear(
     account,
     household.people,
     household.filingStatus,
@@ -294,8 +294,8 @@ function Deposits({ account }: { account: Account }) {
               // Most deposits are contributions made while still working, so
               // default to stopping when the owner retires (later of the two
               // when the account is joint).
-              ...(Number.isFinite(ownerRetirementYear)
-                ? { endYear: ownerRetirementYear }
+              ...(Number.isFinite(depositEndYear)
+                ? { endYear: depositEndYear }
                 : {}),
             });
             setEditingId(id);

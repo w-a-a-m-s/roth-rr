@@ -11,9 +11,11 @@ import {
   realEstateGrowthStart,
   businessGrowthStart,
   expenseMonthlyForYear,
+  contributionAccounts,
   eventWithdrawalKey,
   incomeMonthlyForYear,
   isIncomeActive,
+  isJointAccount,
   isWithdrawalIncome,
 } from "@/lib/domain/household";
 import {
@@ -700,9 +702,9 @@ export function projectScenario(
           growthRate: IMPLICIT_ROTH_GROWTH,
         }
       : null;
-  const accounts = implicitRoth
-    ? [...household.accounts, implicitRoth]
-    : household.accounts;
+  // Deposits stop once their owner retires.
+  const planAccounts = contributionAccounts(household);
+  const accounts = implicitRoth ? [...planAccounts, implicitRoth] : planAccounts;
 
   const retirementAccounts = accounts.filter(
     (acc) => acc.kind === "retirementTaxable",
@@ -910,6 +912,13 @@ export function projectScenario(
     let monthlyDeposits = 0;
     let preTaxDeposits = 0;
     for (const acc of accounts) {
+      // Survivorship: nobody pays into the deceased's own accounts. A joint
+      // account keeps going while the survivor still works.
+      if (hasPassed(death, acc.ownerId, calendarYear)) {
+        if (!isJointAccount(acc, planFiling)) continue;
+        const survivor = household.people.find((p) => p.id === death?.survivorId);
+        if (!(calendarYear < (survivor?.retirementYear ?? -Infinity))) continue;
+      }
       for (const deposit of acc.deposits ?? []) {
         const annual = depositAmountForYear(deposit, calendarYear);
         if (annual <= 0) continue;
