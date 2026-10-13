@@ -63,18 +63,24 @@ next year:
 - expenses drop to `SURVIVOR_EXPENSE_SHARE` (70%) of the plan's amounts.
 Inheritance uses the final row's filing status.
 
-## Living off the accounts once an event happens (`projectScenario` 5c)
+## Lifetime income from the accounts once an event happens
 
 Survivorship (from the year after the death) and Long-term care (from the
-first care year) cover every short year from then on out of the accounts,
-so the surplus lands at 0 until they run dry. Order: after-tax accounts
-(gains vs basis taxed as LTCG), then tax-deferred (ordinary income), then
-Roth. Never business or real estate; life insurance proceeds keep paying
-only their fixed income. The draw is grossed up for the tax it adds (fixed
-point on `priceYear`); the rental-loss allowance keeps its pre-draw MAGI.
-Each take is an income line `draw:<accountId>` (`eventWithdrawalKey`,
-labelled "Withdrawal · <account>", charted as Withdrawals from assets).
-No early-withdrawal penalty is modelled. Disability doesn't draw (yet).
+first care year) turn every investment and retirement account (after-tax,
+tax-deferred, Roth; never business or real estate) into a fixed lifetime
+income, the same way life insurance proceeds work: the balance that
+January times `lifeInsurancePayoutRate` (the Transamerica "Immediate
+Payout %" column; under 59 is 5%, past 86 holds) for the age of the person
+it pays (the owner, the survivor after a death, the younger spouse on a
+joint account). From then the account grows 8%
+(`LIFE_INSURANCE_PROCEEDS_GROWTH`) instead of its own rate and pays the
+income first (step 2b). Guaranteed: past an empty balance it keeps paying,
+taxed like the account's money (tax-deferred ordinary, after-tax as gains
+vs basis, Roth free). The income counts toward the RMD: only an RMD above it
+is added. Income line `draw:<accountId>` (`eventWithdrawalKey`), labelled
+"Lifetime income · <account>", charted as Withdrawals from assets. It doesn't
+chase the shortfall: a year can still come up short or over. Disability
+doesn't do this (yet).
 
 Survivorship, Disability and Long-term care show only the no-conversion
 scenario (`single` in ResultsView): one snapshot table, no No/With toggles,

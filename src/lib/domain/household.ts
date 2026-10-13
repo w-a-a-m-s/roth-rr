@@ -418,8 +418,8 @@ function disabilityPayoutShare(
 }
 
 /**
- * Income key for what Survivorship or Long-term care draws from an account
- * to cover a short year once the event happens (`draw:<accountId>`).
+ * Income key for the fixed lifetime income an account pays once a
+ * Survivorship or Long-term care event happens (`draw:<accountId>`).
  */
 export function eventWithdrawalKey(accountId: string): string {
   return `draw:${accountId}`;

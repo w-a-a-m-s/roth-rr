@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { Household } from "@/lib/domain/types";
 import type { ProjectionOptions, ProjectionRow } from "@/lib/engine/types";
 import { projectScenario, projectionYears } from "@/lib/engine/project";
+import { SOCIAL_SECURITY_TAXABLE_PCT } from "@/lib/config/federalTax";
 
-// Alex (born 1960) and Sam (born 1962), retired in 2026. Spending is well
-// over Social Security, so every year after an event comes up short.
+// Alex (born 1960) and Sam (born 1962), retired in 2026. Accounts don't grow
+// on their own, so the 8% after an event is easy to see.
 function couple(patch: Partial<Household> = {}): Household {
   return {
     filingStatus: "mfj",
@@ -46,45 +47,45 @@ const draws = (row: ProjectionRow) =>
 // Alex passes at 70: the end of 2030.
 const death: ProjectionOptions = { death: { personId: "a", deathAge: 70 } };
 
-describe("withdrawals once an event happens", () => {
-  it("draws nothing in the Retirement analysis", () => {
+describe("lifetime income once an event happens", () => {
+  it("pays nothing from the accounts in the Retirement analysis", () => {
     for (const row of rows(couple())) expect(draws(row)).toEqual([]);
   });
 
-  it("starts the year after a death and covers the shortfall exactly", () => {
+  it("starts the year after a death at the survivor's payout rate", () => {
     const r = rows(couple(), death);
     expect(draws(at(r, 2030))).toEqual([]);
-    expect(at(r, 2030).surplus).toBeLessThan(0);
-    expect(draws(at(r, 2031)).length).toBeGreaterThan(0);
-    expect(at(r, 2031).surplus).toBeCloseTo(0, 1);
+    // Sam is 69 in 2031: 6.7% of each balance on January 1.
+    const y = at(r, 2031);
+    expect(y.incomeMonthly["draw:brk"] * 12).toBeCloseTo(50_000 * 0.067, 6);
+    expect(y.incomeMonthly["draw:ira"] * 12).toBeCloseTo(300_000 * 0.067, 6);
+    expect(y.incomeMonthly["draw:roth"] * 12).toBeCloseTo(100_000 * 0.067, 6);
   });
 
-  it("draws the investment account first, realizing gains above basis", () => {
+  it("grows what's left at 8% and keeps the income fixed", () => {
     const r = rows(couple(), death);
-    const year = at(r, 2031);
-    // $10,000/mo at 70% is $84,000 a year; SS covers $36,000.
-    expect(year.incomeMonthly["draw:brk"] * 12).toBeCloseTo(50_000, 6);
-    // Zero basis, so the whole investment draw is a gain.
-    expect(year.capitalGainsIncome).toBeCloseTo(50_000, 6);
-    expect(year.balances.brk).toBeCloseTo(0, 6);
+    const income = 300_000 * 0.067;
+    expect(at(r, 2031).balances.ira).toBeCloseTo(300_000 * 1.08 - income, 6);
+    expect(at(r, 2032).balances.ira).toBeCloseTo((300_000 * 1.08 - income) * 1.08 - income, 6);
+    expect(at(r, 2045).incomeMonthly["draw:ira"] * 12).toBeCloseTo(income, 6);
   });
 
-  it("then the IRA, grossed up for the tax it adds", () => {
-    const r = rows(couple(), death);
-    const year = at(r, 2031);
-    const ira = year.incomeMonthly["draw:ira"] * 12;
-    // The IRA covers the rest of the gap plus the year's tax.
-    expect(ira).toBeCloseTo(84_000 - 36_000 - 50_000 + year.annualTax, 0);
-    expect(year.balances.ira).toBeCloseTo(300_000 - ira, 6);
-    expect(year.grossTaxableIncome).toBeCloseTo(36_000 * 0.85 + ira, 6);
+  it("taxes each income like the account's money", () => {
+    const y = at(rows(couple(), death), 2031);
+    // IRA income is ordinary; the zero-basis brokerage income is all gain;
+    // Roth income is tax free.
+    expect(y.grossTaxableIncome).toBeCloseTo(36_000 * SOCIAL_SECURITY_TAXABLE_PCT + 300_000 * 0.067, 6);
+    expect(y.capitalGainsIncome).toBeCloseTo(50_000 * 0.067, 6);
   });
 
-  it("reaches the Roth only once the IRA is empty, and never touches business or real estate", () => {
+  it("counts the income toward the RMD", () => {
+    // Sam's RMD age is 75 (2037): 6.7% beats the required ~4%.
+    expect(at(rows(couple(), death), 2040).incomeMonthly["rmd:ira"]).toBeUndefined();
+    expect(at(rows(couple()), 2040).incomeMonthly["rmd:ira"]).toBeGreaterThan(0);
+  });
+
+  it("never touches business or real estate", () => {
     const r = rows(couple(), death);
-    const firstRoth = r.find((row) => (row.incomeMonthly["draw:roth"] ?? 0) > 0)!;
-    expect(firstRoth).toBeDefined();
-    expect(firstRoth.balances.ira).toBeCloseTo(0, 6);
-    expect(at(r, 2031).incomeMonthly["draw:roth"]).toBeUndefined();
     const plain = rows(couple());
     for (const row of r) {
       const same = at(plain, row.calendarYear);
@@ -93,15 +94,8 @@ describe("withdrawals once an event happens", () => {
     }
   });
 
-  it("leaves a shortfall once every account is empty", () => {
-    const r = rows(couple(), death);
-    const last = r[r.length - 1];
-    expect(last.retirementTotal + last.rothTotal + last.afterTaxTotal).toBeCloseTo(0, 6);
-    expect(last.surplus).toBeLessThan(0);
-  });
-
-  it("starts in the first year of long-term care", () => {
-    // Alex in home care from 75 (2035).
+  it("starts in the first year of long-term care at the owner's age", () => {
+    // Alex in home care from 75 (2035): 7.3%.
     const care: ProjectionOptions = {
       longTermCare: {
         who: "one",
@@ -113,10 +107,10 @@ describe("withdrawals once an event happens", () => {
     };
     const r = rows(couple(), care);
     expect(draws(at(r, 2034))).toEqual([]);
-    expect(draws(at(r, 2035)).length).toBeGreaterThan(0);
-    expect(at(r, 2035).surplus).toBeCloseTo(0, 1);
-    // Care is over, but the household keeps living off its accounts.
-    expect(draws(at(r, 2038)).length).toBeGreaterThan(0);
+    const ira = at(r, 2034).balances.ira;
+    expect(at(r, 2035).incomeMonthly["draw:ira"] * 12).toBeCloseTo(ira * 0.073, 6);
+    // Care is over, but the income keeps paying.
+    expect(at(r, 2040).incomeMonthly["draw:ira"] * 12).toBeCloseTo(ira * 0.073, 6);
   });
 
   it("stops the deceased's own contributions, but not a joint account's while the survivor works", () => {
@@ -146,12 +140,4 @@ describe("withdrawals once an event happens", () => {
     expect(at(plain, 2036).monthlyDeposits).toBe(0);
   });
 
-  it("draws nothing in a year the income already covers", () => {
-    const rich = couple({
-      incomes: [
-        { id: "ss", label: "SS", ownerId: "b", kind: "socialSecurity", monthlyAmount: 15_000, growthRate: 0, taxability: "full" },
-      ],
-    });
-    for (const row of rows(rich, death)) expect(draws(row)).toEqual([]);
-  });
 });

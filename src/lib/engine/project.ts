@@ -41,7 +41,10 @@ import {
   longTermCarePolicies,
   resolveDisability,
 } from "@/lib/domain/insurance";
-import { LIFE_INSURANCE_PROCEEDS_GROWTH } from "@/lib/config/lifeInsurancePayout";
+import {
+  LIFE_INSURANCE_PROCEEDS_GROWTH,
+  lifeInsurancePayoutRate,
+} from "@/lib/config/lifeInsurancePayout";
 import { personRmdAge } from "@/lib/domain/rmd";
 import {
   DEFAULT_REPAYMENT_YEARS,
@@ -766,45 +769,39 @@ export function projectScenario(
   const firstYearGrowth = firstYearGrowthFraction(start, refs.asOfDate);
 
   // Survivorship and Long-term care: from the year the event takes effect
-  // (the year after a death, the first year of care) a short year is covered
-  // from the accounts, after-tax first, then tax-deferred, then Roth.
+  // (the year after a death, the first year of care) every investment and
+  // retirement account pays a fixed lifetime income, like the life insurance
+  // proceeds: its balance that January times the payout table's rate for the
+  // age of the person it pays. What's left grows 8% a year. The income is
+  // guaranteed, so it keeps paying if the balance runs out.
   const careStart =
     care && care.stays.length > 0
       ? Math.min(...care.stays.map((stay) => stay.firstYear))
       : null;
-  const eventFundsShortfall = (calendarYear: number) =>
-    (death != null && calendarYear > death.year) ||
-    (careStart != null && calendarYear >= careStart);
-  const drawOrder = [
-    ...accounts.filter((acc) => AFTER_TAX_KINDS.includes(acc.kind)),
-    ...accounts.filter((acc) => acc.kind === "retirementTaxable"),
-    ...accounts.filter((acc) => acc.kind === "rothTaxFree"),
-  ];
-  /**
-   * Take `amount` from the accounts in draw order, capped at what's there:
-   * each account's take, the taxable ordinary income (tax-deferred) and the
-   * gains realized (after-tax, against remaining basis).
-   */
-  const planEventDraws = (amount: number) => {
-    const takes: Record<string, number> = {};
-    let left = amount;
-    let total = 0;
-    let ordinary = 0;
-    let gains = 0;
-    for (const acc of drawOrder) {
-      if (left <= 0) break;
-      const bal = Math.max(0, balances[acc.id]);
-      const take = Math.min(bal, left);
-      if (take <= 0) continue;
-      takes[acc.id] = take;
-      left -= take;
-      total += take;
-      if (acc.kind === "retirementTaxable") ordinary += take;
-      if (basisRemaining[acc.id] != null) {
-        gains += take * Math.max(0, 1 - basisRemaining[acc.id] / bal);
-      }
-    }
-    return { takes, total, ordinary, gains };
+  const eventYears = [death ? death.year + 1 : null, careStart].filter(
+    (y): y is number => y != null,
+  );
+  const eventStart = eventYears.length > 0 ? Math.min(...eventYears) : null;
+  const incomeAccounts = accounts.filter(
+    (acc) =>
+      AFTER_TAX_KINDS.includes(acc.kind) ||
+      acc.kind === "retirementTaxable" ||
+      acc.kind === "rothTaxFree",
+  );
+  // Yearly income per account, fixed the year the event starts.
+  let eventIncome: Record<string, number> | null = null;
+  const incomeRecipientAge = (acc: Account, calendarYear: number) => {
+    const ids = isJointAccount(acc, planFiling)
+      ? household.people
+          .filter((p) => !hasPassed(death, p.id, calendarYear))
+          .map((p) => p.id)
+      : [effectiveOwner(death, acc.ownerId, calendarYear)];
+    const ages = ids
+      .map((id) => household.people.find((p) => p.id === id)?.birthYear)
+      .filter((y): y is number => Number.isFinite(y))
+      .map((y) => calendarYear - y);
+    // Joint: the younger of the two, as the rider does for joint life.
+    return ages.length > 0 ? Math.min(...ages) : NaN;
   };
 
   const rows: ProjectionRow[] = [];
@@ -844,8 +841,20 @@ export function projectScenario(
     //    the app), year 0 compounds only for the rest of that year. All
     //    accounts keep compounding for life, including tax-deferred ones past
     //    the RMD age: the money stays invested while RMDs are taken.
+    if (eventIncome == null && eventStart != null && calendarYear >= eventStart) {
+      eventIncome = {};
+      for (const acc of incomeAccounts) {
+        const base = Math.max(0, balances[acc.id]);
+        if (!(base > 0)) continue;
+        eventIncome[acc.id] = base * lifeInsurancePayoutRate(incomeRecipientAge(acc, calendarYear));
+      }
+    }
     const yearFraction = i === 0 ? firstYearGrowth : 1;
     for (const acc of accounts) {
+      if (eventIncome?.[acc.id] != null) {
+        balances[acc.id] *= Math.pow(1 + LIFE_INSURANCE_PROCEEDS_GROWTH, yearFraction);
+        continue;
+      }
       if (!accountGrowsInYear(acc, household.people, calendarYear, planStart)) {
         continue;
       }
@@ -876,6 +885,22 @@ export function projectScenario(
       }
       balances[accId] -= take;
       withdrawalTaken[income.id] = take;
+    }
+    // 2b) The event's fixed income out of each account. Past what the balance
+    //     holds it's still paid (guaranteed), taxed like the account's money.
+    let eventOrdinary = 0;
+    for (const [accId, income] of Object.entries(eventIncome ?? {})) {
+      const acc = incomeAccounts.find((a) => a.id === accId)!;
+      const balBefore = Math.max(0, balances[accId]);
+      const take = Math.min(balBefore, income);
+      if (acc.kind === "retirementTaxable") eventOrdinary += income;
+      if (basisRemaining[accId] != null) {
+        const basis = basisRemaining[accId];
+        const basisShare = balBefore > 0 ? basis / balBefore : 0;
+        capitalGainsIncome += income - take * basisShare;
+        basisRemaining[accId] = Math.max(0, basis - take * basisShare);
+      }
+      balances[accId] = balBefore - take;
     }
 
     // 3) Roth conversions: cascade out of tax-deferred accounts into Roth.
@@ -978,6 +1003,13 @@ export function projectScenario(
       }
     }
 
+    for (const [accId, income] of Object.entries(eventIncome ?? {})) {
+      totalMonthlyIncome += income / 12;
+      incomeMonthly[eventWithdrawalKey(accId)] = income / 12;
+    }
+    federalOrdinaryGross += eventOrdinary;
+    stateOrdinaryGross += eventOrdinary;
+
     // RMD income once the owner reaches their birth-year RMD age (taxable in
     // full). Per the IRS, the amount is the prior December 31 balance divided by
     // the owner's Uniform Lifetime denominator for their age this year, so
@@ -992,7 +1024,11 @@ export function projectScenario(
       const ownerRmdAge = personRmdAge(owner);
       if (ownerRmdAge == null || ages[ownerId] < ownerRmdAge) continue;
       const base = Math.max(0, priorYearEndBalances[acc.id] ?? 0);
-      const required = base / uniformLifetimeDenominator(ages[ownerId]);
+      // The event's income from this account counts toward its RMD.
+      const required = Math.max(
+        0,
+        base / uniformLifetimeDenominator(ages[ownerId]) - (eventIncome?.[acc.id] ?? 0),
+      );
       const bal = Math.max(0, balances[acc.id]);
       const rmdAnnual = Math.min(bal, required);
       if (rmdAnnual <= 0) continue;
@@ -1276,72 +1312,23 @@ export function projectScenario(
       monthlyExpenses += payment;
     }
 
-    // The year's tax with `extraOrdinary` / `extraGains` on top, and the part
-    // of it withheld from the conversion.
     // 5b) Conversion tax paid from assets: the tax the conversion adds this
     //     year is withheld from the converted dollars, so the Roth gets the
     //     rest and the household's cash flow doesn't pay it. The full
     //     conversion is still taxable (withholding is part of the
     //     distribution), so the year's tax is unchanged.
-    const stateTaxesOrdinary = state.hasIncomeTax && !state.capitalGainsOnly;
-    const priceYear = (extraOrdinary: number, extraGains: number) => {
-      const fed = federalOrdinaryGross + extraOrdinary;
-      const st = stateTaxesOrdinary ? stateOrdinaryGross + extraOrdinary : 0;
-      const gains = capitalGainsIncome + extraGains;
-      const taxes = taxForYear(fed, st, gains);
-      if (conversionTaxPaidFrom !== "assets" || converted <= 0) {
-        return { taxes, withheld: 0 };
-      }
+    const taxes = taxForYear(federalOrdinaryGross, stateOrdinaryGross, capitalGainsIncome);
+    let conversionTaxWithheld = 0;
+    if (conversionTaxPaidFrom === "assets" && converted > 0) {
       const withoutConversion = taxForYear(
-        Math.max(0, fed - converted),
-        st > 0 ? Math.max(0, st - converted) : 0,
-        gains,
+        Math.max(0, federalOrdinaryGross - converted),
+        stateOrdinaryGross > 0 ? Math.max(0, stateOrdinaryGross - converted) : 0,
+        capitalGainsIncome,
       );
-      const withheld = Math.min(
+      conversionTaxWithheld = Math.min(
         converted,
         Math.max(0, taxes.annualTax - withoutConversion.annualTax),
       );
-      return { taxes, withheld };
-    };
-    let priced = priceYear(0, 0);
-
-    // 5c) Survivorship and Long-term care: once the event happens, a year
-    //     that comes up short is covered from the household's investment and
-    //     retirement accounts (never business or real estate), grossed up
-    //     for the tax the withdrawals add. The rental-loss allowance keeps
-    //     the MAGI it had before these withdrawals.
-    if (eventFundsShortfall(calendarYear)) {
-      const outflow = (monthlyExpenses + monthlyDeposits) * 12;
-      const cashTax = (p: typeof priced) => p.taxes.annualTax - p.withheld;
-      const baseTax = cashTax(priced);
-      const gap = outflow - (totalMonthlyIncome * 12 - baseTax);
-      if (gap > 0.005) {
-        let target = gap;
-        let plan = planEventDraws(target);
-        for (let k = 0; k < 50; k++) {
-          // Ran out of money to draw: take everything that's left.
-          if (plan.total < target - 0.005) break;
-          const next =
-            gap + cashTax(priceYear(plan.ordinary, plan.gains)) - baseTax;
-          if (Math.abs(next - target) < 0.005) break;
-          target = next;
-          plan = planEventDraws(target);
-        }
-        for (const [accId, take] of Object.entries(plan.takes)) {
-          const balBefore = Math.max(0, balances[accId]);
-          if (basisRemaining[accId] != null && balBefore > 0) {
-            const basis = basisRemaining[accId];
-            basisRemaining[accId] = Math.max(0, basis - take * (basis / balBefore));
-          }
-          balances[accId] = balBefore - take;
-          incomeMonthly[eventWithdrawalKey(accId)] = take / 12;
-          totalMonthlyIncome += take / 12;
-        }
-        federalOrdinaryGross += plan.ordinary;
-        if (stateTaxesOrdinary) stateOrdinaryGross += plan.ordinary;
-        capitalGainsIncome += plan.gains;
-        priced = priceYear(0, 0);
-      }
     }
 
     const {
@@ -1358,8 +1345,7 @@ export function projectScenario(
       stateTaxByBracket,
       stateAnnualTax,
       annualTax,
-    } = priced.taxes;
-    const conversionTaxWithheld = priced.withheld;
+    } = taxes;
     if (targetRoth) balances[targetRoth.id] -= conversionTaxWithheld;
 
     const monthlyTax = annualTax / 12;
