@@ -344,7 +344,9 @@ user asks for a change:
    Each tab shows only its own sections; Main is the default.
    - **Main**: the Assets, Income & Taxes tables (No conversion, then With
      conversion).
-   - **Summary**: Total impact, the six metric cards, After-tax assets.
+   - **Summary**: Total impact, the metric cards (lifetime taxes only; taxes
+     before and after the RMD age sit behind a "Show taxes before and after"
+     link), After-tax assets.
    - **Graphic view**: Retirement Objective, Income Sources, Income Applied
      and Analysis Results charts, then the Assets and Cash flow charts.
    - **Main in detail analysis**: the Year-by-year table (alone, for

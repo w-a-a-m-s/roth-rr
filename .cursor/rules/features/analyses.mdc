@@ -91,7 +91,9 @@ Approved by the user: keep it (see AGENTS.md, "Results layout").
 Under the analysis links, four tabs (`ResultsView` state, Main on load);
 each tab shows only its own sections:
 - **Main**: the Assets, Income & Taxes tables.
-- **Summary**: Total impact, the metric cards, and After-tax assets.
+- **Summary**: Total impact, the metric cards, and After-tax assets. Taxes
+  show as lifetime only; the before and after RMD age split opens from a
+  "Show taxes before and after" link under the cards.
 - **Graphic view**: `PresentationCharts` plus the Assets / Cash flow charts.
 - **Main in detail analysis**: the Year-by-year table, alone in the scroller
   for pin-to-top.
