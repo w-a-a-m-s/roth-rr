@@ -6,8 +6,13 @@ import type { Comparison, ScenarioResult } from "@/lib/engine/types";
 import { Select } from "@/components/ui/inputs";
 import { formatCurrency } from "@/lib/format";
 import { DualScroll } from "@/components/results/DualScroll";
+import { retirementStartYear } from "@/lib/engine/project";
+import { useExternalData } from "@/store/useExternalData";
 import {
+  SNAPSHOT_FROM_LABELS,
   buildSnapshotTable,
+  snapshotFromYear,
+  type SnapshotFrom,
   type SnapshotAssetGroup,
   type SnapshotLine,
   type SnapshotSection,
@@ -97,14 +102,24 @@ export function ScenarioSnapshot({
   /** Year the table opens on (the plan start); earlier years are a Jump away. */
   initialYear?: number;
 }) {
+  const asOfDate = useExternalData((s) => s.refs.asOfDate);
+  const todayYear = asOfDate ? Number(asOfDate.slice(0, 4)) : new Date().getFullYear();
   const allYears = comparison.baseline.rows.map((r) => r.calendarYear);
-  const [startYear, setStartYear] = useState<number>(
+  const [from, setFrom] = useState<SnapshotFrom>("today");
+  const fromYear = snapshotFromYear(
+    allYears,
+    from,
+    todayYear,
+    retirementStartYear(household),
+  );
+  const [jumpYear, setJumpYear] = useState<number>(
     initialYear != null && allYears.includes(initialYear) ? initialYear : allYears[0] ?? 0,
   );
+  const startYear = Math.max(jumpYear, fromYear);
 
   if (allYears.length === 0) return null;
   // Each year also shows the main client's age, so you can jump by either.
-  const startOptions = comparison.baseline.rows.map((r) => {
+  const startOptions = comparison.baseline.rows.filter((r) => r.calendarYear >= fromYear).map((r) => {
     const age = r.ages[primaryId];
     return {
       value: String(r.calendarYear),
@@ -118,16 +133,46 @@ export function ScenarioSnapshot({
         <h3 className="m-0 text-[14.5px] font-bold text-foreground">
           Assets, income &amp; taxes
         </h3>
-        <div className="flex items-center gap-2 text-[12.5px] font-semibold text-muted-2">
-          <label htmlFor="snapshot-start">Jump to</label>
-          <span className="w-[140px]">
-            <Select
-              id="snapshot-start"
-              value={String(startYear)}
-              onChange={(v) => setStartYear(Number(v))}
-              options={startOptions}
-            />
-          </span>
+        <div className="flex flex-col items-end gap-2 text-[12.5px] font-semibold text-muted-2">
+          <div className="flex items-center gap-2">
+            <label htmlFor="snapshot-start">Jump to</label>
+            <span className="w-[140px]">
+              <Select
+                id="snapshot-start"
+                value={String(startYear)}
+                onChange={(v) => setJumpYear(Number(v))}
+                options={startOptions}
+              />
+            </span>
+          </div>
+          <div
+            role="radiogroup"
+            aria-label="Display from"
+            className="flex rounded-[9px] border border-border-2 bg-surface-muted p-0.5"
+          >
+            {(Object.keys(SNAPSHOT_FROM_LABELS) as SnapshotFrom[]).map((option) => {
+              const on = option === from;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => {
+                    setFrom(option);
+                    setJumpYear(allYears[0] ?? 0);
+                  }}
+                  className={`whitespace-nowrap rounded-[7px] px-2.5 py-1 transition ${
+                    on
+                      ? "bg-white font-semibold text-foreground shadow-sm"
+                      : "text-muted hover:text-foreground"
+                  }`}
+                >
+                  {SNAPSHOT_FROM_LABELS[option]}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
       <SnapshotCard
@@ -136,6 +181,7 @@ export function ScenarioSnapshot({
         household={household}
         primaryId={primaryId}
         startYear={startYear}
+        fromYear={fromYear}
       />
       {single ? null : <SnapshotCard
         label="With conversion"
@@ -143,6 +189,7 @@ export function ScenarioSnapshot({
         household={household}
         primaryId={primaryId}
         startYear={startYear}
+        fromYear={fromYear}
       />}
     </div>
   );
@@ -154,25 +201,28 @@ function SnapshotCard({
   household,
   primaryId,
   startYear,
+  fromYear,
 }: {
   label: string;
   scenario: ScenarioResult;
   household: Household;
   primaryId: string;
   startYear: number;
+  /** First year shown (today or the retirement year); earlier years are hidden. */
+  fromYear: number;
 }) {
-  // Every year of the plan, about six in view; scroll (or "Jump to") for more.
-  const firstRowYear = scenario.rows[0]?.calendarYear ?? startYear;
+  // Every year from `fromYear`, about six in view; scroll (or "Jump to") for more.
+  const shownRows = scenario.rows.filter((r) => r.calendarYear >= fromYear);
   const table = buildSnapshotTable(
     scenario,
     household,
     primaryId,
-    firstRowYear,
-    scenario.rows.length,
+    shownRows[0]?.calendarYear ?? fromYear,
+    shownRows.length,
   );
   if (table.years.length === 0) return null;
 
-  const primaryAges = scenario.rows
+  const primaryAges = shownRows
     .map((r) => r.ages[primaryId])
     .filter((a) => a != null);
   const startIndex = Math.max(0, table.years.indexOf(startYear));

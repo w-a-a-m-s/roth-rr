@@ -63,6 +63,30 @@ const AFTER_TAX_KINDS = new Set<string>(AFTER_TAX_ACCOUNT_KINDS);
 /** The engine's stand-in Roth when a converting plan has no Roth account. */
 const IMPLICIT_ROTH_ID = "__implicit_roth__";
 
+export type SnapshotFrom = "today" | "retirement";
+
+export const SNAPSHOT_FROM_LABELS: Record<SnapshotFrom, string> = {
+  today: "From today",
+  retirement: "From retirement year",
+};
+
+/**
+ * First year the Main tables show: this year, or the household's first
+ * retirement year. Clamped to the projection, so a plan that starts later
+ * than today opens on its first year.
+ */
+export function snapshotFromYear(
+  years: number[],
+  from: SnapshotFrom,
+  todayYear: number,
+  retirementYear: number,
+): number {
+  if (years.length === 0) return todayYear;
+  const wanted = from === "today" ? todayYear : retirementYear;
+  if (!Number.isFinite(wanted) || wanted <= years[0]) return years[0];
+  return years.find((y) => y >= wanted) ?? years[years.length - 1];
+}
+
 /** Window rows: `count` years starting at `startYear` (clamped to the projection). */
 export function snapshotRows(
   rows: ProjectionRow[],

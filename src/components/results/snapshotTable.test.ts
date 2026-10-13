@@ -3,7 +3,11 @@ import { calculate } from "@/lib/calculate";
 import type { Household } from "@/lib/domain/types";
 import { primaryPersonId } from "@/lib/engine/project";
 import modernSample from "@/lib/engine/golden/cases/modern-sample.json";
-import { buildSnapshotTable, snapshotRows } from "./snapshotTable";
+import {
+  buildSnapshotTable,
+  snapshotFromYear,
+  snapshotRows,
+} from "./snapshotTable";
 
 const household = modernSample.household as unknown as Household;
 const comparison = calculate(household);
@@ -203,5 +207,21 @@ describe("tax paid from conversion section", () => {
     expect(build(household).sections.map((s) => s.key)).not.toContain(
       "conversionTax",
     );
+  });
+});
+
+describe("snapshotFromYear", () => {
+  const years = [2026, 2027, 2028, 2029, 2030, 2031];
+
+  it("starts at this year or the retirement year", () => {
+    expect(snapshotFromYear(years, "today", 2027, 2030)).toBe(2027);
+    expect(snapshotFromYear(years, "retirement", 2027, 2030)).toBe(2030);
+  });
+
+  it("clamps to the projection", () => {
+    // A plan that starts after today opens on its first year.
+    expect(snapshotFromYear(years, "today", 2024, 2030)).toBe(2026);
+    expect(snapshotFromYear(years, "retirement", 2027, 2040)).toBe(2031);
+    expect(snapshotFromYear(years, "retirement", 2027, NaN)).toBe(2026);
   });
 });
