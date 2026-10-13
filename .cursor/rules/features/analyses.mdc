@@ -78,9 +78,15 @@ income first (step 2b). Guaranteed: past an empty balance it keeps paying,
 taxed like the account's money (tax-deferred ordinary, after-tax as gains
 vs basis, Roth free). The income counts toward the RMD: only an RMD above it
 is added. Income line `draw:<accountId>` (`eventWithdrawalKey`), labelled
-"Lifetime income · <account>", charted as Withdrawals from assets. It doesn't
-chase the shortfall: a year can still come up short or over. Disability
-doesn't do this (yet).
+"Lifetime income · <account>", charted as Withdrawals from assets.
+
+A year still short after that income (step 5c) takes more from the same
+accounts until the surplus is 0 or they're empty: after-tax first, then
+tax-deferred, then Roth, grossed up for the tax it adds (fixed point on
+`priceYear`; the rental-loss allowance keeps its pre-draw MAGI). Line
+`topup:<accountId>` (`eventTopUpKey`), "Extra withdrawal · <account>". A
+year with more income than spending keeps the surplus. Disability doesn't
+do any of this (yet).
 
 Survivorship, Disability and Long-term care show only the no-conversion
 scenario (`single` in ResultsView): one snapshot table, no No/With toggles,

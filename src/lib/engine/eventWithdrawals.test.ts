@@ -75,7 +75,45 @@ describe("lifetime income once an event happens", () => {
     // IRA income is ordinary; the zero-basis brokerage income is all gain;
     // Roth income is tax free.
     expect(y.grossTaxableIncome).toBeCloseTo(36_000 * SOCIAL_SECURITY_TAXABLE_PCT + 300_000 * 0.067, 6);
-    expect(y.capitalGainsIncome).toBeCloseTo(50_000 * 0.067, 6);
+    expect(y.capitalGainsIncome).toBeCloseTo(
+      50_000 * 0.067 + y.incomeMonthly["topup:brk"] * 12,
+      6,
+    );
+  });
+
+  it("takes more to cover a year still short, investment account first", () => {
+    const r = rows(couple(), death);
+    expect(at(r, 2030).incomeMonthly["topup:brk"]).toBeUndefined();
+    const y = at(r, 2031);
+    // $84,000 of spending (70% after the death) against $36,000 of Social
+    // Security and the lifetime income: the brokerage covers the rest.
+    expect(y.incomeMonthly["topup:brk"]).toBeGreaterThan(0);
+    expect(y.incomeMonthly["topup:ira"]).toBeUndefined();
+    expect(y.surplus).toBeCloseTo(0, 1);
+    // Every year is covered until the accounts run dry.
+    const covered = r.filter((row) => row.calendarYear > 2030 && row.retirementTotal + row.rothTotal + row.afterTaxTotal > 1);
+    for (const row of covered) expect(row.surplus).toBeGreaterThan(-0.1);
+  });
+
+  it("then the IRA, grossed up for its tax, and the Roth last", () => {
+    const r = rows(couple(), death);
+    const firstIra = r.find((row) => (row.incomeMonthly["topup:ira"] ?? 0) > 0)!;
+    expect(firstIra.surplus).toBeCloseTo(0, 1);
+    const ira = (firstIra.incomeMonthly["draw:ira"] + firstIra.incomeMonthly["topup:ira"]) * 12;
+    expect(firstIra.grossTaxableIncome).toBeCloseTo(36_000 * SOCIAL_SECURITY_TAXABLE_PCT + ira, 6);
+    const firstRoth = r.find((row) => (row.incomeMonthly["topup:roth"] ?? 0) > 0);
+    if (firstRoth) expect(firstRoth.calendarYear).toBeGreaterThanOrEqual(firstIra.calendarYear);
+  });
+
+  it("takes nothing extra when the income covers the year", () => {
+    const rich = couple({
+      incomes: [
+        { id: "ss", label: "SS", ownerId: "b", kind: "socialSecurity", monthlyAmount: 15_000, growthRate: 0, taxability: "full" },
+      ],
+    });
+    for (const row of rows(rich, death)) {
+      expect(Object.keys(row.incomeMonthly).filter((k) => k.startsWith("topup:"))).toEqual([]);
+    }
   });
 
   it("counts the income toward the RMD", () => {

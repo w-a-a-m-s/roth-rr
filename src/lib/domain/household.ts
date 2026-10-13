@@ -425,6 +425,14 @@ export function eventWithdrawalKey(accountId: string): string {
   return `draw:${accountId}`;
 }
 
+/**
+ * Income key for what an account adds on top of that income when the year
+ * still comes up short (`topup:<accountId>`).
+ */
+export function eventTopUpKey(accountId: string): string {
+  return `topup:${accountId}`;
+}
+
 /** Whether an income kind withdraws from (and depletes) a specific account. */
 export function isWithdrawalIncome(kind: IncomeKind): boolean {
   return kind in WITHDRAWAL_SOURCE_KINDS;

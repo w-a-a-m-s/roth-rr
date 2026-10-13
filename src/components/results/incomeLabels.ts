@@ -35,7 +35,7 @@ export function insuranceLabel(household: Household, key: string): string {
 
 /**
  * Display label for an income key in the results: an income id, `rmd:<account>`
- * `re:<property>`, `draw:<account>` (an event's lifetime income), or an insurance benefit (`life:`, `di:`, `ltci:`). Social Security also names whose benefit it is, unless
+ * `re:<property>`, `draw:<account>` (an event's lifetime income), `topup:<account>` (more to cover a short year), or an insurance benefit (`life:`, `di:`, `ltci:`). Social Security also names whose benefit it is, unless
  * the label already does.
  */
 export function incomeLabel(household: Household, key: string): string {
@@ -50,6 +50,10 @@ export function incomeLabel(household: Household, key: string): string {
   if (key.startsWith("draw:")) {
     const acc = household.accounts.find((a) => a.id === key.slice(5));
     return acc?.label?.trim() ? `Lifetime income · ${acc.label.trim()}` : "Lifetime income";
+  }
+  if (key.startsWith("topup:")) {
+    const acc = household.accounts.find((a) => a.id === key.slice(6));
+    return acc?.label?.trim() ? `Extra withdrawal · ${acc.label.trim()}` : "Extra withdrawal";
   }
   if (insuranceKeyKind(key)) return insuranceLabel(household, key);
   const income = household.incomes.find((i) => i.id === key);

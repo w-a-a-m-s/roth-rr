@@ -12,6 +12,7 @@ import {
   businessGrowthStart,
   expenseMonthlyForYear,
   contributionAccounts,
+  eventTopUpKey,
   eventWithdrawalKey,
   incomeMonthlyForYear,
   isIncomeActive,
@@ -790,6 +791,39 @@ export function projectScenario(
   );
   // Yearly income per account, fixed the year the event starts.
   let eventIncome: Record<string, number> | null = null;
+  // A year still short after that income takes more from the same accounts:
+  // after-tax first, then tax-deferred, then Roth.
+  const topUpOrder = [
+    ...incomeAccounts.filter((acc) => AFTER_TAX_KINDS.includes(acc.kind)),
+    ...incomeAccounts.filter((acc) => acc.kind === "retirementTaxable"),
+    ...incomeAccounts.filter((acc) => acc.kind === "rothTaxFree"),
+  ];
+  /**
+   * Take `amount` from the accounts in top-up order, capped at what's there:
+   * each account's take, the ordinary income (tax-deferred) and the gains
+   * realized (after-tax, against remaining basis).
+   */
+  const planTopUp = (amount: number) => {
+    const takes: Record<string, number> = {};
+    let left = amount;
+    let total = 0;
+    let ordinary = 0;
+    let gains = 0;
+    for (const acc of topUpOrder) {
+      if (left <= 0) break;
+      const bal = Math.max(0, balances[acc.id]);
+      const take = Math.min(bal, left);
+      if (take <= 0) continue;
+      takes[acc.id] = take;
+      left -= take;
+      total += take;
+      if (acc.kind === "retirementTaxable") ordinary += take;
+      if (basisRemaining[acc.id] != null) {
+        gains += take * Math.max(0, 1 - basisRemaining[acc.id] / bal);
+      }
+    }
+    return { takes, total, ordinary, gains };
+  };
   const incomeRecipientAge = (acc: Account, calendarYear: number) => {
     const ids = isJointAccount(acc, planFiling)
       ? household.people
@@ -1316,19 +1350,65 @@ export function projectScenario(
     //     year is withheld from the converted dollars, so the Roth gets the
     //     rest and the household's cash flow doesn't pay it. The full
     //     conversion is still taxable (withholding is part of the
-    //     distribution), so the year's tax is unchanged.
-    const taxes = taxForYear(federalOrdinaryGross, stateOrdinaryGross, capitalGainsIncome);
-    let conversionTaxWithheld = 0;
-    if (conversionTaxPaidFrom === "assets" && converted > 0) {
+    //     distribution), so the year's tax is unchanged. `priceYear` is the
+    //     year's tax with `extraOrdinary` / `extraGains` on top.
+    const stateTaxesOrdinary = state.hasIncomeTax && !state.capitalGainsOnly;
+    const priceYear = (extraOrdinary: number, extraGains: number) => {
+      const fed = federalOrdinaryGross + extraOrdinary;
+      const st = stateTaxesOrdinary ? stateOrdinaryGross + extraOrdinary : 0;
+      const gains = capitalGainsIncome + extraGains;
+      const taxes = taxForYear(fed, st, gains);
+      if (conversionTaxPaidFrom !== "assets" || converted <= 0) {
+        return { taxes, withheld: 0 };
+      }
       const withoutConversion = taxForYear(
-        Math.max(0, federalOrdinaryGross - converted),
-        stateOrdinaryGross > 0 ? Math.max(0, stateOrdinaryGross - converted) : 0,
-        capitalGainsIncome,
+        Math.max(0, fed - converted),
+        st > 0 ? Math.max(0, st - converted) : 0,
+        gains,
       );
-      conversionTaxWithheld = Math.min(
+      const withheld = Math.min(
         converted,
         Math.max(0, taxes.annualTax - withoutConversion.annualTax),
       );
+      return { taxes, withheld };
+    };
+    let priced = priceYear(0, 0);
+
+    // 5c) After an event, a year still short once the lifetime income is in
+    //     takes more from the accounts until it's covered (or they're empty),
+    //     grossed up for the tax the extra adds. The rental-loss allowance
+    //     keeps the MAGI it had before.
+    if (eventIncome != null) {
+      const outflow = (monthlyExpenses + monthlyDeposits) * 12;
+      const cashTax = (p: typeof priced) => p.taxes.annualTax - p.withheld;
+      const baseTax = cashTax(priced);
+      const gap = outflow - (totalMonthlyIncome * 12 - baseTax);
+      if (gap > 0.005) {
+        let target = gap;
+        let plan = planTopUp(target);
+        for (let k = 0; k < 50; k++) {
+          // Ran out of money to draw: take everything that's left.
+          if (plan.total < target - 0.005) break;
+          const next = gap + cashTax(priceYear(plan.ordinary, plan.gains)) - baseTax;
+          if (Math.abs(next - target) < 0.005) break;
+          target = next;
+          plan = planTopUp(target);
+        }
+        for (const [accId, take] of Object.entries(plan.takes)) {
+          const balBefore = Math.max(0, balances[accId]);
+          if (basisRemaining[accId] != null && balBefore > 0) {
+            const basis = basisRemaining[accId];
+            basisRemaining[accId] = Math.max(0, basis - take * (basis / balBefore));
+          }
+          balances[accId] = balBefore - take;
+          incomeMonthly[eventTopUpKey(accId)] = take / 12;
+          totalMonthlyIncome += take / 12;
+        }
+        federalOrdinaryGross += plan.ordinary;
+        if (stateTaxesOrdinary) stateOrdinaryGross += plan.ordinary;
+        capitalGainsIncome += plan.gains;
+        priced = priceYear(0, 0);
+      }
     }
 
     const {
@@ -1345,7 +1425,8 @@ export function projectScenario(
       stateTaxByBracket,
       stateAnnualTax,
       annualTax,
-    } = taxes;
+    } = priced.taxes;
+    const conversionTaxWithheld = priced.withheld;
     if (targetRoth) balances[targetRoth.id] -= conversionTaxWithheld;
 
     const monthlyTax = annualTax / 12;
