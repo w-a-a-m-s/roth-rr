@@ -457,13 +457,26 @@ function AccountFields({
             label="Cost basis"
             hint={
               returnsBasisFirst(account.kind)
-                ? "Distributions come back as tax-free return of capital until the basis is used up, then they're taxed as long-term capital gains. Also used for inheritance valuation."
+                ? "Distributions come back as return of capital until the basis is used up. That return of capital is recaptured later: once the basis is gone, draws are taxed as ordinary income up to it, then as long-term capital gains. Also used for inheritance valuation."
                 : "Return of basis is tax-free; the rest of each withdrawal is taxed as long-term capital gains. Also used for inheritance valuation."
             }
           >
             <MoneyInput
               value={account.costBasis ?? 0}
               onChange={(costBasis) => updateAccount(account.id, { costBasis })}
+            />
+          </Field>
+        ) : null}
+        {returnsBasisFirst(account.kind) ? (
+          <Field
+            label="Depreciation to recapture"
+            hint="Depreciation already taken on the K-1s. Once the basis is gone, draws are taxed as ordinary income up to this amount plus the return of capital received during the plan, then as long-term capital gains."
+          >
+            <MoneyInput
+              value={account.depreciationRecapture ?? 0}
+              onChange={(depreciationRecapture) =>
+                updateAccount(account.id, { depreciationRecapture })
+              }
             />
           </Field>
         ) : null}

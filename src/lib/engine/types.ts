@@ -94,6 +94,11 @@ export interface ProjectionRow {
   grossTaxableIncome: number;
   /** Realized capital gains from after-tax withdrawals this year. */
   capitalGainsIncome: number;
+  /**
+   * DPP / MLP depreciation recaptured this year: gain taxed as ordinary income
+   * (already inside `grossTaxableIncome`, not in `capitalGainsIncome`).
+   */
+  recaptureIncome: number;
   deductions: DeductionBreakdown;
   /** Federal ordinary taxable income after deductions (excludes gains). */
   taxableIncome: number;

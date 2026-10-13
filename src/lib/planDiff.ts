@@ -125,6 +125,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   retirementType: "Type",
   balance: "Balance",
   costBasis: "Cost basis",
+  depreciationRecapture: "Depreciation to recapture",
   deposits: "Deposits",
   growthRate: "Growth rate",
   growthStart: "Growth starts",
@@ -210,6 +211,7 @@ const PROPERTY_LABELS: Record<string, string> = {
 const MONEY_KEYS = new Set([
   "balance",
   "costBasis",
+  "depreciationRecapture",
   "monthlyAmount",
   "amount",
   "purchasePrice",

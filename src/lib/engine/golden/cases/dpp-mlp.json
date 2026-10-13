@@ -1,7 +1,7 @@
 {
-  "name": "DPP / MLP after-tax account (return of basis first)",
+  "name": "DPP / MLP after-tax account (return of basis first, then recapture)",
   "strategy": "manual",
-  "note": "A single filer with a DPP / MLP holding next to a brokerage. Distributions from the DPP come back as tax-free return of capital until its $40k basis runs out, then are taxed as long-term gains, while the brokerage draw splits each withdrawal pro rata. Both count as after-tax assets net of basis at inheritance. Defaults to FL (no state income tax).",
+  "note": "A single filer with a DPP / MLP holding next to a brokerage. Distributions from the DPP come back as return of capital until its $40k basis runs out; that $40k is then recaptured as ordinary income before later draws are taxed as long-term gains. The brokerage draw splits each withdrawal pro rata. Both count as after-tax assets net of basis at inheritance. Defaults to FL (no state income tax).",
   "household": {
     "filingStatus": "single",
     "residenceState": "FL",
@@ -115,24 +115,24 @@
   },
   "expected": {
     "baseline": {
-      "taxesTotal": 485167.82,
+      "taxesTotal": 487967.82,
       "medicareTotal": 91062,
       "afterTaxAssetsAtRmd": 736080.88,
       "inheritanceFinal": 791269.56
     },
     "roth": {
-      "taxesTotal": 471365.54,
+      "taxesTotal": 474265.54,
       "medicareTotal": 88146,
       "afterTaxAssetsAtRmd": 946753.81,
       "inheritanceFinal": 1965212.66
     },
     "deltas": {
-      "taxesTotal": -13802.28,
+      "taxesTotal": -13702.28,
       "medicareTotal": -2916,
       "afterTaxAssetsAtRmd": 210672.93,
       "inheritanceFinal": 1173943.1
     }
   },
-  "commit": "890b6d6",
-  "commitDate": "2026-10-13T16:24:09+00:00"
+  "commit": "e6a98c1",
+  "commitDate": "2026-10-13T21:54:35+00:00"
 }

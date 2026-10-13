@@ -232,7 +232,7 @@ describe("state income tax and capital gains", () => {
     expect(rows2[0].grossTaxableIncome).toBeCloseTo(20_000 * 12, 2);
   });
 
-  it("DPP / MLP distributions return basis first, then are taxed as gains", () => {
+  const dppPlan = (depreciationRecapture?: number) => {
     const h = structuredClone(SAMPLE_HOUSEHOLD);
     h.residenceState = "FL";
     h.accounts = [
@@ -243,6 +243,7 @@ describe("state income tax and capital gains", () => {
         kind: "dppMlp",
         balance: 200_000,
         costBasis: 25_000,
+        depreciationRecapture,
         growthRate: 0,
       },
     ];
@@ -260,17 +261,42 @@ describe("state income tax and capital gains", () => {
     ];
     h.realEstate = [];
     h.expenses = [];
-    const rows = projectScenario(h, zeros(projectionYears(h)));
-    // $25k of basis covers the first two $10k distributions tax free and
-    // half of the third. After that every dollar is a gain. A brokerage with
-    // the same 12.5% basis would have realized $8,750 of gain each year.
-    expect(rows[0].capitalGainsIncome).toBeCloseTo(0, 2);
-    expect(rows[1].capitalGainsIncome).toBeCloseTo(0, 2);
-    expect(rows[2].capitalGainsIncome).toBeCloseTo(5_000, 2);
-    expect(rows[3].capitalGainsIncome).toBeCloseTo(10_000, 2);
+    return projectScenario(h, zeros(projectionYears(h)));
+  };
+
+  it("DPP / MLP distributions return basis first, then recapture it as ordinary income", () => {
+    const rows = dppPlan();
+    // $25k of basis covers the first two $10k distributions and half of the
+    // third, all deferred. Past the basis, that $25k of return of capital
+    // comes back as ordinary income ($5k, $10k, $10k), then long-term gains.
+    const recapture = rows.slice(0, 6).map((r) => r.recaptureIncome);
+    const gains = rows.slice(0, 6).map((r) => r.capitalGainsIncome);
+    [0, 0, 5_000, 10_000, 10_000, 0].forEach((v, i) =>
+      expect(recapture[i]).toBeCloseTo(v, 2),
+    );
+    [0, 0, 0, 0, 0, 10_000].forEach((v, i) =>
+      expect(gains[i]).toBeCloseTo(v, 2),
+    );
     expect(rows[3].balances.mlp).toBeCloseTo(160_000, 2);
     // It's an after-tax account: it counts in the after-tax total.
     expect(rows[0].afterTaxTotal).toBeCloseTo(190_000, 2);
+  });
+
+  it("DPP / MLP recaptures depreciation already taken before long-term gains", () => {
+    const plain = dppPlan();
+    const rows = dppPlan(15_000);
+    // $25k of return of capital plus $15k already taken: $40k of recapture,
+    // paid off by year 6 ($5k + 10k + 10k + 10k + 5k), then gains.
+    [0, 0, 5_000, 10_000, 10_000, 10_000, 5_000, 0].forEach((v, i) =>
+      expect(rows[i].recaptureIncome).toBeCloseTo(v, 2),
+    );
+    expect(rows[6].capitalGainsIncome).toBeCloseTo(5_000, 2);
+    // Recapture is ordinary income: it lands in gross taxable income.
+    expect(rows[5].grossTaxableIncome - plain[5].grossTaxableIncome).toBeCloseTo(
+      10_000,
+      2,
+    );
+    expect(rows[5].capitalGainsIncome).toBeCloseTo(0, 2);
   });
 
   it("grows the after-tax account before withdrawing, then taxes the gain as LTCG", () => {

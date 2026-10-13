@@ -529,6 +529,14 @@ function buildSections(
           : undefined,
     });
   }
+  if (scenario.rows.some((r) => r.recaptureIncome > 0)) {
+    deductions.push({
+      key: "recapture",
+      label: "Depreciation recapture (DPP / MLP), taxed as ordinary",
+      unit: "yr",
+      value: (r) => r.recaptureIncome,
+    });
+  }
   if (hasCapitalGains) {
     deductions.push({
       key: "capitalGains",

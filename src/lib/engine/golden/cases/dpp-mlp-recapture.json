@@ -1,0 +1,139 @@
+{
+  "name": "DPP / MLP with depreciation already taken",
+  "strategy": "manual",
+  "note": "Same plan as dpp-mlp, but the DPP already passed through $30k of depreciation on its K-1s. Once the $40k basis is gone, $70k (the return of capital plus the $30k) is recaptured as ordinary income before draws are taxed as long-term gains, so ordinary income, taxes and IRMAA run higher than dpp-mlp. Defaults to FL (no state income tax).",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 4000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Sam",
+        "birthYear": 1962,
+        "retirementYear": 2028,
+        "sex": "female"
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ret",
+        "label": "403(b)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 400000,
+        "growthRate": 0.05,
+        "retirementType": "403b",
+        "deposits": []
+      },
+      {
+        "id": "brk",
+        "label": "Brokerage",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 300000,
+        "costBasis": 150000,
+        "growthRate": 0.05,
+        "deposits": []
+      },
+      {
+        "id": "dpp",
+        "label": "DPP",
+        "ownerId": "p1",
+        "kind": "dppMlp",
+        "balance": 150000,
+        "costBasis": 40000,
+        "growthRate": 0.06,
+        "deposits": [],
+        "depreciationRecapture": 30000
+      }
+    ],
+    "incomes": [
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 4000,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2028
+      },
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2500,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2028
+      },
+      {
+        "id": "dpp-dist",
+        "label": "DPP distributions",
+        "ownerId": "p1",
+        "kind": "afterTaxWithdrawal",
+        "monthlyAmount": 750,
+        "growthRate": 0,
+        "taxability": "taxFree",
+        "drawsFromAccountId": "dpp"
+      },
+      {
+        "id": "brk-draw",
+        "label": "Brokerage draw",
+        "ownerId": "p1",
+        "kind": "afterTaxWithdrawal",
+        "monthlyAmount": 1000,
+        "growthRate": 0,
+        "taxability": "taxFree",
+        "drawsFromAccountId": "brk"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 90
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        50000,
+        50000,
+        50000,
+        50000,
+        50000
+      ]
+    }
+  },
+  "expected": {
+    "baseline": {
+      "taxesTotal": 490300.62,
+      "medicareTotal": 91062,
+      "afterTaxAssetsAtRmd": 736080.88,
+      "inheritanceFinal": 791269.56
+    },
+    "roth": {
+      "taxesTotal": 476365.54,
+      "medicareTotal": 88146,
+      "afterTaxAssetsAtRmd": 946753.81,
+      "inheritanceFinal": 1965212.66
+    },
+    "deltas": {
+      "taxesTotal": -13935.09,
+      "medicareTotal": -2916,
+      "afterTaxAssetsAtRmd": 210672.93,
+      "inheritanceFinal": 1173943.1
+    }
+  },
+  "commit": "e6a98c1",
+  "commitDate": "2026-10-13T21:54:35+00:00"
+}

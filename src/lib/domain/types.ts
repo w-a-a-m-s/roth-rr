@@ -141,6 +141,12 @@ export interface Account {
   balance: number;
   /** For investment/annuity/DPP-MLP: basis subtracted when computing inheritance. */
   costBasis?: number;
+  /**
+   * DPP / MLP only: depreciation already passed through on the K-1s, recaptured
+   * as ordinary income once draws run past the basis. Return of capital taken
+   * during the plan adds to it (see `realizeAfterTaxDraw`).
+   */
+  depreciationRecapture?: number;
   /** Annual growth (decimal, e.g. 0.05). Required per account. */
   growthRate: number;
   /** When growth starts. Optional: unset uses `defaultGrowthStart`. */

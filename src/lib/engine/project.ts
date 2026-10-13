@@ -110,6 +110,32 @@ export function basisReturned(
 }
 
 /**
+ * Tax split of one draw from an after-tax account: `cashOut` paid out of a
+ * `take` from the balance (an event's guaranteed income can pay past it).
+ * DPP / MLP return of capital is deferred, not tax free: it adds to the
+ * account's `recapture` along with the depreciation already taken, and once
+ * the basis is gone the gain is ordinary income up to that amount, then
+ * long-term gains. Other kinds realize only gains.
+ */
+export function realizeAfterTaxDraw(
+  kind: Account["kind"],
+  take: number,
+  balance: number,
+  basis: number,
+  recapture = 0,
+  cashOut = take,
+): { returned: number; ordinary: number; gains: number; recapture: number } {
+  const returned = basisReturned(kind, take, balance, basis);
+  if (!returnsBasisFirst(kind)) {
+    return { returned, ordinary: 0, gains: cashOut - returned, recapture };
+  }
+  const pool = recapture + returned;
+  const gain = Math.max(0, cashOut - returned);
+  const ordinary = Math.min(gain, pool);
+  return { returned, ordinary, gains: gain - ordinary, recapture: pool - ordinary };
+}
+
+/**
  * First year an analysis projects. Normally the plan start; an analysis whose
  * event (a death, a disability) comes before it starts in the event's year,
  * but never before the year of `asOfDate` (today in the app).
@@ -750,6 +776,12 @@ export function projectScenario(
       Math.max(0, preStartDepositPrincipal(acc, start));
     basisRemaining[acc.id] = Math.min(basis, Math.max(0, balances[acc.id]));
   }
+  // DPP / MLP depreciation still to be recaptured as ordinary income.
+  const recaptureRemaining: Record<string, number> = {};
+  for (const acc of accounts) {
+    if (!returnsBasisFirst(acc.kind)) continue;
+    recaptureRemaining[acc.id] = Math.max(0, acc.depreciationRecapture ?? 0);
+  }
 
   const mortgageBalances: Record<string, number> = {};
   for (const re of household.realEstate) {
@@ -814,8 +846,8 @@ export function projectScenario(
   ];
   /**
    * Take `amount` from the accounts in top-up order, capped at what's there:
-   * each account's take, the ordinary income (tax-deferred) and the gains
-   * realized (after-tax, against remaining basis).
+   * each account's take, the ordinary income (tax-deferred, and DPP / MLP
+   * recapture) and the gains realized (after-tax, against remaining basis).
    */
   const planTopUp = (amount: number) => {
     const takes: Record<string, number> = {};
@@ -833,7 +865,15 @@ export function projectScenario(
       total += take;
       if (acc.kind === "retirementTaxable") ordinary += take;
       if (basisRemaining[acc.id] != null) {
-        gains += take - basisReturned(acc.kind, take, bal, basisRemaining[acc.id]);
+        const draw = realizeAfterTaxDraw(
+          acc.kind,
+          take,
+          bal,
+          basisRemaining[acc.id],
+          recaptureRemaining[acc.id],
+        );
+        ordinary += draw.ordinary;
+        gains += draw.gains;
       }
     }
     return { takes, total, ordinary, gains };
@@ -916,6 +956,32 @@ export function projectScenario(
     //    Takes are capped at the available balance so accounts never go negative;
     //    income below uses the same capped amount (no phantom cash / tax).
     let capitalGainsIncome = 0;
+    let recaptureIncome = 0;
+    /** Book one after-tax draw: basis, recapture and the income it realizes. */
+    const realizeDraw = (
+      acc: Account,
+      take: number,
+      balBefore: number,
+      cashOut = take,
+    ) => {
+      const draw = realizeAfterTaxDraw(
+        acc.kind,
+        take,
+        balBefore,
+        basisRemaining[acc.id] ?? 0,
+        recaptureRemaining[acc.id],
+        cashOut,
+      );
+      basisRemaining[acc.id] = Math.max(
+        0,
+        (basisRemaining[acc.id] ?? 0) - draw.returned,
+      );
+      if (recaptureRemaining[acc.id] != null) {
+        recaptureRemaining[acc.id] = draw.recapture;
+      }
+      recaptureIncome += draw.ordinary;
+      return draw;
+    };
     const withdrawalTaken: Record<string, number> = {};
     for (const income of household.incomes) {
       if (!isWithdrawalIncome(income.kind)) continue;
@@ -926,11 +992,8 @@ export function projectScenario(
       const balBefore = Math.max(0, balances[accId]);
       const take = Math.min(balBefore, Math.max(0, withdraw));
       if (income.kind === "afterTaxWithdrawal" && take > 0 && balBefore > 0) {
-        const basis = basisRemaining[accId] ?? 0;
-        const kind = accounts.find((a) => a.id === accId)?.kind ?? "investment";
-        const returned = basisReturned(kind, take, balBefore, basis);
-        capitalGainsIncome += take - returned;
-        basisRemaining[accId] = Math.max(0, basis - returned);
+        const acc = accounts.find((a) => a.id === accId)!;
+        capitalGainsIncome += realizeDraw(acc, take, balBefore).gains;
       }
       balances[accId] -= take;
       withdrawalTaken[income.id] = take;
@@ -944,10 +1007,7 @@ export function projectScenario(
       const take = Math.min(balBefore, income);
       if (acc.kind === "retirementTaxable") eventOrdinary += income;
       if (basisRemaining[accId] != null) {
-        const basis = basisRemaining[accId];
-        const returned = basisReturned(acc.kind, take, balBefore, basis);
-        capitalGainsIncome += income - returned;
-        basisRemaining[accId] = Math.max(0, basis - returned);
+        capitalGainsIncome += realizeDraw(acc, take, balBefore, income).gains;
       }
       balances[accId] = balBefore - take;
     }
@@ -1056,8 +1116,8 @@ export function projectScenario(
       totalMonthlyIncome += income / 12;
       incomeMonthly[eventWithdrawalKey(accId)] = income / 12;
     }
-    federalOrdinaryGross += eventOrdinary;
-    stateOrdinaryGross += eventOrdinary;
+    federalOrdinaryGross += eventOrdinary + recaptureIncome;
+    stateOrdinaryGross += eventOrdinary + recaptureIncome;
 
     // RMD income once the owner reaches their birth-year RMD age (taxable in
     // full). Per the IRS, the amount is the prior December 31 balance divided by
@@ -1412,12 +1472,7 @@ export function projectScenario(
         for (const [accId, take] of Object.entries(plan.takes)) {
           const balBefore = Math.max(0, balances[accId]);
           if (basisRemaining[accId] != null && balBefore > 0) {
-            const basis = basisRemaining[accId];
-            const kind = accounts.find((a) => a.id === accId)!.kind;
-            basisRemaining[accId] = Math.max(
-              0,
-              basis - basisReturned(kind, take, balBefore, basis),
-            );
+            realizeDraw(accounts.find((a) => a.id === accId)!, take, balBefore);
           }
           balances[accId] = balBefore - take;
           incomeMonthly[eventTopUpKey(accId)] = take / 12;
@@ -1510,6 +1565,7 @@ export function projectScenario(
       incomeMonthly,
       grossTaxableIncome,
       capitalGainsIncome,
+      recaptureIncome,
       deductions,
       taxableIncome,
       stateGrossTaxableIncome,
