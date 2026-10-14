@@ -38,6 +38,19 @@ export const AFTER_TAX_ACCOUNT_KINDS: AccountKind[] = [
   "dppMlp",
 ];
 
+/**
+ * After-tax accounts grouped by type, in `AFTER_TAX_ACCOUNT_KINDS` order
+ * (brokerage, annuity, CD, savings, DPP / MLP), each type in entry order.
+ * Other kinds are dropped.
+ */
+export function afterTaxAccountsByKind<T extends Pick<Account, "kind">>(
+  accounts: T[],
+): T[] {
+  return AFTER_TAX_ACCOUNT_KINDS.flatMap((kind) =>
+    accounts.filter((acc) => acc.kind === kind),
+  );
+}
+
 /** After-tax kinds that carry a cost basis the user enters. */
 export const COST_BASIS_ACCOUNT_KINDS: AccountKind[] = [
   "investment",

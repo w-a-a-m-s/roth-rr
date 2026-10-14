@@ -240,3 +240,45 @@ describe("scenarioFrom", () => {
     expect(scenarioFrom(comparison.baseline, firstYear)).toBe(comparison.baseline);
   });
 });
+
+describe("after-tax accounts by type", () => {
+  it("groups them by type, each type in its own shade, in entry order within a type", () => {
+    const h = structuredClone(household);
+    const acc = (id: string, kind: Household["accounts"][number]["kind"]) => ({
+      id,
+      label: id,
+      ownerId: h.people[0].id,
+      kind,
+      balance: 10_000,
+      growthRate: 0,
+    });
+    h.accounts = [
+      acc("annuity-1", "annuity"),
+      acc("dpp-1", "dppMlp"),
+      acc("brk-1", "investment"),
+      acc("annuity-2", "annuity"),
+      acc("cd-1", "cd"),
+      acc("brk-2", "investment"),
+      acc("dpp-2", "dppMlp"),
+    ];
+    const result = calculate(h);
+    const table = buildSnapshotTable(
+      result.baseline,
+      h,
+      primaryPersonId(h),
+      result.baseline.rows[0].calendarYear,
+    );
+    const regular = table.sections
+      .find((s) => s.key === "assets")!
+      .lines.filter((l) => l.group === "regular" && !l.subtotal && l.key.startsWith("acc-"));
+    expect(regular.map((l) => [l.label, l.tint])).toEqual([
+      ["brk-1", "brokerage"],
+      ["brk-2", "brokerage"],
+      ["annuity-1", "annuity"],
+      ["annuity-2", "annuity"],
+      ["cd-1", "cash"],
+      ["dpp-1", "dpp"],
+      ["dpp-2", "dpp"],
+    ]);
+  });
+});

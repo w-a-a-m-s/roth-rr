@@ -2,8 +2,8 @@
 
 import { Fragment, useEffect, useRef, useState } from "react";
 import {
-  AFTER_TAX_ACCOUNT_KINDS,
   accountsInDisplayOrder,
+  afterTaxAccountsByKind,
 } from "@/lib/domain/household";
 import { personRmdAge } from "@/lib/domain/rmd";
 import type { Household } from "@/lib/domain/types";
@@ -130,7 +130,6 @@ const UNIT_LABEL: Record<Unit, string> = {
   none: "",
 };
 
-const AFTER_TAX_KINDS = new Set<string>(AFTER_TAX_ACCOUNT_KINDS);
 
 function formatValue(line: LineDef, row: Row, primaryId: string): string {
   const v = line.value(row, primaryId);
@@ -273,9 +272,8 @@ function buildAssetLines(
     (a) => a.kind === "retirementTaxable"
   );
   const rothAccounts = accounts.filter((a) => a.kind === "rothTaxFree");
-  const afterTaxAccounts = accounts.filter((a) =>
-    AFTER_TAX_KINDS.has(a.kind)
-  );
+  // Grouped by type: brokerage, annuity, CD, savings, DPP / MLP.
+  const afterTaxAccounts = afterTaxAccountsByKind(accounts);
 
   const accountChildren = (
     accounts: typeof household.accounts

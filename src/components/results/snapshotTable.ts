@@ -1,8 +1,8 @@
 import {
-  AFTER_TAX_ACCOUNT_KINDS,
   accountsInDisplayOrder,
+  afterTaxAccountsByKind,
 } from "@/lib/domain/household";
-import type { Household } from "@/lib/domain/types";
+import type { AccountKind, Household } from "@/lib/domain/types";
 import type { ProjectionRow, ScenarioResult } from "@/lib/engine/types";
 import {
   careMonthly,
@@ -18,7 +18,24 @@ export const SNAPSHOT_YEARS = 6;
 
 export type SnapshotTone = "plain" | "roth" | "tax" | "strong" | "surplus";
 
-export type SnapshotTint = "realEstate" | "business" | "life" | "disability" | "longTermCare";
+export type SnapshotTint =
+  | "realEstate"
+  | "business"
+  | "life"
+  | "disability"
+  | "longTermCare"
+  | AfterTaxTint;
+
+/** After-tax accounts are grouped by type, each type in its own shade. */
+export type AfterTaxTint = "brokerage" | "annuity" | "cash" | "dpp";
+
+const AFTER_TAX_TINT: Partial<Record<AccountKind, AfterTaxTint>> = {
+  investment: "brokerage",
+  annuity: "annuity",
+  cd: "cash",
+  savings: "cash",
+  dppMlp: "dpp",
+};
 
 /** Tint for an income key, when it's an insurance benefit. */
 function insuranceTint(key: string): SnapshotTint | undefined {
@@ -57,8 +74,6 @@ export interface SnapshotTable {
   ages: { label: string; values: (number | null)[] }[];
   sections: SnapshotSection[];
 }
-
-const AFTER_TAX_KINDS = new Set<string>(AFTER_TAX_ACCOUNT_KINDS);
 
 /** The engine's stand-in Roth when a converting plan has no Roth account. */
 const IMPLICIT_ROTH_ID = "__implicit_roth__";
@@ -155,9 +170,12 @@ function buildAssetLines(
     .filter((acc) => acc.kind === "retirementTaxable")
     .map((acc) => accountLine(acc, "retirement"));
 
-  const regular = accounts
-    .filter((acc) => AFTER_TAX_KINDS.has(acc.kind))
-    .map((acc) => accountLine(acc, "regular"));
+  // Grouped by type (brokerage, annuity, CD, savings, DPP / MLP), each type
+  // in its own shade.
+  const regular: SnapshotLine[] = afterTaxAccountsByKind(accounts).map((acc) => ({
+    ...accountLine(acc, "regular"),
+    tint: AFTER_TAX_TINT[acc.kind],
+  }));
   // Survivorship: life insurance proceeds sit with the after-tax money.
   for (const key of lifeInsuranceBalanceKeys(scenario.rows)) {
     regular.push({
