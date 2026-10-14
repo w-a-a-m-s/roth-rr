@@ -3,6 +3,7 @@ import type { Household, LongTermCareSettings } from "@/lib/domain/types";
 import { projectScenario, projectionYears } from "@/lib/engine/project";
 import { calculate } from "@/lib/calculate";
 import {
+  careExpenseShare,
   careForYear,
   carePeriodFor,
   defaultCareYears,
@@ -90,16 +91,17 @@ describe("one spouse in care", () => {
     expect(at(care, 2033).expenseMonthly["ltc:a"]).toBeUndefined();
   });
 
-  it("drops other expenses to 70% while in care, then back to normal", () => {
+  it("drops other expenses to 75% while one spouse is in home care, then back to normal", () => {
     expect(at(care, 2029).expenseMonthly.living).toBe(5000);
-    expect(at(care, 2030).expenseMonthly.living).toBeCloseTo(3500, 6);
+    expect(at(care, 2030).expenseMonthly.living).toBeCloseTo(3750, 6);
     expect(at(care, 2033).expenseMonthly.living).toBe(5000);
-    expect(at(care, 2030).monthlyExpenses).toBeCloseTo(3500 + 6000 * 1.03 ** 4, 6);
+    expect(at(care, 2030).monthlyExpenses).toBeCloseTo(3750 + 6000 * 1.03 ** 4, 6);
   });
 
-  it("uses $10,000 a month for a nursing home", () => {
+  it("uses $10,000 a month and 60% of other expenses for a nursing home", () => {
     const nursing = rows(h, settings({ careType: "nursing", inflation: 0 }));
     expect(at(nursing, 2030).expenseMonthly["ltc:a"]).toBe(10000);
+    expect(at(nursing, 2030).expenseMonthly.living).toBeCloseTo(3000, 6);
   });
 });
 
@@ -108,15 +110,23 @@ describe("both spouses in care", () => {
   // Alex 2030 to 2032 (3 years), Sam from 80 (2032) for 5 years: 2032 to 2036.
   const care = rows(h, settings({ who: "both", inflation: 0 }));
 
-  it("keeps 70% of expenses while only one is in care", () => {
-    expect(at(care, 2031).expenseMonthly.living).toBeCloseTo(3500, 6);
-    expect(at(care, 2033).expenseMonthly.living).toBeCloseTo(3500, 6);
+  it("keeps 75% of expenses while only one is in home care", () => {
+    expect(at(care, 2031).expenseMonthly.living).toBeCloseTo(3750, 6);
+    expect(at(care, 2033).expenseMonthly.living).toBeCloseTo(3750, 6);
   });
 
-  it("keeps 70% of expenses while both are in care, plus both care costs", () => {
+  it("keeps 55% of expenses while both are in home care, plus both care costs", () => {
     const y = at(care, 2032);
-    expect(y.expenseMonthly.living).toBeCloseTo(3500, 6);
-    expect(y.monthlyExpenses).toBeCloseTo(3500 + 12000, 6);
+    expect(y.expenseMonthly.living).toBeCloseTo(2750, 6);
+    expect(y.monthlyExpenses).toBeCloseTo(2750 + 12000, 6);
+  });
+
+  it("drops other expenses to zero while both are in a nursing home", () => {
+    const nursing = rows(h, settings({ who: "both", careType: "nursing", inflation: 0 }));
+    const y = at(nursing, 2032);
+    expect(y.expenseMonthly.living).toBe(0);
+    expect(y.monthlyExpenses).toBe(20000);
+    expect(at(nursing, 2033).expenseMonthly.living).toBeCloseTo(3000, 6);
   });
 
   it("is back to normal after both stays end", () => {
@@ -129,9 +139,9 @@ describe("a single person in care", () => {
   const h: Household = { ...couple(), filingStatus: "single", people: [couple().people[0]] };
   const care = rows(h, settings({ inflation: 0 }));
 
-  it("keeps 70% of expenses rather than dropping them to zero", () => {
-    expect(at(care, 2030).expenseMonthly.living).toBeCloseTo(3500, 6);
-    expect(at(care, 2030).monthlyExpenses).toBeCloseTo(3500 + 6000, 6);
+  it("uses the one-spouse share (75% for home care) rather than zero", () => {
+    expect(at(care, 2030).expenseMonthly.living).toBeCloseTo(3750, 6);
+    expect(at(care, 2030).monthlyExpenses).toBeCloseTo(3750 + 6000, 6);
     expect(at(care, 2033).expenseMonthly.living).toBe(5000);
   });
 });
@@ -153,8 +163,11 @@ describe("each spouse's own care", () => {
     const y = at(care, 2032);
     expect(y.expenseMonthly["ltc:a"]).toBe(6000);
     expect(y.expenseMonthly["ltc:b"]).toBe(10000);
-    expect(y.monthlyExpenses).toBeCloseTo(3500 + 16000, 6);
+    // One at home, one in a nursing home: 50% of other expenses.
+    expect(y.expenseMonthly.living).toBeCloseTo(2500, 6);
+    expect(y.monthlyExpenses).toBeCloseTo(2500 + 16000, 6);
     expect(at(care, 2034).expenseMonthly["ltc:b"]).toBe(10000);
+    expect(at(care, 2034).expenseMonthly.living).toBeCloseTo(3000, 6);
   });
 
   it("falls back to the plan-wide care type for older settings", () => {
@@ -164,6 +177,18 @@ describe("each spouse's own care", () => {
       settings({ careType: "nursing", inflation: 0, periods: [{ personId: "a", startAge: 80, years: 3 }] }),
     );
     expect(at(care, 2030).expenseMonthly["ltc:a"]).toBe(10000);
+  });
+});
+
+describe("careExpenseShare", () => {
+  it("follows the table by each spouse's care, in either order", () => {
+    expect(careExpenseShare([])).toBe(1);
+    expect(careExpenseShare(["home"])).toBe(0.75);
+    expect(careExpenseShare(["nursing"])).toBe(0.6);
+    expect(careExpenseShare(["home", "home"])).toBe(0.55);
+    expect(careExpenseShare(["nursing", "home"])).toBe(0.5);
+    expect(careExpenseShare(["home", "nursing"])).toBe(0.5);
+    expect(careExpenseShare(["nursing", "nursing"])).toBe(0);
   });
 });
 

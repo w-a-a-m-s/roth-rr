@@ -21,10 +21,28 @@ export const DEFAULT_CARE_INFLATION = 0.03;
 export const DEFAULT_CARE_START_AGE = 80;
 
 /**
- * While anyone is in care (one spouse, both, or a single person), the
- * household's other expenses drop to this share of what they were before care.
+ * Share of the household's other expenses that still applies while someone is
+ * in care, by the care each spouse gets. Order doesn't matter: one spouse at
+ * home and the other in a nursing home is 50% whichever spouse is which. A
+ * single person in care uses the one-spouse row for their care type.
  */
-export const CARE_EXPENSE_SHARE = 0.7;
+export const CARE_EXPENSE_SHARES = {
+  home: 0.75,
+  nursing: 0.6,
+  homeHome: 0.55,
+  homeNursing: 0.5,
+  nursingNursing: 0,
+} as const;
+
+/** Share of other expenses for the care types of the people in care this year. */
+export function careExpenseShare(types: CareType[]): number {
+  if (types.length === 0) return 1;
+  const nursing = types.filter((t) => t === "nursing").length;
+  if (types.length === 1) return nursing ? CARE_EXPENSE_SHARES.nursing : CARE_EXPENSE_SHARES.home;
+  if (nursing === 0) return CARE_EXPENSE_SHARES.homeHome;
+  if (nursing === 1) return CARE_EXPENSE_SHARES.homeNursing;
+  return CARE_EXPENSE_SHARES.nursingNursing;
+}
 
 /** Default years of care: 3 for men, 5 for women, 3 when not set. */
 export function defaultCareYears(person: Pick<Person, "sex"> | undefined): number {
@@ -92,7 +110,13 @@ export function peopleInCare(household: Household, settings: LongTermCareSetting
 export interface ResolvedCare {
   inflation: number;
   /** Each stay's monthly cost is in first-projection-year dollars. */
-  stays: { personId: string; firstYear: number; lastYear: number; monthlyCost: number }[];
+  stays: {
+    personId: string;
+    firstYear: number;
+    lastYear: number;
+    careType: CareType;
+    monthlyCost: number;
+  }[];
 }
 
 export function resolveLongTermCare(
@@ -106,11 +130,13 @@ export function resolveLongTermCare(
     if (!person || !Number.isFinite(person.birthYear)) continue;
     const period = carePeriodFor(household, settings, personId);
     const firstYear = (person.birthYear as number) + Math.round(period.startAge);
+    const careType = period.careType ?? settings.careType;
     stays.push({
       personId,
       firstYear,
       lastYear: firstYear + period.years - 1,
-      monthlyCost: CARE_MONTHLY_COST[period.careType ?? settings.careType],
+      careType,
+      monthlyCost: CARE_MONTHLY_COST[careType],
     });
   }
   if (stays.length === 0) return null;
@@ -123,8 +149,8 @@ export function resolveLongTermCare(
 /**
  * One year of care: the care cost per person (inflated from the first
  * projection year) and the share of the regular expenses that still applies:
- * all of it with nobody in care, 70% while anyone is in care (one spouse,
- * both spouses, or a single person).
+ * all of it with nobody in care, otherwise `careExpenseShare` of the care
+ * types of the people in care that year.
  */
 export function careForYear(
   care: ResolvedCare | null,
@@ -134,13 +160,13 @@ export function careForYear(
   const costMonthlyById: Record<string, number> = {};
   if (!care) return { costMonthlyById, expenseShare: 1 };
   const growth = Math.pow(1 + care.inflation, Math.max(0, calendarYear - projectionStart));
-  let inCare = false;
+  const types: CareType[] = [];
   for (const stay of care.stays) {
     if (calendarYear < stay.firstYear || calendarYear > stay.lastYear) continue;
     costMonthlyById[stay.personId] = stay.monthlyCost * growth;
-    inCare = true;
+    types.push(stay.careType);
   }
-  return { costMonthlyById, expenseShare: inCare ? CARE_EXPENSE_SHARE : 1 };
+  return { costMonthlyById, expenseShare: careExpenseShare(types) };
 }
 
 /** Expense key for a person's care cost in `ProjectionRow.expenseMonthly`. */

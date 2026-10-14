@@ -19,7 +19,7 @@ import {
 } from "@/lib/domain/insurance";
 import { PercentInput, Select } from "@/components/ui/inputs";
 import {
-  CARE_EXPENSE_SHARE,
+  CARE_EXPENSE_SHARES,
   CARE_MONTHLY_COST,
   CARE_TYPE_LABELS,
   carePeriodFor,
@@ -284,6 +284,9 @@ export function DisabilityControls({
   );
 }
 
+/** A care expense share as a whole percent, e.g. 0.75 as "75%". */
+const carePct = (share: number) => `${Math.round(share * 100)}%`;
+
 const CARE_OPTIONS = (["home", "nursing"] as const).map((t) => ({
   value: t,
   label: `${CARE_TYPE_LABELS[t]} (${formatCurrency(CARE_MONTHLY_COST[t])}/mo)`,
@@ -322,10 +325,14 @@ export function LongTermCareControls({
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-5 py-4">
       <p className="m-0 rounded-lg bg-accent-soft px-3 py-2 text-[13px] leading-relaxed text-foreground">
-        <strong>Note:</strong> while one or both spouses are in long-term care,
-        your other expenses are adjusted to{" "}
-        {Math.round(CARE_EXPENSE_SHARE * 100)}% of what you spent before care,
-        on top of the care itself.
+        <strong>Note:</strong> while someone is in long-term care, your other
+        expenses are adjusted to a share of what you spent before care, on top
+        of the care itself: {carePct(CARE_EXPENSE_SHARES.home)} with one spouse
+        in home care, {carePct(CARE_EXPENSE_SHARES.nursing)} with one in a
+        nursing home, {carePct(CARE_EXPENSE_SHARES.homeHome)} with both in home
+        care, {carePct(CARE_EXPENSE_SHARES.homeNursing)} with one at home and
+        one in a nursing home, and {carePct(CARE_EXPENSE_SHARES.nursingNursing)}{" "}
+        with both in a nursing home.
       </p>
       <div className="flex flex-wrap items-end gap-3">
         <Control id="ltc-who" label="Who's in care" width="w-[180px]">
@@ -392,7 +399,6 @@ export function LongTermCareControls({
       <p className="m-0 text-[13px] leading-relaxed text-muted">
         {[
           `Home care costs ${formatCurrency(CARE_MONTHLY_COST.home)} and a nursing home ${formatCurrency(CARE_MONTHLY_COST.nursing)} a month per person in today's dollars, growing ${formatPercent(settings.inflation)} a year.`,
-          `While one or both spouses are in care, your other expenses drop to ${Math.round(CARE_EXPENSE_SHARE * 100)}%, plus the care costs.`,
           "After care ends, expenses go back to normal.",
           "Care length defaults to 3 years for men and 5 for women (set in Household).",
         ].join(" ")}
