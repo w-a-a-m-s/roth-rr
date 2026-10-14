@@ -19,6 +19,9 @@ import { formatCurrency } from "@/lib/format";
 
 const CELL = "border-b border-border-subtle px-3 py-1.5 text-right tabular-nums";
 const HEAD = "bg-[#1B365D] px-3 py-2 text-right text-[12px] font-bold text-white";
+/** The monthly spending stands out, so it's easy to find. */
+const MONTHLY_HEAD = HEAD.replace("bg-[#1B365D]", "bg-[#2563EB]");
+const MONTHLY_CELL = "bg-[#E8F0FE] font-bold text-[#1B365D]";
 
 type ScenarioKey = "baseline" | "roth";
 const SCENARIO_LABELS: Record<ScenarioKey, string> = {
@@ -80,6 +83,7 @@ export function SpendingCapacityAnalysis({
           </Field>
         </div>
       </div>
+      <Headline result={result} finalAge={finalAge} />
       <SummaryTable result={result} finalAge={finalAge} />
       <YearTable
         household={household}
@@ -87,6 +91,35 @@ export function SpendingCapacityAnalysis({
         scenario={scenario}
         onScenario={setScenario}
       />
+    </div>
+  );
+}
+
+/** The answer up top: what the plan could spend a month. */
+function Headline({
+  result,
+  finalAge,
+}: {
+  result: Record<ScenarioKey, CapacityScenario>;
+  finalAge: number;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {(["baseline", "roth"] as const).map((key) => (
+        <div key={key} className="rounded-2xl border-2 border-[#2563EB] bg-[#E8F0FE] px-5 py-4">
+          <p className="m-0 text-[12.5px] font-semibold text-muted">
+            {SCENARIO_LABELS[key]}: you could spend
+          </p>
+          <p className="m-0 text-[28px] font-bold tabular-nums text-[#1B365D]">
+            {formatCurrency(result[key].capacityMonthly)}
+            <span className="text-[15px] font-semibold"> a month</span>
+          </p>
+          <p className="m-0 text-[12.5px] text-muted">
+            In the plan&apos;s first year, growing as the plan&apos;s expenses do, to age{" "}
+            {finalAge}.
+          </p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -107,7 +140,7 @@ function SummaryTable({
             <tr>
               <th className={`${HEAD} text-left`}>Scenario</th>
               <th className={HEAD}>Plan spends a month</th>
-              <th className={HEAD}>You could spend a month</th>
+              <th className={MONTHLY_HEAD}>You could spend a month</th>
               <th className={HEAD}>Difference</th>
               <th className={HEAD}>With the plan&apos;s spending</th>
             </tr>
@@ -120,7 +153,7 @@ function SummaryTable({
                 <tr key={key}>
                   <td className={`${CELL} text-left font-semibold`}>{SCENARIO_LABELS[key]}</td>
                   <td className={CELL}>{formatCurrency(s.planMonthly)}</td>
-                  <td className={`${CELL} bg-[#E8F0FE] font-bold text-[#1B365D]`}>
+                  <td className={`${CELL} ${MONTHLY_CELL}`}>
                     {formatCurrency(s.capacityMonthly)}
                   </td>
                   <td className={`${CELL} font-semibold ${diff >= 0 ? "text-[#1C8A5B]" : "text-danger"}`}>
@@ -182,7 +215,8 @@ function YearTable({
             <tr>
               <th className={`${HEAD} text-left`}>Year</th>
               <th className={HEAD}>Age</th>
-              <th className={HEAD}>Spending</th>
+              <th className={MONTHLY_HEAD}>Spending a month</th>
+              <th className={HEAD}>Spending a year</th>
               <th className={HEAD}>Income after tax</th>
               <th className={HEAD}>Taken from accounts</th>
               <th className={HEAD}>Accounts left</th>
@@ -198,6 +232,9 @@ function YearTable({
                 <tr key={row.calendarYear}>
                   <td className={`${CELL} text-left font-semibold`}>{row.calendarYear}</td>
                   <td className={CELL}>{row.ages[primaryId] ?? "-"}</td>
+                  <td className={`${CELL} ${MONTHLY_CELL}`}>
+                    {formatCurrency(row.monthlyExpenses)}
+                  </td>
                   <td className={CELL}>{formatCurrency(row.monthlyExpenses * 12)}</td>
                   <td className={CELL}>{formatCurrency(net - taken)}</td>
                   <td className={CELL}>{taken > 0.5 ? formatCurrency(taken) : "-"}</td>
@@ -209,7 +246,7 @@ function YearTable({
         </table>
       </DualScroll>
       <p className="m-0 text-[12px] text-muted">
-        Yearly amounts. Income after tax is the plan&apos;s income less all its taxes (a
+        Spending a month is highlighted. The other columns are yearly. Income after tax is the plan&apos;s income less all its taxes (a
         conversion&apos;s tax included), not counting what&apos;s taken from the accounts to cover
         a short year. Accounts left is before tax.
       </p>
