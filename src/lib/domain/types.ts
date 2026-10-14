@@ -563,6 +563,11 @@ export interface Household {
    * Social Security income. Doesn't change the projection.
    */
   socialSecurityClaims?: SocialSecurityClaim[];
+  /**
+   * Car analysis: lease, pay cash or finance one car. Doesn't change the
+   * projection. Optional; the analysis falls back to `defaultCarDecision`.
+   */
+  carDecision?: CarDecision;
   /** Settings for the Disability analysis. Optional, with defaults. */
   disability?: DisabilityEvent;
   /**
@@ -730,6 +735,34 @@ export interface LongTermCareSettings {
   inflation: number;
   /** Per-person start age and length; anyone missing uses the defaults. */
   periods: CarePeriod[];
+}
+
+/**
+ * Car analysis inputs. Rates are decimals; terms are months. The comparison
+ * runs `years` years: the cash and financed car is worth its depreciated value
+ * at the end, and a lease shorter than that is renewed on the same terms.
+ */
+export interface CarDecision {
+  /** Negotiated price before sales tax. */
+  price: number;
+  salesTaxRate: number;
+  /** Title, registration and dealer fees paid up front (buying only). */
+  fees: number;
+  /** How many years the comparison covers. */
+  years: number;
+  /** Yearly drop in the car's value. */
+  depreciationRate: number;
+  /** What money kept invested would earn a year. */
+  investmentReturn: number;
+  /** Finance: cash down, loan rate (APR) and term. */
+  downPayment: number;
+  loanRate: number;
+  loanTermMonths: number;
+  /** Lease: monthly payment (tax included), term, due at signing, turn-in fee. */
+  leaseMonthly: number;
+  leaseTermMonths: number;
+  leaseDueAtSigning: number;
+  leaseEndFee: number;
 }
 
 /**

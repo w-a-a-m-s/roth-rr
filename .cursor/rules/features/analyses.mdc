@@ -1,5 +1,5 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Social Security analysis) and the survivorship death model
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Social Security analysis, Car analysis) and the survivorship death model
 globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
@@ -46,6 +46,17 @@ conversion schedule always comes from the plan's strategy as-is.
   the first year an option's running total reaches the plan's (from either
   side). It never feeds `projectScenario`; ResultsView returns it before the
   tax tables load.
+
+- **Car analysis**: not a projection. `CarAnalysis.tsx` edits
+  `household.carDecision` and shows `compareCarOptions()`
+  (`lib/engine/carDecision.ts`): pay cash, finance (down payment, APR, term)
+  or lease (monthly, term, due at signing, turn-in fee) over `years`. Bought
+  cars depreciate `depreciationRate` a year and count their value less any
+  loan owed at the end; a lease shorter than the comparison is renewed on the
+  same terms, and one still running at the end counts only its months
+  inside. "Net cost with lost growth" carries every payment forward at
+  `investmentReturn`. Defaults (`defaultCarDecision`) take the price from a
+  one-time depreciation entry named like a car. Before income tax.
 
 ## Survivorship rules (`domain/survivorship.ts` + `projectScenario`)
 

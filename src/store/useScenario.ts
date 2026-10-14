@@ -7,6 +7,7 @@ import type {
   DeathEvent,
   OneTimeDepreciation,
   DeletedItem,
+  CarDecision,
   DisabilityEvent,
   SocialSecurityClaim,
   InsurancePolicy,
@@ -239,6 +240,10 @@ export function migrateHousehold(household: Household): Household {
       !Array.isArray(care.periods))
   ) {
     delete legacy.longTermCare;
+  }
+  // Car analysis inputs are healed when read; drop only a broken shape.
+  if (legacy.carDecision != null && typeof legacy.carDecision !== "object") {
+    delete legacy.carDecision;
   }
   // Social Security analysis claims: keep only well-formed ones for someone
   // in the plan.
@@ -815,6 +820,8 @@ interface ScenarioState {
   setDisability: (event: DisabilityEvent) => void;
   /** Social Security analysis: the other claiming ages and benefits. */
   setSocialSecurityClaims: (claims: SocialSecurityClaim[]) => void;
+  /** Car analysis: lease, cash or finance inputs. */
+  setCarDecision: (decision: CarDecision) => void;
   addInsurance: (policy: InsurancePolicy) => void;
   updateInsurance: (id: string, patch: Partial<InsurancePolicy>) => void;
   removeInsurance: (id: string) => void;
@@ -1575,6 +1582,8 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       editActive((h) => ({ ...h, survivorship: { ...event } })),
     setDisability: (event) =>
       editActive((h) => ({ ...h, disability: { ...event } })),
+    setCarDecision: (decision) =>
+      editActive((h) => ({ ...h, carDecision: { ...decision } })),
     setSocialSecurityClaims: (claims) =>
       editActive((h) => ({
         ...h,

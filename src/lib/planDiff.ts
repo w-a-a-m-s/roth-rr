@@ -79,6 +79,7 @@ const HOUSEHOLD_KEYS = [
   "mortgages",
   "deletedMortgages",
   "socialSecurityClaims",
+  "carDecision",
 ] as const satisfies readonly (keyof Household)[];
 
 const NOT_SET = "Not set";
@@ -208,9 +209,28 @@ const PROPERTY_LABELS: Record<string, string> = {
   extraPrincipal: "Extra principal",
   originalAmount: "Original loan amount",
   originalTermYears: "Original term (years)",
+  price: "Price",
+  salesTaxRate: "Sales tax",
+  fees: "Fees",
+  years: "Years compared",
+  depreciationRate: "Depreciation",
+  investmentReturn: "Investment return",
+  downPayment: "Down payment",
+  loanRate: "Loan rate",
+  loanTermMonths: "Loan term (months)",
+  leaseMonthly: "Lease payment",
+  leaseTermMonths: "Lease term (months)",
+  leaseDueAtSigning: "Due at signing",
+  leaseEndFee: "Lease-end fee",
 };
 
 const MONEY_KEYS = new Set([
+  "price",
+  "fees",
+  "downPayment",
+  "leaseMonthly",
+  "leaseDueAtSigning",
+  "leaseEndFee",
   "balance",
   "costBasis",
   "depreciationRecapture",
@@ -237,6 +257,10 @@ const MONEY_KEYS = new Set([
 ]);
 
 const PERCENT_KEYS = new Set([
+  "salesTaxRate",
+  "depreciationRate",
+  "investmentReturn",
+  "loanRate",
   "inflation",
   "growthRate",
   "expenseGrowth",
@@ -747,6 +771,8 @@ export function formatPlanChangeLabel(field: string): string {
       return "Deleted mortgages";
     case "socialSecurityClaims":
       return "Social Security analysis";
+    case "carDecision":
+      return "Car analysis";
     default:
       return field;
   }
@@ -1059,6 +1085,20 @@ export function detailPlanSnapshots(
       formatPlanChangeLabel("disability"),
       prevDisability,
       next.household.disability as unknown as Record<string, unknown>,
+      out,
+      ctx,
+    );
+  }
+
+  if (hasOwn(nextHousehold, "carDecision") && next.household.carDecision) {
+    const prevCar =
+      hasOwn(prevHousehold, "carDecision") && prevHousehold.carDecision != null
+        ? (prevHousehold.carDecision as unknown as Record<string, unknown>)
+        : null;
+    diffRecordFields(
+      formatPlanChangeLabel("carDecision"),
+      prevCar,
+      next.household.carDecision as unknown as Record<string, unknown>,
       out,
       ctx,
     );

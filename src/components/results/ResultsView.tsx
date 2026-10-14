@@ -22,6 +22,7 @@ import { PresentationCharts } from '@/components/results/PresentationCharts';
 import { LabsLoading } from '@/lib/common/client';
 import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
 import { SocialSecurityAnalysis } from '@/components/results/SocialSecurityAnalysis';
+import { CarAnalysis } from '@/components/results/CarAnalysis';
 import { LifeInsuranceSummary } from '@/components/wizard/steps/LifeInsuranceSummary';
 import { AnalysisTabs, DisabilityControls, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
 import { disabilityEvent, resolveDisability } from '@/lib/domain/insurance';
@@ -30,7 +31,7 @@ import { resolveDeath, survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
 
 /** Analyses that aren't a projection run and skip the results tabs. */
-const STANDALONE = new Set(['mortgage', 'socialSecurity']);
+const STANDALONE = new Set(['mortgage', 'socialSecurity', 'car']);
 
 export function ResultsView() {
 	const household = useHousehold();
@@ -93,6 +94,16 @@ export function ResultsView() {
 			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
 				<AnalysisTabs />
 				<SocialSecurityAnalysis household={household} />
+			</div>
+		);
+	}
+
+	// Car analysis: lease, cash or finance one car. Not a projection either.
+	if (analysis === 'car') {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<CarAnalysis household={household} />
 			</div>
 		);
 	}

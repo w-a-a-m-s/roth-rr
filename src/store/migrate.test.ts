@@ -1020,3 +1020,14 @@ describe("migrateHousehold: Social Security analysis claims", () => {
     expect(migrateHousehold(household([], []))).not.toHaveProperty("socialSecurityClaims");
   });
 });
+
+describe("migrateHousehold: car analysis", () => {
+  it("keeps saved inputs and drops a broken shape", () => {
+    const h = household([], []);
+    (h as unknown as Record<string, unknown>).carDecision = { price: 40_000 };
+    expect(migrateHousehold(h).carDecision).toEqual({ price: 40_000 });
+    const broken = household([], []);
+    (broken as unknown as Record<string, unknown>).carDecision = "x";
+    expect(migrateHousehold(broken)).not.toHaveProperty("carDecision");
+  });
+});
