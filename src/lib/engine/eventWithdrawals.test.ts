@@ -151,6 +151,22 @@ describe("lifetime income once an event happens", () => {
     expect(at(r, 2040).incomeMonthly["draw:ira"] * 12).toBeCloseTo(ira * 0.073, 6);
   });
 
+  it("takes more to cover a long-term care year still short, until the accounts run dry", () => {
+    // Both in a nursing home from 75 for 3 years ($20,000 a month of care):
+    // the lifetime income and Social Security fall well short.
+    const care: ProjectionOptions = {
+      longTermCare: { who: "both", personId: "a", careType: "nursing", inflation: 0, periods: [] },
+    };
+    const r = rows(couple(), care);
+    const y = r.find((row) => Object.keys(row.expenseMonthly).some((k) => k.startsWith("ltc:")))!;
+    expect(y.incomeMonthly["topup:brk"]).toBeGreaterThan(0);
+    expect(y.surplus).toBeCloseTo(0, 1);
+    const covered = r.filter(
+      (row) => row.calendarYear >= y.calendarYear && row.retirementTotal + row.rothTotal + row.afterTaxTotal > 1,
+    );
+    for (const row of covered) expect(row.surplus).toBeGreaterThan(-0.1);
+  });
+
   it("stops the deceased's own contributions, but not a joint account's while the survivor works", () => {
     const working = couple({
       people: [
