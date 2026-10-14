@@ -20,7 +20,10 @@ export const CARE_TYPE_LABELS: Record<CareType, string> = {
 export const DEFAULT_CARE_INFLATION = 0.03;
 export const DEFAULT_CARE_START_AGE = 80;
 
-/** While some (not all) of the household is in care, expenses drop to this share. */
+/**
+ * While one person is in care, the household's other expenses drop to this
+ * share. They go to zero only when both spouses of a couple are in care.
+ */
 export const CARE_EXPENSE_SHARE = 0.7;
 
 /** Default years of care: 3 for men, 5 for women, 3 when not set. */
@@ -122,8 +125,8 @@ export function resolveLongTermCare(
 /**
  * One year of care: the care cost per person (inflated from the first
  * projection year) and the share of the regular expenses that still applies:
- * all of it with nobody in care, 70% while some of the household is in care,
- * none once everyone is.
+ * all of it with nobody in care, 70% while one person is in care (a single
+ * person included), none only while both spouses of a couple are.
  */
 export function careForYear(
   care: ResolvedCare | null,
@@ -142,7 +145,7 @@ export function careForYear(
   if (inCare === 0) return { costMonthlyById, expenseShare: 1 };
   return {
     costMonthlyById,
-    expenseShare: inCare >= care.peopleCount ? 0 : CARE_EXPENSE_SHARE,
+    expenseShare: care.peopleCount > 1 && inCare >= care.peopleCount ? 0 : CARE_EXPENSE_SHARE,
   };
 }
 

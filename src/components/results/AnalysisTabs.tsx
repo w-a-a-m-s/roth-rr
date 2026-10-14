@@ -393,7 +393,7 @@ export function LongTermCareControls({
       <p className="m-0 text-[13px] leading-relaxed text-muted">
         {[
           `Home care costs ${formatCurrency(CARE_MONTHLY_COST.home)} and a nursing home ${formatCurrency(CARE_MONTHLY_COST.nursing)} a month per person in today's dollars, growing ${formatPercent(settings.inflation)} a year.`,
-          `While one spouse is in care, your other expenses drop to ${Math.round(CARE_EXPENSE_SHARE * 100)}%; while everyone is in care, only the care costs count.`,
+          `While one spouse is in care, your other expenses drop to ${Math.round(CARE_EXPENSE_SHARE * 100)}%; while both spouses are in care, only the care costs count.`,
           "After care ends, expenses go back to normal.",
           "Care length defaults to 3 years for men and 5 for women (set in Household).",
         ].join(" ")}
