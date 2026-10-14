@@ -334,12 +334,14 @@ The results page layout was signed off by the user. Keep it as is unless the
 user asks for a change:
 
 1. Analysis links: **Retirement | Survivorship | Disability | Long-term care |
-   Mortgage analysis**. Survivorship, Disability and Long-term care show their
+   Mortgage analysis | Social Security analysis**. Survivorship, Disability and Long-term care show their
    own settings card under them. Survivorship also shows the Life insurance
    summary table (the one on the Insurance step) under its card, at the
    user's request. Mortgage analysis (added at the user's
    request) skips the results tabs: it shows statement inputs and an
-   amortization table instead.
+   amortization table instead. Social Security analysis (also added at the
+   user's request) skips them too: claiming-age inputs, a Crossover year
+   table, a cumulative benefits chart and a Breakeven by year table.
 2. Results tabs: **Main | Summary | Graphic view | Main in detail analysis**.
    Each tab shows only its own sections; Main is the default.
    - **Main**: the Assets, Income & Taxes tables (No conversion, then With

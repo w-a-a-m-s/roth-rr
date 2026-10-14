@@ -1,5 +1,5 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis) and the survivorship death model
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Social Security analysis) and the survivorship death model
 globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
@@ -34,6 +34,17 @@ conversion schedule always comes from the plan's strategy as-is.
   linked by `loanId` (saved or deleted) shows up as one
   (`propertyMortgageStatements`); the first edit saves it, Remove saves then
   deletes it so it stays gone. ResultsView returns it before the tax tables load.
+
+- **Social Security analysis**: not a projection. `SocialSecurityAnalysis.tsx`
+  edits `household.socialSecurityClaims` (person, claiming age, monthly
+  benefit at that age) and shows `socialSecurityBreakeven()`
+  (`lib/engine/socialSecurity.ts`). The first option is the plan's own Social
+  Security income (its start year and amount); every option grows by that
+  income's COLA (`growthRate`) from its own claim year, full years, before
+  tax, not discounted, through the person's final age. The crossover year is
+  the first year an option's running total reaches the plan's (from either
+  side). It never feeds `projectScenario`; ResultsView returns it before the
+  tax tables load.
 
 ## Survivorship rules (`domain/survivorship.ts` + `projectScenario`)
 

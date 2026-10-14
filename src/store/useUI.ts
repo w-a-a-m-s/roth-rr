@@ -53,7 +53,8 @@ export type AnalysisKind =
   | "survivorship"
   | "disability"
   | "longTermCare"
-  | "mortgage";
+  | "mortgage"
+  | "socialSecurity";
 
 interface UIState {
   analysis: AnalysisKind;

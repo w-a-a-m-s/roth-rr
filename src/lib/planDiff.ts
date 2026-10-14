@@ -11,6 +11,7 @@ import type {
   InsuranceKind,
   InsurancePolicy,
   MortgageStatement,
+  SocialSecurityClaim,
   Household,
   IncomeKind,
   IncomeSource,
@@ -77,6 +78,7 @@ const HOUSEHOLD_KEYS = [
   "disability",
   "mortgages",
   "deletedMortgages",
+  "socialSecurityClaims",
 ] as const satisfies readonly (keyof Household)[];
 
 const NOT_SET = "Not set";
@@ -743,6 +745,8 @@ export function formatPlanChangeLabel(field: string): string {
       return "Mortgage analysis";
     case "deletedMortgages":
       return "Deleted mortgages";
+    case "socialSecurityClaims":
+      return "Social Security analysis";
     default:
       return field;
   }
@@ -960,6 +964,19 @@ export function detailPlanSnapshots(
       out,
       ctx,
       (p) => entityLabel(p, INSURANCE_KIND_LABELS[p.kind] || "Policy"),
+    );
+  }
+
+  if (hasOwn(nextHousehold, "socialSecurityClaims")) {
+    diffEntityList<SocialSecurityClaim>(
+      "socialSecurityClaims",
+      hasOwn(prevHousehold, "socialSecurityClaims")
+        ? previous.household.socialSecurityClaims
+        : undefined,
+      next.household.socialSecurityClaims ?? [],
+      out,
+      ctx,
+      (c) => `Claim at ${c.age}`,
     );
   }
 

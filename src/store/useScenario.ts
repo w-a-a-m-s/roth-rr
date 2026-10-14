@@ -8,6 +8,7 @@ import type {
   OneTimeDepreciation,
   DeletedItem,
   DisabilityEvent,
+  SocialSecurityClaim,
   InsurancePolicy,
   LongTermCareSettings,
   MortgageStatement,
@@ -238,6 +239,22 @@ export function migrateHousehold(household: Household): Household {
       !Array.isArray(care.periods))
   ) {
     delete legacy.longTermCare;
+  }
+  // Social Security analysis claims: keep only well-formed ones for someone
+  // in the plan.
+  if (legacy.socialSecurityClaims != null) {
+    if (!Array.isArray(legacy.socialSecurityClaims)) {
+      delete legacy.socialSecurityClaims;
+    } else {
+      legacy.socialSecurityClaims = legacy.socialSecurityClaims.filter(
+        (c) =>
+          c != null &&
+          typeof c.id === "string" &&
+          (legacy.people ?? []).some((p) => p.id === c.personId) &&
+          Number.isFinite(c.age) &&
+          Number.isFinite(c.monthlyAmount),
+      );
+    }
   }
   // The Survivorship setting must name someone in the plan and a real age.
   const survivorship = legacy.survivorship;
@@ -796,6 +813,8 @@ interface ScenarioState {
   setLongTermCare: (settings: LongTermCareSettings) => void;
   /** Disability analysis: who becomes disabled and at what age. */
   setDisability: (event: DisabilityEvent) => void;
+  /** Social Security analysis: the other claiming ages and benefits. */
+  setSocialSecurityClaims: (claims: SocialSecurityClaim[]) => void;
   addInsurance: (policy: InsurancePolicy) => void;
   updateInsurance: (id: string, patch: Partial<InsurancePolicy>) => void;
   removeInsurance: (id: string) => void;
@@ -1556,6 +1575,11 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       editActive((h) => ({ ...h, survivorship: { ...event } })),
     setDisability: (event) =>
       editActive((h) => ({ ...h, disability: { ...event } })),
+    setSocialSecurityClaims: (claims) =>
+      editActive((h) => ({
+        ...h,
+        socialSecurityClaims: claims.map((c) => ({ ...c })),
+      })),
     addInsurance: (policy) => addTo("insurance", policy),
     updateInsurance: (id, patch) => patchIn("insurance", id, patch),
     removeInsurance: (id) => softDeleteIn("insurance", id),

@@ -21,12 +21,16 @@ import { ScenarioSnapshot } from '@/components/results/ScenarioSnapshot';
 import { PresentationCharts } from '@/components/results/PresentationCharts';
 import { LabsLoading } from '@/lib/common/client';
 import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
+import { SocialSecurityAnalysis } from '@/components/results/SocialSecurityAnalysis';
 import { LifeInsuranceSummary } from '@/components/wizard/steps/LifeInsuranceSummary';
 import { AnalysisTabs, DisabilityControls, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
 import { disabilityEvent, resolveDisability } from '@/lib/domain/insurance';
 import { longTermCareSettings, resolveLongTermCare } from '@/lib/domain/longTermCare';
 import { resolveDeath, survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
+
+/** Analyses that aren't a projection run and skip the results tabs. */
+const STANDALONE = new Set(['mortgage', 'socialSecurity']);
 
 export function ResultsView() {
 	const household = useHousehold();
@@ -49,7 +53,7 @@ export function ResultsView() {
 		return {};
 	}, [analysis, deathEvent, careSettings, disabilitySetting]);
 	const comparison = useMemo(
-		() => (ready && refsReady && analysis !== 'mortgage' ? calculate(household, refs, options) : null),
+		() => (ready && refsReady && !STANDALONE.has(analysis) ? calculate(household, refs, options) : null),
 		[household, ready, refsReady, refs, options, analysis],
 	);
 	// The tables and charts also show the years from today to the plan start
@@ -57,7 +61,7 @@ export function ResultsView() {
 	// count the years before the plan.
 	const displayComparison = useMemo(
 		() =>
-			ready && refsReady && analysis !== 'mortgage'
+			ready && refsReady && !STANDALONE.has(analysis)
 				? calculate(household, refs, { ...options, fromYear: new Date().getFullYear() })
 				: null,
 		[household, ready, refsReady, refs, options, analysis],
@@ -78,6 +82,17 @@ export function ResultsView() {
 			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
 				<AnalysisTabs />
 				<MortgageAnalysis household={household} />
+			</div>
+		);
+	}
+
+	// Social Security analysis compares claiming ages for the plan's benefit,
+	// not a projection, so it skips the results tabs too.
+	if (analysis === 'socialSecurity') {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<SocialSecurityAnalysis household={household} />
 			</div>
 		);
 	}

@@ -993,3 +993,30 @@ describe("property loans", () => {
   });
 });
 
+
+describe("migrateHousehold: Social Security analysis claims", () => {
+  it("keeps well-formed claims for someone in the plan", () => {
+    const h = household([], []);
+    h.socialSecurityClaims = [{ id: "c1", personId: "p1", age: 70, monthlyAmount: 3800 }];
+    expect(migrateHousehold(h).socialSecurityClaims).toEqual([
+      { id: "c1", personId: "p1", age: 70, monthlyAmount: 3800 },
+    ]);
+  });
+
+  it("drops claims for someone gone or with a bad age, and a broken list", () => {
+    const h = household([], []);
+    h.socialSecurityClaims = [
+      { id: "c1", personId: "nobody", age: 70, monthlyAmount: 3800 },
+      { id: "c2", personId: "p1", age: Number.NaN, monthlyAmount: 3800 },
+      { id: "c3", personId: "p1", age: 67, monthlyAmount: 3000 },
+    ];
+    expect(migrateHousehold(h).socialSecurityClaims?.map((c) => c.id)).toEqual(["c3"]);
+    const broken = household([], []);
+    (broken as unknown as Record<string, unknown>).socialSecurityClaims = "x";
+    expect(migrateHousehold(broken)).not.toHaveProperty("socialSecurityClaims");
+  });
+
+  it("leaves older plans without any", () => {
+    expect(migrateHousehold(household([], []))).not.toHaveProperty("socialSecurityClaims");
+  });
+});

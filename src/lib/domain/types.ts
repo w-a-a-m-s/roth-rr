@@ -558,6 +558,11 @@ export interface Household {
   survivorship?: DeathEvent;
   /** Settings for the Long-term care analysis. Optional, with defaults. */
   longTermCare?: LongTermCareSettings;
+  /**
+   * Social Security analysis: other claiming ages to compare with the plan's
+   * Social Security income. Doesn't change the projection.
+   */
+  socialSecurityClaims?: SocialSecurityClaim[];
   /** Settings for the Disability analysis. Optional, with defaults. */
   disability?: DisabilityEvent;
   /**
@@ -725,6 +730,17 @@ export interface LongTermCareSettings {
   inflation: number;
   /** Per-person start age and length; anyone missing uses the defaults. */
   periods: CarePeriod[];
+}
+
+/**
+ * A Social Security benefit for claiming at `age`: `monthlyAmount` a month in
+ * the claim year, raised each year after by the plan's Social Security COLA.
+ */
+export interface SocialSecurityClaim {
+  id: string;
+  personId: string;
+  age: number;
+  monthlyAmount: number;
 }
 
 /** One spouse passing at a given age (end of that year). */
