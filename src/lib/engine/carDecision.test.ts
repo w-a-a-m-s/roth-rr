@@ -82,3 +82,29 @@ describe("car analysis: lease, cash or finance", () => {
     for (const o of r.options) expect(o.netCostWithGrowth).toBeCloseTo(o.netCost, 2);
   });
 });
+
+describe("car analysis: lease mileage", () => {
+  it("charges the miles over the allowance at each turn-in, prorated for a lease still running", () => {
+    // 15,000 driven on a 12,000 allowance: 3,000 extra miles a year at $0.25.
+    const d = { ...DECISION, milesDrivenPerYear: 15_000 };
+    const r = compareCarOptions(d);
+    const lease = r.options.find((o) => o.key === "lease")!;
+    // 5 years: the first 36-month lease owes 3 years, the second 2 years.
+    expect(lease.excessMileCharges).toBeCloseTo(5 * 3_000 * 0.25, 2);
+    expect(lease.totalPaid).toBeCloseTo(2 * 3_000 + 400 + 60 * 650 + 3_750, 2);
+    // Charged at turn-in: year 3 picks up the first lease's 3 years.
+    expect(r.years[2].paid.lease - r.years[1].paid.lease).toBeCloseTo(
+      3_000 + 12 * 650 + 400 + 3 * 3_000 * 0.25,
+      2,
+    );
+    // Buying doesn't pay it.
+    const cash = r.options.find((o) => o.key === "cash")!;
+    expect(cash.excessMileCharges).toBe(0);
+    expect(cash.totalPaid).toBeCloseTo(63_600, 2);
+  });
+
+  it("charges nothing when driving within the allowance", () => {
+    const r = compareCarOptions({ ...DECISION, milesDrivenPerYear: 10_000 });
+    expect(r.options.find((o) => o.key === "lease")!.excessMileCharges).toBe(0);
+  });
+});

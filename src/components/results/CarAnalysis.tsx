@@ -27,15 +27,50 @@ import {
   CAR_OPTION_LABELS,
   carDecisionFor,
   compareCarOptions,
+  excessMilesPerYear,
   type CarComparison,
   type CarOptionKey,
 } from "@/lib/engine/carDecision";
 import { formatCurrency, formatPercent } from "@/lib/format";
 
+const formatNumber = (x: number) => Math.round(x).toLocaleString("en-US");
+
 const OPTION_COLORS: Record<CarOptionKey, string> = {
   cash: "#2563EB",
   finance: "#B0552B",
   lease: "#1C8A5B",
+};
+
+/**
+ * Each option keeps its color through the tables: cash blue, finance rust,
+ * lease green. A dark header, a lighter sub-header, a pale body tint, and a
+ * rule on the left of its first column.
+ */
+const OPTION_STYLE: Record<
+  CarOptionKey,
+  { head: string; sub: string; tint: string; text: string; rule: string }
+> = {
+  cash: {
+    head: "bg-[#1E4FBF]",
+    sub: "bg-[#3D6BD6]",
+    tint: "bg-[#EEF3FD]",
+    text: "text-[#1E4FBF]",
+    rule: "border-l-[3px] border-l-[#1E4FBF]",
+  },
+  finance: {
+    head: "bg-[#9A4522]",
+    sub: "bg-[#B8623C]",
+    tint: "bg-[#FBF0EA]",
+    text: "text-[#9A4522]",
+    rule: "border-l-[3px] border-l-[#9A4522]",
+  },
+  lease: {
+    head: "bg-[#17734C]",
+    sub: "bg-[#2E8C62]",
+    tint: "bg-[#ECF6F0]",
+    text: "text-[#17734C]",
+    rule: "border-l-[3px] border-l-[#17734C]",
+  },
 };
 
 /** Car analysis: lease, pay cash or finance one car. It doesn't change the plan. */
@@ -136,6 +171,33 @@ function CarInputs({ decision }: { decision: CarDecision }) {
         <Field label="Turn-in fee" hint="Disposition fee at the end of each lease.">
           <MoneyInput value={decision.leaseEndFee} step={50} onChange={(leaseEndFee) => set({ leaseEndFee })} />
         </Field>
+        <Field
+          label="Miles allowed per year"
+          hint={`${formatNumber((decision.leaseMilesPerYear * decision.leaseTermMonths) / 12)} miles over the ${decision.leaseTermMonths}-month lease.`}
+        >
+          <NumberField
+            value={decision.leaseMilesPerYear}
+            min={0}
+            step={1000}
+            onChange={(leaseMilesPerYear) => set({ leaseMilesPerYear })}
+          />
+        </Field>
+        <Field label="Miles actually driven per year">
+          <NumberField
+            value={decision.milesDrivenPerYear}
+            min={0}
+            step={1000}
+            onChange={(milesDrivenPerYear) => set({ milesDrivenPerYear })}
+          />
+        </Field>
+        <Field label="Charge per extra mile" hint="Paid at turn-in for miles over the allowance.">
+          <MoneyInput
+            value={decision.excessMileRate}
+            step={0.05}
+            decimals={2}
+            onChange={(excessMileRate) => set({ excessMileRate })}
+          />
+        </Field>
       </InputGroup>
     </div>
   );
@@ -168,8 +230,11 @@ function Recommendation({ result }: { result: CarComparison }) {
   );
 }
 
-const CELL = "border-b border-border-subtle px-3 py-1.5 text-right tabular-nums";
-const HEAD = "bg-[#1B365D] px-3 py-2 text-right text-[12px] font-bold text-white";
+const CELL_BASE = "border-b border-border-subtle px-3 py-1.5 tabular-nums";
+const CELL = `${CELL_BASE} text-right`;
+const HEAD_BASE = "px-3 py-2 text-[12px] font-bold text-white";
+const HEAD = `bg-[#1B365D] ${HEAD_BASE} text-right`;
+const HEAD_LEFT = `bg-[#1B365D] ${HEAD_BASE} text-left`;
 
 function SummaryTable({ result }: { result: CarComparison }) {
   const money = (x: number) => formatCurrency(x);
@@ -182,9 +247,10 @@ function SummaryTable({ result }: { result: CarComparison }) {
         <table className="w-full min-w-[760px] border-collapse text-[12.5px]">
           <thead>
             <tr>
-              <th className={`${HEAD} text-left`}>Option</th>
+              <th className={`${HEAD_LEFT}`}>Option</th>
               <th className={HEAD}>Up front</th>
               <th className={HEAD}>Monthly</th>
+              <th className={HEAD}>Extra-mile charges</th>
               <th className={HEAD}>Total paid</th>
               <th className={HEAD}>Car worth at end</th>
               <th className={HEAD}>Net cost</th>
@@ -193,12 +259,23 @@ function SummaryTable({ result }: { result: CarComparison }) {
           </thead>
           <tbody>
             {result.options.map((o) => (
-              <tr key={o.key} className={o.key === result.best ? "bg-[#E7F2EC] font-semibold" : ""}>
-                <td className={`${CELL} text-left font-semibold`} style={{ color: OPTION_COLORS[o.key] }}>
+              <tr
+                key={o.key}
+                className={`${OPTION_STYLE[o.key].tint} ${o.key === result.best ? "font-semibold" : ""}`}
+              >
+                <td
+                  className={`${CELL_BASE} ${OPTION_STYLE[o.key].rule} ${OPTION_STYLE[o.key].text} text-left font-bold`}
+                >
                   {CAR_OPTION_LABELS[o.key]}
+                  {o.key === result.best ? (
+                    <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide">
+                      Lowest
+                    </span>
+                  ) : null}
                 </td>
                 <td className={CELL}>{money(o.upFront)}</td>
                 <td className={CELL}>{o.monthly > 0 ? money(o.monthly) : "-"}</td>
+                <td className={CELL}>{o.key === "lease" ? money(o.excessMileCharges) : "-"}</td>
                 <td className={CELL}>{money(o.totalPaid)}</td>
                 <td className={CELL}>{o.endEquity > 0 ? money(o.endEquity) : "-"}</td>
                 <td className={CELL}>{money(o.netCost)}</td>
@@ -215,7 +292,9 @@ function SummaryTable({ result }: { result: CarComparison }) {
         is worth {formatCurrency(result.endCarValue)} after {result.inputs.years} years at{" "}
         {formatPercent(result.inputs.depreciationRate)} a year. Lost growth is at{" "}
         {formatPercent(result.inputs.investmentReturn)} a year. A lease still running at the end
-        counts only its months inside the comparison.
+        counts only its months inside the comparison. Extra-mile charges:{" "}
+        {formatNumber(excessMilesPerYear(result.inputs))} miles a year over the lease allowance at{" "}
+        {formatCurrency(result.inputs.excessMileRate, true)} a mile, paid at each turn-in.
       </p>
     </div>
   );
@@ -276,24 +355,31 @@ function YearTable({ result }: { result: CarComparison }) {
         <table className="w-full min-w-[760px] border-collapse text-[12.5px]">
           <thead>
             <tr>
-              <th className={`${HEAD} text-left`} rowSpan={2}>
+              <th className={`${HEAD_LEFT}`} rowSpan={2}>
                 Year
               </th>
               {CAR_OPTIONS.map((k) => (
-                <th key={k} className={`${HEAD} text-center`} colSpan={3}>
+                <th
+                  key={k}
+                  className={`${HEAD_BASE} ${OPTION_STYLE[k].head} border-l-2 border-l-white text-center text-[12.5px]`}
+                  colSpan={3}
+                >
                   {CAR_OPTION_LABELS[k]}
                 </th>
               ))}
             </tr>
             <tr>
               {CAR_OPTIONS.map((k) => [
-                <th key={`p-${k}`} className={HEAD}>
+                <th
+                  key={`p-${k}`}
+                  className={`${HEAD_BASE} ${OPTION_STYLE[k].sub} border-l-2 border-l-white text-right`}
+                >
                   Paid so far
                 </th>,
-                <th key={`e-${k}`} className={HEAD}>
+                <th key={`e-${k}`} className={`${HEAD_BASE} ${OPTION_STYLE[k].sub} text-right`}>
                   Car equity
                 </th>,
-                <th key={`n-${k}`} className={HEAD}>
+                <th key={`n-${k}`} className={`${HEAD_BASE} ${OPTION_STYLE[k].sub} text-right`}>
                   Net cost
                 </th>,
               ])}
@@ -302,15 +388,18 @@ function YearTable({ result }: { result: CarComparison }) {
           <tbody>
             {result.years.map((y) => (
               <tr key={y.year}>
-                <td className={`${CELL} text-left`}>{y.year}</td>
+                <td className={`${CELL_BASE} text-left`}>{y.year}</td>
                 {CAR_OPTIONS.map((k) => [
-                  <td key={`p-${k}`} className={CELL}>
+                  <td key={`p-${k}`} className={`${CELL} ${OPTION_STYLE[k].tint} ${OPTION_STYLE[k].rule}`}>
                     {money(y.paid[k])}
                   </td>,
-                  <td key={`e-${k}`} className={CELL}>
+                  <td key={`e-${k}`} className={`${CELL} ${OPTION_STYLE[k].tint}`}>
                     {k === "lease" ? "-" : money(y.equity[k])}
                   </td>,
-                  <td key={`n-${k}`} className={`${CELL} font-semibold`}>
+                  <td
+                    key={`n-${k}`}
+                    className={`${CELL} ${OPTION_STYLE[k].tint} ${OPTION_STYLE[k].text} font-bold`}
+                  >
                     {money(y.netCost[k])}
                   </td>,
                 ])}

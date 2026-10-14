@@ -222,6 +222,9 @@ const PROPERTY_LABELS: Record<string, string> = {
   leaseTermMonths: "Lease term (months)",
   leaseDueAtSigning: "Due at signing",
   leaseEndFee: "Lease-end fee",
+  leaseMilesPerYear: "Lease miles per year",
+  milesDrivenPerYear: "Miles driven per year",
+  excessMileRate: "Charge per extra mile",
 };
 
 const MONEY_KEYS = new Set([

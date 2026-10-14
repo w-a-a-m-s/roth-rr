@@ -763,6 +763,13 @@ export interface CarDecision {
   leaseTermMonths: number;
   leaseDueAtSigning: number;
   leaseEndFee: number;
+  /**
+   * Lease mileage: miles the lease allows a year, miles actually driven a
+   * year, and the charge per mile over the allowance at turn-in.
+   */
+  leaseMilesPerYear: number;
+  milesDrivenPerYear: number;
+  excessMileRate: number;
 }
 
 /**

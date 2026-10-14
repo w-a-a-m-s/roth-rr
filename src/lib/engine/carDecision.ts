@@ -31,6 +31,9 @@ export function defaultCarDecision(household: Household): CarDecision {
     leaseTermMonths: 36,
     leaseDueAtSigning: 3_000,
     leaseEndFee: 400,
+    leaseMilesPerYear: 12_000,
+    milesDrivenPerYear: 12_000,
+    excessMileRate: 0.25,
   };
 }
 
@@ -88,6 +91,8 @@ export interface CarOptionSummary {
    * the end: what the choice costs counting the growth the money gave up.
    */
   netCostWithGrowth: number;
+  /** Lease only: excess-mile charges inside the comparison (in total paid). */
+  excessMileCharges: number;
 }
 
 export interface CarComparison {
@@ -117,15 +122,28 @@ function cashFlows(key: CarOptionKey, d: CarDecision, months: number): number[] 
     for (let m = 1; m <= Math.min(months, d.loanTermMonths); m++) flows[m] += pmt;
     return flows;
   }
-  // Lease: due at signing at each start, the payment every month, the
-  // turn-in fee at each lease's end inside the comparison.
+  // Lease: due at signing at each start, the payment every month, and at
+  // each turn-in the fee plus the miles over the allowance. A lease still
+  // running at the end owes the excess miles of its months inside.
   const term = Math.max(1, Math.round(d.leaseTermMonths));
   for (let start = 0; start < months; start += term) {
     flows[start] += d.leaseDueAtSigning;
-    if (start + term <= months) flows[start + term] += d.leaseEndFee;
+    const inside = Math.min(term, months - start);
+    flows[start + inside] += excessMileCharge(d, inside);
+    if (inside === term) flows[start + term] += d.leaseEndFee;
   }
   for (let m = 1; m <= months; m++) flows[m] += d.leaseMonthly;
   return flows;
+}
+
+/** Miles a year over the lease allowance. */
+export function excessMilesPerYear(d: CarDecision): number {
+  return Math.max(0, d.milesDrivenPerYear - d.leaseMilesPerYear);
+}
+
+/** What `months` of driving over the allowance cost at turn-in. */
+export function excessMileCharge(d: CarDecision, months: number): number {
+  return ((excessMilesPerYear(d) * months) / 12) * d.excessMileRate;
 }
 
 function monthlyPayment(key: CarOptionKey, d: CarDecision): number {
@@ -165,6 +183,7 @@ export function compareCarOptions(d: CarDecision): CarComparison {
       endEquity,
       netCost: totalPaid - endEquity,
       netCostWithGrowth: grown - endEquity,
+      excessMileCharges: key === "lease" ? excessMileCharge(d, months) : 0,
     };
   });
 

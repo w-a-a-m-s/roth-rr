@@ -54,7 +54,10 @@ conversion schedule always comes from the plan's strategy as-is.
   cars depreciate `depreciationRate` a year and count their value less any
   loan owed at the end; a lease shorter than the comparison is renewed on the
   same terms, and one still running at the end counts only its months
-  inside. "Net cost with lost growth" carries every payment forward at
+  inside. Lease mileage: miles over `leaseMilesPerYear` (from
+  `milesDrivenPerYear`) cost `excessMileRate` each, paid at each turn-in
+  (prorated for a lease still running). The tables color each option (cash
+  blue, finance rust, lease green). "Net cost with lost growth" carries every payment forward at
   `investmentReturn`. Defaults (`defaultCarDecision`) take the price from a
   one-time depreciation entry named like a car. Before income tax.
 
