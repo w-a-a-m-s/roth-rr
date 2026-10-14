@@ -113,10 +113,10 @@ describe("both spouses in care", () => {
     expect(at(care, 2033).expenseMonthly.living).toBeCloseTo(3500, 6);
   });
 
-  it("counts only the care costs while both are in care", () => {
+  it("keeps 70% of expenses while both are in care, plus both care costs", () => {
     const y = at(care, 2032);
-    expect(y.expenseMonthly.living).toBe(0);
-    expect(y.monthlyExpenses).toBe(12000);
+    expect(y.expenseMonthly.living).toBeCloseTo(3500, 6);
+    expect(y.monthlyExpenses).toBeCloseTo(3500 + 12000, 6);
   });
 
   it("is back to normal after both stays end", () => {
@@ -153,7 +153,7 @@ describe("each spouse's own care", () => {
     const y = at(care, 2032);
     expect(y.expenseMonthly["ltc:a"]).toBe(6000);
     expect(y.expenseMonthly["ltc:b"]).toBe(10000);
-    expect(y.monthlyExpenses).toBe(16000);
+    expect(y.monthlyExpenses).toBeCloseTo(3500 + 16000, 6);
     expect(at(care, 2034).expenseMonthly["ltc:b"]).toBe(10000);
   });
 

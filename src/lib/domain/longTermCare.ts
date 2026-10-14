@@ -21,8 +21,8 @@ export const DEFAULT_CARE_INFLATION = 0.03;
 export const DEFAULT_CARE_START_AGE = 80;
 
 /**
- * While one person is in care, the household's other expenses drop to this
- * share. They go to zero only when both spouses of a couple are in care.
+ * While anyone is in care (one spouse, both, or a single person), the
+ * household's other expenses drop to this share of what they were before care.
  */
 export const CARE_EXPENSE_SHARE = 0.7;
 
@@ -91,7 +91,6 @@ export function peopleInCare(household: Household, settings: LongTermCareSetting
 /** Care resolved to calendar years. */
 export interface ResolvedCare {
   inflation: number;
-  peopleCount: number;
   /** Each stay's monthly cost is in first-projection-year dollars. */
   stays: { personId: string; firstYear: number; lastYear: number; monthlyCost: number }[];
 }
@@ -117,7 +116,6 @@ export function resolveLongTermCare(
   if (stays.length === 0) return null;
   return {
     inflation: settings.inflation,
-    peopleCount: household.people.length,
     stays,
   };
 }
@@ -125,8 +123,8 @@ export function resolveLongTermCare(
 /**
  * One year of care: the care cost per person (inflated from the first
  * projection year) and the share of the regular expenses that still applies:
- * all of it with nobody in care, 70% while one person is in care (a single
- * person included), none only while both spouses of a couple are.
+ * all of it with nobody in care, 70% while anyone is in care (one spouse,
+ * both spouses, or a single person).
  */
 export function careForYear(
   care: ResolvedCare | null,
@@ -136,17 +134,13 @@ export function careForYear(
   const costMonthlyById: Record<string, number> = {};
   if (!care) return { costMonthlyById, expenseShare: 1 };
   const growth = Math.pow(1 + care.inflation, Math.max(0, calendarYear - projectionStart));
-  let inCare = 0;
+  let inCare = false;
   for (const stay of care.stays) {
     if (calendarYear < stay.firstYear || calendarYear > stay.lastYear) continue;
     costMonthlyById[stay.personId] = stay.monthlyCost * growth;
-    inCare += 1;
+    inCare = true;
   }
-  if (inCare === 0) return { costMonthlyById, expenseShare: 1 };
-  return {
-    costMonthlyById,
-    expenseShare: care.peopleCount > 1 && inCare >= care.peopleCount ? 0 : CARE_EXPENSE_SHARE,
-  };
+  return { costMonthlyById, expenseShare: inCare ? CARE_EXPENSE_SHARE : 1 };
 }
 
 /** Expense key for a person's care cost in `ProjectionRow.expenseMonthly`. */

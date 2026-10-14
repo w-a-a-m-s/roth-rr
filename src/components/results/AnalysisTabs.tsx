@@ -322,11 +322,10 @@ export function LongTermCareControls({
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-5 py-4">
       <p className="m-0 rounded-lg bg-accent-soft px-3 py-2 text-[13px] leading-relaxed text-foreground">
-        <strong>Note:</strong> while one spouse is in long-term care, the
-        spouse who isn&apos;t has their expenses adjusted to{" "}
-        {Math.round(CARE_EXPENSE_SHARE * 100)}% of what you spent before care.
-        When both spouses are in long-term care, all expenses besides the care
-        itself are removed.
+        <strong>Note:</strong> while one or both spouses are in long-term care,
+        your other expenses are adjusted to{" "}
+        {Math.round(CARE_EXPENSE_SHARE * 100)}% of what you spent before care,
+        on top of the care itself.
       </p>
       <div className="flex flex-wrap items-end gap-3">
         <Control id="ltc-who" label="Who's in care" width="w-[180px]">
@@ -393,7 +392,7 @@ export function LongTermCareControls({
       <p className="m-0 text-[13px] leading-relaxed text-muted">
         {[
           `Home care costs ${formatCurrency(CARE_MONTHLY_COST.home)} and a nursing home ${formatCurrency(CARE_MONTHLY_COST.nursing)} a month per person in today's dollars, growing ${formatPercent(settings.inflation)} a year.`,
-          `While one spouse is in care, your other expenses drop to ${Math.round(CARE_EXPENSE_SHARE * 100)}%; while both spouses are in care, only the care costs count.`,
+          `While one or both spouses are in care, your other expenses drop to ${Math.round(CARE_EXPENSE_SHARE * 100)}%, plus the care costs.`,
           "After care ends, expenses go back to normal.",
           "Care length defaults to 3 years for men and 5 for women (set in Household).",
         ].join(" ")}

@@ -129,9 +129,8 @@ instead of Total impact. Retirement still compares the two.
   first-projection-year dollars, grown by `inflation` (default 3%) each year.
   It lands in `expenseMonthly` under `ltc:<personId>` (labelled by
   `expenseLabel`) and in `monthlyExpenses`.
-- Regular expenses: 70% while one person is in care (a single person in a
-  one-person plan included), 0 only while both spouses of a couple are, back
-  to 100% after care ends. Survivorship's 70% multiplies in
+- Regular expenses: 70% of the pre-care amounts while anyone is in care (one
+  spouse, both spouses, or a single person), back to 100% after care ends. Survivorship's 70% multiplies in
   if both analyses' options are ever combined.
 - The tab opens with a note saying so (the user asked for it on top).
 - Care costs aren't deducted as medical expenses (no itemizing in the model).
