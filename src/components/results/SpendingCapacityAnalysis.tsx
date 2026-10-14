@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Household } from "@/lib/domain/types";
 import type { ReferenceData } from "@/lib/externalData/types";
+import type { ProjectionRow } from "@/lib/engine/types";
 import { useScenario } from "@/store/useScenario";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
 import { Field } from "@/components/ui/Field";
@@ -180,6 +181,13 @@ function SummaryTable({
   );
 }
 
+/** What a year takes from the accounts to cover being short. */
+function takenFromAccounts(row: ProjectionRow): number {
+  return Object.entries(row.incomeMonthly)
+    .filter(([key]) => key.startsWith("topup:"))
+    .reduce((sum, [, v]) => sum + v * 12, 0);
+}
+
 function YearTable({
   household,
   capacity,
@@ -192,6 +200,7 @@ function YearTable({
   onScenario: (key: ScenarioKey) => void;
 }) {
   const primaryId = primaryPersonId(household);
+  const hasDeposits = capacity.rows.some((row) => row.monthlyDeposits > 0);
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -217,17 +226,16 @@ function YearTable({
               <th className={HEAD}>Age</th>
               <th className={MONTHLY_HEAD}>Spending a month</th>
               <th className={HEAD}>Spending a year</th>
-              <th className={HEAD}>Income after tax</th>
+              <th className={HEAD}>Income</th>
               <th className={HEAD}>Taken from accounts</th>
+              <th className={HEAD}>Taxes</th>
+              {hasDeposits ? <th className={HEAD}>Saved to accounts</th> : null}
               <th className={HEAD}>Accounts left</th>
             </tr>
           </thead>
           <tbody>
             {capacity.rows.map((row) => {
-              const taken = Object.entries(row.incomeMonthly)
-                .filter(([key]) => key.startsWith("topup:"))
-                .reduce((sum, [, v]) => sum + v * 12, 0);
-              const net = row.netMonthlyIncome * 12;
+              const taken = takenFromAccounts(row);
               return (
                 <tr key={row.calendarYear}>
                   <td className={`${CELL} text-left font-semibold`}>{row.calendarYear}</td>
@@ -236,8 +244,14 @@ function YearTable({
                     {formatCurrency(row.monthlyExpenses)}
                   </td>
                   <td className={CELL}>{formatCurrency(row.monthlyExpenses * 12)}</td>
-                  <td className={CELL}>{formatCurrency(net - taken)}</td>
+                  <td className={CELL}>{formatCurrency(row.totalMonthlyIncome * 12 - taken)}</td>
                   <td className={CELL}>{taken > 0.5 ? formatCurrency(taken) : "-"}</td>
+                  <td className={CELL}>{formatCurrency(row.annualTax - row.conversionTaxWithheld)}</td>
+                  {hasDeposits ? (
+                    <td className={CELL}>
+                      {row.monthlyDeposits > 0 ? formatCurrency(row.monthlyDeposits * 12) : "-"}
+                    </td>
+                  ) : null}
                   <td className={CELL}>{formatCurrency(accountsLeft(row))}</td>
                 </tr>
               );
@@ -246,9 +260,11 @@ function YearTable({
         </table>
       </DualScroll>
       <p className="m-0 text-[12px] text-muted">
-        Spending a month is highlighted. The other columns are yearly. Income after tax is the plan&apos;s income less all its taxes (a
-        conversion&apos;s tax included), not counting what&apos;s taken from the accounts to cover
-        a short year. Accounts left is before tax.
+        Spending a month is highlighted; the other columns are yearly. Each year adds up: Income
+        plus Taken from accounts, less Taxes{hasDeposits ? " and Saved to accounts" : ""}, is the
+        Spending. Income is before tax: pensions, Social Security, RMDs and the plan&apos;s own
+        withdrawals. Taxes include the tax on conversions and on what&apos;s taken. Accounts left
+        is before tax.
       </p>
     </div>
   );
