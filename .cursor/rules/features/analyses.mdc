@@ -37,7 +37,8 @@ conversion schedule always comes from the plan's strategy as-is.
 
 - **Social Security analysis**: not a projection. `SocialSecurityAnalysis.tsx`
   edits `household.socialSecurityClaims` (person, claiming age, monthly
-  benefit at that age) and shows `socialSecurityBreakeven()`
+  benefit at that age; at most `MAX_SOCIAL_SECURITY_CLAIMS`, 2, per person,
+  the first two entered) and shows `socialSecurityBreakeven()`
   (`lib/engine/socialSecurity.ts`). The first option is the plan's own Social
   Security income (its start year and amount); every option grows by that
   income's COLA (`growthRate`) from its own claim year, full years, before

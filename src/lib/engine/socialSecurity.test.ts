@@ -81,3 +81,21 @@ describe("Social Security breakeven", () => {
     expect(socialSecurityBreakeven(h, "p1")).toBeNull();
   });
 });
+
+describe("Social Security claim limit", () => {
+  it("compares the plan with at most two other ages, the first two entered", () => {
+    const h = plan(2600);
+    h.socialSecurityClaims = [
+      { id: "c70", personId: "p1", age: 70, monthlyAmount: 3800 },
+      { id: "c67", personId: "p1", age: 67, monthlyAmount: 2800 },
+      { id: "c68", personId: "p1", age: 68, monthlyAmount: 3000 },
+    ];
+    const r = socialSecurityBreakeven(h, "p1")!;
+    expect(r.options.map((o) => o.label)).toEqual([
+      "Plan: claim at 66",
+      "Claim at 67",
+      "Claim at 70",
+    ]);
+    expect(r.crossovers).toHaveLength(2);
+  });
+});

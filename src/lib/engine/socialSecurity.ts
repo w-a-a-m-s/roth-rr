@@ -64,13 +64,25 @@ export function socialSecurityPeople(household: Household): Person[] {
   );
 }
 
-/** The claims entered for `personId` that can run: a real age and amount. */
-export function claimsFor(
+/** Other claiming ages a person can compare with the plan's own claim. */
+export const MAX_SOCIAL_SECURITY_CLAIMS = 2;
+
+/** The person's claims as entered, up to the limit. */
+export function enteredClaims(
   household: Household,
   personId: string,
 ): SocialSecurityClaim[] {
   return (household.socialSecurityClaims ?? [])
     .filter((c) => c.personId === personId)
+    .slice(0, MAX_SOCIAL_SECURITY_CLAIMS);
+}
+
+/** The claims entered for `personId` that can run: a real age and amount. */
+export function claimsFor(
+  household: Household,
+  personId: string,
+): SocialSecurityClaim[] {
+  return enteredClaims(household, personId)
     .filter((c) => Number.isFinite(c.age) && c.monthlyAmount > 0)
     .sort((a, b) => a.age - b.age);
 }

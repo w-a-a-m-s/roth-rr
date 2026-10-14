@@ -26,6 +26,8 @@ import {
   formatAxisCurrency,
 } from "@/components/results/chartUtils";
 import {
+  MAX_SOCIAL_SECURITY_CLAIMS,
+  enteredClaims,
   socialSecurityBreakeven,
   socialSecurityPeople,
   type SocialSecurityBreakeven,
@@ -110,7 +112,8 @@ function ClaimInputs({
   const setClaims = useScenario((s) => s.setSocialSecurityClaims);
   const { readOnly } = usePlanAccess();
   const all = household.socialSecurityClaims ?? [];
-  const mine = all.filter((c) => c.personId === personId);
+  const mine = enteredClaims(household, personId);
+  const canAdd = !readOnly && mine.length < MAX_SOCIAL_SECURITY_CLAIMS;
   const plan = result.options[0];
 
   const update = (id: string, patch: Partial<SocialSecurityClaim>) =>
@@ -123,10 +126,13 @@ function ClaimInputs({
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="m-0 text-[14.5px] font-bold text-foreground">Benefit by claiming age</h3>
-        {readOnly ? null : (
+        {canAdd ? (
           <AddButton label="Add claiming age" shortLabel="Add" onClick={add} />
-        )}
+        ) : null}
       </div>
+      <p className="m-0 text-[12px] text-muted">
+        Compare the plan&apos;s claim with up to {MAX_SOCIAL_SECURITY_CLAIMS} other ages.
+      </p>
       <p className="m-0 text-[13px] text-foreground">
         <strong>Plan:</strong> claim at {plan.claimAge} ({plan.claimYear}),{" "}
         {formatCurrency(plan.monthlyAtClaim)}/mo
