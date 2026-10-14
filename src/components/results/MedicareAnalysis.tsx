@@ -13,6 +13,9 @@ import { formatCurrency } from "@/lib/format";
 
 const CELL = "border-b border-border-subtle px-3 py-1.5 text-right tabular-nums";
 const HEAD = "bg-[#1B365D] px-3 py-2 text-right text-[12px] font-bold text-white";
+/** The monthly premium column stands out, so the year's premium is easy to find. */
+const PREMIUM_HEAD = HEAD.replace("bg-[#1B365D]", "bg-[#2563EB]");
+const PREMIUM_CELL = "bg-[#E8F0FE] font-bold text-[#1B365D]";
 /** Room under this much MAGI before the next tier is flagged as close. */
 const CLOSE_TO_NEXT_TIER = 10_000;
 
@@ -226,7 +229,7 @@ function YearTable({
               <th className={HEAD}>Next tier costs</th>
               <th className={HEAD}>Premium based on</th>
               <th className={`${HEAD} text-left`}>Tier</th>
-              <th className={HEAD}>Monthly per person</th>
+              <th className={PREMIUM_HEAD}>Monthly premium per person</th>
               <th className={HEAD}>On Medicare</th>
               <th className={HEAD}>Yearly premiums</th>
               <th className={HEAD}>IRMAA part</th>
@@ -256,7 +259,9 @@ function YearTable({
                     {paying ? `${y.lookbackYear}: ${formatCurrency(y.lookbackMagi)}` : "-"}
                   </td>
                   <td className={`${CELL} text-left`}>{paying ? tierLabel(y.tier) : "-"}</td>
-                  <td className={CELL}>{paying ? formatCurrency(y.monthlyPremium, true) : "-"}</td>
+                  <td className={`${CELL} ${PREMIUM_CELL}`}>
+                    {paying ? formatCurrency(y.monthlyPremium, true) : "-"}
+                  </td>
                   <td className={CELL}>{y.enrolled}</td>
                   <td className={CELL}>{paying ? formatCurrency(y.annualPremium) : "-"}</td>
                   <td className={CELL}>{paying ? formatCurrency(y.irmaaSurcharge) : "-"}</td>
@@ -269,7 +274,7 @@ function YearTable({
       <p className="m-0 text-[12px] text-muted">
         Room to next tier is how much more income the year can have before the premium two years
         later moves up a tier; Next tier costs is what that step adds that year. Under{" "}
-        {formatCurrency(CLOSE_TO_NEXT_TIER)} of room is in red. Years paying IRMAA are highlighted.
+        {formatCurrency(CLOSE_TO_NEXT_TIER)} of room is in red. The monthly premium for each year is highlighted in blue; years paying IRMAA are shaded.
       </p>
     </div>
   );
