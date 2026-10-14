@@ -3,7 +3,8 @@
 import { useMemo, useState } from "react";
 import type { Household } from "@/lib/domain/types";
 import type { Comparison } from "@/lib/engine/types";
-import type { MedicarePartBYear } from "@/lib/config/medicare";
+import type { MedicarePartBTier, MedicarePartBYear } from "@/lib/config/medicare";
+import { forFiling } from "@/lib/config/filingStatus";
 import { MEDICARE_PREMIUM_START_AGE } from "@/lib/config/medicare";
 import { medicareYears, type MedicareSummary } from "@/lib/engine/medicare";
 import { Select } from "@/components/ui/inputs";
@@ -56,6 +57,7 @@ export function MedicareAnalysis({
           extra charge on top of the standard premium (IRMAA). The tiers are {medicare.year}&apos;s,
           per person. This uses the Retirement projection and doesn&apos;t change it.
         </p>
+        <IrmaaTiers medicare={medicare} />
       </div>
       <SummaryTable summaries={summaries} />
       <YearTable
@@ -64,6 +66,69 @@ export function MedicareAnalysis({
         scenario={scenario}
         onScenario={setScenario}
       />
+    </div>
+  );
+}
+
+/** MAGI range of one tier, from its floor to the next tier's. */
+function tierRange(tiers: MedicarePartBTier[], i: number): string {
+  const next = tiers[i + 1];
+  if (i === 0) return next ? `Under ${formatCurrency(next.magiFloor)}` : "Any income";
+  if (!next) return `${formatCurrency(tiers[i].magiFloor)} and up`;
+  return `${formatCurrency(tiers[i].magiFloor)} to ${formatCurrency(next.magiFloor)}`;
+}
+
+/** A link that opens the full IRMAA tier table for the year the plan uses. */
+function IrmaaTiers({ medicare }: { medicare: MedicarePartBYear }) {
+  const [open, setOpen] = useState(false);
+  const single = forFiling(medicare.tiers, "single", "medicare IRMAA tiers");
+  const joint = forFiling(medicare.tiers, "mfj", "medicare IRMAA tiers");
+  const standard = medicare.standardMonthlyPremium;
+  return (
+    <div className="flex flex-col gap-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="self-start rounded px-1 text-[14px] font-semibold text-accent underline-offset-4 transition hover:underline"
+      >
+        {open ? `Hide the ${medicare.year} IRMAA tables` : `Show the full ${medicare.year} IRMAA tables`}
+      </button>
+      {open ? (
+        <>
+          <DualScroll>
+            <table className="w-full min-w-[720px] border-collapse text-[12.5px]">
+              <thead>
+                <tr>
+                  <th className={`${HEAD} text-left`}>Tier</th>
+                  <th className={HEAD}>Single or head of household MAGI</th>
+                  <th className={HEAD}>Married filing jointly MAGI</th>
+                  <th className={HEAD}>Monthly premium per person</th>
+                  <th className={HEAD}>IRMAA per person, monthly</th>
+                  <th className={HEAD}>IRMAA per person, yearly</th>
+                </tr>
+              </thead>
+              <tbody>
+                {single.map((tier, i) => (
+                  <tr key={i}>
+                    <td className={`${CELL} text-left font-semibold`}>{tierLabel(i)}</td>
+                    <td className={CELL}>{tierRange(single, i)}</td>
+                    <td className={CELL}>{joint[i] ? tierRange(joint, i) : "-"}</td>
+                    <td className={CELL}>{formatCurrency(tier.monthlyPremium, true)}</td>
+                    <td className={CELL}>{formatCurrency(tier.monthlyPremium - standard, true)}</td>
+                    <td className={CELL}>{formatCurrency((tier.monthlyPremium - standard) * 12, true)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </DualScroll>
+          <p className="m-0 text-[12px] text-muted">
+            Part B premiums for {medicare.year}, set by MAGI from two years before (
+            {medicare.year - 2} for {medicare.year}). A couple on Medicare each pays the
+            premium. The standard premium is {formatCurrency(standard, true)} a month.
+          </p>
+        </>
+      ) : null}
     </div>
   );
 }

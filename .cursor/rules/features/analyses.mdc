@@ -60,7 +60,10 @@ conversion schedule always comes from the plan's strategy as-is.
   status of that year), and Next tier costs is that step for everyone
   enrolled then. `medicareTotal` in `runScenario.ts` is `medicareYears(...)
   .totalPremiums`, so the comparison's Medicare metric and this tab always
-  agree. No saved fields.
+  agree. No saved fields. A "Show the full <year> IRMAA tables" link under
+  the intro (user's request) opens every tier for single / head of household
+  and married filing jointly from `refs.medicare`: MAGI range, monthly
+  premium per person, and the IRMAA part monthly and yearly.
 
 - **Car analysis**: not a projection. `CarAnalysis.tsx` edits
   `household.carDecision` and shows `compareCarOptions()`
