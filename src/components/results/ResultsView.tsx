@@ -23,6 +23,7 @@ import { LabsLoading } from '@/lib/common/client';
 import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
 import { SocialSecurityAnalysis } from '@/components/results/SocialSecurityAnalysis';
 import { CarAnalysis } from '@/components/results/CarAnalysis';
+import { MedicareAnalysis } from '@/components/results/MedicareAnalysis';
 import { LifeInsuranceSummary } from '@/components/wizard/steps/LifeInsuranceSummary';
 import { AnalysisTabs, DisabilityControls, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
 import { disabilityEvent, resolveDisability } from '@/lib/domain/insurance';
@@ -122,6 +123,17 @@ export function ResultsView() {
 			<div className="rounded-2xl border border-border bg-white p-6 text-center text-sm text-muted">
 				<p className="font-medium text-foreground">Almost there</p>
 				<p className="mt-1">Enter a birth year and retirement year for everyone in the Household step to see your projection.</p>
+			</div>
+		);
+	}
+
+	// Medicare analysis reads the Retirement projection (both scenarios) and
+	// skips the results tabs.
+	if (analysis === 'medicare') {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<MedicareAnalysis household={household} comparison={comparison} medicare={refs.medicare} />
 			</div>
 		);
 	}

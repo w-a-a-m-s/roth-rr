@@ -23,11 +23,7 @@ import {
 import { progressiveTax } from "@/lib/engine/tax";
 import type { FederalTaxYear } from "@/lib/config/federalTax";
 import type { MedicarePartBYear } from "@/lib/config/medicare";
-import {
-  MEDICARE_IRMAA_LOOKBACK_YEARS,
-  medicarePartBMonthlyPremium,
-  paysMedicarePartB,
-} from "@/lib/config/medicare";
+import { medicareYears } from "@/lib/engine/medicare";
 import { getStateTaxTable, type StateIncomeTaxYear } from "@/lib/config/stateTax";
 import { forFiling } from "@/lib/config/filingStatus";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
@@ -133,22 +129,7 @@ function medicareTotal(
   rows: ProjectionRow[],
   medicare: MedicarePartBYear,
 ): number {
-  let total = 0;
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const enrolled = household.people.filter(
-      (p) => row.livingIds.includes(p.id) && paysMedicarePartB(p, row.calendarYear),
-    ).length;
-    if (enrolled === 0) continue;
-    const lookback = rows[Math.max(0, i - MEDICARE_IRMAA_LOOKBACK_YEARS)];
-    const monthly = medicarePartBMonthlyPremium(
-      lookback.grossTaxableIncome + lookback.capitalGainsIncome,
-      row.filingStatus,
-      medicare,
-    );
-    total += enrolled * monthly * 12;
-  }
-  return total;
+  return medicareYears(household, rows, medicare).totalPremiums;
 }
 
 function computeTotals(

@@ -55,6 +55,7 @@ export type AnalysisKind =
   | "longTermCare"
   | "mortgage"
   | "socialSecurity"
+  | "medicare"
   | "car";
 
 interface UIState {

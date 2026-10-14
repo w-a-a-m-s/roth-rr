@@ -1,6 +1,6 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Social Security analysis, Car analysis) and the survivorship death model
-globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Social Security analysis, Medicare analysis, Car analysis) and the survivorship death model
+globs: src/components/results/AnalysisTabs.tsx,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
 
@@ -46,6 +46,21 @@ conversion schedule always comes from the plan's strategy as-is.
   the first year an option's running total reaches the plan's (from either
   side). It never feeds `projectScenario`; ResultsView returns it before the
   tax tables load.
+
+- **Medicare analysis**: reads the Retirement run (`calculate(household,
+  refs)`, no options) and skips the results tabs, returned after the tax
+  tables load. `MedicareAnalysis.tsx` shows `medicareYears()`
+  (`lib/engine/medicare.ts`) for both scenarios: a Lifetime Medicare table
+  (Part B premiums, the IRMAA part, years with IRMAA, and the conversion's
+  impact) and a Medicare by year table for one scenario (With conversion by
+  default). Each year's premium uses the MAGI from two years earlier (the
+  first two years use the first year's); MAGI is `grossTaxableIncome +
+  capitalGainsIncome`. Room to next tier is how much more of this year's
+  MAGI fits before the premium two years later moves up (under the filing
+  status of that year), and Next tier costs is that step for everyone
+  enrolled then. `medicareTotal` in `runScenario.ts` is `medicareYears(...)
+  .totalPremiums`, so the comparison's Medicare metric and this tab always
+  agree. No saved fields.
 
 - **Car analysis**: not a projection. `CarAnalysis.tsx` edits
   `household.carDecision` and shows `compareCarOptions()`
