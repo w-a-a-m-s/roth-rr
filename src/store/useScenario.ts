@@ -8,6 +8,8 @@ import type {
   OneTimeDepreciation,
   DeletedItem,
   CarDecision,
+  MortgagePayoffSettings,
+  SpendingCapacitySettings,
   DisabilityEvent,
   SocialSecurityClaim,
   InsurancePolicy,
@@ -244,6 +246,14 @@ export function migrateHousehold(household: Household): Household {
   // Car analysis inputs are healed when read; drop only a broken shape.
   if (legacy.carDecision != null && typeof legacy.carDecision !== "object") {
     delete legacy.carDecision;
+  }
+  // Pay off the mortgage or invest, and Spending capacity: healed when read;
+  // drop only a broken shape.
+  if (legacy.mortgagePayoff != null && typeof legacy.mortgagePayoff !== "object") {
+    delete legacy.mortgagePayoff;
+  }
+  if (legacy.spendingCapacity != null && typeof legacy.spendingCapacity !== "object") {
+    delete legacy.spendingCapacity;
   }
   // Social Security analysis claims: keep only well-formed ones for someone
   // in the plan.
@@ -822,6 +832,10 @@ interface ScenarioState {
   setSocialSecurityClaims: (claims: SocialSecurityClaim[]) => void;
   /** Car analysis: lease, cash or finance inputs. */
   setCarDecision: (decision: CarDecision) => void;
+  /** Pay off the mortgage or invest inputs. */
+  setMortgagePayoff: (settings: MortgagePayoffSettings) => void;
+  /** Spending capacity inputs. */
+  setSpendingCapacity: (settings: SpendingCapacitySettings) => void;
   addInsurance: (policy: InsurancePolicy) => void;
   updateInsurance: (id: string, patch: Partial<InsurancePolicy>) => void;
   removeInsurance: (id: string) => void;
@@ -1584,6 +1598,10 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       editActive((h) => ({ ...h, disability: { ...event } })),
     setCarDecision: (decision) =>
       editActive((h) => ({ ...h, carDecision: { ...decision } })),
+    setMortgagePayoff: (settings) =>
+      editActive((h) => ({ ...h, mortgagePayoff: { ...settings } })),
+    setSpendingCapacity: (settings) =>
+      editActive((h) => ({ ...h, spendingCapacity: { ...settings } })),
     setSocialSecurityClaims: (claims) =>
       editActive((h) => ({
         ...h,

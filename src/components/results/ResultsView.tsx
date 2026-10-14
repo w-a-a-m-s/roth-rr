@@ -24,6 +24,8 @@ import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
 import { SocialSecurityAnalysis } from '@/components/results/SocialSecurityAnalysis';
 import { CarAnalysis } from '@/components/results/CarAnalysis';
 import { MedicareAnalysis } from '@/components/results/MedicareAnalysis';
+import { MortgagePayoffAnalysis } from '@/components/results/MortgagePayoffAnalysis';
+import { SpendingCapacityAnalysis } from '@/components/results/SpendingCapacityAnalysis';
 import { LifeInsuranceSummary } from '@/components/wizard/steps/LifeInsuranceSummary';
 import { AnalysisTabs, DisabilityControls, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
 import { disabilityEvent, resolveDisability } from '@/lib/domain/insurance';
@@ -32,7 +34,7 @@ import { resolveDeath, survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
 
 /** Analyses that aren't a projection run and skip the results tabs. */
-const STANDALONE = new Set(['mortgage', 'socialSecurity', 'car']);
+const STANDALONE = new Set(['mortgage', 'mortgagePayoff', 'socialSecurity', 'car', 'spendingCapacity']);
 
 export function ResultsView() {
 	const household = useHousehold();
@@ -88,6 +90,17 @@ export function ResultsView() {
 		);
 	}
 
+	// Pay off the mortgage or invest: one mortgage against investing, not a
+	// projection.
+	if (analysis === 'mortgagePayoff') {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<MortgagePayoffAnalysis household={household} />
+			</div>
+		);
+	}
+
 	// Social Security analysis compares claiming ages for the plan's benefit,
 	// not a projection, so it skips the results tabs too.
 	if (analysis === 'socialSecurity') {
@@ -114,6 +127,17 @@ export function ResultsView() {
 			<div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border bg-white p-8">
 				<LabsLoading size="md" />
 				<p className="text-sm text-muted">Fetching tax and Medicare tables…</p>
+			</div>
+		);
+	}
+
+	// Spending capacity runs its own projections (expenses scaled, short years
+	// covered from the accounts) and skips the results tabs.
+	if (analysis === 'spendingCapacity' && ready) {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<SpendingCapacityAnalysis household={household} refs={refs} />
 			</div>
 		);
 	}

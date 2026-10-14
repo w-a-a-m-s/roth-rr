@@ -41,9 +41,11 @@ const ANALYSES: { key: AnalysisKind; label: string }[] = [
   { key: "disability", label: "Disability" },
   { key: "longTermCare", label: "Long-term care" },
   { key: "mortgage", label: "Mortgage analysis" },
+  { key: "mortgagePayoff", label: "Pay off or invest" },
   { key: "socialSecurity", label: "Social Security analysis" },
   { key: "medicare", label: "Medicare analysis" },
   { key: "car", label: "Car analysis" },
+  { key: "spendingCapacity", label: "Spending capacity" },
 ];
 
 /** Links that switch the results between analyses of the same plan. */

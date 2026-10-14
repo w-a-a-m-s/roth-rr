@@ -1,6 +1,7 @@
 import type { Household } from "@/lib/domain/types";
 import type { Comparison, ProjectionOptions } from "@/lib/engine/types";
 import { compareScenarios } from "@/lib/engine/runScenario";
+import { spendingCapacity, type SpendingCapacity } from "@/lib/engine/spendingCapacity";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import type { ReferenceData } from "@/lib/externalData/types";
@@ -20,4 +21,15 @@ export function calculate(
   // analysis compares the same conversions.
   const schedule = buildConversionSchedule(household, refs);
   return compareScenarios(household, schedule, refs, options);
+}
+
+/**
+ * Spending capacity for both scenarios, with the plan's conversion schedule
+ * (see `spendingCapacity`).
+ */
+export function calculateSpendingCapacity(
+  household: Household,
+  refs: ReferenceData = FALLBACK_REFERENCE_DATA,
+): SpendingCapacity {
+  return spendingCapacity(household, buildConversionSchedule(household, refs), refs);
 }

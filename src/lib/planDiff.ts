@@ -80,6 +80,8 @@ const HOUSEHOLD_KEYS = [
   "deletedMortgages",
   "socialSecurityClaims",
   "carDecision",
+  "mortgagePayoff",
+  "spendingCapacity",
 ] as const satisfies readonly (keyof Household)[];
 
 const NOT_SET = "Not set";
@@ -222,12 +224,16 @@ const PROPERTY_LABELS: Record<string, string> = {
   leaseTermMonths: "Lease term (months)",
   leaseDueAtSigning: "Due at signing",
   leaseEndFee: "Lease-end fee",
+  taxRate: "Tax on growth",
+  mortgageId: "Mortgage",
+  endReserve: "Leave at the end",
   leaseMilesPerYear: "Lease miles per year",
   milesDrivenPerYear: "Miles driven per year",
   excessMileRate: "Charge per extra mile",
 };
 
 const MONEY_KEYS = new Set([
+  "endReserve",
   "price",
   "fees",
   "downPayment",
@@ -260,6 +266,7 @@ const MONEY_KEYS = new Set([
 ]);
 
 const PERCENT_KEYS = new Set([
+  "taxRate",
   "salesTaxRate",
   "depreciationRate",
   "investmentReturn",
@@ -776,6 +783,10 @@ export function formatPlanChangeLabel(field: string): string {
       return "Social Security analysis";
     case "carDecision":
       return "Car analysis";
+    case "mortgagePayoff":
+      return "Pay off or invest";
+    case "spendingCapacity":
+      return "Spending capacity";
     default:
       return field;
   }
@@ -1102,6 +1113,21 @@ export function detailPlanSnapshots(
       formatPlanChangeLabel("carDecision"),
       prevCar,
       next.household.carDecision as unknown as Record<string, unknown>,
+      out,
+      ctx,
+    );
+  }
+
+  for (const key of ["mortgagePayoff", "spendingCapacity"] as const) {
+    if (!hasOwn(nextHousehold, key) || !next.household[key]) continue;
+    const prevValue =
+      hasOwn(prevHousehold, key) && prevHousehold[key] != null
+        ? (prevHousehold[key] as unknown as Record<string, unknown>)
+        : null;
+    diffRecordFields(
+      formatPlanChangeLabel(key),
+      prevValue,
+      next.household[key] as unknown as Record<string, unknown>,
       out,
       ctx,
     );

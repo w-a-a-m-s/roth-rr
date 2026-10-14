@@ -1,6 +1,6 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Social Security analysis, Medicare analysis, Car analysis) and the survivorship death model
-globs: src/components/results/AnalysisTabs.tsx,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Social Security analysis, Medicare analysis, Car analysis, Spending capacity) and the survivorship death model
+globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
 
@@ -35,6 +35,19 @@ conversion schedule always comes from the plan's strategy as-is.
   (`propertyMortgageStatements`); the first edit saves it, Remove saves then
   deletes it so it stays gone. ResultsView returns it before the tax tables load.
 
+- **Pay off or invest** (user's request): not a projection.
+  `MortgagePayoffAnalysis.tsx` picks one Mortgage analysis entry (saved
+  statements, then property mortgages via `propertyMortgageStatements`) and
+  shows `compareMortgagePayoff()` (`lib/engine/mortgagePayoff.ts`) with
+  `household.mortgagePayoff` (mortgage id, investment return, tax on growth;
+  healed by `mortgagePayoffSettingsFor`, defaults 6% and 15%). Both choices
+  spend the same each month: Pay it off invests each payment (plus extra
+  principal) the loan would have taken; Keep it invests the principal balance
+  and pays the loan. Monthly growth is `(1 + return x (1 - tax))^(1/12) - 1`.
+  Compared at the loan's payoff month (from `amortize`). Breakeven return is
+  the loan rate compounded monthly, grossed up for the tax. Escrow is left
+  out, no interest deduction. Returns null for a loan that never pays off.
+
 - **Social Security analysis**: not a projection. `SocialSecurityAnalysis.tsx`
   edits `household.socialSecurityClaims` (person, claiming age, monthly
   benefit at that age; at most `MAX_SOCIAL_SECURITY_CLAIMS`, 2, per person,
@@ -64,6 +77,20 @@ conversion schedule always comes from the plan's strategy as-is.
   the intro (user's request) opens every tier for single / head of household
   and married filing jointly from `refs.medicare`: MAGI range, monthly
   premium per person, and the IRMAA part monthly and yearly.
+
+- **Spending capacity** (user's request): its own projections, skips the
+  results tabs, returned after the tax tables load. `calculateSpendingCapacity`
+  (`lib/calculate.ts`) builds the plan's schedule once, then
+  `spendingCapacity()` (`lib/engine/spendingCapacity.ts`) searches, for each
+  scenario, the largest `ProjectionOptions.spendingScale` (multiplies only
+  `household.expenses`, not care or property loans) for which every row's
+  surplus is at least -$1 a month with `coverShortfalls` on (the same
+  after-tax, tax-deferred, Roth top-up as an event year, `topup:` income) and
+  the last row's accounts (retirement + Roth + after-tax, before tax) are at
+  least `household.spendingCapacity.endReserve`. Doubling then halving to
+  within $1 a month of first-year spending. A surplus year isn't saved (the
+  engine never saves surplus), so the answer leans safe. Retirement runs
+  never set either option, so golden cases don't move.
 
 - **Car analysis**: not a projection. `CarAnalysis.tsx` edits
   `household.carDecision` and shows `compareCarOptions()`

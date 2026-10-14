@@ -1031,3 +1031,21 @@ describe("migrateHousehold: car analysis", () => {
     expect(migrateHousehold(broken)).not.toHaveProperty("carDecision");
   });
 });
+
+describe("migrateHousehold: pay off or invest, and spending capacity", () => {
+  it("keeps saved inputs and drops a broken shape", () => {
+    const h = household([], []);
+    const raw = h as unknown as Record<string, unknown>;
+    raw.mortgagePayoff = { investmentReturn: 0.07, taxRate: 0.15 };
+    raw.spendingCapacity = { endReserve: 100_000 };
+    const out = migrateHousehold(h);
+    expect(out.mortgagePayoff).toEqual({ investmentReturn: 0.07, taxRate: 0.15 });
+    expect(out.spendingCapacity).toEqual({ endReserve: 100_000 });
+    const broken = household([], []);
+    (broken as unknown as Record<string, unknown>).mortgagePayoff = 5;
+    (broken as unknown as Record<string, unknown>).spendingCapacity = "x";
+    const healed = migrateHousehold(broken);
+    expect(healed).not.toHaveProperty("mortgagePayoff");
+    expect(healed).not.toHaveProperty("spendingCapacity");
+  });
+});

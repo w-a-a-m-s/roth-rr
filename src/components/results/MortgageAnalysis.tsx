@@ -28,7 +28,7 @@ const NO_PROPERTY = "none";
 const monthYear = (month: number, year: number) => `${MONTHS[month - 1] ?? "?"} ${year}`;
 
 /** Next month from today: where a fresh statement's next payment usually lands. */
-function nextMonth(): { month: number; year: number } {
+export function nextMonth(): { month: number; year: number } {
   const now = new Date();
   const month = now.getMonth() + 2;
   return month > 12 ? { month: 1, year: now.getFullYear() + 1 } : { month, year: now.getFullYear() };

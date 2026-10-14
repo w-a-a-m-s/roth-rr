@@ -50,10 +50,12 @@ interface NameModalState {
 /** Which analysis the results show. All of them run from the same plan. */
 export type AnalysisKind =
   | "retirement"
+  | "spendingCapacity"
   | "survivorship"
   | "disability"
   | "longTermCare"
   | "mortgage"
+  | "mortgagePayoff"
   | "socialSecurity"
   | "medicare"
   | "car";

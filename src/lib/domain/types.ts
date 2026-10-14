@@ -568,6 +568,13 @@ export interface Household {
    * projection. Optional; the analysis falls back to `defaultCarDecision`.
    */
   carDecision?: CarDecision;
+  /**
+   * Pay off the mortgage or invest: which mortgage and the investment
+   * assumptions. Doesn't change the projection. Optional, with defaults.
+   */
+  mortgagePayoff?: MortgagePayoffSettings;
+  /** Spending capacity: what to leave at the end. Optional, with defaults. */
+  spendingCapacity?: SpendingCapacitySettings;
   /** Settings for the Disability analysis. Optional, with defaults. */
   disability?: DisabilityEvent;
   /**
@@ -735,6 +742,22 @@ export interface LongTermCareSettings {
   inflation: number;
   /** Per-person start age and length; anyone missing uses the defaults. */
   periods: CarePeriod[];
+}
+
+/** Pay off the mortgage or invest inputs. Rates are decimals. */
+export interface MortgagePayoffSettings {
+  /** The Mortgage analysis entry to compare. Missing means the first one. */
+  mortgageId?: string;
+  /** What the money would earn a year if invested. */
+  investmentReturn: number;
+  /** Tax on that growth each year. */
+  taxRate: number;
+}
+
+/** Spending capacity inputs. */
+export interface SpendingCapacitySettings {
+  /** Leave at least this much in the accounts at the final age. */
+  endReserve: number;
 }
 
 /**

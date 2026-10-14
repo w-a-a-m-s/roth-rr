@@ -43,6 +43,17 @@ export interface ProjectionOptions {
    * only when the projection reaches its year (see `fromYear`).
    */
   earlyConversions?: EarlyConversion[];
+  /**
+   * Spending capacity: multiplies the plan's own expenses (not long-term care
+   * or property loan payments). Missing means 1.
+   */
+  spendingScale?: number;
+  /**
+   * Spending capacity: every year still short takes more from the accounts
+   * (after-tax, then tax-deferred, then Roth, grossed up for the tax), the
+   * same way a year after a death or long-term care does.
+   */
+  coverShortfalls?: boolean;
 }
 
 export interface ProjectionRow {

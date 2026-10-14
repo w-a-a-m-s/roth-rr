@@ -1400,9 +1400,11 @@ export function projectScenario(
     // Survivorship: after a death the household spends a set share of what
     // the couple did.
     const careYear = careForYear(care, calendarYear, planStart);
+    // Spending capacity scales the plan's own expenses (not care or loans).
     const expenseShare =
       (death != null && calendarYear > death.year ? SURVIVOR_EXPENSE_SHARE : 1) *
-      careYear.expenseShare;
+      careYear.expenseShare *
+      (options.spendingScale ?? 1);
     const expenseMonthly: Record<string, number> = {};
     let monthlyExpenses = 0;
     for (const e of household.expenses) {
@@ -1452,8 +1454,9 @@ export function projectScenario(
     // 5c) After an event, a year still short once the lifetime income is in
     //     takes more from the accounts until it's covered (or they're empty),
     //     grossed up for the tax the extra adds. The rental-loss allowance
-    //     keeps the MAGI it had before.
-    if (eventIncome != null) {
+    //     keeps the MAGI it had before. Spending capacity covers every
+    //     short year this way (`coverShortfalls`).
+    if (eventIncome != null || options.coverShortfalls) {
       const outflow = (monthlyExpenses + monthlyDeposits) * 12;
       const cashTax = (p: typeof priced) => p.taxes.annualTax - p.withheld;
       const baseTax = cashTax(priced);
