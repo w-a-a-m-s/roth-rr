@@ -319,6 +319,16 @@ export function buildSnapshotTable(
       tint: insuranceTint(key),
     }),
   );
+  // Every source added up, so the month's income reads in one number.
+  if (incomeLines.length > 0) {
+    incomeLines.push({
+      key: "income-total",
+      label: "Total monthly income",
+      values: pick((r) => r.totalMonthlyIncome),
+      tone: "strong",
+      subtotal: true,
+    });
+  }
 
   const cashLines: SnapshotLine[] = [
     {

@@ -20,10 +20,15 @@ import {
 /** Section colors from the planning deck: navy assets, green income, rust cash flow. */
 const SECTION_STYLE: Record<
   SnapshotSection["key"],
-  { head: string; row: string; rule: string }
+  { head: string; row: string; rule: string; total?: string }
 > = {
   assets: { head: "bg-[#1B365D]", row: "bg-[#E8EEF6]", rule: "border-t-[3px] border-t-[#14243D]" },
-  income: { head: "bg-[#20784F]", row: "bg-[#E7F2EC]", rule: "border-t-[3px] border-t-[#14243D]" },
+  income: {
+    head: "bg-[#20784F]",
+    row: "bg-[#E7F2EC]",
+    rule: "border-t-[3px] border-t-[#14243D]",
+    total: "bg-[#CFE6D8] border-t-2 border-t-[#20784F]",
+  },
   cashflow: { head: "bg-[#B85C38]", row: "bg-[#F7EAE3]", rule: "border-t-[3px] border-t-[#7A3B22]" },
   conversionTax: { head: "bg-[#5B4B8A]", row: "bg-[#EFEBF7]", rule: "border-t-[3px] border-t-[#3B2F5E]" },
   depreciation: { head: "bg-[#5E6B2E]", row: "bg-[#F1F3E6]", rule: "border-t-[3px] border-t-[#3E471E]" },
@@ -64,9 +69,13 @@ const TINT_ROW: Record<SnapshotTint, string> = {
   dpp: "bg-[#E9E6D2]",
 };
 
-function lineRowClass(line: SnapshotLine, sectionRow: string): string {
+function lineRowClass(
+  line: SnapshotLine,
+  sectionRow: string,
+  sectionTotal = ALL_ASSETS_ROW,
+): string {
   if (line.tint && !line.subtotal) return TINT_ROW[line.tint];
-  if (!line.group) return line.subtotal ? ALL_ASSETS_ROW : sectionRow;
+  if (!line.group) return line.subtotal ? sectionTotal : sectionRow;
   const tint = ASSET_GROUP_ROW[line.group];
   return line.subtotal ? `${tint.total} border-b-2 border-b-[#B8C4D4]` : tint.row;
 }
@@ -268,7 +277,7 @@ function SnapshotCard({
                   ))}
                 </tr>,
                 ...section.lines.map((line) => (
-                  <tr key={line.key} className={lineRowClass(line, style.row)}>
+                  <tr key={line.key} className={lineRowClass(line, style.row, style.total)}>
                     <th className={`${CELL} ${STICKY} text-left ${TONE_CLASS[line.tone]}`}>{line.label}</th>
                     {line.values.map((v, i) => (
                       <td

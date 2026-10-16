@@ -162,6 +162,19 @@ describe("buildSnapshotTable", () => {
     expect(rmd!.values.every((v) => v === 0)).toBe(true);
   });
 
+  it("closes the income with the total monthly income", () => {
+    const lines = section("income").lines;
+    const total = lines[lines.length - 1];
+    expect(total.key).toBe("income-total");
+    expect(total.label).toBe("Total monthly income");
+    expect(total.subtotal).toBe(true);
+    const sources = lines.slice(0, -1);
+    total.values.forEach((v, i) => {
+      expect(v).toBe(comparison.baseline.rows[i].totalMonthlyIncome);
+      expect(sources.reduce((sum, l) => sum + l.values[i], 0)).toBeCloseTo(v, 6);
+    });
+  });
+
   it("reads cash flow straight off the projection rows", () => {
     const row = comparison.baseline.rows[0];
     const cash = section("cashflow").lines;
