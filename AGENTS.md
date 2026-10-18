@@ -166,6 +166,13 @@ additional 0.9% Medicare tax uses combined household earnings over $250k
 joint / $200k single, which the law doesn't index. Business income is
 treated as self-employment: an S-corp owner's distributions would not owe it.
 
+Conversions stop at an owner's RMD age unless the plan turns on
+`optimizer.allowConversionsInRmdYears` ("Convert in RMD years", next to the
+conversion strategy). Then every year can convert, but `projectScenario`
+figures the year's RMD first (`rmdRequired`) and converts only what's above
+it, so the RMD is always taken in full. `conversionYears` becomes the whole
+projection and `convertibleTotal` nets out the RMDs along the way.
+
 Plans used to carry a flat `assumptions.rmdRate` (default 5%) applied to the
 live balance. That overstated RMDs in the early years and understated them in
 the late ones, since the table's implied rate crosses 5% around age 80 and keeps

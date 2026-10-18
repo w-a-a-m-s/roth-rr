@@ -1,7 +1,9 @@
 "use client";
 
 import type { Household } from "@/lib/domain/types";
-import { diagnoseConversionEmpty } from "@/lib/engine/conversionEmpty";
+import { diagnoseConversionEmpty, isConversionEmpty } from "@/lib/engine/conversionEmpty";
+import { allowsRmdYearConversions } from "@/lib/domain/rmd";
+import { RmdYearConversionsSwitch } from "@/components/plan/RmdYearConversionsSwitch";
 import { usePlanNav } from "@/components/plan/PlanNavContext";
 import { useExternalData } from "@/store/useExternalData";
 
@@ -10,6 +12,13 @@ export function ConversionEmptyNotice({ household }: { household: Household }) {
   const nav = usePlanNav();
   const asOfDate = useExternalData((s) => s.refs.asOfDate);
   const { facts } = diagnoseConversionEmpty(household, asOfDate);
+  // Only RMD-year conversions are missing: offer the switch right here.
+  const wouldOpenInRmdYears =
+    !allowsRmdYearConversions(household) &&
+    !isConversionEmpty({
+      ...household,
+      optimizer: { ...household.optimizer, allowConversionsInRmdYears: true },
+    });
 
   return (
     <div className="rounded-xl border border-warning-border bg-warning-bg px-4 py-3.5">
@@ -40,6 +49,15 @@ export function ConversionEmptyNotice({ household }: { household: Household }) {
         and only from taxable retirement balances. Go back and fix Household or
         Accounts, then return here.
       </p>
+      {wouldOpenInRmdYears ? (
+        <div className="mt-3 rounded-lg border border-warning-border/70 bg-white/60 px-3 py-2">
+          <p className="m-0 mb-2 text-[12.5px] leading-snug text-muted-2">
+            You still have tax-deferred money past the RMD age. The law lets you
+            convert it once each year&apos;s RMD is out:
+          </p>
+          <RmdYearConversionsSwitch />
+        </div>
+      ) : null}
       {nav ? (
         <div className="mt-3 flex flex-wrap gap-2">
           <button

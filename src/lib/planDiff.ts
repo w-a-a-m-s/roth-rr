@@ -169,6 +169,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   taxIndexing: "Tax brackets grow",
   strategy: "Strategy",
   allowOverConvertible: "Allow over-convertible",
+  allowConversionsInRmdYears: "Convert in RMD years",
   manualSchedule: "Manual schedule",
   targetBracketRate: "Target bracket",
   convertAmount: "Amount to convert",

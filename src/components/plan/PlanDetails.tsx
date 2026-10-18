@@ -12,7 +12,7 @@ import {
   accountsInDisplayOrder,
   expenseYearsLabel,
 } from "@/lib/domain/household";
-import { primaryRmdAge } from "@/lib/domain/rmd";
+import { allowsRmdYearConversions, primaryRmdAge } from "@/lib/domain/rmd";
 import { propertyLoanBalance } from "@/lib/domain/propertyLoans";
 import type {
   AccountKind,
@@ -426,6 +426,10 @@ export function PlanDetails() {
             value={formatCurrency(c.amount)}
           />
         ))}
+        <Row
+          label="Convert in RMD years"
+          value={allowsRmdYearConversions(household) ? "On (after each year's RMD)" : "Off"}
+        />
         <ManualSchedule
           schedule={buildConversionSchedule(household, refs).slice(
             0,

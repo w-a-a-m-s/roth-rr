@@ -154,6 +154,20 @@ describe("migrateHousehold: costs from other steps switch", () => {
   });
 });
 
+describe("migrateHousehold: conversions in RMD years switch", () => {
+  it("is off for an older plan, keeps a real on/off, drops anything else", () => {
+    expect(migrateHousehold(household([], [])).optimizer).not.toHaveProperty(
+      "allowConversionsInRmdYears",
+    );
+    const on = household([], []);
+    on.optimizer.allowConversionsInRmdYears = true;
+    expect(migrateHousehold(on).optimizer.allowConversionsInRmdYears).toBe(true);
+    const bad = household([], []);
+    (bad.optimizer as { allowConversionsInRmdYears?: unknown }).allowConversionsInRmdYears = 1;
+    expect(migrateHousehold(bad).optimizer).not.toHaveProperty("allowConversionsInRmdYears");
+  });
+});
+
 describe("migrateHousehold: soft-delete trash arrays", () => {
   it("defaults missing deleted* arrays to empty lists", () => {
     const h = household([], []);

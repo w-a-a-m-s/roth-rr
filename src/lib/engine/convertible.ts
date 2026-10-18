@@ -5,7 +5,8 @@ import {
   incomeMonthlyForYear,
   isIncomeActive,
 } from "@/lib/domain/household";
-import { personRmdAge } from "@/lib/domain/rmd";
+import { allowsRmdYearConversions, personRmdAge } from "@/lib/domain/rmd";
+import { uniformLifetimeDenominator } from "@/lib/config/rmdTable";
 import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
 import {
   projectionStartYear,
@@ -27,6 +28,8 @@ function ownerConvertibleInYear(
   ownerId: string,
   calendarYear: number,
 ): boolean {
+  // With RMD-year conversions on, every year can convert (after the RMD).
+  if (allowsRmdYearConversions(household)) return true;
   const owner = household.people.find((p) => p.id === ownerId);
   const rmdAge = personRmdAge(owner);
   const age = calendarYear - (owner?.birthYear ?? NaN);
@@ -39,12 +42,15 @@ function ownerConvertibleInYear(
  * Number of leading projection years in which at least one person is still
  * below their birth-year RMD age - i.e. the years a conversion can actually
  * take effect. Conversions in later years are ignored by the engine, so this
- * is the window a default "spread evenly" distribution fills.
+ * is the window a default "spread evenly" distribution fills. With RMD-year
+ * conversions on, it's every projection year.
  */
 export function conversionYears(household: Household): number {
   const start = projectionStartYear(household);
   const n = projectionYears(household);
   if (!Number.isFinite(start) || !Number.isFinite(n)) return 0;
+  // With RMD-year conversions on, the window is the whole projection.
+  if (allowsRmdYearConversions(household)) return n;
   let count = 0;
   for (let i = 0; i < n; i++) {
     const calendarYear = start + i;
@@ -88,6 +94,10 @@ export function convertibleTotal(
   }
 
   let banked = 0;
+  // RMD years in the window (RMD-year conversions on) take the RMD out of
+  // the convertible money, figured from the prior December 31 balance.
+  const rmdYears = allowsRmdYearConversions(household);
+  let priorYearEnd: Record<string, number> = { ...balances };
 
   for (let i = 0; i < years; i++) {
     const calendarYear = start + i;
@@ -119,6 +129,16 @@ export function convertibleTotal(
         balances[acc.id] += depositAmountForYear(deposit, calendarYear);
       }
     }
+
+    for (const acc of rmdYears ? retirementAccounts : []) {
+      const owner = household.people.find((p) => p.id === acc.ownerId);
+      const rmdAge = personRmdAge(owner);
+      const age = calendarYear - (owner?.birthYear ?? NaN);
+      if (rmdAge == null || !(age >= rmdAge)) continue;
+      const required = Math.max(0, priorYearEnd[acc.id] ?? 0) / uniformLifetimeDenominator(age);
+      balances[acc.id] = Math.max(0, balances[acc.id] - required);
+    }
+    priorYearEnd = { ...balances };
 
     const isLastYear = i === years - 1;
     for (const acc of retirementAccounts) {

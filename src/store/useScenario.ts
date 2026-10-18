@@ -453,6 +453,15 @@ export function migrateHousehold(household: Household): Household {
     delete legacy.includeOtherExpenses;
   }
 
+  // Converting in RMD years is optional (off when missing).
+  if (
+    legacy.optimizer &&
+    legacy.optimizer.allowConversionsInRmdYears != null &&
+    typeof legacy.optimizer.allowConversionsInRmdYears !== "boolean"
+  ) {
+    delete legacy.optimizer.allowConversionsInRmdYears;
+  }
+
   // Older plans have no over-convertible toggle; default off (UI clamps).
   // Missing or unknown strategy defaults to manual (the conversion-step
   // editor). An empty manual schedule stays manual: the engine spreads the

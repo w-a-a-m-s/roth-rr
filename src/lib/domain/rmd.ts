@@ -42,3 +42,12 @@ export function primaryRmdAge(household: Household): number | undefined {
   }
   return personRmdAge(primary);
 }
+
+/**
+ * Whether the plan converts in RMD years too (the switch next to the
+ * conversion strategy, `optimizer.allowConversionsInRmdYears`). The law
+ * allows it once that year's RMD is out; missing means off.
+ */
+export function allowsRmdYearConversions(household: Pick<Household, "optimizer">): boolean {
+  return household.optimizer?.allowConversionsInRmdYears === true;
+}

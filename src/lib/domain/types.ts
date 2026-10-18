@@ -420,6 +420,12 @@ export interface OptimizerConfig {
    */
   allowOverConvertible?: boolean;
   /**
+   * Convert in years an owner is at or past their RMD age too (the switch
+   * next to the conversion strategy). That year's RMD is always taken in
+   * full first; only the rest can be converted. Missing means off.
+   */
+  allowConversionsInRmdYears?: boolean;
+  /**
    * Top ordinary rate to fill when `strategy` is `fillBracket`.
    * Missing defaults to 22%.
    */

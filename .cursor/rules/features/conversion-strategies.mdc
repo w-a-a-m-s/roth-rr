@@ -148,3 +148,13 @@ is the selected rate; all three rates are precomputed.
   manual, not to the computed strategies.
 - Editing a year in the Conversion wizard copies the live schedule into
   `manual` and does not keep a computed strategy live.
+
+## Conversions in RMD years
+
+The "Convert in RMD years" switch (`RmdYearConversionsSwitch`, also on the
+empty-conversion notice when it would open years up) sets
+`optimizer.allowConversionsInRmdYears`. Every strategy then sees the whole
+projection as its window. Anything that builds a strategy's household (like
+`minTaxSchedule`'s starting points and its cache key) must keep that flag, or
+the search silently ignores RMD years.
+

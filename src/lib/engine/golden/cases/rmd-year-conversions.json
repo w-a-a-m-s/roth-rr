@@ -1,0 +1,97 @@
+{
+  "name": "Conversions in RMD years (after each year's RMD)",
+  "strategy": "manual",
+  "note": "Owner already past the RMD age with a $1.5M IRA growing 6% and a pension. The RMD-year switch is on and a manual schedule converts $150k a year for five years: each year the full RMD comes out first, then the conversion.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 1000,
+        "frequency": "monthly",
+        "growthRate": 0
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Pat",
+        "birthYear": 1953,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ret",
+        "label": "IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "retirementType": "ira",
+        "balance": 1500000,
+        "growthRate": 0.06
+      },
+      {
+        "id": "roth",
+        "label": "Roth",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 0,
+        "growthRate": 0.06
+      }
+    ],
+    "incomes": [
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 3000,
+        "growthRate": 0,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0,
+      "finalAge": 80
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        150000,
+        150000,
+        150000,
+        150000,
+        150000,
+        0,
+        0,
+        0
+      ],
+      "allowConversionsInRmdYears": true
+    }
+  },
+  "commit": "686aac2",
+  "commitDate": "2026-10-18T23:39:06+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 98898.42,
+      "medicareTotal": 20452.8,
+      "afterTaxAssetsAtRmd": 1010082.37,
+      "inheritanceFinal": 1130032.66
+    },
+    "roth": {
+      "taxesTotal": 244604.25,
+      "medicareTotal": 56967.6,
+      "afterTaxAssetsAtRmd": 1065582.37,
+      "inheritanceFinal": 1628790.46
+    },
+    "deltas": {
+      "taxesTotal": 145705.82,
+      "medicareTotal": 36514.8,
+      "afterTaxAssetsAtRmd": 55500,
+      "inheritanceFinal": 498757.8
+    }
+  }
+}

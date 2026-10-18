@@ -15,6 +15,7 @@ import { DEFAULT_MAX_MONTHLY_SHORTFALL } from "@/lib/optimizer/shortfall";
 import { hasManualConversionSchedule } from "@/lib/optimizer/util";
 import { useStrategyScores } from "@/components/plan/useStrategyScores";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { RmdYearConversionsSwitch } from "@/components/plan/RmdYearConversionsSwitch";
 import { useHousehold, useScenario } from "@/store/useScenario";
 import { useExternalData } from "@/store/useExternalData";
 import { useUI } from "@/store/useUI";
@@ -116,10 +117,11 @@ export function ConversionStrategyMenu({
 
   return (
     <div className={className ?? "mb-5"}>
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h3 className="m-0 text-[13.5px] font-bold text-foreground">
           Conversion strategy
         </h3>
+        <RmdYearConversionsSwitch readOnly={readOnly} />
         <div className="flex items-center gap-1.5">
           <InfoTooltip
             text={`When on, each year converts only as much as keeps that year's monthly shortfall (a negative Surplus) at ${capLabel} or less. Applies to every strategy.`}

@@ -50,7 +50,7 @@ import {
   LIFE_INSURANCE_PROCEEDS_GROWTH,
   lifeInsurancePayoutRate,
 } from "@/lib/config/lifeInsurancePayout";
-import { personRmdAge } from "@/lib/domain/rmd";
+import { allowsRmdYearConversions, personRmdAge } from "@/lib/domain/rmd";
 import {
   DEFAULT_REPAYMENT_YEARS,
   loanExpenseKey,
@@ -837,6 +837,7 @@ export function projectScenario(
   // analysis statement's terms when it has one (see `loanPaydown.ts`).
   const terms = loanTerms(household, refs.asOfDate);
   const otherExpenses = includesOtherExpenses(household);
+  const rmdYearConversions = allowsRmdYearConversions(household);
   const carCosts = otherExpenses ? carCostsByYear(household, planStart) : null;
   const mortgageBalances: Record<string, number> = {};
   // A line of credit's repayment, fixed the year its draw period ends.
@@ -1087,16 +1088,36 @@ export function projectScenario(
       (i >= offset
         ? conversionSchedule[i - offset]
         : early.find((c) => c.year === calendarYear)?.amount) ?? 0;
-    let converted = 0;
+    // This year's required minimum distribution per account, figured before
+    // any conversion: the IRS wants it out first, and it can't be converted.
+    // Per the IRS, the amount is the prior December 31 balance divided by the
+    // owner's Uniform Lifetime denominator for their age this year, so growth,
+    // scheduled draws and conversions taken during the year don't change it.
+    const rmdRequired: Record<string, number> = {};
     for (const acc of retirementAccounts) {
-      if (toConvert <= 0) break;
       const ownerId = effectiveOwner(death, acc.ownerId, calendarYear);
       const owner = household.people.find((p) => p.id === ownerId);
       const ownerRmdAge = personRmdAge(owner);
-      const ownerAge = ages[ownerId];
-      // Missing birth year → still convertible. Known age at/after RMD → skip.
-      if (ownerRmdAge != null && ownerAge >= ownerRmdAge) continue;
-      const take = Math.min(Math.max(0, balances[acc.id]), toConvert);
+      if (ownerRmdAge == null || ages[ownerId] < ownerRmdAge) continue;
+      const base = Math.max(0, priorYearEndBalances[acc.id] ?? 0);
+      // The event's income from this account counts toward its RMD.
+      rmdRequired[acc.id] = Math.max(
+        0,
+        base / uniformLifetimeDenominator(ages[ownerId]) - (eventIncome?.[acc.id] ?? 0),
+      );
+    }
+
+    let converted = 0;
+    for (const acc of retirementAccounts) {
+      if (toConvert <= 0) break;
+      // Missing birth year → still convertible. At or past the RMD age, only
+      // when the plan allows RMD-year conversions, and only what's left after
+      // setting the year's RMD aside, so the RMD is still taken in full.
+      const required = rmdRequired[acc.id];
+      if (required != null && !rmdYearConversions) continue;
+      const available = Math.max(0, balances[acc.id] - (required ?? 0));
+      const take = Math.min(available, toConvert);
+      if (!(take > 0)) continue;
       balances[acc.id] -= take;
       toConvert -= take;
       converted += take;
@@ -1211,16 +1232,8 @@ export function projectScenario(
     // to any scheduled retirement draw; both show as separate income lines. No
     // birth year → no forced RMD.
     for (const acc of retirementAccounts) {
-      const ownerId = effectiveOwner(death, acc.ownerId, calendarYear);
-      const owner = household.people.find((p) => p.id === ownerId);
-      const ownerRmdAge = personRmdAge(owner);
-      if (ownerRmdAge == null || ages[ownerId] < ownerRmdAge) continue;
-      const base = Math.max(0, priorYearEndBalances[acc.id] ?? 0);
-      // The event's income from this account counts toward its RMD.
-      const required = Math.max(
-        0,
-        base / uniformLifetimeDenominator(ages[ownerId]) - (eventIncome?.[acc.id] ?? 0),
-      );
+      const required = rmdRequired[acc.id];
+      if (required == null) continue;
       const bal = Math.max(0, balances[acc.id]);
       const rmdAnnual = Math.min(bal, required);
       if (rmdAnnual <= 0) continue;
