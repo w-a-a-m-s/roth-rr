@@ -422,7 +422,10 @@ describe("baseline projection vs spreadsheet", () => {
     expect(t.medicare).toBeCloseTo(wages * 0.0145 + net * 0.029, 6);
     expect(t.additionalMedicare).toBe(0);
     expect(rows[0].federalAnnualTax).toBeCloseTo(
-      rows[0].federalOrdinaryTax + rows[0].federalCapitalGainsTax + t.total,
+      rows[0].federalOrdinaryTax +
+        rows[0].federalCapitalGainsTax +
+        rows[0].netInvestmentIncomeTax +
+        t.total,
       6,
     );
     // Once the salary and business stop, so does the tax.

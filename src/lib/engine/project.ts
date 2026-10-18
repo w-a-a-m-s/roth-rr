@@ -58,6 +58,7 @@ import { levelPayment } from "@/lib/engine/amortization";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
 import { employmentTax, type EarnedIncome } from "@/lib/engine/employmentTax";
 import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
+import { netInvestmentIncomeTax } from "@/lib/engine/netInvestmentIncomeTax";
 import type {
   DeductionBreakdown,
   ProjectionOptions,
@@ -969,6 +970,9 @@ export function projectScenario(
     //    income below uses the same capped amount (no phantom cash / tax).
     let capitalGainsIncome = 0;
     let recaptureIncome = 0;
+    // Taxable earnings on life insurance proceeds paid like an annuity
+    // (Survivorship), which count as investment income.
+    let lifeInsuranceEarnings = 0;
     /** Book one after-tax draw: basis, recapture and the income it realizes. */
     const realizeDraw = (
       acc: Account,
@@ -1208,6 +1212,7 @@ export function projectScenario(
       incomeMonthly[key] = income / 12;
       federalOrdinaryGross += taxable;
       stateOrdinaryGross += taxable;
+      lifeInsuranceEarnings += taxable;
     }
     //  - Disability: the disabled person's policies pay after the waiting
     //    period for the benefit period. Tax free unless the policy says
@@ -1377,8 +1382,23 @@ export function projectScenario(
         capitalGainsIncome,
         ltcgBrackets,
       ).map((tax, bi) => ({ rate: ltcgBrackets[bi].rate, tax }));
+      // Net investment income tax: gains, DPP / MLP recapture, net rental
+      // income (not for a real-estate professional) and annuity-like life
+      // insurance earnings, against MAGI (AGI here).
+      const netInvestmentIncome = Math.max(
+        0,
+        capitalGainsIncome +
+          recaptureIncome +
+          lifeInsuranceEarnings +
+          (household.realEstateProfessional ? 0 : rentalPal.allowedRentalOrdinary),
+      );
+      const niit = netInvestmentIncomeTax(
+        netInvestmentIncome,
+        federalOrdinaryGross + capitalGainsIncome,
+        fs,
+      );
       const federalAnnualTax =
-        federalOrdinaryTax + federalCapitalGainsTax + employment.total;
+        federalOrdinaryTax + federalCapitalGainsTax + niit + employment.total;
 
       const stateDeduction = state.hasIncomeTax
         ? stateDeductionTotal(state, fs) + oneTimeDepreciation
@@ -1432,6 +1452,8 @@ export function projectScenario(
         federalTaxByBracket,
         federalCapitalGainsTax,
         federalCapitalGainsTaxByBracket,
+        netInvestmentIncome,
+        netInvestmentIncomeTax: niit,
         federalAnnualTax,
         stateDeductions,
         stateGrossTaxableIncome,
@@ -1543,6 +1565,8 @@ export function projectScenario(
       federalTaxByBracket,
       federalCapitalGainsTax,
       federalCapitalGainsTaxByBracket,
+      netInvestmentIncome,
+      netInvestmentIncomeTax: niit,
       federalAnnualTax,
       stateDeductions,
       stateGrossTaxableIncome,
@@ -1624,6 +1648,8 @@ export function projectScenario(
       stateTaxableIncome,
       federalOrdinaryTax,
       federalCapitalGainsTax,
+      netInvestmentIncome,
+      netInvestmentIncomeTax: niit,
       employmentTax: employment,
       federalAnnualTax,
       federalMonthlyTax,

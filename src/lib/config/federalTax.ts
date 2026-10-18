@@ -106,3 +106,16 @@ export const ADDITIONAL_MEDICARE_THRESHOLD: Record<FilingStatus, number> = {
   single: 200_000,
   hoh: 200_000,
 };
+
+/**
+ * Net investment income tax (IRC 1411, Form 8960): 3.8% of the smaller of
+ * net investment income and MAGI above the threshold by filing status. Fixed
+ * in the law, not indexed. (Not filing statuses here yet: a qualifying
+ * surviving spouse uses $250,000, married filing separately $125,000.)
+ */
+export const NET_INVESTMENT_INCOME_TAX_RATE = 0.038;
+export const NET_INVESTMENT_INCOME_TAX_THRESHOLD: Record<FilingStatus, number> = {
+  mfj: 250_000,
+  single: 200_000,
+  hoh: 200_000,
+};

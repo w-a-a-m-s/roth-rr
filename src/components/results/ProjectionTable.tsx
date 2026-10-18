@@ -627,6 +627,16 @@ function buildSections(
           },
         ]
       : []),
+    ...(scenario.rows.some((r) => r.netInvestmentIncomeTax > 0)
+      ? [
+          {
+            key: "federalNiit",
+            label: "Net investment income tax (3.8%)",
+            unit: "yr" as const,
+            value: (r: Row) => r.netInvestmentIncomeTax,
+          },
+        ]
+      : []),
     ...(hasEmploymentTax
       ? [
           {

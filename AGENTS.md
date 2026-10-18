@@ -128,6 +128,17 @@ conversions, top-ups and the conversion-tax pricing all move it (the "tax
 torpedo"). The $25k rental-loss allowance tests MAGI without it, as 469(i)
 does. State tax still uses each state's own `socialSecurityTaxablePct`.
 
+## Net investment income tax (3.8%)
+
+`netInvestmentIncomeTax` (`lib/engine/netInvestmentIncomeTax.ts`, Form 8960):
+3.8% of the smaller of net investment income and MAGI over $250k joint /
+$200k single and HOH (fixed in the law). Investment income here is realized
+gains, DPP / MLP recapture, net rental income after allowed losses (none for
+a real-estate professional) and annuity-like life insurance earnings. IRA
+draws, RMDs and conversions aren't investment income but raise MAGI. It's in
+`federalAnnualTax` (row `netInvestmentIncomeTax`), figured inside
+`taxForYear` so conversion pricing sees it.
+
 ## Employment tax (Social Security and Medicare)
 
 Salary pays employee FICA and business income pays self-employment tax

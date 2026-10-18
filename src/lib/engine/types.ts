@@ -131,12 +131,20 @@ export interface ProjectionRow {
   /** Federal long-term capital gains tax. */
   federalCapitalGainsTax: number;
   /**
+   * Investment income for the 3.8% tax: gains, DPP / MLP recapture, net
+   * rental income (none for a real-estate professional) and life insurance
+   * earnings paid like an annuity. Never below 0.
+   */
+  netInvestmentIncome: number;
+  /** 3.8% net investment income tax (Form 8960). */
+  netInvestmentIncomeTax: number;
+  /**
    * Social Security and Medicare tax: employee FICA on salary plus
    * self-employment tax on business income. Its `selfEmploymentDeduction` is
    * already out of `grossTaxableIncome`.
    */
   employmentTax: EmploymentTax;
-  /** Federal ordinary + LTCG + employment tax. */
+  /** Federal ordinary + LTCG + net investment income tax + employment tax. */
   federalAnnualTax: number;
   federalMonthlyTax: number;
   /**
