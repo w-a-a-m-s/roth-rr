@@ -160,6 +160,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   mortgageMonthlyPayment: "Mortgage payment",
   activeParticipation: "Active participation",
   realEstateProfessional: "Real estate professional",
+  includeOtherExpenses: "Count costs from other steps",
   amount: "Amount",
   year: "Year",
   frequency: "Frequency",

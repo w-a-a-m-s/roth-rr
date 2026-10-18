@@ -1,6 +1,7 @@
 import type { Household, InsuranceKind } from "@/lib/domain/types";
 import { insurancePolicy } from "@/lib/domain/insurance";
 import { propertyLoans } from "@/lib/domain/propertyLoans";
+import { CAR_EXPENSE_KEY } from "@/lib/engine/otherExpenses";
 
 const INSURANCE_INCOME_LABELS: Record<InsuranceKind, string> = {
   life: "Income from life insurance",
@@ -68,8 +69,9 @@ export function incomeLabel(household: Household, key: string): string {
 }
 
 /**
- * Display label for an expense key: an expense id, `ltc:<person>` care, or
- * `loan:<property>` loan payments.
+ * Display label for an expense key: an expense id, `ltc:<person>` care,
+ * `loan:<property>` loan payments, `premium:<policy>` insurance premiums or
+ * the Car analysis.
  */
 export function expenseLabel(household: Household, key: string): string {
   if (key.startsWith("loan:")) {
@@ -82,6 +84,12 @@ export function expenseLabel(household: Household, key: string): string {
     const name = household.people.find((p) => p.id === key.slice(4))?.name?.trim();
     return name ? `Long-term care · ${name}` : "Long-term care";
   }
+  if (key.startsWith("premium:")) {
+    const policy = (household.insurance ?? []).find((p) => p.id === key.slice(8));
+    const name = policy?.label?.trim();
+    return name ? `Insurance premium · ${name}` : "Insurance premium";
+  }
+  if (key === CAR_EXPENSE_KEY) return "Car (from Car analysis)";
   return household.expenses.find((e) => e.id === key)?.label ?? key;
 }
 

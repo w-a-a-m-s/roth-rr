@@ -58,6 +58,13 @@ import {
 } from "@/lib/domain/propertyLoans";
 import { levelPayment } from "@/lib/engine/amortization";
 import { balanceAtStart, loanTerms, type LoanTerms } from "@/lib/engine/loanPaydown";
+import {
+  CAR_EXPENSE_KEY,
+  carCostsByYear,
+  includesOtherExpenses,
+  lifePremiumsForYear,
+  premiumExpenseKey,
+} from "@/lib/engine/otherExpenses";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
 import { employmentTax, type EarnedIncome } from "@/lib/engine/employmentTax";
 import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
@@ -319,6 +326,11 @@ interface RealEstateYear {
    * paid as an expense. A homestead's loans aren't counted.
    */
   loanPaymentMonthlyById: Record<string, number>;
+  /**
+   * Per homestead: its monthly loan payments, which count as an expense only
+   * when the plan includes other expenses (`includeOtherExpenses`).
+   */
+  homesteadLoanPaymentMonthlyById: Record<string, number>;
   /** Per-property equity (value − mortgage); sums to `value - mortgage`. */
   equityById: Record<string, number>;
   /** Per-property rental net before depreciation (rent − opex − interest). */
@@ -350,6 +362,7 @@ function stepRealEstate(
   let taxableAnnual = 0;
   const cashMonthlyById: Record<string, number> = {};
   const loanPaymentMonthlyById: Record<string, number> = {};
+  const homesteadLoanPaymentMonthlyById: Record<string, number> = {};
   const equityById: Record<string, number> = {};
   const taxableBeforeDepById: Record<string, number> = {};
   const isRentalById: Record<string, boolean> = {};
@@ -418,6 +431,10 @@ function stepRealEstate(
     cashMonthlyById[re.id] = cash / 12;
     const payment = loanCost.interest + loanCost.principal;
     if (payment > 0) loanPaymentMonthlyById[re.id] = payment / 12;
+    const homesteadPayment = am.interest + am.principal;
+    if (re.use === "homestead" && homesteadPayment > 0) {
+      homesteadLoanPaymentMonthlyById[re.id] = homesteadPayment / 12;
+    }
     const taxableBeforeDep = rentAnnual - expenseAnnual - loanCost.interest;
     taxableAnnual += taxableBeforeDep;
     taxableBeforeDepById[re.id] = taxableBeforeDep;
@@ -431,6 +448,7 @@ function stepRealEstate(
     taxableAnnual,
     cashMonthlyById,
     loanPaymentMonthlyById,
+    homesteadLoanPaymentMonthlyById,
     equityById,
     taxableBeforeDepById,
     isRentalById,
@@ -818,6 +836,8 @@ export function projectScenario(
   // from its next payment up to the projection start, on the Mortgage
   // analysis statement's terms when it has one (see `loanPaydown.ts`).
   const terms = loanTerms(household, refs.asOfDate);
+  const otherExpenses = includesOtherExpenses(household);
+  const carCosts = otherExpenses ? carCostsByYear(household, planStart) : null;
   const mortgageBalances: Record<string, number> = {};
   // A line of credit's repayment, fixed the year its draw period ends.
   const lineOfCreditPayments: Record<string, number> = {};
@@ -1522,6 +1542,24 @@ export function projectScenario(
     for (const [id, payment] of Object.entries(realEstate.loanPaymentMonthlyById)) {
       expenseMonthly[loanExpenseKey(id)] = payment;
       monthlyExpenses += payment;
+    }
+    // Costs entered on other steps, when the plan counts them (the Expenses
+    // step switch): life insurance premiums, homestead loan payments and the
+    // Car analysis. Fixed bills, so never scaled.
+    if (otherExpenses) {
+      for (const [id, annual] of Object.entries(lifePremiumsForYear(household, calendarYear, death))) {
+        expenseMonthly[premiumExpenseKey(id)] = annual / 12;
+        monthlyExpenses += annual / 12;
+      }
+      for (const [id, payment] of Object.entries(realEstate.homesteadLoanPaymentMonthlyById)) {
+        expenseMonthly[loanExpenseKey(id)] = payment;
+        monthlyExpenses += payment;
+      }
+      const car = carCosts?.byYear[calendarYear] ?? 0;
+      if (car > 0) {
+        expenseMonthly[CAR_EXPENSE_KEY] = car / 12;
+        monthlyExpenses += car / 12;
+      }
     }
 
     // 5b) Conversion tax paid from assets: the tax the conversion adds this

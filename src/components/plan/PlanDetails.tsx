@@ -26,6 +26,7 @@ import {
 } from "@/lib/depositSummary";
 import { primaryPersonId, projectionStartYear } from "@/lib/engine/project";
 import { taxIndexingRate } from "@/lib/engine/taxIndexing";
+import { includesOtherExpenses } from "@/lib/engine/otherExpenses";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import {
@@ -372,6 +373,10 @@ export function PlanDetails() {
             );
           })
         )}
+        <Row
+          label="Costs from other steps"
+          value={includesOtherExpenses(household) ? "Counted" : "Not counted"}
+        />
       </Section>
 
       <OneTimeDepreciationSection readOnly={readOnly} />

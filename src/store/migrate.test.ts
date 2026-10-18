@@ -139,6 +139,21 @@ describe("migrateHousehold: depreciation land share and month", () => {
   });
 });
 
+describe("migrateHousehold: costs from other steps switch", () => {
+  it("is off for an older plan and keeps a real on/off", () => {
+    expect(migrateHousehold(household([], []))).not.toHaveProperty("includeOtherExpenses");
+    const on = household([], []);
+    on.includeOtherExpenses = true;
+    expect(migrateHousehold(on).includeOtherExpenses).toBe(true);
+  });
+
+  it("drops a value that isn't on or off", () => {
+    const h = household([], []);
+    (h as { includeOtherExpenses?: unknown }).includeOtherExpenses = "yes";
+    expect(migrateHousehold(h)).not.toHaveProperty("includeOtherExpenses");
+  });
+});
+
 describe("migrateHousehold: soft-delete trash arrays", () => {
   it("defaults missing deleted* arrays to empty lists", () => {
     const h = household([], []);

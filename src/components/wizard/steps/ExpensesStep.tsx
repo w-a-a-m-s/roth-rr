@@ -13,13 +13,21 @@ import {
 import { AddButton, EntityCard, ReadStat } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { StepTour } from "@/components/onboarding/StepTour";
-import type { Expense, ExpenseFrequency } from "@/lib/domain/types";
+import type { Expense, ExpenseFrequency, Household } from "@/lib/domain/types";
 import {
   expenseMonthlyForYear,
   expenseYearsLabel,
 } from "@/lib/domain/household";
 import { DEFAULT_EXPENSE_GROWTH, EXPENSE_SUGGESTIONS } from "@/lib/config/defaults";
 import { projectionStartYear } from "@/lib/engine/project";
+import { loanTerms } from "@/lib/engine/loanPaydown";
+import {
+  carCostsByYear,
+  includesOtherExpenses,
+  lifePremiumsForYear,
+} from "@/lib/engine/otherExpenses";
+import { CAR_OPTION_LABELS } from "@/lib/engine/carDecision";
+import { loanMonthlyPaymentToday, propertyLoans } from "@/lib/domain/propertyLoans";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { EXPENSES_TOUR_STEPS } from "@/lib/onboarding/expensesTour";
@@ -133,6 +141,63 @@ function ExpenseFields({
   );
 }
 
+/**
+ * What the "costs from other steps" switch brings in, as of today: life
+ * insurance premiums, homestead loan payments, and the Car analysis.
+ */
+function otherCostsToday(household: Household, start: number) {
+  const year = new Date().getFullYear();
+  const premiums = Object.values(lifePremiumsForYear(household, year, null)).reduce(
+    (sum, annual) => sum + annual / 12,
+    0,
+  );
+  const terms = loanTerms(household);
+  let homeLoans = 0;
+  for (const re of household.realEstate) {
+    if (re.use !== "homestead") continue;
+    for (const loan of propertyLoans(re)) {
+      const t = terms[loan.id];
+      homeLoans +=
+        loan.kind === "mortgage" && t
+          ? t.monthlyPayment + t.extraPrincipal
+          : loanMonthlyPaymentToday(loan);
+    }
+  }
+  const car = Number.isFinite(start) ? carCostsByYear(household, start) : null;
+  return { premiums, homeLoans, car };
+}
+
+function OtherExpensesSwitch() {
+  const household = useHousehold();
+  const { setIncludeOtherExpenses } = useScenario();
+  const start = projectionStartYear(household);
+  const { premiums, homeLoans, car } = otherCostsToday(household, start);
+  const parts = [
+    `Life insurance premiums ${formatCurrency(premiums)}/mo`,
+    `Home mortgage and line of credit ${formatCurrency(homeLoans)}/mo`,
+    car
+      ? `Car: ${CAR_OPTION_LABELS[car.option].toLowerCase()} (the Car analysis's pick) from ${start}`
+      : "Car: none until you fill in the Car analysis",
+  ];
+  return (
+    <Field
+      label="Costs from other steps"
+      help="Counts costs you entered elsewhere as expenses in every analysis: life insurance premiums (term policies through their term, permanent ones for life), payments on your home's mortgage and line of credit, and the Car analysis's recommended option. Turn it off if your expenses above already include them."
+    >
+      <label className="flex items-center gap-2 text-[13px] text-foreground">
+        <input
+          type="checkbox"
+          checked={includesOtherExpenses(household)}
+          onChange={(e) => setIncludeOtherExpenses(e.target.checked)}
+          className="h-4 w-4 rounded border border-border"
+        />
+        Count them as expenses
+      </label>
+      <p className="mt-1.5 mb-0 text-xs text-muted">Today: {parts.join(" · ")}</p>
+    </Field>
+  );
+}
+
 export function ExpensesStep() {
   const household = useHousehold();
   const { addExpense, restoreExpense, discardDeletedExpense } = useScenario();
@@ -152,6 +217,7 @@ export function ExpensesStep() {
         steps={EXPENSES_TOUR_STEPS}
         targets={{ "add-expense": addButtonRef }}
       />
+      <OtherExpensesSwitch />
       <div className="flex justify-end gap-2">
         <RestoreDeleted
           items={(household.deletedExpenses ?? []).map((entry) => ({

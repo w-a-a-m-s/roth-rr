@@ -35,3 +35,15 @@ there.
 Additive. `migrateHousehold` leaves missing years alone (open-ended) and strips
 non-finite `startYear` / `endYear` on live and deleted expenses. Existing
 golden cases must not move.
+
+## Costs from other steps (switch)
+
+`Household.includeOtherExpenses` (Expenses step, off by default) adds costs
+entered elsewhere as expense lines every year (`lib/engine/otherExpenses.ts`):
+life insurance premiums (`premium:<policy>`; term through its term,
+permanent for life, none after the insured passes), homestead loan payments
+(`loan:<property>`, on the same pay-down as the balance) and the Car
+analysis's recommended option from the plan start (`car`, only once
+`carDecision` is saved). They're fixed bills: Spending capacity never scales
+them. Homestead interest is still not deducted.
+

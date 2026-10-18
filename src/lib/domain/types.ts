@@ -549,6 +549,12 @@ export interface Household {
   /** Itemized household expenses; each grows by its own rate. */
   expenses: Expense[];
   /**
+   * Count costs entered on other steps as expenses too (the Expenses step
+   * switch): life insurance premiums, homestead loan payments and the Car
+   * analysis. Missing means off.
+   */
+  includeOtherExpenses?: boolean;
+  /**
    * Soft-deleted items kept for quick restore in the plan editor. Not used by
    * the projection engine — only the live lists above are projected. Optional
    * for older saved plans; `migrateHousehold` defaults missing arrays to `[]`.

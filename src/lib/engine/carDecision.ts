@@ -136,6 +136,21 @@ function cashFlows(key: CarOptionKey, d: CarDecision, months: number): number[] 
   return flows;
 }
 
+/**
+ * One option's payments by year of the comparison (index 0 is the first
+ * year): the signing / purchase day and months 1 to 12 in the first year,
+ * then twelve months a year, with each turn-in in the year it lands.
+ */
+export function carCashFlows(key: CarOptionKey, d: CarDecision): number[] {
+  const years = Math.max(1, Math.round(d.years));
+  const flows = cashFlows(key, d, years * 12);
+  const byYear = new Array(years).fill(0);
+  flows.forEach((amount, month) => {
+    byYear[Math.min(years - 1, Math.max(0, Math.ceil(month / 12) - 1))] += amount;
+  });
+  return byYear;
+}
+
 /** Miles a year over the lease allowance. */
 export function excessMilesPerYear(d: CarDecision): number {
   return Math.max(0, d.milesDrivenPerYear - d.leaseMilesPerYear);

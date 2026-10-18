@@ -448,6 +448,11 @@ export function migrateHousehold(household: Household): Household {
     delete legacy.assumptions.taxIndexing;
   }
 
+  // The other-expenses switch is optional (off when missing).
+  if (legacy.includeOtherExpenses != null && typeof legacy.includeOtherExpenses !== "boolean") {
+    delete legacy.includeOtherExpenses;
+  }
+
   // Older plans have no over-convertible toggle; default off (UI clamps).
   // Missing or unknown strategy defaults to manual (the conversion-step
   // editor). An empty manual schedule stays manual: the engine spreads the
@@ -790,6 +795,7 @@ interface ScenarioState {
   setFilingStatus: (status: FilingStatus) => void;
   setResidenceState: (state: UsStateCode) => void;
   setRealEstateProfessional: (value: boolean) => void;
+  setIncludeOtherExpenses: (value: boolean) => void;
   addExpense: (expense: Expense) => void;
   updateExpense: (id: string, patch: Partial<Expense>) => void;
   removeExpense: (id: string) => void;
@@ -1429,6 +1435,8 @@ export const useScenario = create<ScenarioState>()((set, get) => {
 
     setRealEstateProfessional: (value) =>
       editActive((h) => ({ ...h, realEstateProfessional: value })),
+    setIncludeOtherExpenses: (value) =>
+      editActive((h) => ({ ...h, includeOtherExpenses: value })),
 
     setFilingStatus: (status) =>
       editActive((h) => {
