@@ -481,6 +481,16 @@ function buildSections(
       unit: "yr",
       value: (r) => r.grossTaxableIncome,
     },
+    ...(household.incomes.some((income) => income.kind === "socialSecurity")
+      ? [
+          {
+            key: "socialSecurityTaxable",
+            label: "Taxable Social Security (included above)",
+            unit: "yr" as const,
+            value: (r: Row) => r.socialSecurityTaxable,
+          },
+        ]
+      : []),
     ...(scenario.rows.some((r) => r.employmentTax.selfEmploymentDeduction > 0)
       ? [
           {

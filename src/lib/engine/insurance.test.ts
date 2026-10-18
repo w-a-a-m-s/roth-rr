@@ -10,7 +10,7 @@ import type { ProjectionOptions } from "@/lib/engine/types";
 import { projectScenario, projectionYears } from "@/lib/engine/project";
 import { calculate } from "@/lib/calculate";
 import { lifeInsurancePayoutRate } from "@/lib/config/lifeInsurancePayout";
-import { SOCIAL_SECURITY_TAXABLE_PCT } from "@/lib/config/federalTax";
+import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
 import {
   disabilityBenefitMonths,
   lifeInsuranceClaims,
@@ -147,7 +147,12 @@ describe("life insurance in Survivorship", () => {
 
   it("taxes earnings first, as ordinary income", () => {
     // 2031: $80,000 of earnings on $1,000,000, so all $78,000 is taxable.
-    expect(at(withLife, 2031).grossTaxableIncome - at(without, 2031).grossTaxableIncome).toBeCloseTo(78_000, 4);
+    // (It also makes more of the Social Security taxable, so leave that out.)
+    const other = (r: (typeof without)[number]) => r.grossTaxableIncome - r.socialSecurityTaxable;
+    expect(other(at(withLife, 2031)) - other(at(without, 2031))).toBeCloseTo(78_000, 4);
+    expect(at(withLife, 2031).socialSecurityTaxable).toBeGreaterThan(
+      at(without, 2031).socialSecurityTaxable,
+    );
   });
 
   it("only pays a term policy that's still in force at the death", () => {
@@ -265,12 +270,17 @@ describe("long-term care insurance", () => {
     const year = at(r, 2031);
     // Taxable income is Social Security, the IRA's lifetime income, any RMD
     // above it and any extra IRA withdrawal: none of the benefit.
-    const taxableMonthly =
-      year.incomeMonthly.ss * SOCIAL_SECURITY_TAXABLE_PCT +
-      (year.incomeMonthly["draw:ira"] ?? 0) +
-      (year.incomeMonthly["rmd:ira"] ?? 0) +
-      (year.incomeMonthly["topup:ira"] ?? 0);
-    expect(year.grossTaxableIncome).toBeCloseTo(taxableMonthly * 12, 6);
+    const iraAnnual =
+      ((year.incomeMonthly["draw:ira"] ?? 0) +
+        (year.incomeMonthly["rmd:ira"] ?? 0) +
+        (year.incomeMonthly["topup:ira"] ?? 0)) *
+      12;
+    const ss = taxableSocialSecurity(
+      year.incomeMonthly.ss * 12,
+      iraAnnual + year.capitalGainsIncome,
+      year.filingStatus,
+    );
+    expect(year.grossTaxableIncome).toBeCloseTo(iraAnnual + ss, 6);
     expect(year.monthlyExpenses).toBe(at(without, 2031).monthlyExpenses);
     // The benefit means less extra comes out of the IRA to pay for care.
     expect(year.incomeMonthly["topup:ira"] ?? 0).toBeLessThan(

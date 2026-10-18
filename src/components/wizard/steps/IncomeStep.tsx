@@ -30,7 +30,7 @@ import {
   isWithdrawalIncome,
   pensionPayout,
 } from "@/lib/domain/household";
-import { SOCIAL_SECURITY_TAXABLE_PCT } from "@/lib/config/federalTax";
+import { SOCIAL_SECURITY_MAX_TAXABLE_SHARE } from "@/lib/config/federalTax";
 import { DEFAULT_INCOME_GROWTH } from "@/lib/config/defaults";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { uid } from "@/lib/id";
@@ -88,7 +88,7 @@ const WITHDRAWAL_TAX_LABEL: Partial<Record<IncomeKind, string>> = {
 
 function taxabilityLabel(income: IncomeSource): string {
   if (income.kind === "socialSecurity") {
-    return `${Math.round(SOCIAL_SECURITY_TAXABLE_PCT * 100)}% taxable`;
+    return `Up to ${Math.round(SOCIAL_SECURITY_MAX_TAXABLE_SHARE * 100)}% taxable`;
   }
   if (isWithdrawalIncome(income.kind)) {
     return WITHDRAWAL_TAX_LABEL[income.kind] ?? "-";
@@ -264,10 +264,10 @@ function IncomeFields({
         {income.kind === "socialSecurity" ? (
           <Field
             label="Taxability"
-            help="Social Security is always taxed at a fixed 85% of benefits, so it can't be changed here."
+            help="The IRS taxes 0% to 85% of Social Security depending on your other income and filing status: none of it below $25,000 single / $32,000 joint, up to 85% above $34,000 / $44,000 (other income plus half the benefits). We figure it every year, so it can't be changed here."
           >
             <div className="flex h-9 items-center rounded-md border border-border bg-card px-2.5 text-sm text-muted">
-              {Math.round(SOCIAL_SECURITY_TAXABLE_PCT * 100)}% taxable (Social
+              Up to {Math.round(SOCIAL_SECURITY_MAX_TAXABLE_SHARE * 100)}% taxable (Social
               Security)
             </div>
           </Field>

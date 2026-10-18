@@ -115,6 +115,19 @@ law, so they don't move. Always get a year's table through
 `runScenario.ts` and the fill-bracket strategy all do. State tables aren't
 indexed yet.
 
+## Taxable Social Security (provisional income)
+
+The federal taxable part of Social Security is 0% to 85% of the benefits from
+provisional income (every other income on the return, gains included, plus
+half the benefits), per IRC 86 / Pub. 915: `taxableSocialSecurity` in
+`lib/engine/socialSecurityTax.ts`, row `socialSecurityTaxable`. Thresholds are
+by filing status and not indexed: single and HOH $25k / $34k, joint $32k /
+$44k (a survivor switches to single the year after the death). Because it
+depends on the rest of the year, it's figured inside `taxForYear`, so
+conversions, top-ups and the conversion-tax pricing all move it (the "tax
+torpedo"). The $25k rental-loss allowance tests MAGI without it, as 469(i)
+does. State tax still uses each state's own `socialSecurityTaxablePct`.
+
 ## Employment tax (Social Security and Medicare)
 
 Salary pays employee FICA and business income pays self-employment tax

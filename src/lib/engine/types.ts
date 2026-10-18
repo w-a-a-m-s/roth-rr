@@ -106,6 +106,11 @@ export interface ProjectionRow {
   incomeMonthly: Record<string, number>;
   /** Federal ordinary gross taxable income (excludes capital gains). */
   grossTaxableIncome: number;
+  /**
+   * The part of this year's Social Security benefits that's federally
+   * taxable (0% to 85%, from provisional income). Inside `grossTaxableIncome`.
+   */
+  socialSecurityTaxable: number;
   /** Realized capital gains from after-tax withdrawals this year. */
   capitalGainsIncome: number;
   /**

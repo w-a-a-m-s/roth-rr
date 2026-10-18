@@ -157,8 +157,8 @@ export interface Account {
 
 /**
  * How an income stream is taxed. Social Security is handled separately by the
- * engine (always 85% taxable, see `SOCIAL_SECURITY_TAXABLE_PCT`), so it is not a
- * selectable option here.
+ * engine (0% to 85% taxable from provisional income, see
+ * `taxableSocialSecurity`), so it is not a selectable option here.
  */
 export type Taxability = "full" | "taxFree";
 

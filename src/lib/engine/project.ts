@@ -57,6 +57,7 @@ import {
 import { levelPayment } from "@/lib/engine/amortization";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
 import { employmentTax, type EarnedIncome } from "@/lib/engine/employmentTax";
+import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
 import type {
   DeductionBreakdown,
   ProjectionOptions,
@@ -74,7 +75,6 @@ import {
   RENTAL_LOSS_ALLOWANCE_MAGI_START,
   RENTAL_LOSS_SPECIAL_ALLOWANCE,
   SENIOR_DEDUCTION_PHASE_OUT_RATE,
-  SOCIAL_SECURITY_TAXABLE_PCT,
 } from "@/lib/config/federalTax";
 import type { StateTaxTable } from "@/lib/config/stateTax";
 import { getStateTaxTable } from "@/lib/config/stateTax";
@@ -1085,6 +1085,9 @@ export function projectScenario(
     const incomeMonthly: Record<string, number> = {};
     // Salary and business income per person, for employment tax.
     const earnedByPerson: Record<string, EarnedIncome> = {};
+    // Social Security benefits. Their federal taxable part depends on the
+    // year's other income, so it's figured with the tax (see `taxForYear`).
+    let socialSecurityBenefits = 0;
     for (const income of household.incomes) {
       if (!isIncomeActive(income, calendarYear)) continue;
       if (stoppedIncomes.has(income.id)) continue;
@@ -1103,14 +1106,15 @@ export function projectScenario(
       incomeMonthly[income.id] = monthly;
       // Ordinary taxable portion (capital gains from after-tax withdrawals are
       // handled separately via `capitalGainsIncome`):
-      //  - Social Security: federal always SOCIAL_SECURITY_TAXABLE_PCT; state
-      //    uses that state's socialSecurityTaxablePct.
+      //  - Social Security: federal from provisional income once the rest of
+      //    the year is known (`taxableSocialSecurity`); state uses that
+      //    state's socialSecurityTaxablePct.
       //  - retirementDraw: always fully taxable (pre-tax dollars).
       //  - rothWithdrawal: tax-free cash flow.
       //  - afterTaxWithdrawal: cash flow only here; gains taxed via LTCG path.
       // Everything else uses its own `taxability`.
       if (income.kind === "socialSecurity") {
-        federalOrdinaryGross += annual * SOCIAL_SECURITY_TAXABLE_PCT;
+        socialSecurityBenefits += annual;
         stateOrdinaryGross += annual * state.socialSecurityTaxablePct;
       } else if (
         income.kind === "rothWithdrawal" ||
@@ -1286,6 +1290,8 @@ export function projectScenario(
       taxableBeforeDepById: realEstate.taxableBeforeDepById,
       isRentalById: realEstate.isRentalById,
       priorSuspendedById: suspendedLossById,
+      // The allowance's MAGI leaves out taxable Social Security (469(i)),
+      // which isn't in federalOrdinaryGross yet.
       nonRentalOrdinary: federalOrdinaryGross,
       capitalGains: capitalGainsIncome,
     });
@@ -1318,10 +1324,18 @@ export function projectScenario(
     //    Wrapped so the same math can price the year without its conversion
     //    when the conversion pays its own tax (see 5b).
     const taxForYear = (
-      federalOrdinaryGross: number,
+      grossBeforeSocialSecurity: number,
       stateOrdinaryGross: number,
       capitalGainsIncome: number,
     ) => {
+      // Social Security's taxable part rides on everything else on the
+      // return, gains included (provisional income).
+      const socialSecurityTaxable = taxableSocialSecurity(
+        socialSecurityBenefits,
+        grossBeforeSocialSecurity + capitalGainsIncome,
+        fs,
+      );
+      const federalOrdinaryGross = grossBeforeSocialSecurity + socialSecurityTaxable;
       // MAGI for the senior deduction is AGI: ordinary income plus gains.
       const deductions = computeDeductions(
         fs,
@@ -1410,6 +1424,8 @@ export function projectScenario(
       // (not double-counted in stateOrdinaryTax). Preferential/WA use CG brackets.
       const stateAnnualTax = stateOrdinaryTax + stateGainsTax;
       return {
+        grossTaxableIncome: federalOrdinaryGross,
+        socialSecurityTaxable,
         deductions,
         taxableIncome,
         federalOrdinaryTax,
@@ -1519,6 +1535,8 @@ export function projectScenario(
     }
 
     const {
+      grossTaxableIncome,
+      socialSecurityTaxable,
       deductions,
       taxableIncome,
       federalOrdinaryTax,
@@ -1542,7 +1560,6 @@ export function projectScenario(
 
     const netMonthlyIncome =
       totalMonthlyIncome - (annualTax - conversionTaxWithheld) / 12;
-    const grossTaxableIncome = federalOrdinaryGross;
 
     // 6) Business equity grows like real estate: year 0 is the January 1
     //    value (grown from today for a plan-start business).
@@ -1597,6 +1614,7 @@ export function projectScenario(
       totalMonthlyIncome,
       incomeMonthly,
       grossTaxableIncome,
+      socialSecurityTaxable,
       capitalGainsIncome,
       recaptureIncome,
       deductions,

@@ -49,11 +49,22 @@ export const FALLBACK_FEDERAL_TAX: FederalTaxYear =
 export const CURRENT_FEDERAL_TAX = FALLBACK_FEDERAL_TAX;
 
 /**
- * Share of Social Security benefits counted as taxable income. Up to 85% is
- * federally taxable for the higher-income households this tool targets, so it is
- * always applied as a fixed rule rather than a per-plan assumption.
+ * Taxable Social Security (IRC 86): the most of the benefits that can be
+ * taxed, and the provisional-income thresholds where taxation starts (base)
+ * and where the 85% tier starts (adjusted base). Fixed in the law, not
+ * indexed. Each filing status has its own entry (see `taxableSocialSecurity`).
  */
-export const SOCIAL_SECURITY_TAXABLE_PCT = 0.85;
+export const SOCIAL_SECURITY_MAX_TAXABLE_SHARE = 0.85;
+export const SOCIAL_SECURITY_BASE_AMOUNT: Record<FilingStatus, number> = {
+  mfj: 32_000,
+  single: 25_000,
+  hoh: 25_000,
+};
+export const SOCIAL_SECURITY_ADJUSTED_BASE: Record<FilingStatus, number> = {
+  mfj: 44_000,
+  single: 34_000,
+  hoh: 34_000,
+};
 
 /**
  * Each person's senior deduction drops by this share of MAGI above

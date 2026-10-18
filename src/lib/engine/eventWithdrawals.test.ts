@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Household } from "@/lib/domain/types";
 import type { ProjectionOptions, ProjectionRow } from "@/lib/engine/types";
 import { projectScenario, projectionYears } from "@/lib/engine/project";
-import { SOCIAL_SECURITY_TAXABLE_PCT } from "@/lib/config/federalTax";
+import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
 
 // Alex (born 1960) and Sam (born 1962), retired in 2026. Accounts don't grow
 // on their own, so the 8% after an event is easy to see.
@@ -74,7 +74,12 @@ describe("lifetime income once an event happens", () => {
     const y = at(rows(couple(), death), 2031);
     // IRA income is ordinary; the zero-basis brokerage income is all gain;
     // Roth income is tax free.
-    expect(y.grossTaxableIncome).toBeCloseTo(36_000 * SOCIAL_SECURITY_TAXABLE_PCT + 300_000 * 0.067, 6);
+    // Social Security's taxable part comes from provisional income: the IRA
+    // income plus the gains, plus half the benefits.
+    const ordinary = 300_000 * 0.067;
+    const ss = taxableSocialSecurity(36_000, ordinary + y.capitalGainsIncome, y.filingStatus);
+    expect(y.socialSecurityTaxable).toBeCloseTo(ss, 6);
+    expect(y.grossTaxableIncome).toBeCloseTo(ss + ordinary, 6);
     expect(y.capitalGainsIncome).toBeCloseTo(
       50_000 * 0.067 + y.incomeMonthly["topup:brk"] * 12,
       6,
@@ -100,7 +105,12 @@ describe("lifetime income once an event happens", () => {
     const firstIra = r.find((row) => (row.incomeMonthly["topup:ira"] ?? 0) > 0)!;
     expect(firstIra.surplus).toBeCloseTo(0, 1);
     const ira = (firstIra.incomeMonthly["draw:ira"] + firstIra.incomeMonthly["topup:ira"]) * 12;
-    expect(firstIra.grossTaxableIncome).toBeCloseTo(36_000 * SOCIAL_SECURITY_TAXABLE_PCT + ira, 6);
+    const ss = taxableSocialSecurity(
+      36_000,
+      ira + firstIra.capitalGainsIncome,
+      firstIra.filingStatus,
+    );
+    expect(firstIra.grossTaxableIncome).toBeCloseTo(ss + ira, 6);
     const firstRoth = r.find((row) => (row.incomeMonthly["topup:roth"] ?? 0) > 0);
     if (firstRoth) expect(firstRoth.calendarYear).toBeGreaterThanOrEqual(firstIra.calendarYear);
   });
