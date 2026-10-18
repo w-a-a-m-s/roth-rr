@@ -19,8 +19,10 @@ export interface FederalTaxYear {
   additionalStandardDeduction: Record<FilingStatus, number>;
   brackets: Record<FilingStatus, TaxBracket[]>;
   /**
-   * Bonus senior deduction (per person age 65+) and the income above which it
-   * is lost. Reflects the 2025 OBBBA $6,000 senior deduction.
+   * Bonus senior deduction (per person age 65+) and the MAGI where it starts
+   * to phase out (6% of MAGI above it, see
+   * {@link SENIOR_DEDUCTION_PHASE_OUT_RATE}). Reflects the 2025 OBBBA $6,000
+   * senior deduction.
    */
   seniorDeductionPerPerson: number;
   seniorDeductionPhaseOut: Record<FilingStatus, number>;
@@ -52,6 +54,13 @@ export const CURRENT_FEDERAL_TAX = FALLBACK_FEDERAL_TAX;
  * always applied as a fixed rule rather than a per-plan assumption.
  */
 export const SOCIAL_SECURITY_TAXABLE_PCT = 0.85;
+
+/**
+ * Each person's senior deduction drops by this share of MAGI above
+ * `seniorDeductionPhaseOut`, so $6,000 is gone $100,000 past the start.
+ * Fixed in the law.
+ */
+export const SENIOR_DEDUCTION_PHASE_OUT_RATE = 0.06;
 
 /**
  * IRC 469(i) special allowance for active-participation rental real estate.

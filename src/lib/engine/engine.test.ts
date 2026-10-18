@@ -2470,3 +2470,83 @@ describe("extra standard deduction at 65", () => {
     expect(rows[1].deductions.standard).toBe(16_100);
   });
 });
+
+describe("senior deduction phase-out", () => {
+  const plan = (
+    filingStatus: Household["filingStatus"],
+    pension: number,
+    extra: Partial<Household> = {},
+  ): Household => ({
+    filingStatus,
+    residenceState: "FL",
+    people: [
+      { id: "p1", name: "Sam", birthYear: 1960, retirementYear: 2026 },
+      ...(filingStatus === "mfj"
+        ? [{ id: "p2", name: "Alex", birthYear: 1960, retirementYear: 2026 }]
+        : []),
+    ],
+    accounts: [],
+    incomes: [
+      {
+        id: "pension",
+        label: "Pension",
+        ownerId: "p1",
+        kind: "pension",
+        monthlyAmount: pension / 12,
+        growthRate: 0,
+        taxability: "full",
+      },
+    ],
+    realEstate: [],
+    expenses: [],
+    assumptions: { expenseGrowth: 0, finalAge: 66 },
+    optimizer: { strategy: "manual" },
+    ...extra,
+  });
+  const senior = (h: Household) => projectScenario(h, zeros(projectionYears(h)))[0].deductions.senior;
+
+  it("is the full $6,000 up to $75k single, then drops 6% of the excess", () => {
+    expect(senior(plan("single", 70_000))).toBeCloseTo(6_000, 6);
+    expect(senior(plan("single", 75_000))).toBeCloseTo(6_000, 6);
+    expect(senior(plan("single", 100_000))).toBeCloseTo(6_000 - 0.06 * 25_000, 6);
+    expect(senior(plan("single", 175_000))).toBe(0);
+    expect(senior(plan("single", 400_000))).toBe(0);
+  });
+
+  it("gives each spouse 65+ their own $6,000, phasing out from $150k joint", () => {
+    expect(senior(plan("mfj", 150_000))).toBeCloseTo(12_000, 6);
+    // $200k: each $6,000 loses 6% of $50k ($3,000).
+    expect(senior(plan("mfj", 200_000))).toBeCloseTo(2 * 3_000, 6);
+    expect(senior(plan("mfj", 250_000))).toBe(0);
+  });
+
+  it("counts capital gains in the income that phases it out", () => {
+    // $80k pension plus a $20k after-tax draw that's all gain: MAGI $100k.
+    const h = plan("single", 80_000, {
+      accounts: [
+        {
+          id: "brk",
+          label: "Brokerage",
+          ownerId: "p1",
+          kind: "investment",
+          balance: 1_000_000,
+          costBasis: 0,
+          growthRate: 0,
+        },
+      ],
+    });
+    h.incomes.push({
+      id: "draw",
+      label: "Brokerage draw",
+      ownerId: "p1",
+      kind: "afterTaxWithdrawal",
+      monthlyAmount: 20_000 / 12,
+      growthRate: 0,
+      taxability: "taxFree",
+      drawsFromAccountId: "brk",
+    });
+    const row = projectScenario(h, zeros(projectionYears(h)))[0];
+    expect(row.capitalGainsIncome).toBeCloseTo(20_000, 6);
+    expect(row.deductions.senior).toBeCloseTo(6_000 - 0.06 * 25_000, 6);
+  });
+});

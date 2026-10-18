@@ -73,6 +73,7 @@ import {
   RENTAL_LOSS_ALLOWANCE_MAGI_END,
   RENTAL_LOSS_ALLOWANCE_MAGI_START,
   RENTAL_LOSS_SPECIAL_ALLOWANCE,
+  SENIOR_DEDUCTION_PHASE_OUT_RATE,
   SOCIAL_SECURITY_TAXABLE_PCT,
 } from "@/lib/config/federalTax";
 import type { StateTaxTable } from "@/lib/config/stateTax";
@@ -602,7 +603,7 @@ function computeDeductions(
   fs: Household["filingStatus"],
   livingIds: string[],
   ages: Record<string, number>,
-  grossTaxableIncome: number,
+  magi: number,
   federal: FederalTaxYear,
   allowedDepreciation: number,
   oneTimeDepreciation: number,
@@ -618,18 +619,19 @@ function computeDeductions(
     age65 *
     forFiling(federal.additionalStandardDeduction, fs, "federal additionalStandardDeduction");
 
-  let senior = 0;
-  if (
-    grossTaxableIncome <
-    forFiling(
-      federal.seniorDeductionPhaseOut,
-      fs,
-      "federal seniorDeductionPhaseOut",
-    )
-  ) {
-    const eligible = livingIds.filter((id) => ages[id] >= 65).length;
-    senior = eligible * federal.seniorDeductionPerPerson;
-  }
+  // Senior deduction: each person 65+ gets the full amount, less 6% of MAGI
+  // over the phase-out start (gone at $250k joint / $175k single).
+  const phaseOutStart = forFiling(
+    federal.seniorDeductionPhaseOut,
+    fs,
+    "federal seniorDeductionPhaseOut",
+  );
+  const perPerson = Math.max(
+    0,
+    federal.seniorDeductionPerPerson -
+      SENIOR_DEDUCTION_PHASE_OUT_RATE * Math.max(0, magi - phaseOutStart),
+  );
+  const senior = age65 * perPerson;
 
   const depreciation = Math.max(0, allowedDepreciation);
   const oneTime = Math.max(0, oneTimeDepreciation);
@@ -1320,11 +1322,12 @@ export function projectScenario(
       stateOrdinaryGross: number,
       capitalGainsIncome: number,
     ) => {
+      // MAGI for the senior deduction is AGI: ordinary income plus gains.
       const deductions = computeDeductions(
         fs,
         livingIds,
         ages,
-        federalOrdinaryGross,
+        federalOrdinaryGross + capitalGainsIncome,
         federal,
         rentalPal.allowedDepreciation,
         oneTimeDepreciation,
