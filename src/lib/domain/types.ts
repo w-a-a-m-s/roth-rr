@@ -266,8 +266,18 @@ export interface RealEstate {
   id: string;
   label: string;
   purchaseYear: number;
+  /**
+   * Month (1 to 12) the property was placed in service, for the mid-month
+   * depreciation convention. Missing means January.
+   */
+  purchaseMonth?: number;
   /** Cost basis used for straight-line depreciation (basis / depreciationYears). */
   purchasePrice: number;
+  /**
+   * Share of the purchase price that's land (decimal). Land isn't
+   * depreciable, so only the rest is. Missing means 20%.
+   */
+  landShare?: number;
   /** Current market value (projection year 0); grows by `appreciationRate`. */
   marketValue: number;
   /** Annual appreciation applied to this property's market value (decimal). */

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import { calculate } from "@/lib/calculate";
 import { levelPayment } from "@/lib/engine/amortization";
+import { propertyDepreciation } from "@/lib/engine/project";
 import { indexedFederalTax } from "@/lib/engine/taxIndexing";
 import { SAMPLE_HOUSEHOLD } from "@/lib/config/sampleData";
 import { primaryRmdAge } from "@/lib/domain/rmd";
@@ -456,8 +457,10 @@ describe("baseline projection vs spreadsheet", () => {
     expect(rows[1].balances["roth-s2"]).toBeCloseTo(17_496, 2);
   });
 
-  it("real-estate depreciation = purchasePrice / 27.5 (Regular!E38)", () => {
-    expect(rows[0].deductions.depreciation).toBeCloseTo(300_000 / 27.5, 2);
+  it("real-estate depreciation = building share of purchasePrice / 27.5 (Regular!E38)", () => {
+    // The sheet depreciated the full price; land (20% by default) isn't
+    // depreciable, so a full year is $240k / 27.5.
+    expect(rows[0].deductions.depreciation).toBeCloseTo((300_000 * 0.8) / 27.5, 2);
   });
 
   it("standard deduction = 32,200 (2026 federal MFJ), indexed 2% a year to 2030", () => {
@@ -516,22 +519,44 @@ describe("real estate", () => {
     expect(rows[0].realEstateEquity).toBeCloseTo(rows[0].realEstateValue, 2);
   });
 
-  it("depreciates purchasePrice/years only within purchaseYear + years, then zero", () => {
-    // Per spec: deduction = purchasePrice / depreciationYears, applied from the
-    // purchase year for `depreciationYears` years; after that it drops to zero.
+  it("depreciates the building (not the land) over its life, mid-month", () => {
+    // The sample property: $300k bought in 2010, 27.5 years, January by
+    // default, 20% land by default. A full year is $240k / 27.5.
     const rows = projectScenario(household, zeros(n));
     const re = household.realEstate[0];
+    expect(re.purchaseYear).toBe(2010);
+    const yearly = (300_000 * 0.8) / 27.5;
     for (const r of rows) {
-      const yearsOwned = r.calendarYear - re.purchaseYear;
-      const within = yearsOwned >= 0 && yearsOwned < re.depreciationYears;
-      expect(r.deductions.depreciation).toBeCloseTo(
-        within ? re.purchasePrice / re.depreciationYears : 0,
-        2,
-      );
+      expect(r.deductions.depreciation).toBeCloseTo(propertyDepreciation(re, r.calendarYear), 6);
     }
+    // 2030 is a full year. 27.5 years from mid-January 2010 ends mid-July
+    // 2037, so 2037 takes the last 6.5 months, then 0.
+    expect(propertyDepreciation(re, 2030)).toBeCloseTo(yearly, 6);
+    expect(propertyDepreciation(re, 2037)).toBeCloseTo(yearly * (6.5 / 12), 6);
+    expect(propertyDepreciation(re, 2038)).toBe(0);
     // The sample plan straddles the boundary, so both sides are exercised.
     expect(rows.some((r) => r.deductions.depreciation > 0)).toBe(true);
     expect(rows.some((r) => r.deductions.depreciation === 0)).toBe(true);
+  });
+
+  it("takes exactly the building's basis in total, never 28 full years", () => {
+    for (const purchaseMonth of [1, 7, 12]) {
+      const re = { ...household.realEstate[0], purchaseMonth, landShare: 0.25 };
+      let total = 0;
+      for (let y = re.purchaseYear; y <= re.purchaseYear + 30; y++) {
+        total += propertyDepreciation(re, y);
+      }
+      expect(total).toBeCloseTo(300_000 * 0.75, 6);
+      // First year: half of the purchase month plus the months after it.
+      expect(propertyDepreciation(re, re.purchaseYear)).toBeCloseTo(
+        ((300_000 * 0.75) / (27.5 * 12)) * (12 - purchaseMonth + 0.5),
+        6,
+      );
+    }
+    // A July 2010 purchase takes its last half-year in 2038.
+    const july = { ...household.realEstate[0], purchaseMonth: 7 };
+    expect(propertyDepreciation(july, 2038)).toBeGreaterThan(0);
+    expect(propertyDepreciation(july, 2039)).toBe(0);
   });
 
   it("does not depreciate before the purchase year", () => {
@@ -549,7 +574,11 @@ describe("real estate", () => {
     expect(rows[0].deductions.depreciation).toBe(0);
     expect(rows[1].deductions.depreciation).toBe(0);
     expect(rows[2].deductions.depreciation).toBe(0);
-    expect(rows[3].deductions.depreciation).toBeCloseTo(275_000 / 27.5, 2);
+    // First year: 11.5 months on the building (80% of the price).
+    expect(rows[3].deductions.depreciation).toBeCloseTo(
+      ((275_000 * 0.8) / 27.5) * (11.5 / 12),
+      2,
+    );
   });
 
   it("tolerates an account missing growthRate without NaN-poisoning", () => {
@@ -629,8 +658,11 @@ function palHousehold(opts: {
         {
           id: "re1",
           label: "Rental",
-          purchaseYear: opts.purchaseYear ?? 2026,
+          // Bought the year before with no land, so every projected year
+          // takes a full year of depreciation (mid-month convention).
+          purchaseYear: opts.purchaseYear ?? 2025,
           purchasePrice: opts.purchasePrice ?? 200_000,
+          landShare: 0,
           marketValue: 200_000,
           appreciationRate: 0,
           depreciationYears: opts.depreciationYears ?? 10,
@@ -750,7 +782,8 @@ describe("rental passive activity loss", () => {
         {
           id: "gain",
           label: "Gain",
-          purchaseYear: 2026,
+          purchaseYear: 2025,
+          landShare: 0,
           purchasePrice: 50_000,
           marketValue: 200_000,
           appreciationRate: 0,
@@ -763,7 +796,8 @@ describe("rental passive activity loss", () => {
         {
           id: "loss",
           label: "Loss",
-          purchaseYear: 2026,
+          purchaseYear: 2025,
+          landShare: 0,
           purchasePrice: 200_000,
           marketValue: 200_000,
           appreciationRate: 0,
@@ -793,10 +827,12 @@ describe("rental passive activity loss", () => {
       years: 3,
     });
     const rows = projectScenario(h, zeros(projectionYears(h)));
-    // Year 0: rent 12,000, dep 200,000 → leftover 188,000, all suspended.
+    // Year 0 (January purchase, mid-month): 11.5 months of a one-year life,
+    // $191,667 against $12,000 of rent → $179,667 suspended.
     expect(rows[0].deductions.depreciation).toBeCloseTo(12_000, 2);
-    expect(rows[0].rentalLossCarryforward).toBeCloseTo(188_000, 2);
-    // Year 1: no more dep; 12,000 net absorbs 12,000 of the carryforward.
+    expect(rows[0].rentalLossCarryforward).toBeCloseTo(200_000 * (11.5 / 12) - 12_000, 2);
+    // Year 1: the last half month ($8,333); the rest of the $12,000 net
+    // absorbs $3,667 of the carryforward.
     expect(rows[1].deductions.depreciation).toBeCloseTo(12_000, 2);
     expect(rows[1].rentalLossCarryforward).toBeCloseTo(176_000, 2);
   });
@@ -2097,8 +2133,9 @@ describe("homestead vs investment property", () => {
   });
 
   it("depreciates investment property (the default)", () => {
-    expect(projectScenario(plan(), [])[0].deductions.depreciation).toBe(10_000);
-    expect(projectScenario(plan("investment"), [])[0].deductions.depreciation).toBe(10_000);
+    // $275k, 20% land: $220k over 27.5 years is $8,000 a full year.
+    expect(projectScenario(plan(), [])[0].deductions.depreciation).toBeCloseTo(8_000, 6);
+    expect(projectScenario(plan("investment"), [])[0].deductions.depreciation).toBeCloseTo(8_000, 6);
   });
 
   it("takes no depreciation deduction on a homestead", () => {

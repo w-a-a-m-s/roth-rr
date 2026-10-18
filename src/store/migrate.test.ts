@@ -9,6 +9,7 @@ import type {
 } from "@/lib/domain/types";
 import { migrateHousehold } from "@/store/useScenario";
 import { taxIndexingRate } from "@/lib/engine/taxIndexing";
+import { propertyLandShare, propertyPurchaseMonth } from "@/lib/domain/household";
 
 function account(partial: Partial<Account> & Pick<Account, "id" | "kind">): Account {
   return {
@@ -95,6 +96,46 @@ describe("migrateHousehold: tax indexing", () => {
       expect(out.assumptions).not.toHaveProperty("taxIndexing");
       expect(taxIndexingRate(out)).toBe(0.02);
     }
+  });
+});
+
+describe("migrateHousehold: depreciation land share and month", () => {
+  const property = (over: Partial<RealEstate>): RealEstate => ({
+    id: "re",
+    label: "Rental",
+    purchaseYear: 2015,
+    purchasePrice: 250_000,
+    marketValue: 500_000,
+    appreciationRate: 0.03,
+    depreciationYears: 27.5,
+    loans: [],
+    ...over,
+  });
+
+  it("leaves an older property without them on the defaults (20%, January)", () => {
+    const h = household([], []);
+    h.realEstate = [property({})];
+    const [re] = migrateHousehold(h).realEstate;
+    expect(re).not.toHaveProperty("landShare");
+    expect(re).not.toHaveProperty("purchaseMonth");
+    expect(propertyLandShare(re)).toBe(0.2);
+    expect(propertyPurchaseMonth(re)).toBe(1);
+  });
+
+  it("keeps values that make sense, including 0% land", () => {
+    const h = household([], []);
+    h.realEstate = [property({ landShare: 0, purchaseMonth: 7 })];
+    const [re] = migrateHousehold(h).realEstate;
+    expect(re.landShare).toBe(0);
+    expect(re.purchaseMonth).toBe(7);
+  });
+
+  it("drops values that don't", () => {
+    const h = household([], []);
+    h.realEstate = [property({ landShare: 1.5, purchaseMonth: 13 })];
+    const [re] = migrateHousehold(h).realEstate;
+    expect(re).not.toHaveProperty("landShare");
+    expect(re).not.toHaveProperty("purchaseMonth");
   });
 });
 

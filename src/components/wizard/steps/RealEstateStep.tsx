@@ -8,6 +8,7 @@ import {
   NumberField,
   PercentInput,
   RateInput,
+  Select,
   TextInput,
   YearSelect,
 } from "@/components/ui/inputs";
@@ -33,9 +34,16 @@ import {
 } from "@/lib/domain/propertyLoans";
 import {
   GROWTH_START_LABELS,
+  propertyLandShare,
+  propertyPurchaseMonth,
   realEstateGrowthStart,
 } from "@/lib/domain/household";
 import { REAL_ESTATE_TOUR_STEPS } from "@/lib/onboarding/realEstateTour";
+
+const MONTH_OPTIONS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+].map((label, i) => ({ value: String(i + 1), label }));
 
 function PropertyFields({
   re,
@@ -139,7 +147,7 @@ function PropertyFields({
         <Field
           layout="row"
           label="Purchase price"
-          help="Depreciation basis. Original cost basis used for straight-line depreciation (basis ÷ useful life). This is not the current market value."
+          help="Depreciation basis. Original cost basis used for straight-line depreciation (the building's share ÷ useful life). This is not the current market value."
         >
           <MoneyInput
             value={re.purchasePrice}
@@ -193,13 +201,36 @@ function PropertyFields({
         <Field
           layout="row"
           label="Depreciation years"
-          help="Useful life used to depreciate this property. Residential real estate is depreciated over 27.5 years under IRS rules; yearly depreciation (purchase price ÷ years) is a non-cash deduction against rental income, limited by passive-loss rules."
+          help="Useful life used to depreciate this property. Residential real estate is depreciated over 27.5 years under IRS rules; yearly depreciation (the building's share of the price ÷ years) is a non-cash deduction against rental income, limited by passive-loss rules."
         >
           <NumberField
             value={re.depreciationYears}
             step={0.5}
             onChange={(depreciationYears) =>
               updateRealEstate(re.id, { depreciationYears })
+            }
+          />
+        </Field>
+        <Field
+          layout="row"
+          label="Month placed in service"
+          help="The month the property was first ready to rent. The IRS starts depreciation in the middle of that month (the mid-month convention), so the first and last years are partial. Leave it on January if you're not sure."
+        >
+          <Select
+            value={String(propertyPurchaseMonth(re))}
+            onChange={(month) => updateRealEstate(re.id, { purchaseMonth: Number(month) })}
+            options={MONTH_OPTIONS}
+          />
+        </Field>
+        <Field
+          layout="row"
+          label="Land share"
+          help="How much of the purchase price is the land. Land can't be depreciated, so only the building is. Your property tax bill often splits land and building value; 20% is a common estimate when you don't know."
+        >
+          <PercentInput
+            value={propertyLandShare(re)}
+            onChange={(landShare) =>
+              updateRealEstate(re.id, { landShare: Math.min(1, Math.max(0, landShare)) })
             }
           />
         </Field>

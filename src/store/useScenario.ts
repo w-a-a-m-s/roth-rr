@@ -336,6 +336,14 @@ export function migrateHousehold(household: Household): Household {
     if (typeof re.activeParticipation !== "boolean") {
       re.activeParticipation = true;
     }
+    // Land share and the month placed in service are optional (20% and
+    // January when missing); anything unusable is dropped so they apply.
+    if (re.landShare != null && !(Number.isFinite(re.landShare) && re.landShare >= 0 && re.landShare <= 1)) {
+      delete re.landShare;
+    }
+    if (re.purchaseMonth != null && !(Number.isInteger(re.purchaseMonth) && re.purchaseMonth >= 1 && re.purchaseMonth <= 12)) {
+      delete re.purchaseMonth;
+    }
     // Older plans had one mortgage in three fields; it becomes the first loan.
     if (!Array.isArray(re.loans)) {
       re.loans = (re.mortgageBalance ?? 0) > 0

@@ -18,6 +18,8 @@ import {
   isIncomeActive,
   isJointAccount,
   isWithdrawalIncome,
+  propertyLandShare,
+  propertyPurchaseMonth,
   returnsBasisFirst,
   AFTER_TAX_ACCOUNT_KINDS,
 } from "@/lib/domain/household";
@@ -435,17 +437,31 @@ function stepRealEstate(
   };
 }
 
-function currentYearDepreciation(
+/**
+ * Straight-line depreciation for `calendarYear` under the mid-month
+ * convention (IRS Pub. 527, MACRS): the building (purchase price less the
+ * land share, which isn't depreciable) starts depreciating in the middle of
+ * the month it was placed in service, and the last year takes what's left,
+ * so the total is exactly the building's basis over `depreciationYears`. A
+ * homestead isn't depreciated.
+ */
+export function propertyDepreciation(
   re: Household["realEstate"][number],
   calendarYear: number,
 ): number {
-  // Your home isn't depreciated; only investment property is.
   if (re.use === "homestead") return 0;
   if (!(re.purchasePrice > 0) || !(re.depreciationYears > 0)) return 0;
-  const yearsOwned = calendarYear - re.purchaseYear;
-  if (yearsOwned < 0) return 0;
-  if (yearsOwned >= re.depreciationYears) return 0;
-  return re.purchasePrice / re.depreciationYears;
+  if (calendarYear < re.purchaseYear) return 0;
+  const basis = re.purchasePrice * (1 - propertyLandShare(re));
+  const perMonth = basis / (re.depreciationYears * 12);
+  // Months taken through the end of a year: half of the first month, then
+  // every month after it.
+  const monthsThrough = (year: number) =>
+    year < re.purchaseYear
+      ? 0
+      : (year - re.purchaseYear) * 12 + (12 - propertyPurchaseMonth(re) + 0.5);
+  const taken = (year: number) => Math.min(basis, perMonth * monthsThrough(year));
+  return taken(calendarYear) - taken(calendarYear - 1);
 }
 
 /** IRC 469(i) special allowance after the MAGI phase-out. */
@@ -515,7 +531,7 @@ function applyRentalPassiveLoss(input: {
       continue;
     }
     const taxableBeforeDep = taxableBeforeDepById[re.id] ?? 0;
-    const currentDep = currentYearDepreciation(re, calendarYear);
+    const currentDep = propertyDepreciation(re, calendarYear);
     activities.push({
       id: re.id,
       taxableBeforeDep,

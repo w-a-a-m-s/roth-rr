@@ -17,6 +17,7 @@ import type {
   RetirementAccountType,
 } from "@/lib/domain/types";
 import { uid } from "@/lib/id";
+import { DEFAULT_LAND_SHARE, DEFAULT_PURCHASE_MONTH } from "@/lib/config/defaults";
 
 /** How often a deposit pays into an account. */
 export const DEPOSIT_FREQUENCIES: DepositFrequency[] = [
@@ -213,6 +214,24 @@ export function realEstateGrowthStart(
   re: Pick<RealEstate, "growthStart">,
 ): GrowthStart {
   return isGrowthStart(re.growthStart) ? re.growthStart : "planStart";
+}
+
+/** A property's land share: the share set on it, or the 20% default. */
+export function propertyLandShare(re: Pick<RealEstate, "landShare">): number {
+  const share = re.landShare;
+  if (share == null || !Number.isFinite(share) || share < 0 || share > 1) {
+    return DEFAULT_LAND_SHARE;
+  }
+  return share;
+}
+
+/** Month a property was placed in service (1 to 12), January by default. */
+export function propertyPurchaseMonth(re: Pick<RealEstate, "purchaseMonth">): number {
+  const month = re.purchaseMonth;
+  if (month == null || !Number.isInteger(month) || month < 1 || month > 12) {
+    return DEFAULT_PURCHASE_MONTH;
+  }
+  return month;
 }
 
 /** A business's growth start: `planStart` unless set to `retirement`. */

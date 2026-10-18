@@ -14,6 +14,10 @@ export const DEFAULT_TAX_INDEXING = 0.02;
 /** Starting per-property real-estate values used when adding a new property. */
 export const DEFAULT_REAL_ESTATE_APPRECIATION = 0.03;
 export const DEFAULT_DEPRECIATION_YEARS = 27.5;
+/** Share of a property's price that's land (not depreciable) when unset. */
+export const DEFAULT_LAND_SHARE = 0.2;
+/** Month a property was placed in service when unset (January). */
+export const DEFAULT_PURCHASE_MONTH = 1;
 
 /** Default yearly growth for a new business equity entry. */
 export const DEFAULT_BUSINESS_GROWTH = 0.03;

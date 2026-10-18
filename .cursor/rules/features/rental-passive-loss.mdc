@@ -14,6 +14,10 @@ in `project.ts` applies federal passive-activity treatment, then
 
 Per rental (rent this year > 0): activity result = rent − opex − mortgage
 interest − current-year straight-line depreciation − prior-year suspended loss.
+Depreciation (`propertyDepreciation`) uses the mid-month convention on the
+building only: purchase price × (1 − `landShare`, default 20%) over
+`depreciationYears`, starting mid-`purchaseMonth` (default January). The
+first and last years are partial and the total is exactly that basis.
 
 - Gains on one property first offset losses on others.
 - Leftover loss offsets other income only if `Household.realEstateProfessional`
