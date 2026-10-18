@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import { calculate } from "@/lib/calculate";
 import { levelPayment } from "@/lib/engine/amortization";
+import { indexedFederalTax } from "@/lib/engine/taxIndexing";
 import { SAMPLE_HOUSEHOLD } from "@/lib/config/sampleData";
 import { primaryRmdAge } from "@/lib/domain/rmd";
 import {
@@ -373,7 +374,8 @@ describe("state income tax and capital gains", () => {
       capitalGainsTaxStacked(
         ordinaryTaxable,
         gains,
-        FALLBACK_FEDERAL_TAX.longTermCapitalGains.mfj,
+        indexedFederalTax(FALLBACK_FEDERAL_TAX, rows[0].calendarYear, 0.02)
+          .longTermCapitalGains.mfj,
       ),
       2,
     );
@@ -432,9 +434,11 @@ describe("baseline projection vs spreadsheet", () => {
     expect(rows[0].deductions.depreciation).toBeCloseTo(300_000 / 27.5, 2);
   });
 
-  it("standard deduction = 32,200 (2026 federal MFJ)", () => {
-    // The sheet used 32,000; we apply the accurate 2026 IRS figure (32,200).
-    expect(rows[0].deductions.standard).toBe(32_200);
+  it("standard deduction = 32,200 (2026 federal MFJ), indexed 2% a year to 2030", () => {
+    // The sheet used 32,000; we apply the accurate 2026 IRS figure (32,200),
+    // grown for inflation to the plan's first year (2030).
+    expect(rows[0].calendarYear).toBe(2030);
+    expect(rows[0].deductions.standard).toBeCloseTo(32_200 * 1.02 ** 4, 6);
   });
 
   it("salary stops the year the owner retires", () => {
@@ -2324,5 +2328,77 @@ describe("taxes until the RMD age count from retirement", () => {
       shown + early.federalTax + early.stateTax,
       2,
     );
+  });
+});
+
+describe("federal brackets and standard deduction indexed for inflation", () => {
+  const base = SAMPLE_HOUSEHOLD;
+  const withIndexing = (taxIndexing?: number): Household => ({
+    ...base,
+    assumptions: { ...base.assumptions, taxIndexing },
+  });
+  const run = (h: Household) => projectScenario(h, zeros(projectionYears(h)));
+  const mfj = FALLBACK_FEDERAL_TAX.brackets.mfj;
+
+  it("grows 2% a year from the 2026 table by default", () => {
+    const rows = run(withIndexing(undefined));
+    for (const row of rows) {
+      const factor = 1.02 ** (row.calendarYear - 2026);
+      expect(row.deductions.standard).toBeCloseTo(32_200 * factor, 6);
+      row.federalTaxByBracket.forEach((b, i) => {
+        expect(b.floor).toBeCloseTo(mfj[i].floor * factor, 6);
+      });
+    }
+    // Year over year the standard deduction moves by exactly 2%.
+    expect(rows[1].deductions.standard / rows[0].deductions.standard).toBeCloseTo(1.02, 12);
+  });
+
+  it("prices each year's ordinary tax on that year's indexed brackets", () => {
+    const rows = run(withIndexing(0.02));
+    for (const row of rows) {
+      const brackets = indexedFederalTax(FALLBACK_FEDERAL_TAX, row.calendarYear, 0.02).brackets.mfj;
+      expect(row.federalOrdinaryTax).toBeCloseTo(progressiveTax(row.taxableIncome, brackets), 6);
+    }
+  });
+
+  it("keeps the 2026 table flat at 0% and follows a custom rate", () => {
+    const flat = run(withIndexing(0));
+    for (const row of flat) {
+      expect(row.deductions.standard).toBe(32_200);
+      expect(row.federalTaxByBracket[3].floor).toBe(211_400);
+    }
+    const three = run(withIndexing(0.03));
+    const factor = 1.03 ** (three[0].calendarYear - 2026);
+    expect(three[0].deductions.standard).toBeCloseTo(32_200 * factor, 6);
+    // Indexing only lowers tax on the same income; more indexing, less tax.
+    const total = (rows: typeof flat) => rows.reduce((s, r) => s + r.federalAnnualTax, 0);
+    expect(total(three)).toBeLessThan(total(run(withIndexing(0.02))));
+    expect(total(run(withIndexing(0.02)))).toBeLessThan(total(flat));
+  });
+
+  it("leaves the table's own year and earlier years, and the senior deduction, unchanged", () => {
+    expect(indexedFederalTax(FALLBACK_FEDERAL_TAX, 2026, 0.02)).toBe(FALLBACK_FEDERAL_TAX);
+    expect(indexedFederalTax(FALLBACK_FEDERAL_TAX, 2020, 0.02)).toBe(FALLBACK_FEDERAL_TAX);
+    const later = indexedFederalTax(FALLBACK_FEDERAL_TAX, 2036, 0.02);
+    expect(later.seniorDeductionPerPerson).toBe(6_000);
+    expect(later.seniorDeductionPhaseOut.mfj).toBe(150_000);
+    expect(later.longTermCapitalGains.mfj[1].floor).toBeCloseTo(98_900 * 1.02 ** 10, 6);
+    expect(later.brackets.single.map((b) => b.rate)).toEqual(
+      FALLBACK_FEDERAL_TAX.brackets.single.map((b) => b.rate),
+    );
+  });
+
+  it("taxes the inherited tax-deferred balance on that year's indexed brackets", () => {
+    const h = withIndexing(0.02);
+    const rows = run(h);
+    const last = rows[rows.length - 1];
+    const indexed = indexedFederalTax(FALLBACK_FEDERAL_TAX, last.calendarYear, 0.02).brackets.mfj;
+    // Same row, only the indexing differs: the gap is the tax on the balance.
+    const gap = afterTaxAssets(h, last) - afterTaxAssets(withIndexing(0), last);
+    expect(gap).toBeCloseTo(
+      progressiveTax(last.retirementTotal, mfj) - progressiveTax(last.retirementTotal, indexed),
+      4,
+    );
+    expect(gap).toBeGreaterThan(0);
   });
 });

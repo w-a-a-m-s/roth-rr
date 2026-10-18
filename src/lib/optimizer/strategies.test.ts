@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { indexedFederalTax } from "@/lib/engine/taxIndexing";
 import type { Household } from "@/lib/domain/types";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import { FALLBACK_FEDERAL_TAX } from "@/lib/config/federalTax";
@@ -96,15 +97,16 @@ describe("fillBracketSchedule", () => {
     h.optimizer.targetBracketRate = 0.22;
     const zeros = padToProjection(h, []);
     const rows = projectScenario(h, zeros);
-    const brackets = forFiling(
-      FALLBACK_FEDERAL_TAX.brackets,
-      "single",
-      "federal brackets",
-    );
-    const ceiling = bracketFillCeiling(brackets, 0.22);
     const years = conversionYears(h);
     const schedule = fillBracketSchedule(h);
     for (let i = 0; i < years; i++) {
+      // Each year's own brackets, indexed 2% a year from the 2026 table.
+      const brackets = forFiling(
+        indexedFederalTax(FALLBACK_FEDERAL_TAX, rows[i].calendarYear, 0.02).brackets,
+        "single",
+        "federal brackets",
+      );
+      const ceiling = bracketFillCeiling(brackets, 0.22);
       expect(schedule[i]).toBe(
         roundCents(Math.max(0, ceiling - rows[i].taxableIncome - 0.01)),
       );

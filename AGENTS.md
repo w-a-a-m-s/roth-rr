@@ -101,6 +101,19 @@ on October 7, 86 of 365 days). Later years get a full year. With no `asOfDate`
 full year. `convertibleTotal` and the strategies take the same `asOfDate` for
 the opening balance, but only the projection prorates year 0.
 
+## Federal brackets are indexed for inflation
+
+The federal table (`refs.federalTax`) is one year's IRS numbers. Every
+projection year uses it grown by `assumptions.taxIndexing` a year from the
+table's year (default 2%, "Tax brackets grow" on the Household step; 0 keeps
+it flat): ordinary brackets, long-term gains brackets and the standard
+deduction. The senior deduction and its income limit are fixed dollars in the
+law, so they don't move. Always get a year's table through
+`federalTaxForYear` (`lib/engine/taxIndexing.ts`), never read
+`refs.federalTax` brackets directly: the projection, the inherited-IRA tax in
+`runScenario.ts` and the fill-bracket strategy all do. State tables aren't
+indexed yet.
+
 Plans used to carry a flat `assumptions.rmdRate` (default 5%) applied to the
 live balance. That overstated RMDs in the early years and understated them in
 the late ones, since the table's implied rate crosses 5% around age 80 and keeps

@@ -25,7 +25,8 @@ import {
   depositYearsLabel,
 } from "@/lib/depositSummary";
 import { primaryPersonId, projectionStartYear } from "@/lib/engine/project";
-import { formatCurrency } from "@/lib/format";
+import { taxIndexingRate } from "@/lib/engine/taxIndexing";
+import { formatCurrency, formatPercent } from "@/lib/format";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import {
   fillBracketLabel,
@@ -243,6 +244,7 @@ export function PlanDetails() {
         ))}
         <Row label="RMD age" value={primaryRmdAge(household) ?? "-"} />
         <Row label="Project to age" value={a.finalAge} />
+        <Row label="Tax brackets grow" value={`${formatPercent(taxIndexingRate(household))} a year`} />
       </Section>
 
       <Section title="Accounts" stepId="accounts" readOnly={readOnly}>

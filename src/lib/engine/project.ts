@@ -55,6 +55,7 @@ import {
   propertyLoans,
 } from "@/lib/domain/propertyLoans";
 import { levelPayment } from "@/lib/engine/amortization";
+import { federalTaxForYear } from "@/lib/engine/taxIndexing";
 import type {
   DeductionBreakdown,
   ProjectionOptions,
@@ -707,7 +708,6 @@ export function projectScenario(
   // lifetime income. Their balance and remaining basis live here.
   const lifeClaims = lifeInsuranceClaims(household, death);
   const lifeBasis: Record<string, number> = {};
-  const federal = refs.federalTax;
   const state = getStateTaxTable(
     refs.stateIncomeTax,
     household.residenceState ?? "FL",
@@ -1288,7 +1288,9 @@ export function projectScenario(
 
     // 5) Deductions, taxable income, federal + state tax (incl. capital gains).
     //    Wrapped so the same math can price the year without its conversion
-    //    when the conversion pays its own tax (see 5b).
+    //    when the conversion pays its own tax (see 5b). Federal brackets and
+    //    the standard deduction are indexed for inflation to this year.
+    const federal = federalTaxForYear(household, refs.federalTax, calendarYear);
     const taxForYear = (
       federalOrdinaryGross: number,
       stateOrdinaryGross: number,

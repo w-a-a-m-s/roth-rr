@@ -6,14 +6,18 @@ import {
   federalBracketLabel,
   federalBracketsTitle,
 } from "@/components/results/bracketLabels";
+import { indexedFederalTax } from "@/lib/engine/taxIndexing";
+import { formatCurrency } from "@/lib/format";
 import singleFiler from "@/lib/engine/golden/cases/single-filer.json";
 
 const household = singleFiler.household as unknown as Household;
-const rows = projectScenario(
-  household,
-  Array.from({ length: projectionYears(household) }, () => 0),
-  refs,
-);
+const project = (h: Household) =>
+  projectScenario(h, Array.from({ length: projectionYears(h) }, () => 0), refs);
+// Flat brackets (no indexing) keep the table's own 2026 ranges every year.
+const rows = project({
+  ...household,
+  assumptions: { ...household.assumptions, taxIndexing: 0 },
+});
 
 describe("federal bracket labels", () => {
   it("show the bracket's range for the plan's filing status", () => {
@@ -26,6 +30,20 @@ describe("federal bracket labels", () => {
       "Tax @ 37% ($640,600 and up)",
     );
     expect(federalBracketsTitle(rows)).toBe("Federal tax brackets (Single)");
+  });
+
+  it("name the first year when the brackets are indexed for inflation", () => {
+    const indexed = project(household);
+    const year = indexed[0].calendarYear;
+    const single = indexedFederalTax(refs.federalTax, year, 0.02).brackets.single;
+    const i = single.findIndex((b) => b.rate === 0.24);
+    expect(year).toBe(2033);
+    expect(federalBracketLabel(indexed, i)).toBe(
+      `Tax @ 24% (${formatCurrency(single[i].floor)} to ${formatCurrency(single[i + 1].floor)} in 2033)`,
+    );
+    expect(federalBracketLabel(indexed, i)).toBe(
+      "Tax @ 24% ($121,416 to $231,776 in 2033)",
+    );
   });
 
   it("use the joint ranges for a married plan", () => {

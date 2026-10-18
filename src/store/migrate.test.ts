@@ -8,6 +8,7 @@ import type {
   RealEstate,
 } from "@/lib/domain/types";
 import { migrateHousehold } from "@/store/useScenario";
+import { taxIndexingRate } from "@/lib/engine/taxIndexing";
 
 function account(partial: Partial<Account> & Pick<Account, "id" | "kind">): Account {
   return {
@@ -68,6 +69,32 @@ describe("migrateHousehold: strip legacy RMD assumptions", () => {
     expect(out.assumptions).not.toHaveProperty("rmdAge");
     expect(out.assumptions).not.toHaveProperty("rmdRate");
     expect(out.assumptions.finalAge).toBe(85);
+  });
+});
+
+describe("migrateHousehold: tax indexing", () => {
+  it("leaves an old plan without it on the 2% default", () => {
+    const out = migrateHousehold(household([], []));
+    expect(out.assumptions).not.toHaveProperty("taxIndexing");
+    expect(taxIndexingRate(out)).toBe(0.02);
+  });
+
+  it("keeps a rate the plan set, including 0", () => {
+    const h = household([], []);
+    h.assumptions.taxIndexing = 0;
+    expect(migrateHousehold(h).assumptions.taxIndexing).toBe(0);
+    h.assumptions.taxIndexing = 0.03;
+    expect(migrateHousehold(h).assumptions.taxIndexing).toBe(0.03);
+  });
+
+  it("drops a value that isn't a usable rate", () => {
+    for (const bad of [Number.NaN, -0.01, "2%" as unknown as number]) {
+      const h = household([], []);
+      h.assumptions.taxIndexing = bad;
+      const out = migrateHousehold(h);
+      expect(out.assumptions).not.toHaveProperty("taxIndexing");
+      expect(taxIndexingRate(out)).toBe(0.02);
+    }
   });
 });
 

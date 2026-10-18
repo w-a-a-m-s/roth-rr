@@ -5,6 +5,12 @@ export const DEFAULT_ASSUMPTIONS: Assumptions = {
   finalAge: 85,
 };
 
+/**
+ * Yearly inflation indexing for federal tax brackets and the standard
+ * deduction, used when a plan doesn't set its own (`assumptions.taxIndexing`).
+ */
+export const DEFAULT_TAX_INDEXING = 0.02;
+
 /** Starting per-property real-estate values used when adding a new property. */
 export const DEFAULT_REAL_ESTATE_APPRECIATION = 0.03;
 export const DEFAULT_DEPRECIATION_YEARS = 27.5;

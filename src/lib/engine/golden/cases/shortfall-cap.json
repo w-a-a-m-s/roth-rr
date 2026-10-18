@@ -82,26 +82,26 @@
       "maxMonthlyShortfall": 1000
     }
   },
-  "commit": "b7a1919",
-  "commitDate": "2026-10-13T15:46:12+00:00",
+  "commit": "15e80b5",
+  "commitDate": "2026-10-16T15:08:46+00:00",
   "expected": {
     "baseline": {
-      "taxesTotal": 641281.51,
+      "taxesTotal": 580462.33,
       "medicareTotal": 98850,
-      "afterTaxAssetsAtRmd": 976261.13,
-      "inheritanceFinal": 964629.7
+      "afterTaxAssetsAtRmd": 985906.25,
+      "inheritanceFinal": 986032.16
     },
     "roth": {
-      "taxesTotal": 665967.95,
-      "medicareTotal": 112968,
-      "afterTaxAssetsAtRmd": 1261018.71,
-      "inheritanceFinal": 1708917.45
+      "taxesTotal": 615244.52,
+      "medicareTotal": 111507.6,
+      "afterTaxAssetsAtRmd": 1287225.07,
+      "inheritanceFinal": 1771209.51
     },
     "deltas": {
-      "taxesTotal": 24686.44,
-      "medicareTotal": 14118,
-      "afterTaxAssetsAtRmd": 284757.58,
-      "inheritanceFinal": 744287.76
+      "taxesTotal": 34782.2,
+      "medicareTotal": 12657.6,
+      "afterTaxAssetsAtRmd": 301318.83,
+      "inheritanceFinal": 785177.35
     }
   }
 }

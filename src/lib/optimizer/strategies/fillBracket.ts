@@ -5,6 +5,7 @@ import { conversionYears } from "@/lib/engine/convertible";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import type { ReferenceData } from "@/lib/externalData/types";
 import { resolveBracketRate } from "@/lib/optimizer/labels";
+import { federalTaxForYear } from "@/lib/engine/taxIndexing";
 import {
   padToProjection,
   roundCents,
@@ -27,7 +28,8 @@ export function bracketFillCeiling(
 
 /**
  * Each conversion year: convert enough to fill the target federal bracket
- * using that year's no-conversion taxable income. The engine caps at balances.
+ * (that year's, indexed for inflation) using that year's no-conversion
+ * taxable income. The engine caps at balances.
  */
 export function fillBracketSchedule(
   household: Household,
@@ -35,18 +37,19 @@ export function fillBracketSchedule(
 ): number[] {
   const zeros = padToProjection(household, []);
   const rows = projectScenario(household, zeros, refs);
-  const brackets = forFiling(
-    refs.federalTax.brackets,
-    household.filingStatus,
-    "federal brackets",
-  );
   const rate = resolveBracketRate(household.optimizer.targetBracketRate);
-  const ceiling = bracketFillCeiling(brackets, rate);
   const years = conversionYears(household);
   const first = strategyStartIndex(household);
 
   const window = rows.slice(0, years).map((row, i) => {
     if (i < first) return 0;
+    // That year's brackets, indexed for inflation like the projection's.
+    const brackets = forFiling(
+      federalTaxForYear(household, refs.federalTax, row.calendarYear).brackets,
+      household.filingStatus,
+      "federal brackets",
+    );
+    const ceiling = bracketFillCeiling(brackets, rate);
     if (!Number.isFinite(ceiling)) return 0;
     // Stay strictly below the next bracket's inclusive floor.
     const room = ceiling - row.taxableIncome - 0.01;

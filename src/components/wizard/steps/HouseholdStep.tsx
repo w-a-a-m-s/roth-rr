@@ -5,6 +5,7 @@ import { useHousehold, useScenario } from "@/store/useScenario";
 import { Field } from "@/components/ui/Field";
 import {
   NumberField,
+  PercentInput,
   Select,
   TextInput,
   YearSelect,
@@ -14,6 +15,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { StepTour } from "@/components/onboarding/StepTour";
 import {
+  DEFAULT_TAX_INDEXING,
   FILING_STATUS_LABELS,
   FILING_STATUS_ORDER,
 } from "@/lib/config/defaults";
@@ -21,6 +23,7 @@ import { US_STATE_CODES, US_STATE_LABELS } from "@/lib/config/stateTax";
 import { maxPeople } from "@/lib/domain/household";
 import type { FilingStatus, Sex } from "@/lib/domain/types";
 import { primaryPersonId, retirementStartYear } from "@/lib/engine/project";
+import { taxIndexingRate } from "@/lib/engine/taxIndexing";
 import { uid } from "@/lib/id";
 import {
   HOUSEHOLD_TOUR_STEPS,
@@ -157,6 +160,20 @@ export function HouseholdStep() {
           <NumberField
             value={household.assumptions.finalAge}
             onChange={(finalAge) => setAssumptions({ finalAge })}
+          />
+        </Field>
+        <Field
+          label="Tax brackets grow"
+          help="Federal tax brackets and the standard deduction go up by this much each year from today's IRS table, the way the IRS adjusts them for inflation. Set it to 0% to keep them flat."
+          hint={
+            household.assumptions.taxIndexing == null
+              ? `${DEFAULT_TAX_INDEXING * 100}% a year (default)`
+              : undefined
+          }
+        >
+          <PercentInput
+            value={taxIndexingRate(household)}
+            onChange={(taxIndexing) => setAssumptions({ taxIndexing })}
           />
         </Field>
       </div>

@@ -379,6 +379,11 @@ export interface Assumptions {
    * are in this year's dollars.
    */
   startYear?: number;
+  /**
+   * Yearly growth of federal tax brackets and the standard deduction from the
+   * tax table's year (inflation indexing). Missing means 2%; 0 keeps them flat.
+   */
+  taxIndexing?: number;
 }
 
 /** How the per-year Roth conversion schedule is produced. */

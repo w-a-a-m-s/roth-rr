@@ -21,6 +21,7 @@ import {
   contributionAccounts,
 } from "@/lib/domain/household";
 import { progressiveTax } from "@/lib/engine/tax";
+import { federalTaxForYear } from "@/lib/engine/taxIndexing";
 import type { FederalTaxYear } from "@/lib/config/federalTax";
 import type { MedicarePartBYear } from "@/lib/config/medicare";
 import { medicareYears } from "@/lib/engine/medicare";
@@ -48,7 +49,8 @@ function afterTaxCostBasis(household: Household, throughYear: number): number {
 
 /**
  * After-tax value of a tax-deferred (retirement) balance: taxed as a lump sum
- * of ordinary income through federal and state brackets (no deductions).
+ * of ordinary income through federal and state brackets (no deductions),
+ * with the federal brackets indexed to `calendarYear`.
  */
 function estateRetirementValue(
   household: Household,
@@ -56,10 +58,15 @@ function estateRetirementValue(
   federal: FederalTaxYear,
   stateTax: StateIncomeTaxYear,
   fs: Household["filingStatus"] = household.filingStatus,
+  calendarYear: number = federal.year,
 ): number {
   const federalTax = progressiveTax(
     retirementTotal,
-    forFiling(federal.brackets, fs, "federal brackets"),
+    forFiling(
+      federalTaxForYear(household, federal, calendarYear).brackets,
+      fs,
+      "federal brackets",
+    ),
   );
   const state = getStateTaxTable(
     stateTax,
@@ -111,6 +118,7 @@ function inheritanceValue(
       federal,
       stateTax,
       row.filingStatus,
+      row.calendarYear,
     ) +
     row.rothTotal +
     Math.max(0, row.afterTaxTotal - costBasis) +

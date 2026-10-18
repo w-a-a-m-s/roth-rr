@@ -431,6 +431,14 @@ export function migrateHousehold(household: Household): Household {
   if (legacy.assumptions && "rmdRate" in legacy.assumptions) {
     delete (legacy.assumptions as { rmdRate?: number }).rmdRate;
   }
+  // Tax indexing is optional: missing means the 2% default. Anything that
+  // isn't a usable rate is dropped so the default applies.
+  if (
+    legacy.assumptions?.taxIndexing != null &&
+    !(Number.isFinite(legacy.assumptions.taxIndexing) && legacy.assumptions.taxIndexing >= 0)
+  ) {
+    delete legacy.assumptions.taxIndexing;
+  }
 
   // Older plans have no over-convertible toggle; default off (UI clamps).
   // Missing or unknown strategy defaults to manual (the conversion-step
