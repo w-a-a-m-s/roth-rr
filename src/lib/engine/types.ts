@@ -73,6 +73,12 @@ export interface ProjectionRow {
    * `life:<policyId>` for life insurance proceeds (counted in `afterTaxTotal`).
    */
   balances: Record<string, number>;
+  /**
+   * Cost basis left in each after-tax account at year end (deposits add to
+   * it, draws use it up). Only the annuity's is used for the estate: other
+   * after-tax accounts step up at death.
+   */
+  costBasisById: Record<string, number>;
   retirementTotal: number;
   rothTotal: number;
   afterTaxTotal: number;

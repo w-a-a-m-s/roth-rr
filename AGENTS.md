@@ -120,6 +120,15 @@ law, so they don't move. Always get a year's table through
 `runScenario.ts` and the fill-bracket strategy all do. State tables aren't
 indexed yet.
 
+## Estate value: step-up at death
+
+`inheritanceValue` (`runScenario.ts`, also the after-tax assets at the RMD
+age) counts every after-tax account at full value: its basis steps up at
+death, so the gain is never taxed. Annuities are the exception: their gain
+over the basis left (row `costBasisById`) is ordinary income to the heirs,
+taxed with the tax-deferred balance as one lump. Real-estate and business
+equity count at full value.
+
 ## Taxable Social Security (provisional income)
 
 The federal taxable part of Social Security is 0% to 85% of the benefits from

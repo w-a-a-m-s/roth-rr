@@ -118,14 +118,14 @@
     "baseline": {
       "taxesTotal": 384549.64,
       "medicareTotal": 91062,
-      "afterTaxAssetsAtRmd": 743681.64,
-      "inheritanceFinal": 812300.91
+      "afterTaxAssetsAtRmd": 933681.64,
+      "inheritanceFinal": 1002300.91
     },
     "roth": {
       "taxesTotal": 371353.66,
       "medicareTotal": 88146,
-      "afterTaxAssetsAtRmd": 953418.2,
-      "inheritanceFinal": 1974206.89
+      "afterTaxAssetsAtRmd": 1143418.2,
+      "inheritanceFinal": 2164206.89
     },
     "deltas": {
       "taxesTotal": -13195.98,
@@ -134,6 +134,6 @@
       "inheritanceFinal": 1161905.98
     }
   },
-  "commit": "f68f499",
-  "commitDate": "2026-10-18T22:57:10+00:00"
+  "commit": "d3d9ea9",
+  "commitDate": "2026-10-18T23:21:32+00:00"
 }

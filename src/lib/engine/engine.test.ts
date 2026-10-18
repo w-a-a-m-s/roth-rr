@@ -1591,11 +1591,9 @@ describe("deposits into accounts", () => {
     expect(rows[1].capitalGainsIncome).toBeCloseTo(0, 6);
   });
 
-  it("counts deposit principal as basis when valuing the estate", () => {
-    // An after-tax account contributes its balance net of basis to the estate.
-    // A $50k deposit in 2030 growing 10% is worth $60,500 by 2032, of which
-    // only the $10,500 of growth is above basis: the deposited principal was
-    // already taxed on the way in.
+  it("steps an after-tax account up to full value at death", () => {
+    // A $50k deposit in 2030 growing 10% is worth $60,500 by 2032. The basis
+    // resets at death, so heirs get all of it with no tax on the growth.
     const household = depositHousehold({
       kind: "investment",
       balance: 0,
@@ -1612,7 +1610,34 @@ describe("deposits into accounts", () => {
     );
     const finalRow = scenario.rows[scenario.rows.length - 1];
     expect(finalRow.afterTaxTotal).toBeCloseTo(60_500, 6);
-    expect(scenario.totals.inheritanceFinal).toBeCloseTo(10_500, 6);
+    expect(finalRow.costBasisById.acc).toBeCloseTo(50_000, 6);
+    expect(scenario.totals.inheritanceFinal).toBeCloseTo(60_500, 6);
+  });
+
+  it("taxes an annuity's gain to the heirs as ordinary income (no step-up)", () => {
+    // Same $50k growing to $60,500, in an annuity: the $10,500 above basis is
+    // ordinary income, taxed on the final year's (indexed) single brackets.
+    const household = depositHousehold({
+      kind: "annuity",
+      balance: 0,
+      costBasis: 0,
+      growthRate: 0.1,
+      deposits: [
+        deposit({ frequency: "oneTime", amount: 50_000, startYear: 2030 }),
+      ],
+    });
+    const scenario = runScenario(
+      household,
+      zeros(projectionYears(household)),
+      "baseline",
+    );
+    const finalRow = scenario.rows[scenario.rows.length - 1];
+    const brackets = indexedFederalTax(FALLBACK_FEDERAL_TAX, finalRow.calendarYear, 0.02)
+      .brackets.single;
+    expect(scenario.totals.inheritanceFinal).toBeCloseTo(
+      60_500 - progressiveTax(10_500, brackets),
+      6,
+    );
   });
 
   it("keeps deposits out of plans that have none", () => {

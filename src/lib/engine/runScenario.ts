@@ -15,11 +15,6 @@ import {
   scenarioStartYear,
   strategyStartYear,
 } from "@/lib/engine/project";
-import { depositPrincipalThrough } from "@/lib/engine/deposits";
-import {
-  AFTER_TAX_ACCOUNT_KINDS,
-  contributionAccounts,
-} from "@/lib/domain/household";
 import { progressiveTax } from "@/lib/engine/tax";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
 import type { FederalTaxYear } from "@/lib/config/federalTax";
@@ -30,21 +25,20 @@ import { forFiling } from "@/lib/config/filingStatus";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import type { ReferenceData } from "@/lib/externalData/types";
 
-const AFTER_TAX_KINDS = new Set<string>(AFTER_TAX_ACCOUNT_KINDS);
-
 /**
- * Cost basis across after-tax accounts as of `throughYear`. Deposits are paid
- * in with already-taxed dollars, so their principal adds to basis and isn't
- * taxed again as a gain when the estate is valued.
+ * Gain inside the plan's annuities at year end: balance above the cost basis
+ * left. Annuities get no step-up at death, so heirs owe ordinary income tax
+ * on it, like a tax-deferred account.
  */
-function afterTaxCostBasis(household: Household, throughYear: number): number {
-  return contributionAccounts(household)
-    .filter((a) => AFTER_TAX_KINDS.has(a.kind))
-    .reduce(
-      (sum, a) =>
-        sum + (a.costBasis ?? 0) + depositPrincipalThrough(a, throughYear),
-      0,
-    );
+function annuityGain(household: Household, row: ProjectionRow): number {
+  let gain = 0;
+  for (const acc of household.accounts) {
+    if (acc.kind !== "annuity") continue;
+    const balance = row.balances[acc.id] ?? 0;
+    const basis = row.costBasisById?.[acc.id] ?? 0;
+    gain += Math.max(0, balance - basis);
+  }
+  return gain;
 }
 
 /**
@@ -87,9 +81,11 @@ function estateRetirementValue(
 }
 
 /**
- * After-tax estate value: tax-deferred balances are taxed through federal +
- * state brackets, Roth passes tax free, after-tax accounts net of cost basis,
- * real-estate equity at full value.
+ * After-tax estate value: tax-deferred balances and annuity gains are taxed
+ * through federal + state brackets as one lump of ordinary income, Roth
+ * passes tax free, and every other after-tax account counts at full value
+ * (its basis steps up at death, so the gain is never taxed). Real-estate and
+ * business equity count at full value too.
  */
 export function afterTaxAssets(
   household: Household,
@@ -110,18 +106,21 @@ function inheritanceValue(
   federal: FederalTaxYear,
   stateTax: StateIncomeTaxYear,
 ): number {
-  const costBasis = afterTaxCostBasis(household, row.calendarYear);
+  // The annuity gain is taxed with the tax-deferred money; the annuity's
+  // full balance is already in `afterTaxTotal`.
+  const gain = annuityGain(household, row);
   return (
     estateRetirementValue(
       household,
-      row.retirementTotal,
+      row.retirementTotal + gain,
       federal,
       stateTax,
       row.filingStatus,
       row.calendarYear,
-    ) +
+    ) -
+    gain +
     row.rothTotal +
-    Math.max(0, row.afterTaxTotal - costBasis) +
+    row.afterTaxTotal +
     row.realEstateEquity +
     row.businessEquity
   );

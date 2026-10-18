@@ -1638,6 +1638,7 @@ export function projectScenario(
       livingIds,
       filingStatus: fs,
       balances: { ...balances },
+      costBasisById: { ...basisRemaining },
       retirementTotal,
       rothTotal,
       afterTaxTotal,
