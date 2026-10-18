@@ -402,8 +402,31 @@ describe("baseline projection vs spreadsheet", () => {
     expect(n).toBe(21);
   });
 
-  it("year 1 gross taxable income = 295,920 (Regular!E35)", () => {
-    expect(rows[0].grossTaxableIncome).toBeCloseTo(295_920, 2);
+  // Half of the self-employment tax on David's $24,000 business income comes
+  // off income before deductions (the sheet had no employment tax).
+  const halfSeTax = (24_000 * 0.9235 * 0.153) / 2;
+
+  it("year 1 gross taxable income = 295,920 (Regular!E35) less half the SE tax", () => {
+    expect(rows[0].employmentTax.selfEmploymentDeduction).toBeCloseTo(halfSeTax, 6);
+    expect(rows[0].grossTaxableIncome).toBeCloseTo(295_920 - halfSeTax, 2);
+  });
+
+  it("year 1 employment tax: FICA on Batsheva's salary, SE tax on David's business", () => {
+    // Salary $7,500 a month in 2030 (its first year): 7.65% employee FICA.
+    // Business $24,000: 92.35% of it at 15.3%. Both under the wage base and
+    // the $250k additional Medicare threshold.
+    const wages = 90_000;
+    const net = 24_000 * 0.9235;
+    const t = rows[0].employmentTax;
+    expect(t.socialSecurity).toBeCloseTo(wages * 0.062 + net * 0.124, 6);
+    expect(t.medicare).toBeCloseTo(wages * 0.0145 + net * 0.029, 6);
+    expect(t.additionalMedicare).toBe(0);
+    expect(rows[0].federalAnnualTax).toBeCloseTo(
+      rows[0].federalOrdinaryTax + rows[0].federalCapitalGainsTax + t.total,
+      6,
+    );
+    // Once the salary and business stop, so does the tax.
+    expect(rows[rows.length - 1].employmentTax.total).toBe(0);
   });
 
   it("year 1 total monthly income = 26,600 (Regular!E33)", () => {
@@ -1002,8 +1025,12 @@ describe("roth scenario with the spreadsheet's manual schedule", () => {
   });
 
   it("conversion adds to taxable income (Roth!E36)", () => {
-    // Gross taxable = 295,920 baseline + 150,000 conversion = 445,920.
-    expect(rows[0].grossTaxableIncome).toBeCloseTo(445_920, 2);
+    // Gross taxable = 295,920 baseline + 150,000 conversion = 445,920, less
+    // half the self-employment tax on the $24,000 business income.
+    expect(rows[0].grossTaxableIncome).toBeCloseTo(
+      445_920 - (24_000 * 0.9235 * 0.153) / 2,
+      2,
+    );
   });
 
   it("never converts more than is available", () => {

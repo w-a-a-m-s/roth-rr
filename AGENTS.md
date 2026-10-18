@@ -114,6 +114,19 @@ law, so they don't move. Always get a year's table through
 `runScenario.ts` and the fill-bracket strategy all do. State tables aren't
 indexed yet.
 
+## Employment tax (Social Security and Medicare)
+
+Salary pays employee FICA and business income pays self-employment tax
+(`lib/engine/employmentTax.ts`, row `employmentTax`, inside
+`federalAnnualTax`). Only incomes with `taxability: "full"` count. The Social
+Security part stops at the wage base per person (wages use it first); the
+wage base is in the federal-tax dataset and indexes with the brackets.
+Self-employment earnings are 92.35% of profit, and half the SE tax comes off
+income before deductions (like a pre-tax deposit, so MAGI drops too). The
+additional 0.9% Medicare tax uses combined household earnings over $250k
+joint / $200k single, which the law doesn't index. Business income is
+treated as self-employment: an S-corp owner's distributions would not owe it.
+
 Plans used to carry a flat `assumptions.rmdRate` (default 5%) applied to the
 live balance. That overstated RMDs in the early years and understated them in
 the late ones, since the table's implied rate crosses 5% around age 80 and keeps

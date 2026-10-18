@@ -21,6 +21,22 @@ describe("validateFederalTaxYear", () => {
     if (result.ok) expect(result.value.year).toBe(2026);
   });
 
+  it("keeps the Social Security wage base, and fills it in for older records", () => {
+    const result = validateFederalTaxYear(FALLBACK_FEDERAL_TAX);
+    expect(result.ok && result.value.socialSecurityWageBase).toBe(184_500);
+    const older = structuredClone(FALLBACK_FEDERAL_TAX) as Partial<typeof FALLBACK_FEDERAL_TAX>;
+    delete older.socialSecurityWageBase;
+    const filled = validateFederalTaxYear(older);
+    expect(filled.ok && filled.value.socialSecurityWageBase).toBe(184_500);
+  });
+
+  it("rejects a wage base that isn't a positive number", () => {
+    for (const bad of [0, -1, "184500"]) {
+      const value = { ...FALLBACK_FEDERAL_TAX, socialSecurityWageBase: bad };
+      expect(validateFederalTaxYear(value).ok).toBe(false);
+    }
+  });
+
   it("rejects non-ascending floors", () => {
     const bad = structuredClone(FALLBACK_FEDERAL_TAX);
     bad.brackets.mfj[2].floor = bad.brackets.mfj[1].floor;

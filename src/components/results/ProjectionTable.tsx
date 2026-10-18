@@ -431,6 +431,7 @@ function buildSections(
   const stateRate = (i: number) =>
     scenario.rows[0]?.stateTaxByBracket[i]?.rate ?? 0;
   const hasFederalTax = scenario.rows.some((r) => r.federalAnnualTax > 0);
+  const hasEmploymentTax = scenario.rows.some((r) => r.employmentTax.total > 0);
   const hasStateTax = scenario.rows.some((r) => r.stateAnnualTax > 0);
   const hasAfterTaxWithdrawals = household.incomes.some(
     (income) => income.kind === "afterTaxWithdrawal"
@@ -480,6 +481,16 @@ function buildSections(
       unit: "yr",
       value: (r) => r.grossTaxableIncome,
     },
+    ...(scenario.rows.some((r) => r.employmentTax.selfEmploymentDeduction > 0)
+      ? [
+          {
+            key: "seDeduction",
+            label: "Half of self-employment tax (already taken off)",
+            unit: "yr" as const,
+            value: (r: Row) => r.employmentTax.selfEmploymentDeduction,
+          },
+        ]
+      : []),
     {
       key: "standard",
       label: "Standard deduction",
@@ -593,6 +604,36 @@ function buildSections(
             label: "Capital gains tax",
             unit: "yr" as const,
             value: (r: Row) => r.federalCapitalGainsTax,
+          },
+        ]
+      : []),
+    ...(hasEmploymentTax
+      ? [
+          {
+            key: "employmentTax",
+            label: "Social Security & Medicare tax",
+            unit: "yr" as const,
+            value: (r: Row) => r.employmentTax.total,
+            children: [
+              {
+                key: "employmentSocialSecurity",
+                label: "Social Security (up to the wage base)",
+                unit: "yr" as const,
+                value: (r: Row) => r.employmentTax.socialSecurity,
+              },
+              {
+                key: "employmentMedicare",
+                label: "Medicare",
+                unit: "yr" as const,
+                value: (r: Row) => r.employmentTax.medicare,
+              },
+              {
+                key: "employmentAdditionalMedicare",
+                label: "Additional Medicare (0.9%)",
+                unit: "yr" as const,
+                value: (r: Row) => r.employmentTax.additionalMedicare,
+              },
+            ],
           },
         ]
       : []),

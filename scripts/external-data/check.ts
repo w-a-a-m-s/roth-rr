@@ -155,6 +155,9 @@ async function checkKey(
     } else {
       console.log("federal-tax hoh completeness (deduction, brackets, phase-out, LTCG) OK");
     }
+    if (typeof (raw as { socialSecurityWageBase?: unknown }).socialSecurityWageBase !== "number") {
+      errors.push("federal-tax fallback is missing socialSecurityWageBase (SSA wage base)");
+    }
   }
 
   if (key === "state-income-tax") {
@@ -170,6 +173,12 @@ async function checkKey(
         record: { data: unknown; year: number };
       };
       const live = validateFallback(key, body.record.data);
+      const liveRaw = body.record.data as { socialSecurityWageBase?: unknown } | null;
+      if (key === "federal-tax" && typeof liveRaw?.socialSecurityWageBase !== "number") {
+        errors.push(
+          "Live federal-tax has no socialSecurityWageBase (stored before the wage base joined the dataset). Re-apply federal-tax from the fallback.",
+        );
+      }
       if (!live.ok) {
         errors.push(`Live ${key} invalid: ${live.error}`);
       } else if (!deepEqual(validated.value, live.value)) {

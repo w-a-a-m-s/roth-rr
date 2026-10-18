@@ -141,8 +141,14 @@ if they are in `.env`. The Next.js server also reads the same `.env` for PUT aut
 
 - **What:** Federal ordinary brackets, standard deduction, senior deduction, and
   long-term capital gains brackets (0% / 15% / 20%) for MFJ, Single, and Head of
-  household.
+  household, plus the Social Security wage base (`socialSecurityWageBase`, the
+  most earnings per person that pay the Social Security part of FICA and
+  self-employment tax). Employment tax rates and the additional Medicare
+  thresholds are fixed in the law and live as constants in
+  `src/lib/config/federalTax.ts`.
 - **Source:** IRS annual inflation Rev. Proc (e.g. Rev. Proc. 2025-32) / IRS newsroom.
+  Wage base: SSA's yearly COLA fact sheet (October, for the next year:
+  <https://www.ssa.gov/oact/cola/cbb.html>). 2026 is $184,500.
 - **Cadence:** Annual (fall). Weekly check only detects staleness (year lag).
 - **Format:** `FederalTaxYear` JSON (see `src/lib/config/federalTax.ts`).
 Fallback file: `src/lib/config/data/federalTax.json`.
@@ -159,6 +165,10 @@ Fallback file: `src/lib/config/data/federalTax.json`.
 - **Who:** Human or Claude cowork following this section. No PDF scrape in v1.
 - **Allow rate-set changes:** `--allow-rate-change` (statute change only; applies
   to ordinary and LTCG rate sets).
+- **Wage base gotcha:** records stored before the wage base joined the dataset
+  don't carry it. Validation fills it from the committed fallback so the app
+  keeps working, but `check` fails on a live record without it until
+  `federal-tax` is applied again.
 
 ## Dataset: medicare
 

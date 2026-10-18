@@ -24,6 +24,11 @@ export interface FederalTaxYear {
    * stacked on top of ordinary taxable income when computing LTCG tax.
    */
   longTermCapitalGains: Record<FilingStatus, TaxBracket[]>;
+  /**
+   * Social Security wage base: the most earnings per person that pay the
+   * Social Security part of FICA / self-employment tax. Set yearly by SSA.
+   */
+  socialSecurityWageBase: number;
 }
 
 /** Committed fallback (offline, tests, first paint). Kept in sync by apply. */
@@ -51,3 +56,28 @@ export const SOCIAL_SECURITY_TAXABLE_PCT = 0.85;
 export const RENTAL_LOSS_SPECIAL_ALLOWANCE = 25_000;
 export const RENTAL_LOSS_ALLOWANCE_MAGI_START = 100_000;
 export const RENTAL_LOSS_ALLOWANCE_MAGI_END = 150_000;
+
+/**
+ * Employment tax rates and limits fixed in the law (IRC 3101, 1401, 1402).
+ * Only the Social Security wage base changes yearly, so it lives in the
+ * federal-tax dataset instead (`socialSecurityWageBase`).
+ */
+export const EMPLOYEE_SOCIAL_SECURITY_RATE = 0.062;
+export const EMPLOYEE_MEDICARE_RATE = 0.0145;
+/** Self-employed pay both halves. */
+export const SELF_EMPLOYMENT_SOCIAL_SECURITY_RATE = 0.124;
+export const SELF_EMPLOYMENT_MEDICARE_RATE = 0.029;
+/** Net earnings from self-employment are 92.35% of business profit. */
+export const SELF_EMPLOYMENT_EARNINGS_SHARE = 0.9235;
+/** Below this much net earnings there's no self-employment tax. */
+export const SELF_EMPLOYMENT_TAX_MINIMUM = 400;
+/**
+ * Additional Medicare tax on wages and self-employment income above a
+ * threshold by filing status. Not indexed for inflation.
+ */
+export const ADDITIONAL_MEDICARE_RATE = 0.009;
+export const ADDITIONAL_MEDICARE_THRESHOLD: Record<FilingStatus, number> = {
+  mfj: 250_000,
+  single: 200_000,
+  hoh: 200_000,
+};

@@ -17,6 +17,7 @@ import {
   BASE_FILING_STATUSES,
   type FilingTable,
 } from "../config/filingStatus";
+import federalTaxFallback from "../config/data/federalTax.json";
 import type {
   ExternalDataKey,
   ExternalDataMeta,
@@ -234,6 +235,13 @@ export function validateFederalTaxYear(
   );
   if (!ltcgHoh.ok) return ltcgHoh;
 
+  // Records stored before the wage base joined the dataset don't carry it:
+  // use the committed one until the next apply writes it.
+  const wageBase = value.socialSecurityWageBase ?? federalTaxFallback.socialSecurityWageBase;
+  if (typeof wageBase !== "number" || !Number.isFinite(wageBase) || wageBase <= 0) {
+    return { ok: false, error: "socialSecurityWageBase: expected positive number" };
+  }
+
   return {
     ok: true,
     value: {
@@ -248,6 +256,7 @@ export function validateFederalTaxYear(
         single: ltcgSingle.value,
         hoh: ltcgHoh.value,
       },
+      socialSecurityWageBase: wageBase,
     },
   };
 }

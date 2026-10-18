@@ -56,6 +56,7 @@ import {
 } from "@/lib/domain/propertyLoans";
 import { levelPayment } from "@/lib/engine/amortization";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
+import { employmentTax, type EarnedIncome } from "@/lib/engine/employmentTax";
 import type {
   DeductionBreakdown,
   ProjectionOptions,
@@ -906,6 +907,9 @@ export function projectScenario(
     const widowed =
       death != null && calendarYear > death.year && planFiling === "mfj";
     const fs: Household["filingStatus"] = widowed ? "single" : planFiling;
+    // This year's federal table: brackets, standard deduction and wage base
+    // indexed for inflation from the table's year.
+    const federal = federalTaxForYear(household, refs.federalTax, calendarYear);
     const stoppedIncomes = incomesStoppedByDeath(
       household,
       death,
@@ -1071,6 +1075,8 @@ export function projectScenario(
     let federalOrdinaryGross = 0;
     let stateOrdinaryGross = 0;
     const incomeMonthly: Record<string, number> = {};
+    // Salary and business income per person, for employment tax.
+    const earnedByPerson: Record<string, EarnedIncome> = {};
     for (const income of household.incomes) {
       if (!isIncomeActive(income, calendarYear)) continue;
       if (stoppedIncomes.has(income.id)) continue;
@@ -1110,7 +1116,16 @@ export function projectScenario(
         federalOrdinaryGross += annual;
         stateOrdinaryGross += annual;
       }
+      if (income.taxability !== "full") continue;
+      if (income.kind !== "salary" && income.kind !== "business") continue;
+      const earned = (earnedByPerson[income.ownerId] ??= { wages: 0, business: 0 });
+      if (income.kind === "salary") earned.wages += annual;
+      else earned.business += annual;
     }
+    // Social Security and Medicare tax on salary (employee FICA) and business
+    // income (self-employment tax). Half the self-employment tax comes off
+    // income before deductions, like a pre-tax contribution below.
+    const employment = employmentTax(earnedByPerson, fs, federal.socialSecurityWageBase);
 
     for (const [accId, income] of Object.entries(eventIncome ?? {})) {
       totalMonthlyIncome += income / 12;
@@ -1251,6 +1266,11 @@ export function projectScenario(
       federalOrdinaryGross = Math.max(0, federalOrdinaryGross - preTaxDeposits);
       stateOrdinaryGross = Math.max(0, stateOrdinaryGross - preTaxDeposits);
     }
+    const seDeduction = employment.selfEmploymentDeduction;
+    if (seDeduction > 0) {
+      federalOrdinaryGross = Math.max(0, federalOrdinaryGross - seDeduction);
+      stateOrdinaryGross = Math.max(0, stateOrdinaryGross - seDeduction);
+    }
 
     const rentalPal = applyRentalPassiveLoss({
       household,
@@ -1288,9 +1308,7 @@ export function projectScenario(
 
     // 5) Deductions, taxable income, federal + state tax (incl. capital gains).
     //    Wrapped so the same math can price the year without its conversion
-    //    when the conversion pays its own tax (see 5b). Federal brackets and
-    //    the standard deduction are indexed for inflation to this year.
-    const federal = federalTaxForYear(household, refs.federalTax, calendarYear);
+    //    when the conversion pays its own tax (see 5b).
     const taxForYear = (
       federalOrdinaryGross: number,
       stateOrdinaryGross: number,
@@ -1336,7 +1354,8 @@ export function projectScenario(
         capitalGainsIncome,
         ltcgBrackets,
       ).map((tax, bi) => ({ rate: ltcgBrackets[bi].rate, tax }));
-      const federalAnnualTax = federalOrdinaryTax + federalCapitalGainsTax;
+      const federalAnnualTax =
+        federalOrdinaryTax + federalCapitalGainsTax + employment.total;
 
       const stateDeduction = state.hasIncomeTax
         ? stateDeductionTotal(state, fs) + oneTimeDepreciation
@@ -1578,6 +1597,7 @@ export function projectScenario(
       stateTaxableIncome,
       federalOrdinaryTax,
       federalCapitalGainsTax,
+      employmentTax: employment,
       federalAnnualTax,
       federalMonthlyTax,
       federalTaxByBracket,

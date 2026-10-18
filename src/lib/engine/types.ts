@@ -15,6 +15,7 @@ export interface StateDeductionBreakdown {
   total: number;
 }
 
+import type { EmploymentTax } from "@/lib/engine/employmentTax";
 import type {
   DeathEvent,
   DisabilityEvent,
@@ -122,7 +123,13 @@ export interface ProjectionRow {
   federalOrdinaryTax: number;
   /** Federal long-term capital gains tax. */
   federalCapitalGainsTax: number;
-  /** Federal ordinary + LTCG. */
+  /**
+   * Social Security and Medicare tax: employee FICA on salary plus
+   * self-employment tax on business income. Its `selfEmploymentDeduction` is
+   * already out of `grossTaxableIncome`.
+   */
+  employmentTax: EmploymentTax;
+  /** Federal ordinary + LTCG + employment tax. */
   federalAnnualTax: number;
   federalMonthlyTax: number;
   /**

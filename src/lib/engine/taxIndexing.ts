@@ -18,10 +18,10 @@ function scaleBrackets(brackets: TaxBracket[], factor: number): TaxBracket[] {
 
 /**
  * Federal tax parameters for `calendarYear`: the table's bracket floors (ordinary
- * and long-term gains) and standard deduction grown by `rate` a year from the
- * table's own year, the way the IRS indexes them for inflation. Years at or
- * before the table's year use it as is. The senior deduction and its income
- * limit are fixed dollar amounts in the law, so they don't move.
+ * and long-term gains), standard deduction and Social Security wage base grown
+ * by `rate` a year from the table's own year, the way the IRS and SSA index
+ * them. Years at or before the table's year use it as is. The senior deduction
+ * and its income limit are fixed dollar amounts in the law, so they don't move.
  */
 export function indexedFederalTax(
   federal: FederalTaxYear,
@@ -49,6 +49,7 @@ export function indexedFederalTax(
       single: scaleBrackets(federal.longTermCapitalGains.single, factor),
       hoh: scaleBrackets(federal.longTermCapitalGains.hoh, factor),
     },
+    socialSecurityWageBase: federal.socialSecurityWageBase * factor,
   };
 }
 
