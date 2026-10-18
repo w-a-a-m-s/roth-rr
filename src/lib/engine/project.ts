@@ -55,6 +55,7 @@ import {
   propertyLoans,
 } from "@/lib/domain/propertyLoans";
 import { levelPayment } from "@/lib/engine/amortization";
+import { balanceAtStart, loanTerms, type LoanTerms } from "@/lib/engine/loanPaydown";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
 import { employmentTax, type EarnedIncome } from "@/lib/engine/employmentTax";
 import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
@@ -338,6 +339,7 @@ function stepRealEstate(
   rentYearIndex = yearIndex,
   calendarYear = 0,
   lineOfCreditPayments: Record<string, number> = {},
+  terms: Record<string, LoanTerms> = {},
 ): RealEstateYear {
   const a = household.assumptions;
   let value = 0;
@@ -376,8 +378,11 @@ function stepRealEstate(
     for (const loan of propertyLoans(re)) {
       const bal = mortgageBalances[loan.id] ?? 0;
       if (!(bal > 0)) continue;
-      const rate = loan.rate ?? 0;
-      let payment = loan.monthlyPayment ?? 0;
+      // The Mortgage analysis statement's terms when there is one (extra
+      // principal included), else the loan as entered.
+      const t = terms[loan.id];
+      const rate = t?.rate ?? loan.rate ?? 0;
+      let payment = t ? t.monthlyPayment + t.extraPrincipal : (loan.monthlyPayment ?? 0);
       if (loan.kind === "lineOfCredit") {
         const drawing = loan.drawEndYear == null || calendarYear <= loan.drawEndYear;
         if (drawing) {
@@ -793,12 +798,23 @@ export function projectScenario(
     recaptureRemaining[acc.id] = Math.max(0, acc.depreciationRecapture ?? 0);
   }
 
+  // Loans are owed as of today too: each one is paid down month by month
+  // from its next payment up to the projection start, on the Mortgage
+  // analysis statement's terms when it has one (see `loanPaydown.ts`).
+  const terms = loanTerms(household, refs.asOfDate);
   const mortgageBalances: Record<string, number> = {};
-  for (const re of household.realEstate) {
-    for (const loan of propertyLoans(re)) mortgageBalances[loan.id] = loan.balance ?? 0;
-  }
   // A line of credit's repayment, fixed the year its draw period ends.
   const lineOfCreditPayments: Record<string, number> = {};
+  for (const re of household.realEstate) {
+    for (const loan of propertyLoans(re)) {
+      const t = terms[loan.id];
+      const opening = balanceAtStart(t, start);
+      mortgageBalances[loan.id] = opening.balance;
+      if (opening.lineOfCreditPayment != null) {
+        lineOfCreditPayments[loan.id] = opening.lineOfCreditPayment;
+      }
+    }
+  }
   // Market values are entered as of today. A plan-start property appreciates
   // from then up to the plan start; a retirement one waits for the plan.
   const realEstatePreStartYears: Record<string, number> = {};
@@ -1270,6 +1286,7 @@ export function projectScenario(
       i - offset,
       calendarYear,
       lineOfCreditPayments,
+      terms,
     );
     totalMonthlyIncome += realEstate.cashAnnual / 12;
     for (const [id, monthly] of Object.entries(realEstate.cashMonthlyById)) {

@@ -94,7 +94,12 @@ means today**: when that date is before the start year, a Plan start account
 compounds from today up to January 1 of the start year (`openingBalance` in
 `lib/engine/deposits.ts`, using `preStartGrowthYears`: on October 9, 2026 with
 a 2040 start, 84/365 of 2026 plus 13 full years). Retirement accounts stay flat
-until then. When the date falls inside year 0 instead, `projectScenario`
+until then. Property loans are paid down month by month over the same gap
+(`lib/engine/loanPaydown.ts`): from the month after `asOfDate`, or from a
+Mortgage analysis statement's next payment when the loan has one. A statement
+also sets the rate, payment and extra principal for every projection year. A
+line of credit stays interest only through its draw period, then pays the
+level payment fixed that January. When the date falls inside year 0 instead, `projectScenario`
 compounds year 0 only for what is left of the year (`firstYearGrowthFraction`:
 on October 7, 86 of 365 days). Later years get a full year. With no `asOfDate`
 (tests, golden cases) balances are January 1 of the start year and year 0 is a
