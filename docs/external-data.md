@@ -139,7 +139,8 @@ if they are in `.env`. The Next.js server also reads the same `.env` for PUT aut
 
 ## Dataset: federal-tax
 
-- **What:** Federal ordinary brackets, standard deduction, senior deduction, and
+- **What:** Federal ordinary brackets, standard deduction, the extra standard
+  deduction per person 65+ (`additionalStandardDeduction`), senior deduction, and
   long-term capital gains brackets (0% / 15% / 20%) for MFJ, Single, and Head of
   household, plus the Social Security wage base (`socialSecurityWageBase`, the
   most earnings per person that pay the Social Security part of FICA and
@@ -165,9 +166,9 @@ Fallback file: `src/lib/config/data/federalTax.json`.
 - **Who:** Human or Claude cowork following this section. No PDF scrape in v1.
 - **Allow rate-set changes:** `--allow-rate-change` (statute change only; applies
   to ordinary and LTCG rate sets).
-- **Wage base gotcha:** records stored before the wage base joined the dataset
-  don't carry it. Validation fills it from the committed fallback so the app
-  keeps working, but `check` fails on a live record without it until
+- **New-field gotcha:** records stored before the wage base and the 65+
+  amount joined the dataset don't carry them. Validation fills it from the committed fallback so the app
+  keeps working, but `check` fails on a live record without them until
   `federal-tax` is applied again.
 
 ## Dataset: medicare

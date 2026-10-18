@@ -612,6 +612,11 @@ function computeDeductions(
     fs,
     "federal standardDeduction",
   );
+  // Each living person 65 or older adds the extra "aged" standard deduction.
+  const age65 = livingIds.filter((id) => ages[id] >= 65).length;
+  const additional =
+    age65 *
+    forFiling(federal.additionalStandardDeduction, fs, "federal additionalStandardDeduction");
 
   let senior = 0;
   if (
@@ -630,10 +635,11 @@ function computeDeductions(
   const oneTime = Math.max(0, oneTimeDepreciation);
   return {
     standard,
+    additional,
     senior,
     depreciation,
     oneTimeDepreciation: oneTime,
-    total: standard + senior + depreciation + oneTime,
+    total: standard + additional + senior + depreciation + oneTime,
   };
 }
 

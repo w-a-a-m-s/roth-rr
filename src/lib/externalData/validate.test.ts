@@ -30,6 +30,19 @@ describe("validateFederalTaxYear", () => {
     expect(filled.ok && filled.value.socialSecurityWageBase).toBe(184_500);
   });
 
+  it("fills in the 65+ standard deduction for records stored before it", () => {
+    const older = structuredClone(FALLBACK_FEDERAL_TAX) as Partial<typeof FALLBACK_FEDERAL_TAX>;
+    delete older.additionalStandardDeduction;
+    const filled = validateFederalTaxYear(older);
+    expect(filled.ok && filled.value.additionalStandardDeduction).toEqual({
+      mfj: 1_650,
+      single: 2_050,
+      hoh: 2_050,
+    });
+    const bad = { ...FALLBACK_FEDERAL_TAX, additionalStandardDeduction: { mfj: -1, single: 2_050 } };
+    expect(validateFederalTaxYear(bad).ok).toBe(false);
+  });
+
   it("rejects a wage base that isn't a positive number", () => {
     for (const bad of [0, -1, "184500"]) {
       const value = { ...FALLBACK_FEDERAL_TAX, socialSecurityWageBase: bad };

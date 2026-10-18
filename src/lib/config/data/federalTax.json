@@ -5,6 +5,11 @@
     "single": 16100,
     "hoh": 24150
   },
+  "additionalStandardDeduction": {
+    "mfj": 1650,
+    "single": 2050,
+    "hoh": 2050
+  },
   "brackets": {
     "mfj": [
       {

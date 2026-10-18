@@ -191,6 +191,15 @@ export function validateFederalTaxYear(
   );
   if (!standard.ok) return standard;
 
+  // Records stored before the 65+ amount joined the dataset don't carry it:
+  // use the committed one until the next apply writes it.
+  const additional = validateFilingNumbers(
+    value.additionalStandardDeduction ?? federalTaxFallback.additionalStandardDeduction,
+    "additionalStandardDeduction",
+    FEDERAL_FILING,
+  );
+  if (!additional.ok) return additional;
+
   const phaseOut = validateFilingNumbers(
     value.seniorDeductionPhaseOut,
     "seniorDeductionPhaseOut",
@@ -247,6 +256,8 @@ export function validateFederalTaxYear(
     value: {
       year: value.year,
       standardDeduction: standard.value as FederalTaxYear["standardDeduction"],
+      additionalStandardDeduction:
+        additional.value as FederalTaxYear["additionalStandardDeduction"],
       brackets: { mfj: mfj.value, single: single.value, hoh: hoh.value },
       seniorDeductionPerPerson: value.seniorDeductionPerPerson,
       seniorDeductionPhaseOut:

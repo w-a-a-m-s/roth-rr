@@ -106,8 +106,9 @@ the opening balance, but only the projection prorates year 0.
 The federal table (`refs.federalTax`) is one year's IRS numbers. Every
 projection year uses it grown by `assumptions.taxIndexing` a year from the
 table's year (default 2%, "Tax brackets grow" on the Household step; 0 keeps
-it flat): ordinary brackets, long-term gains brackets and the standard
-deduction. The senior deduction and its income limit are fixed dollars in the
+it flat): ordinary brackets, long-term gains brackets, the standard
+deduction and its extra amount per person 65+ (`additionalStandardDeduction`,
+$1,650 joint / $2,050 single in 2026). The senior deduction and its income limit are fixed dollars in the
 law, so they don't move. Always get a year's table through
 `federalTaxForYear` (`lib/engine/taxIndexing.ts`), never read
 `refs.federalTax` brackets directly: the projection, the inherited-IRA tax in

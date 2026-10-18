@@ -497,6 +497,16 @@ function buildSections(
       unit: "yr",
       value: (r) => r.deductions.standard,
     },
+    ...(scenario.rows.some((r) => r.deductions.additional > 0)
+      ? [
+          {
+            key: "age65Deduction",
+            label: "Age 65+ standard deduction",
+            unit: "yr" as const,
+            value: (r: Row) => r.deductions.additional,
+          },
+        ]
+      : []),
     {
       key: "ssDeduction",
       label: "Senior deduction",

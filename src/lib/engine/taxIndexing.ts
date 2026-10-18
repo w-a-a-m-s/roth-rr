@@ -18,7 +18,8 @@ function scaleBrackets(brackets: TaxBracket[], factor: number): TaxBracket[] {
 
 /**
  * Federal tax parameters for `calendarYear`: the table's bracket floors (ordinary
- * and long-term gains), standard deduction and Social Security wage base grown
+ * and long-term gains), standard deduction (with its 65+ amount) and Social
+ * Security wage base grown
  * by `rate` a year from the table's own year, the way the IRS and SSA index
  * them. Years at or before the table's year use it as is. The senior deduction
  * and its income limit are fixed dollar amounts in the law, so they don't move.
@@ -38,6 +39,11 @@ export function indexedFederalTax(
       mfj: federal.standardDeduction.mfj * factor,
       single: federal.standardDeduction.single * factor,
       hoh: federal.standardDeduction.hoh * factor,
+    },
+    additionalStandardDeduction: {
+      mfj: federal.additionalStandardDeduction.mfj * factor,
+      single: federal.additionalStandardDeduction.single * factor,
+      hoh: federal.additionalStandardDeduction.hoh * factor,
     },
     brackets: {
       mfj: scaleBrackets(federal.brackets.mfj, factor),

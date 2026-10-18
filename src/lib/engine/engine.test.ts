@@ -2429,3 +2429,44 @@ describe("federal brackets and standard deduction indexed for inflation", () => 
     expect(gap).toBeGreaterThan(0);
   });
 });
+
+describe("extra standard deduction at 65", () => {
+  it("adds the joint amount for each spouse 65 or older, indexed like the rest", () => {
+    // David (1965) is 65 in 2030; Batsheva (1967) is 65 in 2032.
+    const h = SAMPLE_HOUSEHOLD;
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    const at = (year: number) => rows.find((r) => r.calendarYear === year)!;
+    const factor = (year: number) => 1.02 ** (year - 2026);
+    expect(at(2030).deductions.additional).toBeCloseTo(1_650 * factor(2030), 6);
+    expect(at(2031).deductions.additional).toBeCloseTo(1_650 * factor(2031), 6);
+    expect(at(2032).deductions.additional).toBeCloseTo(2 * 1_650 * factor(2032), 6);
+    const row = at(2032);
+    expect(row.deductions.total).toBeCloseTo(
+      row.deductions.standard +
+        row.deductions.additional +
+        row.deductions.senior +
+        row.deductions.depreciation +
+        row.deductions.oneTimeDepreciation,
+      6,
+    );
+  });
+
+  it("uses the single amount for a single filer, and nothing before 65", () => {
+    const h: Household = {
+      filingStatus: "single",
+      residenceState: "FL",
+      people: [{ id: "p1", name: "Sam", birthYear: 1962, retirementYear: 2026 }],
+      accounts: [],
+      incomes: [],
+      realEstate: [],
+      expenses: [],
+      assumptions: { expenseGrowth: 0, finalAge: 66, taxIndexing: 0 },
+      optimizer: { strategy: "manual" },
+    };
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    expect(rows.map((r) => r.calendarYear)).toEqual([2026, 2027, 2028]);
+    expect(rows[0].deductions.additional).toBe(0); // 64
+    expect(rows[1].deductions.additional).toBe(2_050); // 65
+    expect(rows[1].deductions.standard).toBe(16_100);
+  });
+});

@@ -158,6 +158,9 @@ async function checkKey(
     if (typeof (raw as { socialSecurityWageBase?: unknown }).socialSecurityWageBase !== "number") {
       errors.push("federal-tax fallback is missing socialSecurityWageBase (SSA wage base)");
     }
+    if ((raw as { additionalStandardDeduction?: unknown }).additionalStandardDeduction == null) {
+      errors.push("federal-tax fallback is missing additionalStandardDeduction (65+ amount)");
+    }
   }
 
   if (key === "state-income-tax") {
@@ -177,6 +180,14 @@ async function checkKey(
       if (key === "federal-tax" && typeof liveRaw?.socialSecurityWageBase !== "number") {
         errors.push(
           "Live federal-tax has no socialSecurityWageBase (stored before the wage base joined the dataset). Re-apply federal-tax from the fallback.",
+        );
+      }
+      if (
+        key === "federal-tax" &&
+        (liveRaw as { additionalStandardDeduction?: unknown } | null)?.additionalStandardDeduction == null
+      ) {
+        errors.push(
+          "Live federal-tax has no additionalStandardDeduction (stored before the 65+ amount joined the dataset). Re-apply federal-tax from the fallback.",
         );
       }
       if (!live.ok) {

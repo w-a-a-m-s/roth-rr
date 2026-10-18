@@ -12,6 +12,11 @@ export interface FederalTaxYear {
   year: number;
   /** Required for every filing status, including HOH. */
   standardDeduction: Record<FilingStatus, number>;
+  /**
+   * Extra standard deduction per person age 65 or older (the "aged" amount).
+   * Married filers get the joint figure each; single and HOH the higher one.
+   */
+  additionalStandardDeduction: Record<FilingStatus, number>;
   brackets: Record<FilingStatus, TaxBracket[]>;
   /**
    * Bonus senior deduction (per person age 65+) and the income above which it

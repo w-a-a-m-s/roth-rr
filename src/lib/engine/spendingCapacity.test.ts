@@ -15,11 +15,11 @@ describe("spendingCapacity", () => {
   const c = calculateSpendingCapacity(h);
 
   it("finds the most the plan can spend, every year covered to the final age", () => {
-    // The plan spends $6,000 a month; the money supports about $11,927
-    // without conversions and $12,617 with them (brackets indexed 2% a year).
+    // The plan spends $6,000 a month; the money supports about $11,974
+    // without conversions and $12,658 with them (brackets indexed 2% a year).
     expect(c.baseline.planMonthly).toBe(6000);
-    expect(Math.round(c.baseline.capacityMonthly)).toBe(11_927);
-    expect(Math.round(c.roth.capacityMonthly)).toBe(12_617);
+    expect(Math.round(c.baseline.capacityMonthly)).toBe(11_974);
+    expect(Math.round(c.roth.capacityMonthly)).toBe(12_658);
     for (const s of [c.baseline, c.roth]) {
       for (const row of s.rows) expect(row.surplus).toBeGreaterThan(-1);
       expect(s.runsShort).toBeNull();

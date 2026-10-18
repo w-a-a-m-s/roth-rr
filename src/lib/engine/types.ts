@@ -1,5 +1,7 @@
 export interface DeductionBreakdown {
   standard: number;
+  /** Extra standard deduction for each living person 65 or older. */
+  additional: number;
   senior: number;
   depreciation: number;
   /** One-time 100% depreciation entered on the plan for this year. */

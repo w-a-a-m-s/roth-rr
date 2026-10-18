@@ -95,26 +95,26 @@
       "strategy": "minTax"
     }
   },
-  "commit": "15e80b5",
-  "commitDate": "2026-10-16T15:08:46+00:00",
+  "commit": "2a7a3b9",
+  "commitDate": "2026-10-18T22:53:29+00:00",
   "expected": {
     "baseline": {
-      "taxesTotal": 298263.44,
+      "taxesTotal": 287484.65,
       "medicareTotal": 72555.6,
       "afterTaxAssetsAtRmd": 1809533.82,
       "inheritanceFinal": 2249631.14
     },
     "roth": {
-      "taxesTotal": 291336.75,
+      "taxesTotal": 281381.62,
       "medicareTotal": 68174.4,
-      "afterTaxAssetsAtRmd": 1948084.49,
-      "inheritanceFinal": 2713393.26
+      "afterTaxAssetsAtRmd": 1959118.54,
+      "inheritanceFinal": 2748390.9
     },
     "deltas": {
-      "taxesTotal": -6926.69,
+      "taxesTotal": -6103.04,
       "medicareTotal": -4381.2,
-      "afterTaxAssetsAtRmd": 138550.66,
-      "inheritanceFinal": 463762.12
+      "afterTaxAssetsAtRmd": 149584.71,
+      "inheritanceFinal": 498759.76
     }
   }
 }
