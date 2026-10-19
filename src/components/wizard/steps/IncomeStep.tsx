@@ -31,7 +31,7 @@ import {
   isWithdrawalIncome,
   pensionPayout,
 } from "@/lib/domain/household";
-import { IncomeGrowthFromToggle } from "@/components/ui/IncomeGrowthFromToggle";
+import { GrowthFromToggle } from "@/components/ui/GrowthFromToggle";
 import { SOCIAL_SECURITY_MAX_TAXABLE_SHARE } from "@/lib/config/federalTax";
 import { DEFAULT_INCOME_GROWTH } from "@/lib/config/defaults";
 import { formatCurrency, formatPercent } from "@/lib/format";
@@ -305,12 +305,11 @@ function IncomeFields({
           label="Growth starts"
           help="Today: the amount is in today's dollars (like a Social Security statement or today's salary), and the yearly growth compounds from now, so it has grown by the time the income starts. Income start: the amount is what you'll get in its first year, and growth starts after that."
         >
-          <IncomeGrowthFromToggle
-            value={incomeGrowthFrom(income)}
-            onChange={(growthFrom) =>
-              updateIncome(income.id, {
-                growthFrom: growthFrom === "today" ? "today" : undefined,
-              })
+          <GrowthFromToggle
+            fromToday={incomeGrowthFrom(income) === "today"}
+            startLabel="Income start"
+            onChange={(fromToday) =>
+              updateIncome(income.id, { growthFrom: fromToday ? "today" : undefined })
             }
           />
         </Field>

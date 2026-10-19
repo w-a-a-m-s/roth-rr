@@ -837,8 +837,8 @@ export function projectScenario(
   // from its next payment up to the projection start, on the Mortgage
   // analysis statement's terms when it has one (see `loanPaydown.ts`).
   const terms = loanTerms(household, refs.asOfDate);
-  // Incomes set to grow from today compound from this year (see
-  // `incomeMonthlyForYear`).
+  // Incomes and expenses set to grow from today compound from this year (see
+  // `incomeMonthlyForYear` / `expenseMonthlyForYear`).
   const todayYear = asOfYear(refs.asOfDate);
   const otherExpenses = includesOtherExpenses(household);
   const rmdYearConversions = allowsRmdYearConversions(household);
@@ -1547,7 +1547,7 @@ export function projectScenario(
     const expenseMonthly: Record<string, number> = {};
     let monthlyExpenses = 0;
     for (const e of household.expenses) {
-      const grown = expenseMonthlyForYear(e, calendarYear, planStart) * expenseShare;
+      const grown = expenseMonthlyForYear(e, calendarYear, planStart, todayYear) * expenseShare;
       expenseMonthly[e.id] = grown;
       monthlyExpenses += grown;
     }

@@ -373,7 +373,16 @@ export interface Expense {
   /** Inclusive first/last calendar year the expense is active. */
   startYear?: number;
   endYear?: number;
+  /**
+   * When yearly growth starts compounding: `expenseStart` (the default when
+   * unset) treats `amount` as start-year dollars; `today` treats it as
+   * today's dollars and grows it from now.
+   */
+  growthFrom?: ExpenseGrowthFrom;
 }
+
+/** Where an expense's yearly growth starts compounding. */
+export type ExpenseGrowthFrom = "today" | "expenseStart";
 
 export interface TaxBracket {
   /** Lower bound (inclusive) of the bracket in taxable dollars. */

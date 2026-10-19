@@ -163,6 +163,14 @@ export function migrateHousehold(household: Household): Household {
     if (expense.endYear != null && !Number.isFinite(expense.endYear)) {
       delete expense.endYear;
     }
+    // Growth start is optional (the expense's start year when missing).
+    if (
+      expense.growthFrom != null &&
+      expense.growthFrom !== "today" &&
+      expense.growthFrom !== "expenseStart"
+    ) {
+      delete expense.growthFrom;
+    }
   };
   for (const expense of legacy.expenses) healExpense(expense);
 

@@ -182,6 +182,19 @@ describe("migrateHousehold: income growth start", () => {
   });
 });
 
+describe("migrateHousehold: expense growth start", () => {
+  it("keeps today, and drops anything that isn't a growth start", () => {
+    const h = household([], []);
+    h.expenses = [
+      { id: "a", label: "A", amount: 1, frequency: "monthly", growthRate: 0, growthFrom: "today" },
+      { id: "b", label: "B", amount: 1, frequency: "monthly", growthRate: 0, growthFrom: "soon" as never },
+    ];
+    const [a, b] = migrateHousehold(h).expenses;
+    expect(a.growthFrom).toBe("today");
+    expect(b).not.toHaveProperty("growthFrom");
+  });
+});
+
 describe("migrateHousehold: soft-delete trash arrays", () => {
   it("defaults missing deleted* arrays to empty lists", () => {
     const h = household([], []);

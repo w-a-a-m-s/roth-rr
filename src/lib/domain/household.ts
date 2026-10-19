@@ -6,6 +6,7 @@ import type {
   DisabilityCoverage,
   DisabilityWaitingDays,
   Expense,
+  ExpenseGrowthFrom,
   FilingStatus,
   GrowthStart,
   Household,
@@ -611,11 +612,6 @@ export function isIncomeActive(
   return true;
 }
 
-export const INCOME_GROWTH_FROM_LABELS: Record<IncomeGrowthFrom, string> = {
-  today: "Today",
-  incomeStart: "Income start",
-};
-
 /** An income's growth start: `incomeStart` unless set to `today`. */
 export function incomeGrowthFrom(income: Pick<IncomeSource, "growthFrom">): IncomeGrowthFrom {
   return income.growthFrom === "today" ? "today" : "incomeStart";
@@ -666,21 +662,33 @@ export function isExpenseActive(
   return true;
 }
 
+/** An expense's growth start: `expenseStart` unless set to `today`. */
+export function expenseGrowthFrom(expense: Pick<Expense, "growthFrom">): ExpenseGrowthFrom {
+  return expense.growthFrom === "today" ? "today" : "expenseStart";
+}
+
 /**
- * Monthly spend in `calendarYear`. The entered amount is what you spend in
- * the start year (or the first projection year if start is omitted); growth
- * only compounds after that. Inactive years are 0.
+ * Monthly spend in `calendarYear`. By default the entered amount is what you
+ * spend in the start year (or the first projection year if start is
+ * omitted), and growth only compounds after that. An expense set to grow from
+ * `today` is in today's dollars instead and compounds from `todayYear` (the
+ * year of `asOfDate`; the projection start when there's none). Inactive
+ * years are 0.
  */
 export function expenseMonthlyForYear(
   expense: Expense,
   calendarYear: number,
   projectionStart: number,
+  todayYear?: number,
 ): number {
   if (!isExpenseActive(expense, calendarYear)) return 0;
   const monthly =
     expense.frequency === "yearly" ? expense.amount / 12 : expense.amount;
   const rate = Number.isFinite(expense.growthRate) ? expense.growthRate : 0;
-  const growthStart = expense.startYear ?? projectionStart;
+  const growthStart =
+    expenseGrowthFrom(expense) === "today"
+      ? (todayYear ?? projectionStart)
+      : (expense.startYear ?? projectionStart);
   const periods = Math.max(0, calendarYear - growthStart);
   return monthly * Math.pow(1 + rate, periods);
 }

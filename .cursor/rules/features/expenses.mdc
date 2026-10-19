@@ -36,6 +36,15 @@ Additive. `migrateHousehold` leaves missing years alone (open-ended) and strips
 non-finite `startYear` / `endYear` on live and deleted expenses. Existing
 golden cases must not move.
 
+## Growth from today
+
+Like incomes, each expense can grow from **today** (`growthFrom: "today"`,
+the "Growth starts" toggle): the amount is today's dollars and compounds from
+the year of `refs.asOfDate` (the projection start with no date). Missing
+means `expenseStart`: the amount is start-year dollars. `expenseMonthlyForYear`
+takes today's year; the Expenses step's year-1 total passes it too. The
+toggle UI is the shared `GrowthFromToggle`.
+
 ## Costs from other steps (switch)
 
 `Household.includeOtherExpenses` (Expenses step, off by default) adds costs

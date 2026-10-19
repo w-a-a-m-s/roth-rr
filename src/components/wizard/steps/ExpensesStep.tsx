@@ -13,8 +13,12 @@ import {
 import { AddButton, EntityCard, ReadStat } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { StepTour } from "@/components/onboarding/StepTour";
+import { GrowthFromToggle } from "@/components/ui/GrowthFromToggle";
+import { useExternalData } from "@/store/useExternalData";
 import type { Expense, ExpenseFrequency, Household } from "@/lib/domain/types";
 import {
+  asOfYear,
+  expenseGrowthFrom,
   expenseMonthlyForYear,
   expenseYearsLabel,
 } from "@/lib/domain/household";
@@ -77,7 +81,12 @@ function ExpenseFields({
             value={`${formatCurrency(expense.amount)}/${expense.frequency === "yearly" ? "yr" : "mo"}`}
           />
           <ReadStat label="Frequency" value={freqLabel} />
-          <ReadStat label="Growth" value={formatPercent(expense.growthRate)} />
+          <ReadStat
+            label="Growth"
+            value={`${formatPercent(expense.growthRate)} from ${
+              expenseGrowthFrom(expense) === "today" ? "today" : "its start"
+            }`}
+          />
           {years ? <ReadStat label="Active years" value={years} /> : null}
         </>
       }
@@ -109,6 +118,18 @@ function ExpenseFields({
             value={expense.growthRate}
             onChange={(growthRate) =>
               updateExpense(expense.id, { growthRate })
+            }
+          />
+        </Field>
+        <Field
+          label="Growth starts"
+          help="Today: the amount is what this costs in today's dollars, and the yearly growth compounds from now, so it has grown by the time the expense starts. Expense start: the amount is what you'll spend in its first year, and growth starts after that."
+        >
+          <GrowthFromToggle
+            fromToday={expenseGrowthFrom(expense) === "today"}
+            startLabel="Expense start"
+            onChange={(fromToday) =>
+              updateExpense(expense.id, { growthFrom: fromToday ? "today" : undefined })
             }
           />
         </Field>
@@ -205,9 +226,10 @@ export function ExpensesStep() {
   const addButtonRef = useRef<HTMLDivElement>(null);
 
   const start = projectionStartYear(household);
+  const todayYear = asOfYear(useExternalData((s) => s.refs.asOfDate));
   const totalMonthly = household.expenses.reduce((sum, e) => {
     if (!Number.isFinite(start)) return sum + monthlyEquivalent(e);
-    return sum + expenseMonthlyForYear(e, start, start);
+    return sum + expenseMonthlyForYear(e, start, start, todayYear);
   }, 0);
 
   return (

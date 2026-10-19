@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { asOfYear, incomeMonthlyForYear } from "@/lib/domain/household";
+import { asOfYear, expenseMonthlyForYear, incomeMonthlyForYear } from "@/lib/domain/household";
 import { projectScenario, projectionYears } from "@/lib/engine/project";
 import { socialSecurityBreakeven } from "@/lib/engine/socialSecurity";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
-import type { Household, IncomeSource } from "@/lib/domain/types";
+import type { Expense, Household, IncomeSource } from "@/lib/domain/types";
 
 const ss = (over: Partial<IncomeSource> = {}): IncomeSource => ({
   id: "ss",
@@ -84,5 +84,51 @@ describe("growth from today in the projection", () => {
     // Left on Income start, the analysis uses the amounts as entered.
     const plain = socialSecurityBreakeven(household(), "a", "2026-10-18")!;
     expect(plain.options[0].monthlyAtClaim).toBe(4_000);
+  });
+});
+
+describe("expense growth from today or from its start", () => {
+  const spend = (over: Partial<Expense> = {}): Expense => ({
+    id: "exp",
+    label: "Living",
+    amount: 20_000,
+    frequency: "monthly",
+    growthRate: 0.02,
+    startYear: 2040,
+    ...over,
+  });
+
+  it("keeps the start-year amount by default", () => {
+    expect(expenseMonthlyForYear(spend(), 2040, 2040, 2026)).toBe(20_000);
+    expect(expenseMonthlyForYear(spend(), 2041, 2040, 2026)).toBeCloseTo(20_400, 6);
+  });
+
+  it("grows today's dollars from today when set to Today", () => {
+    const today = spend({ growthFrom: "today" });
+    expect(expenseMonthlyForYear(today, 2040, 2040, 2026)).toBeCloseTo(20_000 * 1.02 ** 14, 6);
+    expect(expenseMonthlyForYear(today, 2039, 2040, 2026)).toBe(0);
+    // Yearly amounts too, spread to monthly.
+    const yearly = spend({ growthFrom: "today", frequency: "yearly", amount: 12_000 });
+    expect(expenseMonthlyForYear(yearly, 2040, 2040, 2026)).toBeCloseTo(1_000 * 1.02 ** 14, 6);
+    // No date: today is the projection start.
+    expect(expenseMonthlyForYear(today, 2041, 2040)).toBeCloseTo(20_400, 6);
+  });
+
+  it("feeds the projection's expenses", () => {
+    const h: Household = {
+      filingStatus: "mfj",
+      residenceState: "FL",
+      people: [{ id: "a", name: "Ran", birthYear: 1973, retirementYear: 2040 }],
+      accounts: [],
+      incomes: [],
+      realEstate: [],
+      expenses: [spend({ growthFrom: "today" }), spend({ id: "plain" })],
+      assumptions: { expenseGrowth: 0, finalAge: 70 },
+      optimizer: { strategy: "manual" },
+    };
+    const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: "2026-10-19" };
+    const [row] = projectScenario(h, new Array(projectionYears(h)).fill(0), refs);
+    expect(row.expenseMonthly.exp).toBeCloseTo(20_000 * 1.02 ** 14, 6);
+    expect(row.expenseMonthly.plain).toBe(20_000);
   });
 });
