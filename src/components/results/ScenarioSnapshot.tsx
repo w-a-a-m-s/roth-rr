@@ -5,6 +5,7 @@ import type { Household } from "@/lib/domain/types";
 import type { Comparison, ScenarioResult } from "@/lib/engine/types";
 import { Select } from "@/components/ui/inputs";
 import { formatCurrency } from "@/lib/format";
+import { MARK_CELL, MarkLegend, MarkTag, ageMark } from "@/components/results/AgeMarks";
 import { DualScroll } from "@/components/results/DualScroll";
 import { DisplayFromToggle } from "@/components/results/DisplayFromToggle";
 import {
@@ -235,6 +236,7 @@ function SnapshotCard({
         {label} · {firstYear}–{lastYear}
         {ageText}
       </div>
+      <MarkLegend className="mb-2 justify-center" />
       <DualScroll className="pb-1" scrollLeft={startIndex * YEAR_COL}>
         <table
           className="table-fixed border-collapse text-[12.5px] tabular-nums"
@@ -258,11 +260,18 @@ function SnapshotCard({
             {table.ages.map((age) => (
               <tr key={age.label} className="bg-[#2D4A73] text-white">
                 <th className={`${CELL} ${STICKY} text-left font-bold`}>{age.label}</th>
-                {age.values.map((v, i) => (
-                  <td key={table.years[i]} className={`${CELL} text-center font-bold`}>
-                    {v ?? "–"}
-                  </td>
-                ))}
+                {age.values.map((v, i) => {
+                  const mark = v == null ? null : ageMark(age, table.years[i]);
+                  return (
+                    <td
+                      key={table.years[i]}
+                      className={`${CELL} text-center font-bold ${mark ? MARK_CELL[mark] : ""}`}
+                    >
+                      {v ?? "–"}
+                      {mark ? <MarkTag mark={mark} /> : null}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </thead>

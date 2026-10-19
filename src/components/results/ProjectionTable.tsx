@@ -20,6 +20,7 @@ import {
   lifeProceedsLabel,
 } from "@/components/results/incomeLabels";
 import { useTopScrollbar } from "@/components/results/useTopScrollbar";
+import { MARK_CELL, MarkTag, ageMark, firstRmdYear, type AgeMark } from "@/components/results/AgeMarks";
 import { surplusLabel } from "@/components/results/chartUtils";
 
 function findScrollParent(el: HTMLElement | null): HTMLElement | null {
@@ -115,6 +116,8 @@ interface LineDef {
   children?: LineDef[];
   /** Color positive green / negative red (e.g. surplus). */
   signed?: boolean;
+  /** Highlight a person's retirement and first RMD year (age rows). */
+  mark?: (row: Row) => AgeMark | null;
 }
 
 interface Section {
@@ -451,6 +454,8 @@ function buildSections(
     label: peopleOrdered.length === 1 ? "Age" : `${person.name}`,
     unit: "none",
     value: (r) => r.ages[person.id],
+    mark: (r) =>
+      ageMark({ retireYear: person.retirementYear, rmdYear: firstRmdYear(person) }, r.calendarYear),
   }));
 
   const incomeMonthlyChildren = buildIncomeChildren(scenario, household, "mo");
@@ -1060,6 +1065,18 @@ function LineRows({
         </th>
         {scenario.rows.map((row) => {
           const value = line.value(row, primaryId);
+          const mark = line.mark?.(row) ?? null;
+          if (mark) {
+            return (
+              <td
+                key={row.yearIndex}
+                className={`whitespace-nowrap px-2 py-1 font-semibold tabular-nums lg:px-3 lg:py-1.5 ${MARK_CELL[mark]}`}
+              >
+                {formatValue(line, row, primaryId)}
+                <MarkTag mark={mark} />
+              </td>
+            );
+          }
           const isRmdCol = rmdYearIndexes.has(row.yearIndex);
           const signedClass =
             line.signed && value > 0

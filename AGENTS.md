@@ -499,7 +499,7 @@ Do not wrap this table in a card with a fixed `max-height` that bypasses pin-to-
 - Section title rows: `sticky left-0 top-8` so they sit under the year header while
   vertical scrolling inside the pinned table.
 
-RMD years use amber column highlighting. Rows with children expand/collapse
+RMD years use amber column highlighting. Each person's age row also marks their retirement year (green, "Retires") and first RMD year (amber, "1st RMD"), from `AgeMarks.tsx`; the Assets, Income & Taxes tables on Main mark the same years, with a legend. Rows with children expand/collapse
 inline. Keep that interaction model.
 
 ## Always-visible horizontal scrollbar

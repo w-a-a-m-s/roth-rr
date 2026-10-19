@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calculate } from "@/lib/calculate";
 import type { Household } from "@/lib/domain/types";
+import { personRmdAge } from "@/lib/domain/rmd";
 import { primaryPersonId } from "@/lib/engine/project";
 import modernSample from "@/lib/engine/golden/cases/modern-sample.json";
 import {
@@ -154,6 +155,15 @@ describe("buildSnapshotTable", () => {
     expect(table.ages[0].values[0]).toBe(
       comparison.baseline.rows[0].ages[primaryId],
     );
+  });
+
+  it("marks each person's retirement year and first RMD year", () => {
+    const main = household.people.find((p) => p.id === primaryId)!;
+    const rmdAge = personRmdAge(main)!;
+    expect(table.ages[0].retireYear).toBe(main.retirementYear);
+    expect(table.ages[0].rmdYear).toBe(main.birthYear! + rmdAge);
+    const other = household.people.find((p) => p.id !== primaryId)!;
+    expect(table.ages[1].rmdYear).toBe(other.birthYear! + personRmdAge(other)!);
   });
 
   it("keeps an RMD row that only pays later in the projection", () => {

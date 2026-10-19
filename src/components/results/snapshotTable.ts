@@ -3,6 +3,7 @@ import {
   afterTaxAccountsByKind,
 } from "@/lib/domain/household";
 import type { AccountKind, Household } from "@/lib/domain/types";
+import { firstRmdYear } from "@/components/results/AgeMarks";
 import type { ProjectionRow, ScenarioResult } from "@/lib/engine/types";
 import {
   careMonthly,
@@ -68,10 +69,19 @@ export interface SnapshotSection {
   lines: SnapshotLine[];
 }
 
+export interface SnapshotAges {
+  label: string;
+  values: (number | null)[];
+  /** Calendar year this person retires, highlighted in their age row. */
+  retireYear?: number;
+  /** Calendar year this person's first RMD is due (birth year + RMD age). */
+  rmdYear?: number;
+}
+
 export interface SnapshotTable {
   years: number[];
   /** Age per year, or null once that person has passed (Survivorship). */
-  ages: { label: string; values: (number | null)[] }[];
+  ages: SnapshotAges[];
   sections: SnapshotSection[];
 }
 
@@ -301,12 +311,16 @@ export function buildSnapshotTable(
     ...household.people.filter((p) => p.id === primaryId),
     ...household.people.filter((p) => p.id !== primaryId),
   ];
-  const ages = people.map((p) => ({
-    label: p.name ? `Age · ${p.name}` : "Age",
-    values: window.map((r) =>
-      r.livingIds.includes(p.id) ? (r.ages[p.id] ?? 0) : null,
-    ),
-  }));
+  const ages = people.map((p): SnapshotAges => {
+    return {
+      label: p.name ? `Age · ${p.name}` : "Age",
+      values: window.map((r) =>
+        r.livingIds.includes(p.id) ? (r.ages[p.id] ?? 0) : null,
+      ),
+      retireYear: p.retirementYear,
+      rmdYear: firstRmdYear(p),
+    };
+  });
 
   const assetLines = buildAssetLines(scenario, household, pick);
 
