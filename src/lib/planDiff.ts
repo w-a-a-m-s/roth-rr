@@ -139,6 +139,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   startYear: "Start year",
   endYear: "End year",
   growthDelayYears: "Growth delay years",
+  growthFrom: "Growth starts",
   drawsFromAccountId: "Draws from account",
   businessId: "From business",
   pensionPayout: "Pension payout",

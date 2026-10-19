@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useExternalData } from "@/store/useExternalData";
 import {
   CartesianGrid,
   Legend,
@@ -48,7 +49,8 @@ export function SocialSecurityAnalysis({ household }: { household: Household }) 
   const people = socialSecurityPeople(household);
   const [personId, setPersonId] = useState<string | null>(null);
   const person = people.find((p) => p.id === personId) ?? people[0];
-  const result = person ? socialSecurityBreakeven(household, person.id) : null;
+  const asOfDate = useExternalData((s) => s.refs.asOfDate);
+  const result = person ? socialSecurityBreakeven(household, person.id, asOfDate) : null;
 
   if (!person || !result) {
     return (

@@ -1,6 +1,7 @@
 import type { Account, Household } from "@/lib/domain/types";
 import {
   contributionAccounts,
+  asOfYear,
   incomeMonthlyForYear,
   isIncomeActive,
 } from "@/lib/domain/household";
@@ -78,7 +79,7 @@ export function depleteByRmdSchedule(
       if (!isIncomeActive(income, calendarYear)) continue;
       const accId = income.drawsFromAccountId;
       if (!accId || balances[accId] == null) continue;
-      const withdraw = incomeMonthlyForYear(income, calendarYear, start) * 12;
+      const withdraw = incomeMonthlyForYear(income, calendarYear, start, asOfYear(asOfDate)) * 12;
       const take = Math.min(Math.max(0, balances[accId]), Math.max(0, withdraw));
       balances[accId] -= take;
     }

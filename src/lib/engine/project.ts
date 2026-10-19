@@ -6,6 +6,7 @@ import type {
 } from "@/lib/domain/types";
 import {
   accountGrowsInYear,
+  asOfYear,
   firstYearGrowthFraction,
   preStartGrowthYears,
   realEstateGrowthStart,
@@ -836,6 +837,9 @@ export function projectScenario(
   // from its next payment up to the projection start, on the Mortgage
   // analysis statement's terms when it has one (see `loanPaydown.ts`).
   const terms = loanTerms(household, refs.asOfDate);
+  // Incomes set to grow from today compound from this year (see
+  // `incomeMonthlyForYear`).
+  const todayYear = asOfYear(refs.asOfDate);
   const otherExpenses = includesOtherExpenses(household);
   const rmdYearConversions = allowsRmdYearConversions(household);
   const carCosts = otherExpenses ? carCostsByYear(household, planStart) : null;
@@ -977,6 +981,7 @@ export function projectScenario(
       death,
       calendarYear,
       planStart,
+      todayYear,
     );
     // A disabled person's salary and business income stop.
     if (disability && calendarYear >= disability.year) {
@@ -1057,7 +1062,7 @@ export function projectScenario(
       if (!isIncomeActive(income, calendarYear)) continue;
       const accId = income.drawsFromAccountId;
       if (!accId || balances[accId] == null) continue;
-      const withdraw = incomeMonthlyForYear(income, calendarYear, planStart) * 12;
+      const withdraw = incomeMonthlyForYear(income, calendarYear, planStart, todayYear) * 12;
       const balBefore = Math.max(0, balances[accId]);
       const take = Math.min(balBefore, Math.max(0, withdraw));
       if (income.kind === "afterTaxWithdrawal" && take > 0 && balBefore > 0) {
@@ -1176,7 +1181,7 @@ export function projectScenario(
       // the source balance). A scheduled draw against an empty account is $0.
       const annual = isWithdrawalIncome(income.kind)
         ? (withdrawalTaken[income.id] ?? 0)
-        : incomeMonthlyForYear(income, calendarYear, planStart) * 12;
+        : incomeMonthlyForYear(income, calendarYear, planStart, todayYear) * 12;
       if (annual <= 0 && isWithdrawalIncome(income.kind)) continue;
       const monthly = annual / 12;
       totalMonthlyIncome += monthly;

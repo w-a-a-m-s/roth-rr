@@ -82,12 +82,13 @@ function socialSecurityMonthly(
   ownerId: string,
   calendarYear: number,
   start: number,
+  todayYear?: number,
 ): number {
   let total = 0;
   for (const income of incomes) {
     if (income.kind !== "socialSecurity" || income.ownerId !== ownerId) continue;
     if (!isIncomeActive(income, calendarYear)) continue;
-    total += incomeMonthlyForYear(income, calendarYear, start);
+    total += incomeMonthlyForYear(income, calendarYear, start, todayYear);
   }
   return total;
 }
@@ -106,14 +107,15 @@ export function incomesStoppedByDeath(
   death: ResolvedDeath | null,
   calendarYear: number,
   start: number,
+  todayYear?: number,
 ): Set<string> {
   const stopped = new Set<string>();
   if (!death || calendarYear <= death.year) return stopped;
 
   const survivorId = death.survivorId;
-  const deceasedSs = socialSecurityMonthly(household.incomes, death.personId, calendarYear, start);
+  const deceasedSs = socialSecurityMonthly(household.incomes, death.personId, calendarYear, start, todayYear);
   const survivorSs = survivorId
-    ? socialSecurityMonthly(household.incomes, survivorId, calendarYear, start)
+    ? socialSecurityMonthly(household.incomes, survivorId, calendarYear, start, todayYear)
     : 0;
   const keepDeceasedSs = survivorId != null && deceasedSs > survivorSs;
 

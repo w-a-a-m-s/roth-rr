@@ -9,6 +9,7 @@ import type {
   FilingStatus,
   GrowthStart,
   Household,
+  IncomeGrowthFrom,
   IncomeKind,
   IncomeSource,
   PensionPayout,
@@ -610,21 +611,44 @@ export function isIncomeActive(
   return true;
 }
 
+export const INCOME_GROWTH_FROM_LABELS: Record<IncomeGrowthFrom, string> = {
+  today: "Today",
+  incomeStart: "Income start",
+};
+
+/** An income's growth start: `incomeStart` unless set to `today`. */
+export function incomeGrowthFrom(income: Pick<IncomeSource, "growthFrom">): IncomeGrowthFrom {
+  return income.growthFrom === "today" ? "today" : "incomeStart";
+}
+
+/** The calendar year of `asOfDate` (YYYY-MM-DD), or undefined without one. */
+export function asOfYear(asOfDate?: string): number | undefined {
+  const match = asOfDate ? /^(\d{4})-/.exec(asOfDate) : null;
+  return match ? Number(match[1]) : undefined;
+}
+
 /**
- * Monthly income in `calendarYear`. The entered amount is what you receive in
- * the start year (or the first projection year if start is omitted); growth
- * only compounds after that, plus any `growthDelayYears`. Inactive years are 0.
+ * Monthly income in `calendarYear`. By default the entered amount is what
+ * you receive in the start year (or the first projection year if start is
+ * omitted), and growth only compounds after that. An income set to grow from
+ * `today` is in today's dollars instead and compounds from `todayYear` (the
+ * year of `asOfDate`; the projection start when there's none), so it has
+ * grown by its start. `growthDelayYears` adds flat years either way.
+ * Inactive years are 0.
  */
 export function incomeMonthlyForYear(
   income: IncomeSource,
   calendarYear: number,
   projectionStart: number,
+  todayYear?: number,
 ): number {
   if (!isIncomeActive(income, calendarYear)) return 0;
   const rate = Number.isFinite(income.growthRate) ? income.growthRate : 0;
   const delay = income.growthDelayYears ?? 0;
   const growthStart = income.startYear ?? projectionStart;
-  const periods = Math.max(0, calendarYear - growthStart - delay);
+  const base =
+    incomeGrowthFrom(income) === "today" ? (todayYear ?? projectionStart) : growthStart;
+  const periods = Math.max(0, calendarYear - base - delay);
   return (
     (income.monthlyAmount || 0) *
     Math.pow(1 + rate, periods) *

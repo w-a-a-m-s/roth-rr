@@ -20,9 +20,17 @@ This used to grow from year 0 even while the source was inactive, so a Social
 Security line that started later was already inflated when it kicked in. Don't
 put that back.
 
+Each income can instead grow from **today** (`growthFrom: "today"`, the
+"Growth starts" toggle on the Income step): the amount is today's dollars
+and compounds from the year of `refs.asOfDate` (the projection start with no
+date), so it has grown by its start. Missing means `incomeStart` (the rule
+above). The Social Security analysis grows the plan's benefit and its other
+claiming ages the same way when the benefit is set to today.
+
 `incomeMonthlyForYear` in `household.ts` is the single source. `project.ts`,
-`convertible.ts`, and `depleteByRmd.ts` must call it; don't re-derive grown
-amounts from `yearIndex`.
+`convertible.ts`, `depleteByRmd.ts` and `survivorship.ts` must call it, and
+pass today's year (`asOfYear(asOfDate)`); don't re-derive grown amounts from
+`yearIndex`.
 
 ## Pension payout (survivorship)
 

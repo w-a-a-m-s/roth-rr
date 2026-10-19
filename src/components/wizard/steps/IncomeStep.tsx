@@ -27,9 +27,11 @@ import {
   disabilityCoverage,
   disabilityWaitingDays,
   isPensionIncome,
+  incomeGrowthFrom,
   isWithdrawalIncome,
   pensionPayout,
 } from "@/lib/domain/household";
+import { IncomeGrowthFromToggle } from "@/components/ui/IncomeGrowthFromToggle";
 import { SOCIAL_SECURITY_MAX_TAXABLE_SHARE } from "@/lib/config/federalTax";
 import { DEFAULT_INCOME_GROWTH } from "@/lib/config/defaults";
 import { formatCurrency, formatPercent } from "@/lib/format";
@@ -193,7 +195,9 @@ function IncomeFields({
           <ReadStat label="Taxability" value={taxabilityLabel(income)} />
           <ReadStat
             label="Annual growth"
-            value={formatPercent(income.growthRate)}
+            value={`${formatPercent(income.growthRate)} from ${
+              incomeGrowthFrom(income) === "today" ? "today" : "its start"
+            }`}
           />
           <ReadStat
             label={isDisability ? "Benefit period" : "Active years"}
@@ -295,6 +299,19 @@ function IncomeFields({
           <PercentInput
             value={income.growthRate}
             onChange={(growthRate) => updateIncome(income.id, { growthRate })}
+          />
+        </Field>
+        <Field
+          label="Growth starts"
+          help="Today: the amount is in today's dollars (like a Social Security statement or today's salary), and the yearly growth compounds from now, so it has grown by the time the income starts. Income start: the amount is what you'll get in its first year, and growth starts after that."
+        >
+          <IncomeGrowthFromToggle
+            value={incomeGrowthFrom(income)}
+            onChange={(growthFrom) =>
+              updateIncome(income.id, {
+                growthFrom: growthFrom === "today" ? "today" : undefined,
+              })
+            }
           />
         </Field>
         {payout ? (

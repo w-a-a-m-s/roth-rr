@@ -189,6 +189,9 @@ export type DisabilityWaitingDays = 30 | 60 | 90 | 180;
 /** Full disability pays the whole monthly benefit; partial pays half. */
 export type DisabilityCoverage = "full" | "partial";
 
+/** Where an income's yearly growth starts compounding. */
+export type IncomeGrowthFrom = "today" | "incomeStart";
+
 export interface IncomeSource {
   id: string;
   label: string;
@@ -207,6 +210,12 @@ export interface IncomeSource {
   endYear?: number;
   /** Years of flat amount before growth kicks in (spreadsheet quirk). */
   growthDelayYears?: number;
+  /**
+   * When yearly growth starts compounding: `incomeStart` (the default when
+   * unset) treats `monthlyAmount` as start-year dollars; `today` treats it as
+   * today's dollars (a Social Security statement, say) and grows it from now.
+   */
+  growthFrom?: IncomeGrowthFrom;
   /**
    * For account-withdrawal kinds (`retirementDraw`, `rothWithdrawal`,
    * `afterTaxWithdrawal`): the account the withdrawal depletes. A retirement

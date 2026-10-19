@@ -5,6 +5,7 @@ import type {
   SocialSecurityClaim,
 } from "@/lib/domain/types";
 import { projectionStartYear } from "@/lib/engine/project";
+import { asOfYear, incomeGrowthFrom } from "@/lib/domain/household";
 
 /** One way to claim: the plan's own Social Security, or a claim at another age. */
 export interface ClaimOption {
@@ -101,6 +102,7 @@ function benefitInYear(option: ClaimOption, year: number, cola: number): number 
 export function socialSecurityBreakeven(
   household: Household,
   personId: string,
+  asOfDate?: string,
 ): SocialSecurityBreakeven | null {
   const person = household.people.find((p) => p.id === personId);
   const income = planSocialSecurity(household, personId);
@@ -108,6 +110,14 @@ export function socialSecurityBreakeven(
   const birthYear = person.birthYear as number;
   const cola = Number.isFinite(income.growthRate) ? income.growthRate : 0;
   const planYear = income.startYear ?? projectionStartYear(household);
+  // A benefit set to grow from today is in today's dollars (like an SSA
+  // statement, which lists every claiming age that way): grow each claim's
+  // amount by the COLA from today to its claim year, as the projection does.
+  const todayYear = asOfYear(asOfDate) ?? projectionStartYear(household);
+  const atClaim = (amount: number, claimYear: number) =>
+    incomeGrowthFrom(income) === "today"
+      ? amount * Math.pow(1 + cola, Math.max(0, claimYear - todayYear))
+      : amount;
 
   const options: ClaimOption[] = [
     {
@@ -115,14 +125,14 @@ export function socialSecurityBreakeven(
       label: `Plan: claim at ${planYear - birthYear}`,
       claimYear: planYear,
       claimAge: planYear - birthYear,
-      monthlyAtClaim: income.monthlyAmount || 0,
+      monthlyAtClaim: atClaim(income.monthlyAmount || 0, planYear),
     },
     ...claimsFor(household, personId).map((c) => ({
       key: c.id,
       label: `Claim at ${Math.round(c.age)}`,
       claimYear: birthYear + Math.round(c.age),
       claimAge: Math.round(c.age),
-      monthlyAtClaim: c.monthlyAmount,
+      monthlyAtClaim: atClaim(c.monthlyAmount, birthYear + Math.round(c.age)),
     })),
   ];
 

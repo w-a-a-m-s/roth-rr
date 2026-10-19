@@ -1,0 +1,129 @@
+{
+  "name": "Income growth from today (Social Security in today's dollars, claimed later)",
+  "strategy": "manual",
+  "note": "Single filer retiring 2033 who claims Social Security in 2035. The $2,800 benefit is set to grow from today (no date in tests, so from the 2033 plan start): it has two years of COLA by its first check. The pension stays on Income start.",
+  "household": {
+    "filingStatus": "single",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 6000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Jordan",
+        "birthYear": 1968,
+        "retirementYear": 2033
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ira",
+        "label": "Traditional IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 800000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      },
+      {
+        "id": "k401",
+        "label": "401(k)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 400000,
+        "growthRate": 0.05,
+        "retirementType": "401k"
+      },
+      {
+        "id": "roth",
+        "label": "Roth IRA",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 50000,
+        "growthRate": 0.08
+      },
+      {
+        "id": "brk",
+        "label": "Brokerage",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 250000,
+        "costBasis": 150000,
+        "growthRate": 0.05
+      },
+      {
+        "id": "sav",
+        "label": "Savings",
+        "ownerId": "p1",
+        "kind": "savings",
+        "balance": 80000,
+        "growthRate": 0.03
+      }
+    ],
+    "incomes": [
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2800,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2035,
+        "growthFrom": "today"
+      },
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 2000,
+        "growthRate": 0.02,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 85
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        80000,
+        80000,
+        80000,
+        80000,
+        80000
+      ]
+    }
+  },
+  "commit": "e647748",
+  "commitDate": "2026-10-18T23:52:14+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 264142.36,
+      "medicareTotal": 72555.6,
+      "afterTaxAssetsAtRmd": 1959533.82,
+      "inheritanceFinal": 2399631.14
+    },
+    "roth": {
+      "taxesTotal": 264431.72,
+      "medicareTotal": 65256,
+      "afterTaxAssetsAtRmd": 2345541.37,
+      "inheritanceFinal": 3653241.35
+    },
+    "deltas": {
+      "taxesTotal": 289.37,
+      "medicareTotal": -7299.6,
+      "afterTaxAssetsAtRmd": 386007.54,
+      "inheritanceFinal": 1253610.21
+    }
+  }
+}

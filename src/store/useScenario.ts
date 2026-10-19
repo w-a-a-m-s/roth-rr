@@ -448,6 +448,13 @@ export function migrateHousehold(household: Household): Household {
     delete legacy.assumptions.taxIndexing;
   }
 
+  // An income's growth start is optional (its start year when missing).
+  for (const income of [...(legacy.incomes ?? []), ...(legacy.deletedIncomes ?? []).map((e) => e.item)]) {
+    if (income.growthFrom != null && income.growthFrom !== "today" && income.growthFrom !== "incomeStart") {
+      delete income.growthFrom;
+    }
+  }
+
   // The other-expenses switch is optional (off when missing).
   if (legacy.includeOtherExpenses != null && typeof legacy.includeOtherExpenses !== "boolean") {
     delete legacy.includeOtherExpenses;

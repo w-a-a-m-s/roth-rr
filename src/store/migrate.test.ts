@@ -168,6 +168,20 @@ describe("migrateHousehold: conversions in RMD years switch", () => {
   });
 });
 
+describe("migrateHousehold: income growth start", () => {
+  it("keeps today, and drops anything that isn't a growth start", () => {
+    const h = household([], [
+      { id: "a", label: "A", ownerId: "p1", kind: "pension", monthlyAmount: 1, growthRate: 0, taxability: "full", growthFrom: "today" },
+      { id: "b", label: "B", ownerId: "p1", kind: "pension", monthlyAmount: 1, growthRate: 0, taxability: "full", growthFrom: "later" as never },
+      { id: "c", label: "C", ownerId: "p1", kind: "pension", monthlyAmount: 1, growthRate: 0, taxability: "full" },
+    ]);
+    const [a, b, c] = migrateHousehold(h).incomes;
+    expect(a.growthFrom).toBe("today");
+    expect(b).not.toHaveProperty("growthFrom");
+    expect(c).not.toHaveProperty("growthFrom");
+  });
+});
+
 describe("migrateHousehold: soft-delete trash arrays", () => {
   it("defaults missing deleted* arrays to empty lists", () => {
     const h = household([], []);
