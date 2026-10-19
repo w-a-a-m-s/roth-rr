@@ -120,6 +120,19 @@ law, so they don't move. Always get a year's table through
 `runScenario.ts` and the fill-bracket strategy all do. State tables aren't
 indexed yet.
 
+## Market history returns
+
+`assumptions.returnMode: "history"` ("Returns: Market history" on the
+Household step) grows IRAs, Roth and brokerage accounts by the S&P 500's
+actual total return each year instead of their own rate: the plan's first
+year uses `historyStartYear`, each later year the next, wrapping to 1950
+after the last year (`lib/engine/marketHistory.ts`, data in
+`config/data/sp500Returns.json`, a committed constant in
+docs/external-data.md). Savings, CDs, annuities, DPP / MLP, real estate and
+businesses keep their own rates, and years before the plan start always use
+the fixed rate. Every place that grows an account must go through
+`accountGrowthForYear`: `project.ts`, `convertible.ts`, `depleteByRmd.ts`.
+
 ## Estate value: step-up at death
 
 `inheritanceValue` (`runScenario.ts`, also the after-tax assets at the RMD

@@ -35,7 +35,8 @@ npm run external-data:check
 ```
 
 Today: `federal-tax` and `medicare` (year-vs-calendar); `state-income-tax`
-(year + all 51 jurisdictions + `reviewedAt` within 90 days).
+(year + all 51 jurisdictions + `reviewedAt` within 90 days); `sp500`
+(committed constant, last year of returns must be last calendar year).
 
 ### When a dataset needs an update
 
@@ -194,6 +195,24 @@ Fallback file: `src/lib/config/data/medicare.json`.
 - **Tier-count changes:** `--allow-rate-change` if CMS changes the number of IRMAA tiers.
 - **How you know:** weekly `external-data:check` / GitHub Action fails when
 fallback `year` lags the calendar year (same alarm as federal-tax).
+
+## Dataset: sp500 (ships as a committed constant)
+
+- **What:** S&P 500 total return (dividends included) for each calendar year
+  from 1950, for the "Market history" return mode (`assumptions.returnMode`).
+- **Source:** Aswath Damodaran, NYU Stern, *Historical Returns on Stocks, Bonds
+  and Bills* (`histretSP`), column "S&P 500 (includes dividends)":
+  <https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html>.
+  Updated each January with the year just ended.
+- **Where it lives:** `src/lib/config/data/sp500Returns.json` (decimal returns
+  by year, plus `firstYear`, `lastYear`, `sourceUpdated`), read through
+  `src/lib/config/marketHistory.ts`. Not in Mongo: past years never change.
+- **How to update (each January):** add the new year's return from the page
+  above (check it against the page itself, not a summary), bump `lastYear`
+  and `sourceUpdated`, run `npm test` (Market history golden cases only move
+  if their years are affected), and commit.
+- **How `check` decides it's stale:** fails when `lastYear` is before last
+  calendar year (in 2027 the data must reach 2026).
 
 ## Dataset: rmd (deferred, ships as a committed constant)
 

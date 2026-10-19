@@ -20,6 +20,11 @@ import {
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { GrowthStartToggle } from "@/components/ui/GrowthStartToggle";
 import { ReturnsArticleLink } from "@/components/plan/ReturnsArticle";
+import {
+  MARKET_ACCOUNT_KINDS,
+  historyStartYear,
+  usesMarketHistory,
+} from "@/lib/engine/marketHistory";
 import { submitEditOnEnter } from "@/components/ui/submitEditOnEnter";
 import { StepTour } from "@/components/onboarding/StepTour";
 import type {
@@ -486,6 +491,12 @@ function AccountFields({
             value={account.growthRate}
             onChange={(growthRate) => updateAccount(account.id, { growthRate })}
           />
+          {usesMarketHistory(household) && MARKET_ACCOUNT_KINDS.includes(account.kind) ? (
+            <p className="m-0 mt-1 text-[11px] leading-tight text-muted">
+              Market history is on: from the plan&apos;s first year this account follows the
+              S&amp;P 500 from {historyStartYear(household)}. This rate is used only before then.
+            </p>
+          ) : null}
           {account.kind === "retirementTaxable" || account.kind === "rothTaxFree" ? (
             <ReturnsArticleLink />
           ) : null}

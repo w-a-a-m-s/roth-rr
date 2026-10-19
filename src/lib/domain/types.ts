@@ -412,7 +412,19 @@ export interface Assumptions {
    * tax table's year (inflation indexing). Missing means 2%; 0 keeps them flat.
    */
   taxIndexing?: number;
+  /**
+   * How market-invested accounts (IRAs, Roth, brokerage) grow: `fixed` (the
+   * default when unset) uses each account's own growth rate every year;
+   * `history` uses the S&P 500's actual yearly returns, starting with
+   * `historyStartYear` in the plan's first year.
+   */
+  returnMode?: ReturnMode;
+  /** First S&P 500 year the plan uses in Market history mode (default 1950). */
+  historyStartYear?: number;
 }
+
+/** Fixed growth rates, or the S&P 500's actual yearly returns. */
+export type ReturnMode = "fixed" | "history";
 
 /** How the per-year Roth conversion schedule is produced. */
 export type ConversionStrategy =

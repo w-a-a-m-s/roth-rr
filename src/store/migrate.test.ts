@@ -207,6 +207,23 @@ describe("migrateHousehold: Medicare premiums switch", () => {
   });
 });
 
+describe("migrateHousehold: market history returns", () => {
+  it("keeps a real return mode and start year, drops anything else", () => {
+    const h = household([], []);
+    h.assumptions.returnMode = "history";
+    h.assumptions.historyStartYear = 1989;
+    const out = migrateHousehold(h);
+    expect(out.assumptions.returnMode).toBe("history");
+    expect(out.assumptions.historyStartYear).toBe(1989);
+    const bad = household([], []);
+    (bad.assumptions as { returnMode?: unknown }).returnMode = "monte";
+    (bad.assumptions as { historyStartYear?: unknown }).historyStartYear = 1989.5;
+    const healed = migrateHousehold(bad);
+    expect(healed.assumptions).not.toHaveProperty("returnMode");
+    expect(healed.assumptions).not.toHaveProperty("historyStartYear");
+  });
+});
+
 describe("migrateHousehold: soft-delete trash arrays", () => {
   it("defaults missing deleted* arrays to empty lists", () => {
     const h = household([], []);

@@ -169,6 +169,8 @@ const PROPERTY_LABELS: Record<string, string> = {
   expenseGrowth: "Expense growth",
   finalAge: "Final age",
   taxIndexing: "Tax brackets grow",
+  returnMode: "Returns",
+  historyStartYear: "Market history starts",
   strategy: "Strategy",
   allowOverConvertible: "Allow over-convertible",
   allowConversionsInRmdYears: "Convert in RMD years",

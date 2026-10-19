@@ -1,4 +1,5 @@
-import type { Account, Household } from "@/lib/domain/types";
+import type { Household } from "@/lib/domain/types";
+import { accountGrowthForYear } from "@/lib/engine/marketHistory";
 import {
   accountGrowsInYear,
   contributionAccounts,
@@ -8,7 +9,6 @@ import {
 } from "@/lib/domain/household";
 import { allowsRmdYearConversions, personRmdAge } from "@/lib/domain/rmd";
 import { uniformLifetimeDenominator } from "@/lib/config/rmdTable";
-import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
 import {
   projectionStartYear,
   projectionYears,
@@ -18,11 +18,6 @@ import {
   openingBalance,
 } from "@/lib/engine/deposits";
 
-function growthRate(account: Account): number {
-  return Number.isFinite(account.growthRate)
-    ? account.growthRate
-    : DEFAULT_ACCOUNT_GROWTH[account.kind] ?? 0;
-}
 
 function ownerConvertibleInYear(
   household: Household,
@@ -109,7 +104,7 @@ export function convertibleTotal(
       if (!accountGrowsInYear(acc, household.people, calendarYear, start)) {
         continue;
       }
-      balances[acc.id] *= 1 + growthRate(acc);
+      balances[acc.id] *= 1 + accountGrowthForYear(household, acc, i);
     }
 
     // Retirement draws deplete their source accounts (same caps as the engine).

@@ -31,6 +31,7 @@ import {
 import { primaryPersonId, projectionStartYear } from "@/lib/engine/project";
 import { taxIndexingRate } from "@/lib/engine/taxIndexing";
 import { includesMedicarePremiums, includesOtherExpenses } from "@/lib/engine/otherExpenses";
+import { historyStartYear, usesMarketHistory } from "@/lib/engine/marketHistory";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import {
@@ -250,6 +251,14 @@ export function PlanDetails() {
         <Row label="RMD age" value={primaryRmdAge(household) ?? "-"} />
         <Row label="Project to age" value={a.finalAge} />
         <Row label="Tax brackets grow" value={`${formatPercent(taxIndexingRate(household))} a year`} />
+        <Row
+          label="Returns"
+          value={
+            usesMarketHistory(household)
+              ? `S&P 500 history from ${historyStartYear(household)}`
+              : "Fixed return"
+          }
+        />
       </Section>
 
       <Section title="Accounts" stepId="accounts" readOnly={readOnly}>

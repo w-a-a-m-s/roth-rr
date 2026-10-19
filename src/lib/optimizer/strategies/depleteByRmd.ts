@@ -1,11 +1,11 @@
-import type { Account, Household } from "@/lib/domain/types";
+import type { Household } from "@/lib/domain/types";
+import { accountGrowthForYear } from "@/lib/engine/marketHistory";
 import {
   contributionAccounts,
   asOfYear,
   incomeMonthlyForYear,
   isIncomeActive,
 } from "@/lib/domain/household";
-import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
 import { allowsRmdYearConversions, personRmdAge } from "@/lib/domain/rmd";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import {
@@ -25,11 +25,6 @@ import {
   strategyStartIndex,
 } from "@/lib/optimizer/util";
 
-function growthRate(account: Account): number {
-  return Number.isFinite(account.growthRate)
-    ? account.growthRate
-    : DEFAULT_ACCOUNT_GROWTH[account.kind] ?? 0;
-}
 
 function ownerConvertibleInYear(
   household: Household,
@@ -75,7 +70,7 @@ export function depleteByRmdSchedule(
     const calendarYear = start + i;
 
     for (const acc of retirementAccounts) {
-      balances[acc.id] *= 1 + growthRate(acc);
+      balances[acc.id] *= 1 + accountGrowthForYear(household, acc, i);
     }
 
     for (const income of household.incomes) {

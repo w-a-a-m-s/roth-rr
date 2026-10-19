@@ -78,6 +78,7 @@ import {
   paysMedicarePartB,
 } from "@/lib/config/medicare";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
+import { accountGrowthForYear } from "@/lib/engine/marketHistory";
 import { employmentTax, type EarnedIncome } from "@/lib/engine/employmentTax";
 import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
 import { netInvestmentIncomeTax } from "@/lib/engine/netInvestmentIncomeTax";
@@ -103,7 +104,6 @@ import type { StateTaxTable } from "@/lib/config/stateTax";
 import { getStateTaxTable } from "@/lib/config/stateTax";
 import { forFiling } from "@/lib/config/filingStatus";
 import {
-  DEFAULT_ACCOUNT_GROWTH,
   DEFAULT_RENT_GROWTH,
   IMPLICIT_ROTH_GROWTH,
 } from "@/lib/config/defaults";
@@ -256,14 +256,6 @@ export function projectionYears(household: Household): number {
   return Math.max(1, household.assumptions.finalAge - ageAtStart + 1);
 }
 
-function growthRate(account: Account): number {
-  // `growthRate` is required, but imported/half-filled plans may omit it. Fall
-  // back to the per-kind default so a single bad account can't NaN-poison the
-  // entire projection.
-  return Number.isFinite(account.growthRate)
-    ? account.growthRate
-    : DEFAULT_ACCOUNT_GROWTH[account.kind] ?? 0;
-}
 
 /**
  * A withdrawal income only counts when it points at a real account balance.
@@ -1031,7 +1023,8 @@ export function projectScenario(
       if (!accountGrowsInYear(acc, household.people, calendarYear, planStart)) {
         continue;
       }
-      balances[acc.id] *= Math.pow(1 + growthRate(acc), yearFraction);
+      // Market accounts follow the S&P 500's year in Market history mode.
+      balances[acc.id] *= Math.pow(1 + accountGrowthForYear(household, acc, i - offset), yearFraction);
     }
 
     // 2) Account withdrawals reduce their source account and continue for as

@@ -223,6 +223,38 @@ function isStateTaxError(message: string): boolean {
   );
 }
 
+/**
+ * The S&P 500 returns ship as a committed constant (no Mongo copy): every year
+ * from the first to the last must be there, and the last must be last
+ * calendar year, since the source adds each year in January.
+ */
+function checkSp500(errors: string[], now = new Date()): void {
+  const file = "src/lib/config/data/sp500Returns.json";
+  if (!fs.existsSync(file)) {
+    errors.push(`sp500: missing ${file}`);
+    return;
+  }
+  const data = JSON.parse(fs.readFileSync(file, "utf8")) as {
+    firstYear: number;
+    lastYear: number;
+    returns: Record<string, number>;
+  };
+  for (let year = data.firstYear; year <= data.lastYear; year++) {
+    if (!Number.isFinite(data.returns[String(year)])) {
+      errors.push(`sp500: no return for ${year}`);
+      return;
+    }
+  }
+  const expected = now.getUTCFullYear() - 1;
+  if (data.lastYear < expected) {
+    errors.push(
+      `sp500: returns end in ${data.lastYear}, expected ${expected}. Add it from the Damodaran histretSP page (docs/external-data.md, Dataset: sp500).`,
+    );
+    return;
+  }
+  console.log(`sp500 returns ${data.firstYear}-${data.lastYear} OK`);
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const expected = expectedTaxYear(
@@ -233,6 +265,7 @@ async function main(): Promise<void> {
   for (const key of CHECKABLE) {
     await checkKey(key, expected, errors);
   }
+  checkSp500(errors);
 
   if (errors.length > 0) {
     for (const e of errors) console.error(e);

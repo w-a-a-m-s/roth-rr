@@ -447,6 +447,14 @@ export function migrateHousehold(household: Household): Household {
   if (legacy.assumptions && "rmdRate" in legacy.assumptions) {
     delete (legacy.assumptions as { rmdRate?: number }).rmdRate;
   }
+  // Return mode and the market history start are optional (fixed returns,
+  // and 1950, when missing); anything unusable is dropped.
+  if (legacy.assumptions?.returnMode != null && legacy.assumptions.returnMode !== "fixed" && legacy.assumptions.returnMode !== "history") {
+    delete legacy.assumptions.returnMode;
+  }
+  if (legacy.assumptions?.historyStartYear != null && !Number.isInteger(legacy.assumptions.historyStartYear)) {
+    delete legacy.assumptions.historyStartYear;
+  }
   // Tax indexing is optional: missing means the 2% default. Anything that
   // isn't a usable rate is dropped so the default applies.
   if (
