@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Household } from "@/lib/domain/types";
 import { convertibleTotal } from "@/lib/engine/convertible";
+import { projectScenario } from "@/lib/engine/project";
 import {
   defaultConversionSchedule,
   hasManualConversionSchedule,
+  padToProjection,
   roundCents,
   spreadConversionEvenly,
 } from "@/lib/optimizer/util";
@@ -107,10 +109,10 @@ describe("default conversion when amount is unset", () => {
     // Born 1960 → RMD at 75. Ages 66..74 → 9 conversion years.
     // growthRate 0 → convertible total equals the starting balance.
     expect(convertibleTotal(h)).toBe(100_000);
-    expect(defaultConversionSchedule(h)).toEqual(
-      spreadConversionEvenly(100_000, 9, 100_000),
-    );
-    expect(manualSchedule(h).slice(0, 9)).toEqual(defaultConversionSchedule(h));
+    const schedule = defaultConversionSchedule(h);
+    expect(schedule).toHaveLength(9);
+    for (const amount of schedule) expect(amount).toBeCloseTo(100_000 / 9, 1);
+    expect(manualSchedule(h).slice(0, 9)).toEqual(schedule);
   });
 
   it("defaults using the progressive convertible total when accounts grow", () => {
@@ -118,9 +120,12 @@ describe("default conversion when amount is unset", () => {
     h.accounts[0].growthRate = 0.05;
     const convertible = convertibleTotal(h);
     expect(convertible).toBeGreaterThan(100_000);
-    expect(defaultConversionSchedule(h)).toEqual(
-      spreadConversionEvenly(convertible, 9, convertible),
-    );
+    // One level amount that empties the IRA by the ninth year, growth and all.
+    const schedule = defaultConversionSchedule(h);
+    expect(new Set(schedule).size).toBe(1);
+    const rows = projectScenario(h, padToProjection(h, schedule));
+    expect(rows[8].retirementTotal).toBeLessThan(1.01);
+    expect(schedule[0] * 9).toBeLessThan(convertible);
   });
 
   it("keeps an explicit schedule, including zeros", () => {

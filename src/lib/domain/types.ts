@@ -444,6 +444,13 @@ export interface OptimizerConfig {
    */
   allowConversionsInRmdYears?: boolean;
   /**
+   * Let strategies convert in working years too: from the projection's first
+   * year instead of the first retirement year (the switch next to the
+   * conversion strategy, which also starts the projection today). Missing
+   * means off.
+   */
+  allowConversionsInWorkingYears?: boolean;
+  /**
    * Top ordinary rate to fill when `strategy` is `fillBracket`.
    * Missing defaults to 22%.
    */

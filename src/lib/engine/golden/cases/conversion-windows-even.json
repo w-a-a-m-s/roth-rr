@@ -1,0 +1,91 @@
+{
+  "name": "Even with working and RMD years on (level from today through the last year)",
+  "strategy": "even",
+  "note": "Pat works through 2029 on a $60k salary, retires in 2030 on a $30k pension and reaches RMD age (75) in 2035. The projection starts in 2026 and both conversion switches are on, so Even converts one level amount every year from 2026 to 2040 that empties the IRA by the end, with each year's RMD taken first.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "people": [
+      {
+        "id": "p",
+        "name": "Pat",
+        "birthYear": 1960,
+        "retirementYear": 2030
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ira",
+        "label": "IRA",
+        "ownerId": "p",
+        "kind": "retirementTaxable",
+        "balance": 1500000,
+        "growthRate": 0.05
+      },
+      {
+        "id": "roth",
+        "label": "Roth",
+        "ownerId": "p",
+        "kind": "rothTaxFree",
+        "balance": 0,
+        "growthRate": 0.05
+      }
+    ],
+    "incomes": [
+      {
+        "id": "salary",
+        "label": "Salary",
+        "ownerId": "p",
+        "kind": "salary",
+        "monthlyAmount": 5000,
+        "growthRate": 0,
+        "taxability": "full",
+        "endYear": 2029
+      },
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p",
+        "kind": "pension",
+        "monthlyAmount": 2500,
+        "growthRate": 0,
+        "taxability": "full",
+        "startYear": 2030
+      }
+    ],
+    "realEstate": [],
+    "expenses": [],
+    "assumptions": {
+      "expenseGrowth": 0,
+      "finalAge": 80,
+      "startYear": 2026
+    },
+    "optimizer": {
+      "strategy": "even",
+      "allowConversionsInWorkingYears": true,
+      "allowConversionsInRmdYears": true
+    }
+  },
+  "expected": {
+    "baseline": {
+      "taxesTotal": 142874.08,
+      "medicareTotal": 32140.8,
+      "afterTaxAssetsAtRmd": 1532346.88,
+      "inheritanceFinal": 1570317.37
+    },
+    "roth": {
+      "taxesTotal": 477004.85,
+      "medicareTotal": 62328,
+      "afterTaxAssetsAtRmd": 2210700.79,
+      "inheritanceFinal": 2973113.76
+    },
+    "deltas": {
+      "taxesTotal": 334130.77,
+      "medicareTotal": 30187.2,
+      "afterTaxAssetsAtRmd": 678353.91,
+      "inheritanceFinal": 1402796.38
+    }
+  },
+  "commit": "44a15e6",
+  "commitDate": "2026-10-19T00:07:25+00:00"
+}

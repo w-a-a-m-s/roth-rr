@@ -12,7 +12,11 @@ import {
   accountsInDisplayOrder,
   expenseYearsLabel,
 } from "@/lib/domain/household";
-import { allowsRmdYearConversions, primaryRmdAge } from "@/lib/domain/rmd";
+import {
+  allowsRmdYearConversions,
+  allowsWorkingYearConversions,
+  primaryRmdAge,
+} from "@/lib/domain/rmd";
 import { propertyLoanBalance } from "@/lib/domain/propertyLoans";
 import type {
   AccountKind,
@@ -426,6 +430,10 @@ export function PlanDetails() {
             value={formatCurrency(c.amount)}
           />
         ))}
+        <Row
+          label="Convert in working years"
+          value={allowsWorkingYearConversions(household) ? "On" : "Off"}
+        />
         <Row
           label="Convert in RMD years"
           value={allowsRmdYearConversions(household) ? "On (after each year's RMD)" : "Off"}

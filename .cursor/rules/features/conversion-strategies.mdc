@@ -158,3 +158,15 @@ projection as its window. Anything that builds a strategy's household (like
 `minTaxSchedule`'s starting points and its cache key) must keep that flag, or
 the search silently ignores RMD years.
 
+## Working years and the four windows
+
+"Convert in working years" (`WorkingYearConversionsSwitch`) sets
+`optimizer.allowConversionsInWorkingYears`: `strategyStartYear` becomes the
+projection start, and turning it on also sets "Projection starts" to this
+year when the plan starts later. Off leaves the start alone. With both
+switches every strategy's window is one of four: retirement years only,
+plus working years, plus RMD years, or all three. Even and the manual
+default are a level amount found by bisection (`levelThroughWindow`) so the
+money lasts the window instead of front-loading. `conversionWindows.test.ts`
+runs every strategy through all four.
+

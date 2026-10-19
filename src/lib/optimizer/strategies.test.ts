@@ -59,15 +59,22 @@ function householdWithConvertible(balance: number): Household {
 }
 
 describe("evenSchedule", () => {
-  it("spreads the full convertible total across the window", () => {
+  it("converts one level amount that empties the IRA by the window's end", () => {
+    // No growth: $100k over the window's 9 years is $11,111.11 a year.
     const h = householdWithConvertible(100_000);
     const years = conversionYears(h);
-    expect(evenSchedule(h)).toEqual(
-      padToProjection(
-        h,
-        spreadConversionEvenly(100_000, years, 100_000),
-      ),
-    );
+    const schedule = evenSchedule(h);
+    for (const amount of schedule.slice(0, years)) expect(amount).toBeCloseTo(100_000 / years, 1);
+    expect(schedule.slice(years).every((v) => v === 0)).toBe(true);
+    // With growth the level amount is higher, and still empties it on time.
+    h.accounts[0].growthRate = 0.05;
+    const grown = evenSchedule(h);
+    const level = grown[0];
+    expect(level).toBeGreaterThan(100_000 / years);
+    for (const amount of grown.slice(0, years)) expect(amount).toBe(level);
+    const rows = projectScenario(h, grown);
+    expect(rows[years - 1].retirementTotal).toBeLessThan(1.01);
+    expect(rows[years - 2].retirementTotal).toBeGreaterThan(level / 2);
   });
 
   it("honors convertAmount when set", () => {
@@ -172,7 +179,7 @@ describe("depleteByRmdSchedule", () => {
     const years = conversionYears(h);
     const even = evenSchedule(h).slice(0, years);
     const deplete = depleteByRmdSchedule(h).slice(0, years);
-    expect(deplete).toEqual(even);
+    deplete.forEach((amount, i) => expect(amount).toBeCloseTo(even[i], 1));
   });
 
   it("converts remaining over years left after growth", () => {

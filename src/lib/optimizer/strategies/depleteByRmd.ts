@@ -6,7 +6,8 @@ import {
   isIncomeActive,
 } from "@/lib/domain/household";
 import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
-import { personRmdAge } from "@/lib/domain/rmd";
+import { allowsRmdYearConversions, personRmdAge } from "@/lib/domain/rmd";
+import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import {
   conversionYears,
 } from "@/lib/engine/convertible";
@@ -15,6 +16,7 @@ import {
   openingBalance,
 } from "@/lib/engine/deposits";
 import {
+  projectScenario,
   projectionStartYear,
 } from "@/lib/engine/project";
 import {
@@ -44,7 +46,8 @@ function ownerConvertibleInYear(
 /**
  * Each pre-RMD year, convert `remaining pre-RMD balance / years left` so the
  * tax-deferred accounts empty by RMD. Walk order matches the engine: grow,
- * withdrawals, convert, then deposits.
+ * withdrawals, convert, then deposits. With RMD years open, empty them by the
+ * window's last year instead (`depleteThroughWindow`).
  */
 export function depleteByRmdSchedule(
   household: Household,
@@ -53,6 +56,7 @@ export function depleteByRmdSchedule(
   const start = projectionStartYear(household);
   const years = conversionYears(household);
   if (!Number.isFinite(start) || years < 1) return padToProjection(household, []);
+  if (allowsRmdYearConversions(household)) return depleteThroughWindow(household, years, asOfDate);
 
   const retirementAccounts = contributionAccounts(household).filter(
     (acc) => acc.kind === "retirementTaxable",
@@ -115,4 +119,27 @@ export function depleteByRmdSchedule(
   }
 
   return padToProjection(household, window);
+}
+
+/**
+ * With RMD years open there's no RMD age to empty the accounts by: empty them
+ * by the window's last year instead. Each year converts what's left divided
+ * by the years remaining, walking the real projection so each year's RMD
+ * comes out first (the engine sets it aside before converting).
+ */
+function depleteThroughWindow(
+  household: Household,
+  years: number,
+  asOfDate?: string,
+): number[] {
+  const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate };
+  const schedule = padToProjection(household, []);
+  const first = strategyStartIndex(household);
+  for (let i = first; i < years; i++) {
+    // What's left in the accounts at the end of year i with nothing
+    // converted that year (after its growth, draws, RMD and deposits).
+    const left = projectScenario(household, schedule, refs)[i]?.retirementTotal ?? 0;
+    schedule[i] = roundCents(Math.max(0, left) / (years - i));
+  }
+  return schedule;
 }

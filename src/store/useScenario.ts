@@ -468,13 +468,11 @@ export function migrateHousehold(household: Household): Household {
     delete legacy.includeOtherExpenses;
   }
 
-  // Converting in RMD years is optional (off when missing).
-  if (
-    legacy.optimizer &&
-    legacy.optimizer.allowConversionsInRmdYears != null &&
-    typeof legacy.optimizer.allowConversionsInRmdYears !== "boolean"
-  ) {
-    delete legacy.optimizer.allowConversionsInRmdYears;
+  // Converting in RMD and working years is optional (off when missing).
+  for (const key of ["allowConversionsInRmdYears", "allowConversionsInWorkingYears"] as const) {
+    if (legacy.optimizer && legacy.optimizer[key] != null && typeof legacy.optimizer[key] !== "boolean") {
+      delete legacy.optimizer[key];
+    }
   }
 
   // Older plans have no over-convertible toggle; default off (UI clamps).

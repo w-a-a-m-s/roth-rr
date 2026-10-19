@@ -51,7 +51,11 @@ import {
   LIFE_INSURANCE_PROCEEDS_GROWTH,
   lifeInsurancePayoutRate,
 } from "@/lib/config/lifeInsurancePayout";
-import { allowsRmdYearConversions, personRmdAge } from "@/lib/domain/rmd";
+import {
+  allowsRmdYearConversions,
+  allowsWorkingYearConversions,
+  personRmdAge,
+} from "@/lib/domain/rmd";
 import {
   DEFAULT_REPAYMENT_YEARS,
   loanExpenseKey,
@@ -208,6 +212,8 @@ export function projectionStartYear(household: Household): number {
  * only (amounts the user typed).
  */
 export function strategyStartYear(household: Household): number {
+  // With working-year conversions on, strategies fill from the plan start.
+  if (allowsWorkingYearConversions(household)) return projectionStartYear(household);
   return Math.max(projectionStartYear(household), retirementStartYear(household));
 }
 

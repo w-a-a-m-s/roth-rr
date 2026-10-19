@@ -51,3 +51,12 @@ export function primaryRmdAge(household: Household): number | undefined {
 export function allowsRmdYearConversions(household: Pick<Household, "optimizer">): boolean {
   return household.optimizer?.allowConversionsInRmdYears === true;
 }
+
+/**
+ * Whether strategies may convert in working years too (the switch next to the
+ * conversion strategy, `optimizer.allowConversionsInWorkingYears`): from the
+ * projection's first year rather than the first retirement year.
+ */
+export function allowsWorkingYearConversions(household: Pick<Household, "optimizer">): boolean {
+  return household.optimizer?.allowConversionsInWorkingYears === true;
+}

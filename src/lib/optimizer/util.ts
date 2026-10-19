@@ -4,10 +4,13 @@ import {
   convertibleTotal,
 } from "@/lib/engine/convertible";
 import {
+  projectScenario,
   projectionStartYear,
   projectionYears,
   strategyStartYear,
 } from "@/lib/engine/project";
+import { allowsRmdYearConversions, personRmdAge } from "@/lib/domain/rmd";
+import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 
 export { conversionYears, convertibleTotal };
 
@@ -75,17 +78,77 @@ export function spreadFromRetirement(
   ];
 }
 
+/** Bisection stops once the level amount is this close, in dollars. */
+const LEVEL_PRECISION = 0.01;
+/** What may be left in an account when it's called empty, in dollars. */
+const LEVEL_EMPTY = 0.01;
+
+/**
+ * One steady yearly amount, converted every year of the window (from the
+ * strategy's first year), that empties each tax-deferred account by the last
+ * year it can convert: the year before its owner's RMD age, or the window's
+ * last year with RMD years open. Growth, draws and each year's RMD are
+ * counted. Splitting the convertible total evenly instead runs the accounts
+ * dry early (the total counts growth to the end); this lasts the window.
+ */
+export function levelThroughWindow(
+  household: Household,
+  asOfDate?: string,
+): number[] {
+  const years = conversionYears(household);
+  const first = Math.min(strategyStartIndex(household), years);
+  if (years - first < 1) return [];
+  // Balances don't depend on the tax tables, so the fallback refs will do.
+  const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate };
+  const start = projectionStartYear(household);
+  const rmdYears = allowsRmdYearConversions(household);
+  // Each account's last window year it can convert in.
+  const lastIndex: Record<string, number> = {};
+  for (const acc of household.accounts) {
+    if (acc.kind !== "retirementTaxable") continue;
+    const owner = household.people.find((p) => p.id === acc.ownerId);
+    const rmdAge = personRmdAge(owner);
+    let last = years - 1;
+    if (!rmdYears && rmdAge != null && Number.isFinite(owner?.birthYear)) {
+      last = Math.min(last, (owner?.birthYear as number) + rmdAge - 1 - start);
+    }
+    if (last >= first) lastIndex[acc.id] = last;
+  }
+  const scheduleFor = (amount: number) =>
+    Array.from({ length: years }, (_, i) => (i < first ? 0 : amount));
+  const leftAtEnd = (amount: number) => {
+    const rows = projectScenario(household, padToProjection(household, scheduleFor(amount)), refs);
+    let left = 0;
+    for (const [id, i] of Object.entries(lastIndex)) {
+      left = Math.max(left, rows[i]?.balances[id] ?? 0);
+    }
+    return left;
+  };
+  let lo = 0;
+  let hi = Math.max(0, convertibleTotal(household, asOfDate));
+  if (!(hi > 0)) return [];
+  // Round up to the cent so the level amount still empties the accounts.
+  const upToCent = (amount: number) => Math.ceil(amount * 100 - 1e-6) / 100;
+  if (leftAtEnd(hi) > LEVEL_EMPTY) return scheduleFor(upToCent(hi));
+  while (hi - lo > LEVEL_PRECISION) {
+    const mid = (lo + hi) / 2;
+    if (leftAtEnd(mid) > LEVEL_EMPTY) lo = mid;
+    else hi = mid;
+  }
+  return scheduleFor(upToCent(hi));
+}
+
 /**
  * Per-year conversion amounts for the conversion window. When the user has not
- * entered a schedule, defaults to the full convertible total spread evenly
- * from the first retirement year.
+ * entered a schedule, defaults to one level amount from the strategy's first
+ * year that empties the accounts by the end of the window
+ * (`levelThroughWindow`).
  */
 export function defaultConversionSchedule(
   household: Household,
   asOfDate?: string,
 ): number[] {
-  const convertible = convertibleTotal(household, asOfDate);
-  return spreadFromRetirement(household, convertible, convertible);
+  return levelThroughWindow(household, asOfDate);
 }
 
 /**

@@ -173,6 +173,16 @@ figures the year's RMD first (`rmdRequired`) and converts only what's above
 it, so the RMD is always taken in full. `conversionYears` becomes the whole
 projection and `convertibleTotal` nets out the RMDs along the way.
 
+A second switch, `optimizer.allowConversionsInWorkingYears` ("Convert in
+working years"), moves `strategyStartYear` from the first retirement year to
+the projection start (and turning it on starts the projection this year), so
+strategies can fill working years too. Every strategy reads its window from
+`strategyStartYear` and `conversionYears`, so the two switches give four
+windows: retirement only, plus working years, plus RMD years, or all three.
+Even and the manual default convert one level amount across the window that
+empties each IRA by its last convertible year (`levelThroughWindow`); Empty
+by RMD empties by the window's end when RMD years are on.
+
 Plans used to carry a flat `assumptions.rmdRate` (default 5%) applied to the
 live balance. That overstated RMDs in the early years and understated them in
 the late ones, since the table's implied rate crosses 5% around age 80 and keeps

@@ -25,15 +25,15 @@ export function fillBracketLabel(rate: FillBracketRate): string {
 export const STRATEGY_HELP: Record<ConversionStrategy, string> = {
   manual:
     "This is the conversion schedule you configured yourself, year by year.",
-  even: "Spread the amount evenly across every year before RMDs start.",
+  even: "Spread the amount evenly across every year conversions are allowed: from retirement (or today, with working years on) until RMDs start, or through the last year with RMD years on.",
   immediate:
-    "Convert the full amount in the first year. Later years convert nothing.",
+    "Convert the full amount in the first year conversions are allowed (this year, with working years on). Later years convert nothing.",
   fillBracket:
     "Each year, convert only enough to fill the selected federal tax bracket. Choose 12%, 22%, or 24%.",
   irmaa:
     "Each year, convert up to just under the next Medicare IRMAA income cliff so premiums stay in the current tier.",
   depleteByRmd:
-    "Convert a share of what's left each year so tax-deferred accounts are empty by RMD age. This accounts for growth along the way.",
+    "Convert a share of what's left each year so tax-deferred accounts are empty by RMD age, or by the plan's last year with RMD years on. This accounts for growth (and each year's RMD) along the way.",
   minTax:
     "Searches for the yearly conversions that pay the least federal and state income tax over your whole retirement. It looks only at taxes, not Medicare or the inheritance.",
 };

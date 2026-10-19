@@ -171,6 +171,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   strategy: "Strategy",
   allowOverConvertible: "Allow over-convertible",
   allowConversionsInRmdYears: "Convert in RMD years",
+  allowConversionsInWorkingYears: "Convert in working years",
   manualSchedule: "Manual schedule",
   targetBracketRate: "Target bracket",
   convertAmount: "Amount to convert",
