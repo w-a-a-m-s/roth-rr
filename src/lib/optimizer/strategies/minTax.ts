@@ -61,10 +61,13 @@ let cache: { refs: ReferenceData; key: string; schedule: number[] } | null =
 
 function cacheKey(household: Household): string {
   // The schedule doesn't depend on which strategy is selected, but it does
-  // on whether RMD years can convert.
+  // on which years can convert (both switches).
   return JSON.stringify({
     ...household,
-    optimizer: { rmdYears: household.optimizer?.allowConversionsInRmdYears === true },
+    optimizer: {
+      rmdYears: household.optimizer?.allowConversionsInRmdYears === true,
+      workingYears: household.optimizer?.allowConversionsInWorkingYears === true,
+    },
   });
 }
 
@@ -73,12 +76,13 @@ function searchMinTax(household: Household, refs: ReferenceData): number[] {
   const years = Math.min(conversionYears(household), zeros.length);
   if (years < 1) return zeros;
 
-  // Each starting strategy keeps the plan's RMD-year switch.
+  // Each starting strategy keeps the plan's conversion-window switches.
   const as = (strategy: ConversionStrategy, extra = {}): Household => ({
     ...household,
     optimizer: {
       strategy,
       allowConversionsInRmdYears: household.optimizer?.allowConversionsInRmdYears,
+      allowConversionsInWorkingYears: household.optimizer?.allowConversionsInWorkingYears,
       ...extra,
     },
   });

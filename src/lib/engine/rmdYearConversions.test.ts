@@ -99,4 +99,31 @@ describe("strategies and the RMD-year switch", () => {
       );
     }
   });
+
+  it("re-runs the minimum-tax search when the working-years switch changes", async () => {
+    const { minTaxSchedule } = await import("@/lib/optimizer/strategies/minTax");
+    // Projection from 2026, retiring 2030: working years 2026-2029 are only
+    // open to strategies with the switch on. Off first, so a cache keyed
+    // without the switch would answer "on" with the retirement-only search.
+    const working = (on: boolean): Household => ({
+      filingStatus: "single",
+      residenceState: "FL",
+      people: [{ id: "p", name: "Pat", birthYear: 1960, retirementYear: 2030 }],
+      accounts: [
+        { id: "ira", label: "IRA", ownerId: "p", kind: "retirementTaxable", balance: 2_000_000, growthRate: 0.06 },
+        { id: "roth", label: "Roth", ownerId: "p", kind: "rothTaxFree", balance: 0, growthRate: 0.06 },
+      ],
+      incomes: [
+        { id: "pension", label: "Pension", ownerId: "p", kind: "pension", monthlyAmount: 4_000, growthRate: 0, taxability: "full", startYear: 2030 },
+      ],
+      realEstate: [],
+      expenses: [],
+      assumptions: { expenseGrowth: 0, finalAge: 95, startYear: 2026 },
+      optimizer: { strategy: "minTax", ...(on ? { allowConversionsInWorkingYears: true } : {}) },
+    });
+    const off = minTaxSchedule(working(false));
+    const on = minTaxSchedule(working(true));
+    expect(off.slice(0, 4).every((v) => v === 0)).toBe(true);
+    expect(on.slice(0, 4).some((v) => v > 0)).toBe(true);
+  });
 });
