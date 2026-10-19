@@ -34,6 +34,8 @@ import {
 import { projectionStartYear, projectionYears } from "@/lib/engine/project";
 import { useScenario } from "@/store/useScenario";
 import { useUI, type AnalysisKind } from "@/store/useUI";
+import { ReturnsArticleLink } from "@/components/plan/ReturnsArticle";
+import { Sp500ReturnsLink } from "@/components/plan/MarketHistory";
 
 const ANALYSES: { key: AnalysisKind; label: string }[] = [
   { key: "retirement", label: "Retirement" },
@@ -53,29 +55,37 @@ export function AnalysisTabs() {
   const analysis = useUI((s) => s.analysis);
   const setAnalysis = useUI((s) => s.setAnalysis);
   return (
-    <nav aria-label="Analysis" className="flex flex-wrap items-center gap-x-1 gap-y-1">
-      {ANALYSES.map(({ key, label }, i) => (
-        <span key={key} className="inline-flex items-center gap-1">
-          {i > 0 ? (
-            <span aria-hidden className="px-1 text-muted-3">
-              |
-            </span>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => setAnalysis(key)}
-            aria-current={analysis === key ? "page" : undefined}
-            className={`rounded px-1 text-[14px] font-semibold underline-offset-4 transition ${
-              analysis === key
-                ? "text-foreground underline decoration-2"
-                : "text-accent hover:underline"
-            }`}
-          >
-            {label}
-          </button>
-        </span>
-      ))}
-    </nav>
+    <div className="flex flex-col gap-1.5">
+      <nav aria-label="Analysis" className="flex flex-wrap items-center gap-x-1 gap-y-1">
+        {ANALYSES.map(({ key, label }, i) => (
+          <span key={key} className="inline-flex items-center gap-1">
+            {i > 0 ? (
+              <span aria-hidden className="px-1 text-muted-3">
+                |
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => setAnalysis(key)}
+              aria-current={analysis === key ? "page" : undefined}
+              className={`rounded px-1 text-[14px] font-semibold underline-offset-4 transition ${
+                analysis === key
+                  ? "text-foreground underline decoration-2"
+                  : "text-accent hover:underline"
+              }`}
+            >
+              {label}
+            </button>
+          </span>
+        ))}
+      </nav>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-1 text-[11.5px] text-muted-2">
+        <span className="font-semibold">Articles:</span>
+        <ReturnsArticleLink />
+        <span aria-hidden className="text-muted-3">·</span>
+        <Sp500ReturnsLink />
+      </div>
+    </div>
   );
 }
 

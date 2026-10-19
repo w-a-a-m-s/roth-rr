@@ -221,14 +221,14 @@ function ReturnsArticleBody() {
 }
 
 /** "Rate of returns for IRAs versus Roth IRAs" link that opens the article. */
-export function ReturnsArticleLink() {
+export function ReturnsArticleLink({ className = "" }: { className?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-1 self-start border-0 bg-transparent p-0 text-left text-[11.5px] font-semibold text-accent underline"
+        className={`self-start border-0 bg-transparent p-0 text-left text-[11.5px] font-semibold text-accent underline ${className}`}
       >
         {RETURNS_ARTICLE_TITLE}
       </button>

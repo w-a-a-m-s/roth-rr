@@ -498,7 +498,7 @@ function AccountFields({
             </p>
           ) : null}
           {account.kind === "retirementTaxable" || account.kind === "rothTaxFree" ? (
-            <ReturnsArticleLink />
+            <ReturnsArticleLink className="mt-1" />
           ) : null}
         </Field>
         <Field
