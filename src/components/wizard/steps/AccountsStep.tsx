@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { GrowthStartToggle } from "@/components/ui/GrowthStartToggle";
+import { ReturnsArticleLink } from "@/components/plan/ReturnsArticle";
 import { submitEditOnEnter } from "@/components/ui/submitEditOnEnter";
 import { StepTour } from "@/components/onboarding/StepTour";
 import type {
@@ -485,6 +486,9 @@ function AccountFields({
             value={account.growthRate}
             onChange={(growthRate) => updateAccount(account.id, { growthRate })}
           />
+          {account.kind === "retirementTaxable" || account.kind === "rothTaxFree" ? (
+            <ReturnsArticleLink />
+          ) : null}
         </Field>
         <Field
           label="Growth starts"
