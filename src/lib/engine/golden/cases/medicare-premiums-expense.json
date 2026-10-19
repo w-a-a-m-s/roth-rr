@@ -1,0 +1,89 @@
+{
+  "name": "Medicare Part B premiums counted as an expense",
+  "strategy": "manual",
+  "note": "The IRMAA-strategy plan with the Expenses step switch on and a manual schedule: each enrolled person's Part B premium (IRMAA included, two-year lookback) is an expense, the same amounts the Medicare analysis shows.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "people": [
+      {
+        "id": "p1",
+        "name": "Pat",
+        "birthYear": 1960,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ret",
+        "label": "IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 200000,
+        "growthRate": 0.04,
+        "retirementType": "ira"
+      },
+      {
+        "id": "roth",
+        "label": "Roth",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 0,
+        "growthRate": 0.04
+      }
+    ],
+    "incomes": [
+      {
+        "id": "pen",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 2500,
+        "growthRate": 0,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "expenses": [],
+    "assumptions": {
+      "expenseGrowth": 0,
+      "finalAge": 76
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        150000,
+        150000,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "includeMedicarePremiums": true
+  },
+  "commit": "67b0b74",
+  "commitDate": "2026-10-19T00:34:39+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 6671.27,
+      "medicareTotal": 24348,
+      "afterTaxAssetsAtRmd": 221581.77,
+      "inheritanceFinal": 221720.08
+    },
+    "roth": {
+      "taxesTotal": 43908.09,
+      "medicareTotal": 32138.4,
+      "afterTaxAssetsAtRmd": 296048.86,
+      "inheritanceFinal": 307890.81
+    },
+    "deltas": {
+      "taxesTotal": 37236.81,
+      "medicareTotal": 7790.4,
+      "afterTaxAssetsAtRmd": 74467.09,
+      "inheritanceFinal": 86170.73
+    }
+  }
+}

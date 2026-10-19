@@ -66,10 +66,17 @@ import { balanceAtStart, loanTerms, type LoanTerms } from "@/lib/engine/loanPayd
 import {
   CAR_EXPENSE_KEY,
   carCostsByYear,
+  includesMedicarePremiums,
   includesOtherExpenses,
   lifePremiumsForYear,
+  medicareExpenseKey,
   premiumExpenseKey,
 } from "@/lib/engine/otherExpenses";
+import {
+  MEDICARE_IRMAA_LOOKBACK_YEARS,
+  medicarePartBMonthlyPremium,
+  paysMedicarePartB,
+} from "@/lib/config/medicare";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
 import { employmentTax, type EarnedIncome } from "@/lib/engine/employmentTax";
 import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
@@ -847,6 +854,7 @@ export function projectScenario(
   // `incomeMonthlyForYear` / `expenseMonthlyForYear`).
   const todayYear = asOfYear(refs.asOfDate);
   const otherExpenses = includesOtherExpenses(household);
+  const medicarePremiums = includesMedicarePremiums(household);
   const rmdYearConversions = allowsRmdYearConversions(household);
   const carCosts = otherExpenses ? carCostsByYear(household, planStart) : null;
   const mortgageBalances: Record<string, number> = {};
@@ -1613,6 +1621,24 @@ export function projectScenario(
       return { taxes, withheld };
     };
     let priced = priceYear(0, 0);
+
+    // Medicare Part B premiums as an expense, when the plan counts them (the
+    // Expenses step switch): the same premiums the Medicare analysis shows.
+    // Each enrolled person pays the tier set by MAGI from two years earlier
+    // (`medicareYears`); the first two years use the plan's first year.
+    if (medicarePremiums) {
+      const lookback = rows[Math.max(0, i - MEDICARE_IRMAA_LOOKBACK_YEARS)];
+      const magi = lookback
+        ? lookback.grossTaxableIncome + lookback.capitalGainsIncome
+        : priced.taxes.grossTaxableIncome + capitalGainsIncome;
+      const monthly = medicarePartBMonthlyPremium(magi, fs, refs.medicare);
+      for (const person of household.people) {
+        if (!livingIds.includes(person.id)) continue;
+        if (!paysMedicarePartB(person, calendarYear)) continue;
+        expenseMonthly[medicareExpenseKey(person.id)] = monthly;
+        monthlyExpenses += monthly;
+      }
+    }
 
     // 5c) After an event, a year still short once the lifetime income is in
     //     takes more from the accounts until it's covered (or they're empty),

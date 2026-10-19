@@ -27,9 +27,11 @@ import { projectionStartYear } from "@/lib/engine/project";
 import { loanTerms } from "@/lib/engine/loanPaydown";
 import {
   carCostsByYear,
+  includesMedicarePremiums,
   includesOtherExpenses,
   lifePremiumsForYear,
 } from "@/lib/engine/otherExpenses";
+import { MEDICARE_PREMIUM_START_AGE } from "@/lib/config/medicare";
 import { CAR_OPTION_LABELS } from "@/lib/engine/carDecision";
 import { loanMonthlyPaymentToday, propertyLoans } from "@/lib/domain/propertyLoans";
 import { formatCurrency, formatPercent } from "@/lib/format";
@@ -219,6 +221,31 @@ function OtherExpensesSwitch() {
   );
 }
 
+function MedicarePremiumsSwitch() {
+  const household = useHousehold();
+  const { setIncludeMedicarePremiums } = useScenario();
+  const standard = useExternalData((s) => s.refs.medicare.standardMonthlyPremium);
+  return (
+    <Field
+      label="Medicare Part B premiums"
+      help={`Counts each person's Part B premium as an expense from age ${MEDICARE_PREMIUM_START_AGE} or retirement, whichever is later, the same premiums the Medicare analysis shows. Higher income adds the IRMAA surcharge, set by your income two years earlier, so a big conversion can raise a later year's premium. Turn it off if your expenses above already include Medicare.`}
+    >
+      <label className="flex items-center gap-2 text-[13px] text-foreground">
+        <input
+          type="checkbox"
+          checked={includesMedicarePremiums(household)}
+          onChange={(e) => setIncludeMedicarePremiums(e.target.checked)}
+          className="h-4 w-4 rounded border border-border"
+        />
+        Count them as expenses
+      </label>
+      <p className="mt-1.5 mb-0 text-xs text-muted">
+        Standard premium today: {formatCurrency(standard)}/mo per person, more with IRMAA.
+      </p>
+    </Field>
+  );
+}
+
 export function ExpensesStep() {
   const household = useHousehold();
   const { addExpense, restoreExpense, discardDeletedExpense } = useScenario();
@@ -240,6 +267,7 @@ export function ExpensesStep() {
         targets={{ "add-expense": addButtonRef }}
       />
       <OtherExpensesSwitch />
+      <MedicarePremiumsSwitch />
       <div className="flex justify-end gap-2">
         <RestoreDeleted
           items={(household.deletedExpenses ?? []).map((entry) => ({

@@ -56,3 +56,13 @@ analysis's recommended option from the plan start (`car`, only once
 `carDecision` is saved). They're fixed bills: Spending capacity never scales
 them. Homestead interest is still not deducted.
 
+## Medicare Part B premiums (switch)
+
+`Household.includeMedicarePremiums` (Expenses step, off by default) adds each
+enrolled person's Part B premium as an expense line (`medicare:<person>`),
+computed inside `projectScenario` after the year's tax is priced: the tier
+from MAGI two years earlier (`MEDICARE_IRMAA_LOOKBACK_YEARS`, the first two
+years use the first year's), enrolled from 67 or retirement
+(`paysMedicarePartB`). It must stay equal to `medicareYears` row by row,
+which the test checks. Fixed bills: Spending capacity doesn't scale them.
+

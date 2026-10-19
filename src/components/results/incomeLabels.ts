@@ -90,6 +90,10 @@ export function expenseLabel(household: Household, key: string): string {
     return name ? `Insurance premium · ${name}` : "Insurance premium";
   }
   if (key === CAR_EXPENSE_KEY) return "Car (from Car analysis)";
+  if (key.startsWith("medicare:")) {
+    const name = household.people.find((p) => p.id === key.slice(9))?.name?.trim();
+    return name ? `Medicare Part B · ${name}` : "Medicare Part B";
+  }
   return household.expenses.find((e) => e.id === key)?.label ?? key;
 }
 

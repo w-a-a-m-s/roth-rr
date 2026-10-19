@@ -586,6 +586,11 @@ export interface Household {
    */
   includeOtherExpenses?: boolean;
   /**
+   * Count Medicare Part B premiums (IRMAA included) as an expense: the
+   * Expenses step switch. Missing means off (they only show as a total).
+   */
+  includeMedicarePremiums?: boolean;
+  /**
    * Soft-deleted items kept for quick restore in the plan editor. Not used by
    * the projection engine — only the live lists above are projected. Optional
    * for older saved plans; `migrateHousehold` defaults missing arrays to `[]`.

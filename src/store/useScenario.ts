@@ -463,9 +463,9 @@ export function migrateHousehold(household: Household): Household {
     }
   }
 
-  // The other-expenses switch is optional (off when missing).
-  if (legacy.includeOtherExpenses != null && typeof legacy.includeOtherExpenses !== "boolean") {
-    delete legacy.includeOtherExpenses;
+  // The other-expenses and Medicare switches are optional (off when missing).
+  for (const key of ["includeOtherExpenses", "includeMedicarePremiums"] as const) {
+    if (legacy[key] != null && typeof legacy[key] !== "boolean") delete legacy[key];
   }
 
   // Converting in RMD and working years is optional (off when missing).
@@ -818,6 +818,7 @@ interface ScenarioState {
   setResidenceState: (state: UsStateCode) => void;
   setRealEstateProfessional: (value: boolean) => void;
   setIncludeOtherExpenses: (value: boolean) => void;
+  setIncludeMedicarePremiums: (value: boolean) => void;
   addExpense: (expense: Expense) => void;
   updateExpense: (id: string, patch: Partial<Expense>) => void;
   removeExpense: (id: string) => void;
@@ -1459,6 +1460,8 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       editActive((h) => ({ ...h, realEstateProfessional: value })),
     setIncludeOtherExpenses: (value) =>
       editActive((h) => ({ ...h, includeOtherExpenses: value })),
+    setIncludeMedicarePremiums: (value) =>
+      editActive((h) => ({ ...h, includeMedicarePremiums: value })),
 
     setFilingStatus: (status) =>
       editActive((h) => {

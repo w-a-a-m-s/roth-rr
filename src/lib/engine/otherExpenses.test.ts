@@ -7,6 +7,8 @@ import {
 } from "@/lib/engine/otherExpenses";
 import { carCashFlows, carDecisionFor, compareCarOptions } from "@/lib/engine/carDecision";
 import { projectScenario, projectionYears } from "@/lib/engine/project";
+import { medicareYears } from "@/lib/engine/medicare";
+import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import { resolveDeath } from "@/lib/domain/survivorship";
 import { loanExpenseKey } from "@/lib/domain/propertyLoans";
 import type { Household } from "@/lib/domain/types";
@@ -132,5 +134,70 @@ describe("costs from other steps in the projection", () => {
     const paid = rows.find((r) => r.mortgageBalance === 0)!;
     const after = rows.find((r) => r.calendarYear === paid.calendarYear + 1)!;
     expect(after.expenseMonthly[loanExpenseKey("home")]).toBeUndefined();
+  });
+});
+
+describe("Medicare Part B premiums as an expense", () => {
+  // Pat and Sam, both born 1958, retired; Part B from 67 (2025), and a $1M
+  // IRA so a conversion can push them into IRMAA.
+  const couple = (on?: boolean): Household => ({
+    filingStatus: "mfj",
+    residenceState: "FL",
+    people: [
+      { id: "a", name: "Pat", birthYear: 1958, retirementYear: 2024 },
+      { id: "b", name: "Sam", birthYear: 1958, retirementYear: 2024 },
+    ],
+    accounts: [
+      { id: "ira", label: "IRA", ownerId: "a", kind: "retirementTaxable", balance: 1_000_000, growthRate: 0 },
+      { id: "roth", label: "Roth", ownerId: "a", kind: "rothTaxFree", balance: 0, growthRate: 0 },
+    ],
+    incomes: [
+      { id: "pension", label: "Pension", ownerId: "a", kind: "pension", monthlyAmount: 5_000, growthRate: 0, taxability: "full" },
+    ],
+    realEstate: [],
+    expenses: [],
+    assumptions: { expenseGrowth: 0, finalAge: 72, startYear: 2026 },
+    optimizer: { strategy: "manual" },
+    ...(on ? { includeMedicarePremiums: true } : {}),
+  });
+  const run = (h: Household, schedule: number[] = []) =>
+    projectScenario(h, padTo(h, schedule), FALLBACK_REFERENCE_DATA);
+  const padTo = (h: Household, s: number[]) =>
+    Array.from({ length: projectionYears(h) }, (_, i) => s[i] ?? 0);
+  const medicareMonthly = (row: { expenseMonthly: Record<string, number> }) =>
+    (row.expenseMonthly["medicare:a"] ?? 0) + (row.expenseMonthly["medicare:b"] ?? 0);
+
+  it("adds nothing while the switch is off", () => {
+    for (const row of run(couple())) expect(medicareMonthly(row)).toBe(0);
+  });
+
+  it("matches the Medicare analysis's premiums every year, IRMAA included", () => {
+    // A $400k conversion in 2027 lifts 2029's premium into IRMAA (two-year
+    // lookback; 2026 and 2027 both use 2026's income).
+    const h = couple(true);
+    const rows = run(h, [0, 400_000]);
+    const analysis = medicareYears(h, rows, FALLBACK_REFERENCE_DATA.medicare).years;
+    rows.forEach((row, i) => {
+      expect(medicareMonthly(row) * 12).toBeCloseTo(analysis[i].annualPremium, 6);
+    });
+    const standard = FALLBACK_REFERENCE_DATA.medicare.standardMonthlyPremium;
+    expect(rows[2].calendarYear).toBe(2028);
+    expect(rows[2].expenseMonthly["medicare:a"]).toBeCloseTo(standard, 6);
+    expect(rows[3].expenseMonthly["medicare:a"]).toBeGreaterThan(standard);
+    expect(rows[4].expenseMonthly["medicare:a"]).toBeCloseTo(standard, 6);
+    // The expense lowers the year's surplus by exactly the premiums.
+    const off = run(couple(), [0, 400_000]);
+    expect(off[3].surplus - rows[3].surplus).toBeCloseTo(medicareMonthly(rows[3]), 6);
+  });
+
+  it("stops a person's premium after they pass", () => {
+    const h = couple(true);
+    const rows = projectScenario(h, padTo(h, []), FALLBACK_REFERENCE_DATA, {
+      death: { personId: "b", deathAge: 69 },
+    });
+    const year = (y: number) => rows.find((r) => r.calendarYear === y)!;
+    expect(year(2027).expenseMonthly["medicare:b"]).toBeGreaterThan(0);
+    expect(year(2028).expenseMonthly["medicare:b"]).toBeUndefined();
+    expect(year(2028).expenseMonthly["medicare:a"]).toBeGreaterThan(0);
   });
 });

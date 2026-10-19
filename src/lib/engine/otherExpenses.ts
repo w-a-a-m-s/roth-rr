@@ -17,6 +17,21 @@ export function includesOtherExpenses(household: Pick<Household, "includeOtherEx
   return household.includeOtherExpenses === true;
 }
 
+/**
+ * Whether the plan counts Medicare Part B premiums (IRMAA included) as an
+ * expense (`Household.includeMedicarePremiums`, the Expenses step switch).
+ */
+export function includesMedicarePremiums(
+  household: Pick<Household, "includeMedicarePremiums">,
+): boolean {
+  return household.includeMedicarePremiums === true;
+}
+
+/** Expense key for a person's Medicare Part B premiums in a projection row. */
+export function medicareExpenseKey(personId: string): string {
+  return `medicare:${personId}`;
+}
+
 /** Expense key for a policy's premiums in a projection row. */
 export function premiumExpenseKey(policyId: string): string {
   return `premium:${policyId}`;

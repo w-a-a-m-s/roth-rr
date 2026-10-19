@@ -195,6 +195,18 @@ describe("migrateHousehold: expense growth start", () => {
   });
 });
 
+describe("migrateHousehold: Medicare premiums switch", () => {
+  it("is off for an older plan, keeps on/off, drops anything else", () => {
+    expect(migrateHousehold(household([], []))).not.toHaveProperty("includeMedicarePremiums");
+    const on = household([], []);
+    on.includeMedicarePremiums = true;
+    expect(migrateHousehold(on).includeMedicarePremiums).toBe(true);
+    const bad = household([], []);
+    (bad as { includeMedicarePremiums?: unknown }).includeMedicarePremiums = "on";
+    expect(migrateHousehold(bad)).not.toHaveProperty("includeMedicarePremiums");
+  });
+});
+
 describe("migrateHousehold: soft-delete trash arrays", () => {
   it("defaults missing deleted* arrays to empty lists", () => {
     const h = household([], []);
