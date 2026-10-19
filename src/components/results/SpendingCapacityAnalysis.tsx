@@ -6,6 +6,7 @@ import type { ReferenceData } from "@/lib/externalData/types";
 import type { ProjectionRow } from "@/lib/engine/types";
 import { useScenario } from "@/store/useScenario";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
+import { EarlyWithdrawalsField } from "@/components/plan/EarlyWithdrawals";
 import { Field } from "@/components/ui/Field";
 import { MoneyInput, Select } from "@/components/ui/inputs";
 import { DualScroll } from "@/components/results/DualScroll";
@@ -64,24 +65,30 @@ export function SpendingCapacityAnalysis({
           The most you could spend so the money lasts to age {finalAge}. Every expense in the plan
           goes up or down by the same share and keeps growing as it does in the plan. A year short
           of cash takes more from the accounts: after-tax first, then tax-deferred, then Roth,
-          including the tax it adds. Money left over in a year isn&apos;t saved, so this leans
-          safe. Property and business aren&apos;t sold. This doesn&apos;t change the plan&apos;s
-          projection.
+          including the tax it adds. Before 59½, tax-deferred and Roth accounts are drawn from only
+          when withdrawals before 59½ are allowed, and then owe the 10% penalty. Money left over in
+          a year isn&apos;t saved, so this leans safe. Property and business aren&apos;t sold. This
+          doesn&apos;t change the plan&apos;s projection.
         </p>
-        <div className="w-full sm:w-[260px]">
-          <Field
-            label={`Leave at least this at age ${finalAge}`}
-            help="In the investment and retirement accounts, before tax."
-          >
-            <MoneyInput
-              value={settings.endReserve}
-              step={10_000}
-              onChange={(endReserve) => {
-                if (readOnly) return;
-                setSpendingCapacity({ ...settings, endReserve: Math.max(0, endReserve) });
-              }}
-            />
-          </Field>
+        <div className="flex flex-wrap items-start gap-4">
+          <div className="w-full sm:w-[260px]">
+            <Field
+              label={`Leave at least this at age ${finalAge}`}
+              help="In the investment and retirement accounts, before tax."
+            >
+              <MoneyInput
+                value={settings.endReserve}
+                step={10_000}
+                onChange={(endReserve) => {
+                  if (readOnly) return;
+                  setSpendingCapacity({ ...settings, endReserve: Math.max(0, endReserve) });
+                }}
+              />
+            </Field>
+          </div>
+          <div className="w-full sm:w-[340px]">
+            <EarlyWithdrawalsField readOnly={readOnly} />
+          </div>
         </div>
       </div>
       <Headline result={result} finalAge={finalAge} />

@@ -145,6 +145,13 @@ export interface ProjectionRow {
   /** 3.8% net investment income tax (Form 8960). */
   netInvestmentIncomeTax: number;
   /**
+   * Draws from tax-deferred and Roth accounts before 59½ that owe the 10%
+   * penalty (only when the plan allows early withdrawals).
+   */
+  earlyDistributions: number;
+  /** 10% early withdrawal penalty on `earlyDistributions`, in `federalAnnualTax`. */
+  earlyWithdrawalPenalty: number;
+  /**
    * Social Security and Medicare tax: employee FICA on salary plus
    * self-employment tax on business income. Its `selfEmploymentDeduction` is
    * already out of `grossTaxableIncome`.

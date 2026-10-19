@@ -30,6 +30,7 @@ import {
 } from "@/lib/depositSummary";
 import { primaryPersonId, projectionStartYear } from "@/lib/engine/project";
 import { taxIndexingRate } from "@/lib/engine/taxIndexing";
+import { allowsEarlyWithdrawals } from "@/lib/engine/earlyWithdrawal";
 import { includesMedicarePremiums, includesOtherExpenses } from "@/lib/engine/otherExpenses";
 import { historyStartYear, usesMarketHistory } from "@/lib/engine/marketHistory";
 import { formatCurrency, formatPercent } from "@/lib/format";
@@ -258,6 +259,10 @@ export function PlanDetails() {
               ? `S&P 500 history from ${historyStartYear(household)}`
               : "Fixed return"
           }
+        />
+        <Row
+          label="Withdrawals before 59½"
+          value={allowsEarlyWithdrawals(household) ? "Allowed (10% penalty)" : "Not allowed"}
         />
       </Section>
 

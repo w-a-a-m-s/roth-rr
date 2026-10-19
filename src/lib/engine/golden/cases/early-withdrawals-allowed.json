@@ -1,0 +1,160 @@
+{
+  "name": "Early withdrawals allowed (10% penalty before 59½)",
+  "strategy": "manual",
+  "note": "Owner born 1972, retired 2026 at 54. Withdrawals before 59½ are allowed, so the IRA and Roth draws are taken from 2026 and each owes the 10% early withdrawal penalty as federal tax through 2031 (the year before the owner turns 60). The 401(k) left at 54 gets no Rule of 55 relief. Conversions never owe it.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-living",
+        "label": "Living expenses",
+        "amount": 7000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p1",
+        "name": "Riley",
+        "birthYear": 1972,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ret",
+        "label": "Traditional IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 600000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      },
+      {
+        "id": "k401",
+        "label": "401(k)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 200000,
+        "growthRate": 0.05,
+        "retirementType": "401k"
+      },
+      {
+        "id": "roth",
+        "label": "Roth IRA",
+        "ownerId": "p1",
+        "kind": "rothTaxFree",
+        "balance": 200000,
+        "growthRate": 0.08
+      },
+      {
+        "id": "brk",
+        "label": "Brokerage",
+        "ownerId": "p1",
+        "kind": "investment",
+        "balance": 300000,
+        "costBasis": 200000,
+        "growthRate": 0.05
+      },
+      {
+        "id": "sav",
+        "label": "Savings",
+        "ownerId": "p1",
+        "kind": "savings",
+        "balance": 100000,
+        "growthRate": 0.03
+      }
+    ],
+    "incomes": [
+      {
+        "id": "ss",
+        "label": "Social Security",
+        "ownerId": "p1",
+        "kind": "socialSecurity",
+        "monthlyAmount": 2500,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "retdraw",
+        "label": "Retirement withdrawal",
+        "ownerId": "p1",
+        "kind": "retirementDraw",
+        "monthlyAmount": 1000,
+        "growthRate": 0,
+        "taxability": "full",
+        "drawsFromAccountId": "ret"
+      },
+      {
+        "id": "rothdraw",
+        "label": "Roth withdrawal",
+        "ownerId": "p1",
+        "kind": "rothWithdrawal",
+        "monthlyAmount": 1500,
+        "growthRate": 0,
+        "taxability": "taxFree",
+        "drawsFromAccountId": "roth"
+      },
+      {
+        "id": "atdraw",
+        "label": "After-tax withdrawal",
+        "ownerId": "p1",
+        "kind": "afterTaxWithdrawal",
+        "monthlyAmount": 1000,
+        "growthRate": 0,
+        "taxability": "taxFree",
+        "drawsFromAccountId": "brk"
+      },
+      {
+        "id": "k401draw",
+        "label": "401(k) withdrawal",
+        "ownerId": "p1",
+        "kind": "retirementDraw",
+        "monthlyAmount": 800,
+        "growthRate": 0,
+        "taxability": "full",
+        "drawsFromAccountId": "k401"
+      }
+    ],
+    "realEstate": [],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 75,
+      "allowEarlyWithdrawals": true
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        60000,
+        60000,
+        60000,
+        60000,
+        60000
+      ]
+    }
+  },
+  "commit": "5341827",
+  "commitDate": "2026-10-19T01:13:26+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 65413.06,
+      "medicareTotal": 21913.2,
+      "afterTaxAssetsAtRmd": 1675999.62,
+      "inheritanceFinal": 1675999.62
+    },
+    "roth": {
+      "taxesTotal": 127267.01,
+      "medicareTotal": 21913.2,
+      "afterTaxAssetsAtRmd": 2513151.08,
+      "inheritanceFinal": 2513151.08
+    },
+    "deltas": {
+      "taxesTotal": 61853.95,
+      "medicareTotal": 0,
+      "afterTaxAssetsAtRmd": 837151.46,
+      "inheritanceFinal": 837151.46
+    }
+  }
+}

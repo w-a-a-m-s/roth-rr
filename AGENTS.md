@@ -179,6 +179,27 @@ additional 0.9% Medicare tax uses combined household earnings over $250k
 joint / $200k single, which the law doesn't index. Business income is
 treated as self-employment: an S-corp owner's distributions would not owe it.
 
+## Withdrawals before 59½ (10% penalty)
+
+A draw from a tax-deferred or Roth account before 59½ owes the 10%
+additional tax (IRC 72(t)). `owesEarlyWithdrawalPenalty`
+(`lib/engine/earlyWithdrawal.ts`) decides it per account and year: with birth
+years only, the owner is early through the year they turn 59. No penalty from
+a 457(b), from a 401(k), 403(b), TSP or DROP once the owner left work in or
+after the year they turned 55 (Rule of 55), after the owner's death, or once
+the owner is disabled. The Survivorship and Long-term care lifetime income is
+exempt too (a lifetime payout). A Roth is treated like an IRA, the whole
+draw, because contributions aren't tracked.
+
+`assumptions.allowEarlyWithdrawals` ("Withdrawals before 59½" on the
+Household step and the Spending capacity card) is off by default: the
+projection never takes a penalized draw, so scheduled draws from those
+accounts wait and short years (Spending capacity, event top-ups) skip them.
+On, they're taken and 10% of them (row `earlyDistributions`) is added to
+`federalAnnualTax` as row `earlyWithdrawalPenalty`, inside `taxForYear`, so
+the top-up gross-up pays for it. Conversions never owe it. Tax withheld from
+a conversion before 59½ would, and isn't charged yet.
+
 Conversions stop at an owner's RMD age unless the plan turns on
 `optimizer.allowConversionsInRmdYears` ("Convert in RMD years", next to the
 conversion strategy). Then every year can convert, but `projectScenario`

@@ -82,6 +82,11 @@ import { accountGrowthForYear } from "@/lib/engine/marketHistory";
 import { employmentTax, type EarnedIncome } from "@/lib/engine/employmentTax";
 import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
 import { netInvestmentIncomeTax } from "@/lib/engine/netInvestmentIncomeTax";
+import {
+  EARLY_WITHDRAWAL_PENALTY_RATE,
+  allowsEarlyWithdrawals,
+  owesEarlyWithdrawalPenalty,
+} from "@/lib/engine/earlyWithdrawal";
 import type {
   DeductionBreakdown,
   ProjectionOptions,
@@ -848,6 +853,11 @@ export function projectScenario(
   const otherExpenses = includesOtherExpenses(household);
   const medicarePremiums = includesMedicarePremiums(household);
   const rmdYearConversions = allowsRmdYearConversions(household);
+  // Before 59½ a draw from a tax-deferred or Roth account owes a 10%
+  // penalty. Unless the plan allows it, those accounts aren't drawn from.
+  const earlyAllowed = allowsEarlyWithdrawals(household);
+  const isEarly = (acc: Account, calendarYear: number) =>
+    owesEarlyWithdrawalPenalty(acc, household.people, calendarYear, { death, disability });
   const carCosts = otherExpenses ? carCostsByYear(household, planStart) : null;
   const mortgageBalances: Record<string, number> = {};
   // A line of credit's repayment, fixed the year its draw period ends.
@@ -922,18 +932,22 @@ export function projectScenario(
    * each account's take, the ordinary income (tax-deferred, and DPP / MLP
    * recapture) and the gains realized (after-tax, against remaining basis).
    */
-  const planTopUp = (amount: number) => {
+  const planTopUp = (amount: number, calendarYear: number) => {
     const takes: Record<string, number> = {};
     let left = amount;
     let total = 0;
     let ordinary = 0;
     let gains = 0;
+    let early = 0;
     for (const acc of topUpOrder) {
       if (left <= 0) break;
+      const penalized = isEarly(acc, calendarYear);
+      if (penalized && !earlyAllowed) continue;
       const bal = Math.max(0, balances[acc.id]);
       const take = Math.min(bal, left);
       if (take <= 0) continue;
       takes[acc.id] = take;
+      if (penalized) early += take;
       left -= take;
       total += take;
       if (acc.kind === "retirementTaxable") ordinary += take;
@@ -949,7 +963,7 @@ export function projectScenario(
         gains += draw.gains;
       }
     }
-    return { takes, total, ordinary, gains };
+    return { takes, total, ordinary, gains, early };
   };
   const incomeRecipientAge = (acc: Account, calendarYear: number) => {
     const ids = isJointAccount(acc, planFiling)
@@ -1064,11 +1078,16 @@ export function projectScenario(
       return draw;
     };
     const withdrawalTaken: Record<string, number> = {};
+    // Draws a 10% early withdrawal penalty applies to (allowed plans only).
+    let earlyDistributions = 0;
     for (const income of household.incomes) {
       if (!isWithdrawalIncome(income.kind)) continue;
       if (!isIncomeActive(income, calendarYear)) continue;
       const accId = income.drawsFromAccountId;
       if (!accId || balances[accId] == null) continue;
+      const source = accounts.find((a) => a.id === accId);
+      const penalized = source != null && isEarly(source, calendarYear);
+      if (penalized && !earlyAllowed) continue;
       const withdraw = incomeMonthlyForYear(income, calendarYear, planStart, todayYear) * 12;
       const balBefore = Math.max(0, balances[accId]);
       const take = Math.min(balBefore, Math.max(0, withdraw));
@@ -1078,6 +1097,7 @@ export function projectScenario(
       }
       balances[accId] -= take;
       withdrawalTaken[income.id] = take;
+      if (penalized) earlyDistributions += take;
     }
     // 2b) The event's fixed income out of each account. Past what the balance
     //     holds it's still paid (guaranteed), taxed like the account's money.
@@ -1410,6 +1430,7 @@ export function projectScenario(
       grossBeforeSocialSecurity: number,
       stateOrdinaryGross: number,
       capitalGainsIncome: number,
+      earlyDistributions: number,
     ) => {
       // Social Security's taxable part rides on everything else on the
       // return, gains included (provisional income).
@@ -1475,8 +1496,14 @@ export function projectScenario(
         federalOrdinaryGross + capitalGainsIncome,
         fs,
       );
+      // The 10% early withdrawal penalty is an additional federal tax.
+      const earlyWithdrawalPenalty = EARLY_WITHDRAWAL_PENALTY_RATE * earlyDistributions;
       const federalAnnualTax =
-        federalOrdinaryTax + federalCapitalGainsTax + niit + employment.total;
+        federalOrdinaryTax +
+        federalCapitalGainsTax +
+        niit +
+        employment.total +
+        earlyWithdrawalPenalty;
 
       const stateDeduction = state.hasIncomeTax
         ? stateDeductionTotal(state, fs) + oneTimeDepreciation
@@ -1532,6 +1559,7 @@ export function projectScenario(
         federalCapitalGainsTaxByBracket,
         netInvestmentIncome,
         netInvestmentIncomeTax: niit,
+        earlyWithdrawalPenalty,
         federalAnnualTax,
         stateDeductions,
         stateGrossTaxableIncome,
@@ -1594,11 +1622,12 @@ export function projectScenario(
     //     distribution), so the year's tax is unchanged. `priceYear` is the
     //     year's tax with `extraOrdinary` / `extraGains` on top.
     const stateTaxesOrdinary = state.hasIncomeTax && !state.capitalGainsOnly;
-    const priceYear = (extraOrdinary: number, extraGains: number) => {
+    const priceYear = (extraOrdinary: number, extraGains: number, extraEarly = 0) => {
       const fed = federalOrdinaryGross + extraOrdinary;
       const st = stateTaxesOrdinary ? stateOrdinaryGross + extraOrdinary : 0;
       const gains = capitalGainsIncome + extraGains;
-      const taxes = taxForYear(fed, st, gains);
+      const early = earlyDistributions + extraEarly;
+      const taxes = taxForYear(fed, st, gains, early);
       if (conversionTaxPaidFrom !== "assets" || converted <= 0) {
         return { taxes, withheld: 0 };
       }
@@ -1606,6 +1635,7 @@ export function projectScenario(
         Math.max(0, fed - converted),
         st > 0 ? Math.max(0, st - converted) : 0,
         gains,
+        early,
       );
       const withheld = Math.min(
         converted,
@@ -1645,14 +1675,15 @@ export function projectScenario(
       const gap = outflow - (totalMonthlyIncome * 12 - baseTax);
       if (gap > 0.005) {
         let target = gap;
-        let plan = planTopUp(target);
+        let plan = planTopUp(target, calendarYear);
         for (let k = 0; k < 50; k++) {
           // Ran out of money to draw: take everything that's left.
           if (plan.total < target - 0.005) break;
-          const next = gap + cashTax(priceYear(plan.ordinary, plan.gains)) - baseTax;
+          const next =
+            gap + cashTax(priceYear(plan.ordinary, plan.gains, plan.early)) - baseTax;
           if (Math.abs(next - target) < 0.005) break;
           target = next;
-          plan = planTopUp(target);
+          plan = planTopUp(target, calendarYear);
         }
         for (const [accId, take] of Object.entries(plan.takes)) {
           const balBefore = Math.max(0, balances[accId]);
@@ -1666,6 +1697,7 @@ export function projectScenario(
         federalOrdinaryGross += plan.ordinary;
         if (stateTaxesOrdinary) stateOrdinaryGross += plan.ordinary;
         capitalGainsIncome += plan.gains;
+        earlyDistributions += plan.early;
         priced = priceYear(0, 0);
       }
     }
@@ -1681,6 +1713,7 @@ export function projectScenario(
       federalCapitalGainsTaxByBracket,
       netInvestmentIncome,
       netInvestmentIncomeTax: niit,
+      earlyWithdrawalPenalty,
       federalAnnualTax,
       stateDeductions,
       stateGrossTaxableIncome,
@@ -1765,6 +1798,8 @@ export function projectScenario(
       federalCapitalGainsTax,
       netInvestmentIncome,
       netInvestmentIncomeTax: niit,
+      earlyDistributions,
+      earlyWithdrawalPenalty,
       employmentTax: employment,
       federalAnnualTax,
       federalMonthlyTax,

@@ -642,6 +642,16 @@ function buildSections(
           },
         ]
       : []),
+    ...(scenario.rows.some((r) => r.earlyWithdrawalPenalty > 0)
+      ? [
+          {
+            key: "earlyWithdrawalPenalty",
+            label: "Early withdrawal penalty (10%)",
+            unit: "yr" as const,
+            value: (r: Row) => r.earlyWithdrawalPenalty,
+          },
+        ]
+      : []),
     ...(hasEmploymentTax
       ? [
           {

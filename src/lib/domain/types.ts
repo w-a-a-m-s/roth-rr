@@ -421,6 +421,11 @@ export interface Assumptions {
   returnMode?: ReturnMode;
   /** First S&P 500 year the plan uses in Market history mode (default 1950). */
   historyStartYear?: number;
+  /**
+   * Let the plan draw from tax-deferred and Roth accounts before 59½, paying
+   * the 10% penalty as tax. Off (the default) skips those draws.
+   */
+  allowEarlyWithdrawals?: boolean;
 }
 
 /** Fixed growth rates, or the S&P 500's actual yearly returns. */

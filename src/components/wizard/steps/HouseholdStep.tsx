@@ -25,6 +25,7 @@ import type { FilingStatus, Sex } from "@/lib/domain/types";
 import { primaryPersonId, retirementStartYear } from "@/lib/engine/project";
 import { taxIndexingRate } from "@/lib/engine/taxIndexing";
 import { MarketHistoryFields } from "@/components/plan/MarketHistory";
+import { EarlyWithdrawalsField } from "@/components/plan/EarlyWithdrawals";
 import { uid } from "@/lib/id";
 import {
   HOUSEHOLD_TOUR_STEPS,
@@ -178,6 +179,7 @@ export function HouseholdStep() {
           />
         </Field>
         <MarketHistoryFields />
+        <EarlyWithdrawalsField />
       </div>
 
       <div ref={peopleRef}>
