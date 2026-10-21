@@ -20,6 +20,7 @@ import {
 import { PercentInput, Select } from "@/components/ui/inputs";
 import {
   CARE_EXPENSE_SHARES,
+  INDIVIDUAL_CARE_EXPENSE_SHARES,
   CARE_MONTHLY_COST,
   CARE_TYPE_LABELS,
   carePeriodFor,
@@ -340,12 +341,22 @@ export function LongTermCareControls({
       <p className="m-0 rounded-lg bg-accent-soft px-3 py-2 text-[13px] leading-relaxed text-foreground">
         <strong>Note:</strong> while someone is in long-term care, your other
         expenses are adjusted to a share of what you spent before care, on top
-        of the care itself: {carePct(CARE_EXPENSE_SHARES.home)} with one spouse
-        in home care, {carePct(CARE_EXPENSE_SHARES.nursing)} with one in a
-        nursing home, {carePct(CARE_EXPENSE_SHARES.homeHome)} with both in home
-        care, {carePct(CARE_EXPENSE_SHARES.homeNursing)} with one at home and
-        one in a nursing home, and {carePct(CARE_EXPENSE_SHARES.nursingNursing)}{" "}
-        with both in a nursing home.
+        of the care itself:{" "}
+        {household.people.length === 1 ? (
+          <>
+            {carePct(INDIVIDUAL_CARE_EXPENSE_SHARES.home)} in home care and{" "}
+            {carePct(INDIVIDUAL_CARE_EXPENSE_SHARES.nursing)} in a nursing home.
+          </>
+        ) : (
+          <>
+            {carePct(CARE_EXPENSE_SHARES.home)} with one spouse in home care,{" "}
+            {carePct(CARE_EXPENSE_SHARES.nursing)} with one in a nursing home,{" "}
+            {carePct(CARE_EXPENSE_SHARES.homeHome)} with both in home care,{" "}
+            {carePct(CARE_EXPENSE_SHARES.homeNursing)} with one at home and one
+            in a nursing home, and {carePct(CARE_EXPENSE_SHARES.nursingNursing)}{" "}
+            with both in a nursing home.
+          </>
+        )}
       </p>
       <div className="flex flex-wrap items-end gap-3">
         <Control id="ltc-who" label="Who's in care" width="w-[180px]">

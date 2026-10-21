@@ -177,8 +177,10 @@ instead of Total impact. Retirement still compares the two.
 - Regular expenses while someone is in care, as a share of the pre-care
   amounts (`CARE_EXPENSE_SHARES`, user's table; order of spouses doesn't
   matter): one spouse in home care 75%, one in a nursing home 60%, both in
-  home care 55%, one home and one nursing 50%, both in a nursing home 0%. A
-  single person in care uses the one-spouse row. Back to 100% after care ends. Survivorship's 70% multiplies in
+  home care 55%, one home and one nursing 50%, both in a nursing home 0%.
+  That table is for couples. A one-person household has its own
+  (`INDIVIDUAL_CARE_EXPENSE_SHARES`, user's numbers): home care 70%, nursing
+  home 0%, since nobody is left at home. Back to 100% after care ends. Survivorship's 70% multiplies in
   if both analyses' options are ever combined.
 - The tab opens with a note saying so (the user asked for it on top).
 - Care costs aren't deducted as medical expenses (no itemizing in the model).

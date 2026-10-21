@@ -134,18 +134,6 @@ describe("both spouses in care", () => {
   });
 });
 
-describe("a single person in care", () => {
-  // Alex alone, in home care from 80 (2030) for 3 years: 2030 to 2032.
-  const h: Household = { ...couple(), filingStatus: "single", people: [couple().people[0]] };
-  const care = rows(h, settings({ inflation: 0 }));
-
-  it("uses the one-spouse share (75% for home care) rather than zero", () => {
-    expect(at(care, 2030).expenseMonthly.living).toBeCloseTo(3750, 6);
-    expect(at(care, 2030).monthlyExpenses).toBeCloseTo(3750 + 6000, 6);
-    expect(at(care, 2033).expenseMonthly.living).toBe(5000);
-  });
-});
-
 describe("each spouse's own care", () => {
   it("prices home care for one spouse and a nursing home for the other", () => {
     const h = couple();
@@ -189,6 +177,32 @@ describe("careExpenseShare", () => {
     expect(careExpenseShare(["nursing", "home"])).toBe(0.5);
     expect(careExpenseShare(["home", "nursing"])).toBe(0.5);
     expect(careExpenseShare(["nursing", "nursing"])).toBe(0);
+  });
+
+  it("uses the individual table for a one-person household", () => {
+    expect(careExpenseShare([], true)).toBe(1);
+    expect(careExpenseShare(["home"], true)).toBe(0.7);
+    expect(careExpenseShare(["nursing"], true)).toBe(0);
+  });
+});
+
+describe("a single person in care", () => {
+  // Alex alone, in care from 80 (2030) for 3 years: 2030 to 2032.
+  const h: Household = { ...couple(), filingStatus: "single", people: [couple().people[0]] };
+
+  it("keeps 70% of other expenses in home care", () => {
+    const care = rows(h, settings({ inflation: 0 }));
+    expect(at(care, 2030).expenseMonthly.living).toBeCloseTo(3500, 6);
+    expect(at(care, 2030).monthlyExpenses).toBeCloseTo(3500 + 6000, 6);
+    expect(at(care, 2033).expenseMonthly.living).toBe(5000);
+  });
+
+  it("drops other expenses to zero in a nursing home, leaving only the care", () => {
+    const care = rows(h, settings({ careType: "nursing", inflation: 0 }));
+    expect(at(care, 2029).expenseMonthly.living).toBe(5000);
+    expect(at(care, 2030).expenseMonthly.living).toBe(0);
+    expect(at(care, 2030).monthlyExpenses).toBe(10000);
+    expect(at(care, 2033).expenseMonthly.living).toBe(5000);
   });
 });
 
