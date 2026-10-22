@@ -397,12 +397,15 @@ export function LongTermCareControls({
                   options={CARE_OPTIONS}
                 />
               </Control>
-              <Control id={`ltc-age-${personId}`} label="Starts at age" width="w-[104px]">
+              <Control id={`ltc-age-${personId}`} label="Starts in" width="w-[150px]">
                 <Select
                   id={`ltc-age-${personId}`}
                   value={String(period.startAge)}
                   onChange={(v) => setPeriod({ ...period, startAge: Number(v) })}
-                  options={ages.map((a) => ({ value: String(a), label: String(a) }))}
+                  options={ages.map((a) => ({
+                    value: String(a),
+                    label: person?.birthYear != null ? `${person.birthYear + a} · age ${a}` : `Age ${a}`,
+                  }))}
                 />
               </Control>
               <Control id={`ltc-years-${personId}`} label="For" width="w-[110px]">
