@@ -36,7 +36,8 @@ pass today's year (`asOfYear(asOfDate)`); don't re-derive grown amounts from
 
 Pension kinds (`pension`, `militaryPension`) carry `pensionPayout`:
 `lifeOnly` (stops when the owner passes) or `survivor` (keeps paying the
-surviving spouse for life). Missing means life only; read it through
+surviving spouse for life). The Income step edits it as a Survivorship
+on/off switch (on is `survivor`). Missing means life only; read it through
 `pensionPayout()` in `household.ts`, which returns undefined for non-pensions.
 `migrateHousehold` drops it from non-pensions and bad values, and the editor
 clears it when the type changes away from a pension.

@@ -17,7 +17,6 @@ import type {
   DisabilityCoverage,
   IncomeKind,
   IncomeSource,
-  PensionPayout,
   Taxability,
 } from "@/lib/domain/types";
 import {
@@ -56,16 +55,6 @@ const TAXABILITY_OPTIONS: { value: Taxability; label: string }[] = [
   { value: "full", label: "Fully taxable" },
   { value: "taxFree", label: "Tax free" },
 ];
-
-const PAYOUT_OPTIONS: { value: PensionPayout; label: string }[] = [
-  { value: "lifeOnly", label: "Life only" },
-  { value: "survivor", label: "Survivorship" },
-];
-
-const PAYOUT_LABEL: Record<PensionPayout, string> = {
-  lifeOnly: "Life only",
-  survivor: "Survivorship",
-};
 
 const WAITING_OPTIONS = DISABILITY_WAITING_DAYS.map((days) => ({
   value: String(days),
@@ -126,6 +115,7 @@ function IncomeFields({
     household.people.find((p) => p.id === income.ownerId)?.name || "Person";
   const kindLabel = KIND_LABEL[income.kind];
   const payout = pensionPayout(income);
+  const hasSpouse = household.people.some((p) => p.id !== income.ownerId);
   const waitingDays = disabilityWaitingDays(income);
   const coverage = disabilityCoverage(income);
   const isDisability = income.kind === "disabilityInsurance";
@@ -212,7 +202,10 @@ function IncomeFields({
             />
           ) : null}
           {payout ? (
-            <ReadStat label="Payout" value={PAYOUT_LABEL[payout]} />
+            <ReadStat
+              label="Survivorship"
+              value={payout === "survivor" ? "On, pays the spouse for life" : "Off"}
+            />
           ) : null}
           {waitingDays ? (
             <ReadStat label="Waiting period" value={`${waitingDays} days`} />
@@ -315,16 +308,39 @@ function IncomeFields({
         </Field>
         {payout ? (
           <Field
-            label="Payout"
-            help="Life only stops when the pension's owner passes. Survivorship keeps paying the surviving spouse for the rest of their life."
+            label="Survivorship"
+            help="On: when the pension's owner passes, it keeps paying the surviving spouse the same amount for the rest of their life. Off (life only): it stops when the owner passes. It needs a spouse on the plan, and shows in the Survivorship analysis."
           >
-            <Select
-              value={payout}
-              onChange={(pensionPayout) =>
-                updateIncome(income.id, { pensionPayout })
-              }
-              options={PAYOUT_OPTIONS}
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={payout === "survivor"}
+                aria-label="Survivorship"
+                onClick={() =>
+                  updateIncome(income.id, {
+                    pensionPayout: payout === "survivor" ? "lifeOnly" : "survivor",
+                  })
+                }
+                className={`relative h-[22px] w-[40px] shrink-0 cursor-pointer rounded-full border-0 transition-colors ${
+                  payout === "survivor" ? "bg-accent" : "bg-border-2"
+                }`}
+              >
+                <span
+                  className={`absolute top-[3px] left-[3px] h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                    payout === "survivor" ? "translate-x-[18px]" : "translate-x-0"
+                  }`}
+                />
+              </button>
+              <span className="text-[13px] text-foreground">
+                {payout === "survivor" ? "Pays the spouse for life" : "Life only"}
+              </span>
+            </div>
+            {payout === "survivor" && !hasSpouse ? (
+              <p className="mt-1.5 mb-0 text-xs text-muted">
+                Add a spouse on the Household step for this to pay anyone.
+              </p>
+            ) : null}
           </Field>
         ) : null}
         {waitingDays ? (
