@@ -1,4 +1,4 @@
-import type { AccountKind, Assumptions, FilingStatus } from "@/lib/domain/types";
+import type { AccountKind, Assumptions, FilingStatus, LeftoverInvestment } from "@/lib/domain/types";
 
 export const DEFAULT_ASSUMPTIONS: Assumptions = {
   expenseGrowth: 0.02,
@@ -50,6 +50,20 @@ export const DEFAULT_ACCOUNT_GROWTH: Record<AccountKind, number> = {
  * conversion projections for plans that omit a Roth account.
  */
 export const IMPLICIT_ROTH_GROWTH = 0.08;
+
+/** The engine's account for the plan's saved leftover money. */
+export const LEFTOVER_ACCOUNT_ID = "__leftover__";
+
+/** Yearly growth of the saved leftover money, by where it's invested. */
+export const LEFTOVER_INVESTMENT_RATE: Record<LeftoverInvestment, number> = {
+  sp500: 0.08,
+  moneyMarket: 0.033,
+};
+
+export const LEFTOVER_INVESTMENT_LABEL: Record<LeftoverInvestment, string> = {
+  sp500: "Leftover money (S&P 500)",
+  moneyMarket: "Leftover money (money market)",
+};
 
 /** Starting annual growth used to seed a newly added expense. */
 export const DEFAULT_EXPENSE_GROWTH = 0;

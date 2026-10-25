@@ -1,0 +1,158 @@
+{
+  "name": "Leftover money saved in the S&P 500 (8%)",
+  "strategy": "manual",
+  "note": "Retired single 65-year-old (pension, Social Security, DROP draw) with about $70k a year above expenses. Pins the yearly leftover money saved into one after-tax account.",
+  "commit": "8c398bd",
+  "commitDate": "2026-10-25T23:24:26+00:00",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-ft429mz",
+        "label": "All",
+        "amount": 4167,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p-ng9k43m",
+        "name": "Pat",
+        "birthYear": 1961,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "acc-sendvj2",
+        "label": "403(b)",
+        "ownerId": "p-ng9k43m",
+        "kind": "retirementTaxable",
+        "balance": 351000,
+        "growthRate": 0.05,
+        "retirementType": "403b",
+        "deposits": [
+          {
+            "id": "dep-r0j1g3r",
+            "label": "",
+            "amount": 100,
+            "frequency": "monthly",
+            "startYear": 2026,
+            "endYear": 2026
+          }
+        ]
+      },
+      {
+        "id": "acc-rfrurbz",
+        "label": "Sick leave payout",
+        "ownerId": "p-ng9k43m",
+        "kind": "retirementTaxable",
+        "balance": 5000,
+        "growthRate": 0.05,
+        "retirementType": "403b",
+        "deposits": []
+      },
+      {
+        "id": "acc-9qsgiqc",
+        "label": "DROP",
+        "ownerId": "p-ng9k43m",
+        "kind": "retirementTaxable",
+        "balance": 635570,
+        "growthRate": 0.05,
+        "retirementType": "drop",
+        "deposits": []
+      }
+    ],
+    "incomes": [
+      {
+        "id": "inc-ux0m87j",
+        "label": "FRS Pension",
+        "ownerId": "p-ng9k43m",
+        "kind": "pension",
+        "monthlyAmount": 6301,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "inc-sux541t",
+        "label": "Social Security",
+        "ownerId": "p-ng9k43m",
+        "kind": "socialSecurity",
+        "monthlyAmount": 3000,
+        "growthRate": 0.02,
+        "taxability": "full"
+      },
+      {
+        "id": "inc-072i711",
+        "label": "Interest Income",
+        "ownerId": "p-ng9k43m",
+        "kind": "other",
+        "monthlyAmount": 1000,
+        "growthRate": 0,
+        "taxability": "full"
+      },
+      {
+        "id": "inc-e5tshp1",
+        "label": "DROP Withdrawal ",
+        "ownerId": "p-ng9k43m",
+        "kind": "retirementDraw",
+        "monthlyAmount": 1667,
+        "growthRate": 0,
+        "taxability": "full",
+        "startYear": 2026,
+        "endYear": 2034,
+        "drawsFromAccountId": "acc-9qsgiqc"
+      }
+    ],
+    "realEstate": [],
+    "realEstateProfessional": false,
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 90,
+      "leftoverInvestment": "sp500"
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "allowOverConvertible": false,
+      "targetBracketRate": 0.24,
+      "manualSchedule": [
+        79326,
+        79326,
+        79326,
+        79326,
+        79326,
+        79326,
+        79326,
+        79326,
+        79326,
+        79326
+      ],
+      "conversionTaxPaidFrom": "assets"
+    },
+    "insurance": [],
+    "mortgages": [],
+    "businesses": []
+  },
+  "expected": {
+    "baseline": {
+      "taxesTotal": 880804.5,
+      "medicareTotal": 154840.8,
+      "afterTaxAssetsAtRmd": 2224224.91,
+      "inheritanceFinal": 8569451.91
+    },
+    "roth": {
+      "taxesTotal": 854902.23,
+      "medicareTotal": 160682.4,
+      "afterTaxAssetsAtRmd": 2488188.76,
+      "inheritanceFinal": 9739351.9
+    },
+    "deltas": {
+      "taxesTotal": -25902.26,
+      "medicareTotal": 5841.6,
+      "afterTaxAssetsAtRmd": 263963.85,
+      "inheritanceFinal": 1169899.99
+    }
+  }
+}

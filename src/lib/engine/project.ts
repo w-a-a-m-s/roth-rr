@@ -111,6 +111,9 @@ import { forFiling } from "@/lib/config/filingStatus";
 import {
   DEFAULT_RENT_GROWTH,
   IMPLICIT_ROTH_GROWTH,
+  LEFTOVER_ACCOUNT_ID,
+  LEFTOVER_INVESTMENT_LABEL,
+  LEFTOVER_INVESTMENT_RATE,
 } from "@/lib/config/defaults";
 import { uniformLifetimeDenominator } from "@/lib/config/rmdTable";
 import {
@@ -227,6 +230,25 @@ export function strategyStartYear(household: Household): number {
   // With working-year conversions on, strategies fill from the plan start.
   if (allowsWorkingYearConversions(household)) return projectionStartYear(household);
   return Math.max(projectionStartYear(household), retirementStartYear(household));
+}
+
+/**
+ * The account the plan's leftover money is saved in, when the plan invests
+ * it (`assumptions.leftoverInvestment`): a brokerage account for the S&P 500
+ * (so Market history mode moves it too), savings for the money market.
+ */
+function leftoverAccount(household: Household): Account | null {
+  const choice = household.assumptions.leftoverInvestment;
+  if (choice !== "sp500" && choice !== "moneyMarket") return null;
+  return {
+    id: LEFTOVER_ACCOUNT_ID,
+    label: LEFTOVER_INVESTMENT_LABEL[choice],
+    ownerId: primaryPerson(household).id,
+    kind: choice === "sp500" ? "investment" : "savings",
+    balance: 0,
+    costBasis: 0,
+    growthRate: LEFTOVER_INVESTMENT_RATE[choice],
+  };
 }
 
 /**
@@ -808,7 +830,13 @@ export function projectScenario(
       : null;
   // Deposits stop once their owner retires.
   const planAccounts = contributionAccounts(household);
-  const accounts = implicitRoth ? [...planAccounts, implicitRoth] : planAccounts;
+  // Leftover money: each year's surplus is saved into one after-tax account.
+  const leftover = leftoverAccount(household);
+  const accounts = [
+    ...planAccounts,
+    ...(implicitRoth ? [implicitRoth] : []),
+    ...(leftover ? [leftover] : []),
+  ];
 
   const retirementAccounts = accounts.filter(
     (acc) => acc.kind === "retirementTaxable",
@@ -1029,6 +1057,7 @@ export function projectScenario(
       }
     }
     const yearFraction = i === 0 ? firstYearGrowth : 1;
+    const leftoverBefore = leftover ? balances[leftover.id] : 0;
     for (const acc of accounts) {
       if (eventIncome?.[acc.id] != null) {
         balances[acc.id] *= Math.pow(1 + LIFE_INSURANCE_PROCEEDS_GROWTH, yearFraction);
@@ -1040,6 +1069,10 @@ export function projectScenario(
       // Market accounts follow the S&P 500's year in Market history mode.
       balances[acc.id] *= Math.pow(1 + accountGrowthForYear(household, acc, i - offset), yearFraction);
     }
+    // Money market interest on the saved leftover money is taxed as it's
+    // earned (S&P 500 growth is unrealized, and steps up at death).
+    const leftoverInterest =
+      leftover?.kind === "savings" ? Math.max(0, balances[leftover.id] - leftoverBefore) : 0;
 
     // 2) Account withdrawals reduce their source account and continue for as
     //    long as the income is active - including retirement draws past the
@@ -1193,8 +1226,8 @@ export function projectScenario(
 
     // 4) Income for the year.
     let totalMonthlyIncome = 0;
-    let federalOrdinaryGross = 0;
-    let stateOrdinaryGross = 0;
+    let federalOrdinaryGross = leftoverInterest;
+    let stateOrdinaryGross = leftoverInterest;
     const incomeMonthly: Record<string, number> = {};
     // Salary and business income per person, for employment tax.
     const earnedByPerson: Record<string, EarnedIncome> = {};
@@ -1493,6 +1526,7 @@ export function projectScenario(
         capitalGainsIncome +
           recaptureIncome +
           lifeInsuranceEarnings +
+          leftoverInterest +
           (household.realEstateProfessional ? 0 : rentalPal.allowedRentalOrdinary),
       );
       const niit = netInvestmentIncomeTax(
@@ -1750,6 +1784,14 @@ export function projectScenario(
       businessEquity += value;
     }
 
+    // 6b) Leftover money: a year's surplus is saved at year end, so it
+    //     starts growing next year. A short year doesn't draw it.
+    const surplus = netMonthlyIncome - monthlyExpenses - monthlyDeposits;
+    if (leftover && surplus > 0) {
+      balances[leftover.id] += surplus * 12;
+      basisRemaining[leftover.id] = (basisRemaining[leftover.id] ?? 0) + surplus * 12;
+    }
+
     // 7) Account totals snapshot.
     let retirementTotal = 0;
     let rothTotal = 0;
@@ -1822,7 +1864,7 @@ export function projectScenario(
       monthlyDeposits,
       depositMonthly,
       preTaxDeposits,
-      surplus: netMonthlyIncome - monthlyExpenses - monthlyDeposits,
+      surplus,
     });
 
     priorYearEndBalances = { ...balances };

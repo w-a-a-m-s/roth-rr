@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/format";
 import { MARK_CELL, MarkLegend, MarkTag, ageMark } from "@/components/results/AgeMarks";
 import { DualScroll } from "@/components/results/DualScroll";
 import { DisplayFromToggle } from "@/components/results/DisplayFromToggle";
+import { LeftoverToggle } from "@/components/results/LeftoverToggle";
 import {
   buildSnapshotTable,
   type SnapshotFrom,
@@ -148,6 +149,7 @@ export function ScenarioSnapshot({
           Assets, income &amp; taxes
         </h3>
         <div className="flex flex-col items-end gap-2 text-[12.5px] font-semibold text-muted-2">
+          <LeftoverToggle />
           <div className="flex items-center gap-2">
             <label htmlFor="snapshot-start">Jump to</label>
             <span className="w-[140px]">

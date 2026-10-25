@@ -7,6 +7,7 @@ import {
 } from "@/lib/domain/household";
 import { personRmdAge } from "@/lib/domain/rmd";
 import type { Household } from "@/lib/domain/types";
+import { LEFTOVER_ACCOUNT_ID, LEFTOVER_INVESTMENT_LABEL } from "@/lib/config/defaults";
 import type { ScenarioResult } from "@/lib/engine/types";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -315,6 +316,18 @@ function buildAssetLines(
       value: (r) => r.afterTaxTotal,
       children: nonEmpty([
         ...(accountChildren(afterTaxAccounts) ?? []),
+        ...(scenario.rows.some((r) => (r.balances[LEFTOVER_ACCOUNT_ID] ?? 0) !== 0)
+          ? [
+              {
+                key: `acc-${LEFTOVER_ACCOUNT_ID}`,
+                label: household.assumptions.leftoverInvestment
+                  ? LEFTOVER_INVESTMENT_LABEL[household.assumptions.leftoverInvestment]
+                  : "Leftover money",
+                unit: "sum" as const,
+                value: (r: Row) => r.balances[LEFTOVER_ACCOUNT_ID] ?? 0,
+              },
+            ]
+          : []),
         ...lifeInsuranceBalanceKeys(scenario.rows).map((key) => ({
           key: `acc-${key}`,
           label: lifeProceedsLabel(household, key),

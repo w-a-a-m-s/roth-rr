@@ -224,6 +224,18 @@ describe("migrateHousehold: market history returns", () => {
   });
 });
 
+describe("migrateHousehold: leftover money", () => {
+  it("leaves an old plan uninvested, keeps a real choice, drops anything else", () => {
+    expect(migrateHousehold(household([], [])).assumptions).not.toHaveProperty("leftoverInvestment");
+    const h = household([], []);
+    h.assumptions.leftoverInvestment = "moneyMarket";
+    expect(migrateHousehold(h).assumptions.leftoverInvestment).toBe("moneyMarket");
+    const bad = household([], []);
+    (bad.assumptions as { leftoverInvestment?: unknown }).leftoverInvestment = "bonds";
+    expect(migrateHousehold(bad).assumptions).not.toHaveProperty("leftoverInvestment");
+  });
+});
+
 describe("migrateHousehold: soft-delete trash arrays", () => {
   it("defaults missing deleted* arrays to empty lists", () => {
     const h = household([], []);

@@ -2628,3 +2628,80 @@ describe("senior deduction phase-out", () => {
     expect(row.deductions.senior).toBeCloseTo(6_000 - 0.06 * 25_000, 6);
   });
 });
+
+describe("leftover money", () => {
+  /** $5,000 a month of pension against $2,000 of expenses, nothing invested. */
+  function saver(leftoverInvestment?: Household["assumptions"]["leftoverInvestment"]): Household {
+    return {
+      filingStatus: "single",
+      residenceState: "FL",
+      people: [{ id: "p1", name: "Pat", birthYear: 1960, retirementYear: 2026 }],
+      accounts: [],
+      incomes: [
+        {
+          id: "pen",
+          label: "Pension",
+          ownerId: "p1",
+          kind: "pension",
+          monthlyAmount: 5_000,
+          growthRate: 0,
+          taxability: "full",
+        },
+      ],
+      realEstate: [],
+      expenses: [{ id: "exp", label: "Living", amount: 2_000, frequency: "monthly", growthRate: 0 }],
+      assumptions: { expenseGrowth: 0, finalAge: 70, leftoverInvestment },
+      optimizer: { strategy: "manual", manualSchedule: [] },
+    };
+  }
+
+  it("is left out of the assets unless the plan invests it", () => {
+    const h = saver();
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    expect(rows[0].surplus).toBeGreaterThan(0);
+    expect(rows[0].balances).not.toHaveProperty("__leftover__");
+    expect(rows.every((r) => r.afterTaxTotal === 0)).toBe(true);
+  });
+
+  it("saves each year's surplus in the S&P 500 at 8%, untaxed until death", () => {
+    const h = saver("sp500");
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    const first = rows[0].surplus * 12;
+    expect(rows[0].balances.__leftover__).toBeCloseTo(first, 2);
+    expect(rows[1].balances.__leftover__).toBeCloseTo(first * 1.08 + rows[1].surplus * 12, 2);
+    expect(rows[1].afterTaxTotal).toBeCloseTo(rows[1].balances.__leftover__, 2);
+    // Unrealized growth: year 1's tax matches the plan that doesn't invest.
+    const plain = projectScenario(saver(), zeros(projectionYears(h)));
+    expect(rows[1].federalAnnualTax).toBeCloseTo(plain[1].federalAnnualTax, 2);
+    // The estate counts it at full value (step-up at death).
+    expect(afterTaxAssets(h, rows[1]) - afterTaxAssets(saver(), plain[1])).toBeCloseTo(
+      rows[1].balances.__leftover__,
+      2,
+    );
+  });
+
+  it("taxes money market interest at 3.3% every year as investment income", () => {
+    const h = saver("moneyMarket");
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    const plain = projectScenario(saver(), zeros(projectionYears(h)));
+    const interest = rows[0].balances.__leftover__ * 0.033;
+    expect(rows[1].grossTaxableIncome - plain[1].grossTaxableIncome).toBeCloseTo(interest, 2);
+    expect(rows[1].netInvestmentIncome).toBeCloseTo(interest, 2);
+    // The tax on it comes out of that year's leftover money.
+    expect(rows[1].surplus).toBeLessThan(plain[1].surplus);
+    expect(rows[1].balances.__leftover__).toBeCloseTo(
+      rows[0].balances.__leftover__ * 1.033 + rows[1].surplus * 12,
+      2,
+    );
+  });
+
+  it("doesn't draw the savings in a short year", () => {
+    const h = saver("sp500");
+    // From 2028 expenses are $6,000 a month, more than the pension pays.
+    h.expenses.push({ id: "big", label: "Care", amount: 4_000, frequency: "monthly", growthRate: 0, startYear: 2028 });
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    const short = rows.findIndex((r) => r.calendarYear === 2028);
+    expect(rows[short].surplus).toBeLessThan(0);
+    expect(rows[short].balances.__leftover__).toBeCloseTo(rows[short - 1].balances.__leftover__ * 1.08, 2);
+  });
+});

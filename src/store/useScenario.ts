@@ -455,6 +455,11 @@ export function migrateHousehold(household: Household): Household {
   if (legacy.assumptions?.historyStartYear != null && !Number.isInteger(legacy.assumptions.historyStartYear)) {
     delete legacy.assumptions.historyStartYear;
   }
+  // Leftover money is optional (not invested when missing).
+  const leftover = legacy.assumptions?.leftoverInvestment;
+  if (leftover != null && leftover !== "sp500" && leftover !== "moneyMarket") {
+    delete legacy.assumptions.leftoverInvestment;
+  }
   // Tax indexing is optional: missing means the 2% default. Anything that
   // isn't a usable rate is dropped so the default applies.
   if (

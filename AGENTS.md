@@ -146,6 +146,20 @@ over the basis left (row `costBasisById`) is ordinary income to the heirs,
 taxed with the tax-deferred balance as one lump. Real-estate and business
 equity count at full value.
 
+## Leftover money
+
+Each year's surplus (net income above expenses and deposits) is dropped
+unless the plan saves it: `assumptions.leftoverInvestment` ("Leftover
+money" on the Main results tab, above Jump to) is `sp500` (8% a year) or
+`moneyMarket` (3.3% a year), missing for not invested. `projectScenario`
+adds one after-tax account (`LEFTOVER_ACCOUNT_ID`, a brokerage account for
+the S&P 500 so Market history moves it, savings for the money market) and
+puts each positive surplus in it at year end, as basis. S&P 500 growth is
+unrealized (it steps up at death); money market interest is ordinary income
+and investment income the year it's earned, inside `taxForYear`. A short
+year doesn't draw it. It counts in `afterTaxTotal`, so in the after-tax
+assets and the inheritance.
+
 ## Taxable Social Security (provisional income)
 
 The federal taxable part of Social Security is 0% to 85% of the benefits from
@@ -477,7 +491,8 @@ user asks for a change:
 2. Results tabs: **Main | Summary | Graphic view | Main in detail analysis**.
    Each tab shows only its own sections; Main is the default.
    - **Main**: the Assets, Income & Taxes tables (No conversion, then With
-     conversion).
+     conversion), with the Leftover money switch above Jump to (user's
+     request).
    - **Summary**: Total impact, the metric cards (lifetime taxes only; taxes
      before and after the RMD age sit behind a "Show taxes before and after"
      link), After-tax assets.

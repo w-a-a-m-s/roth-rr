@@ -426,7 +426,16 @@ export interface Assumptions {
    * the 10% penalty as tax. Off (the default) skips those draws.
    */
   allowEarlyWithdrawals?: boolean;
+  /**
+   * Where each year's leftover money (net income above expenses) is saved:
+   * `sp500` (8% a year) or `moneyMarket` (3.3% a year, interest taxed every
+   * year). Missing (the default) leaves it uninvested and out of the totals.
+   */
+  leftoverInvestment?: LeftoverInvestment;
 }
+
+/** Where the plan saves its yearly leftover money (see `Assumptions`). */
+export type LeftoverInvestment = "sp500" | "moneyMarket";
 
 /** Fixed growth rates, or the S&P 500's actual yearly returns. */
 export type ReturnMode = "fixed" | "history";
