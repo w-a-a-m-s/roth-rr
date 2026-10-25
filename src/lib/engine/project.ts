@@ -1088,16 +1088,20 @@ export function projectScenario(
       const source = accounts.find((a) => a.id === accId);
       const penalized = source != null && isEarly(source, calendarYear);
       if (penalized && !earlyAllowed) continue;
-      const withdraw = incomeMonthlyForYear(income, calendarYear, planStart, todayYear) * 12;
+      const withdraw = Math.max(0, incomeMonthlyForYear(income, calendarYear, planStart, todayYear) * 12);
+      // Balances are entered today, so year 0's draws before today are
+      // already out of them: only the part of the year left comes out of the
+      // balance. The year's income and tax still count the whole year's draw.
+      const drawnBeforeToday = withdraw * (1 - yearFraction);
       const balBefore = Math.max(0, balances[accId]);
-      const take = Math.min(balBefore, Math.max(0, withdraw));
+      const take = Math.min(balBefore, withdraw - drawnBeforeToday);
       if (income.kind === "afterTaxWithdrawal" && take > 0 && balBefore > 0) {
         const acc = accounts.find((a) => a.id === accId)!;
         capitalGainsIncome += realizeDraw(acc, take, balBefore).gains;
       }
       balances[accId] -= take;
-      withdrawalTaken[income.id] = take;
-      if (penalized) earlyDistributions += take;
+      withdrawalTaken[income.id] = drawnBeforeToday + take;
+      if (penalized) earlyDistributions += drawnBeforeToday + take;
     }
     // 2b) The event's fixed income out of each account. Past what the balance
     //     holds it's still paid (guaranteed), taxed like the account's money.

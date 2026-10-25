@@ -1927,6 +1927,19 @@ describe("DROP growth delay", () => {
     expect(rows[1].balances.ret).toBeCloseTo(year0 * 1.05, 2);
   });
 
+  it("draws year 0 from the balance only for the rest of the year, but taxes the whole year's draw", () => {
+    // A 401(k) left at 56 draws penalty free (Rule of 55).
+    const h = household({ retirementType: "401k", retirementYear: 2026, monthlyDraw: 1_000 });
+    const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: "2026-10-07" };
+    const rows = projectScenario(h, zeros(projectionYears(h)), refs);
+    // 86 of 365 days left: only that share of the $12,000 leaves today's balance.
+    const year0 = 100_000 * Math.pow(1.05, 86 / 365) - 12_000 * (86 / 365);
+    expect(rows[0].balances.ret).toBeCloseTo(year0, 2);
+    expect(rows[0].incomeMonthly.draw * 12).toBeCloseTo(12_000, 2);
+    // Later years draw the full year from the balance.
+    expect(rows[1].balances.ret).toBeCloseTo(year0 * 1.05 - 12_000, 2);
+  });
+
   it("compounds a plan-start balance from today up to a later plan start", () => {
     const h = household({ retirementType: "ira", retirementYear: 2030 });
     const refs = { ...FALLBACK_REFERENCE_DATA, asOfDate: "2026-10-07" };

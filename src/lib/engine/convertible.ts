@@ -4,6 +4,7 @@ import {
   accountGrowsInYear,
   contributionAccounts,
   asOfYear,
+  firstYearGrowthFraction,
   incomeMonthlyForYear,
   isIncomeActive,
 } from "@/lib/domain/household";
@@ -114,7 +115,9 @@ export function convertibleTotal(
       const accId = income.drawsFromAccountId;
       if (!accId || balances[accId] == null) continue;
       const withdraw = incomeMonthlyForYear(income, calendarYear, start, asOfYear(asOfDate)) * 12;
-      const take = Math.min(Math.max(0, balances[accId]), Math.max(0, withdraw));
+      // Year 0 draws only what's left of the year from today's balance.
+      const share = i === 0 ? firstYearGrowthFraction(start, asOfDate) : 1;
+      const take = Math.min(Math.max(0, balances[accId]), Math.max(0, withdraw) * share);
       balances[accId] -= take;
     }
 

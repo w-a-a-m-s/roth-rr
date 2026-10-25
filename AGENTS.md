@@ -101,7 +101,11 @@ also sets the rate, payment and extra principal for every projection year. A
 line of credit stays interest only through its draw period, then pays the
 level payment fixed that January. When the date falls inside year 0 instead, `projectScenario`
 compounds year 0 only for what is left of the year (`firstYearGrowthFraction`:
-on October 7, 86 of 365 days). Later years get a full year. With no `asOfDate`
+on October 7, 86 of 365 days). Later years get a full year. Scheduled
+draws (retirement, Roth and after-tax withdrawals) take the same share out
+of the balance in year 0, since the draws before today are already out of
+it, but the year's income and tax still count the whole year's draw.
+`convertibleTotal` and Empty by RMD take the same share. With no `asOfDate`
 (tests, golden cases) balances are January 1 of the start year and year 0 is a
 full year. `convertibleTotal` and the strategies take the same `asOfDate` for
 the opening balance, but only the projection prorates year 0.
