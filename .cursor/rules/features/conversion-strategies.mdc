@@ -16,7 +16,7 @@ do not change income, expenses, withdrawals, or RMD rules.
 | ---- | ---- |
 | `even` | Convertible total (or `convertAmount`) spread across the pre-RMD window. |
 | `immediate` | Same target in year 1. Engine caps at that year's live pre-RMD balance. |
-| `fillBracket` | Each year, room to the top of `targetBracketRate` (12% / 22% / 24%; default 22%) from one no-conversion projection. |
+| `fillBracket` | Each year, converts up to just under the top of `targetBracketRate` (12% / 22% / 24%; default 22%) and never past it. Starts from the room in the no-conversion projection, then re-projects with the schedule and settles each year onto the ceiling, since a conversion can phase out the senior deduction or make more Social Security taxable (overshoot), or be partly absorbed by unused deductions (undershoot). |
 | `irmaa` | Each year, room just under the next IRMAA MAGI floor above baseline MAGI. Top tier: no MAGI cap. |
 | `depleteByRmd` | Walk balances (grow, withdraw, convert `remaining / yearsLeft`, then deposits) so tax-deferred empties by RMD. |
 | `minTax` | Lowest lifetime income tax: federal + state paid over the plan, the same `taxesTotal` the results show as Lifetime taxes. Tax on tax-deferred money left at the end is not counted. Starts from the best of no conversion and every other strategy, then nudges each conversion year up or down (step halves to $500) keeping changes that lower that total. Ignores Medicare and inheritance size. |
@@ -141,8 +141,9 @@ is the selected rate; all three rates are precomputed.
   tax heirs will owe on a leftover tax-deferred balance, so on a plan with
   steady income and a short RMD window it may convert little or nothing.
 
-- Fill-bracket / IRMAA use baseline income only (one pass). Later-year
-  balances may be lower; the engine caps.
+- IRMAA uses baseline income only (one pass). Later-year balances may be
+  lower; the engine caps. Fill-bracket re-projects with its own schedule
+  (see the table above).
 - Brackets and IRMAA floors are not inflation-adjusted in the projection.
 - `allowOverConvertible` and `convertAmount` apply to even / immediate /
   manual, not to the computed strategies.

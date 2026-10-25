@@ -98,25 +98,62 @@ describe("immediateSchedule", () => {
 });
 
 describe("fillBracketSchedule", () => {
-  it("fills room up to the next bracket floor", () => {
-    const h = householdWithConvertible(500_000);
-    h.optimizer.strategy = "fillBracket";
-    h.optimizer.targetBracketRate = 0.22;
-    const zeros = padToProjection(h, []);
-    const rows = projectScenario(h, zeros);
-    const years = conversionYears(h);
+  /** Each conversion year's taxable income and its 22% ceiling, with the schedule. */
+  function filledYears(h: Household) {
     const schedule = fillBracketSchedule(h);
-    for (let i = 0; i < years; i++) {
+    const rows = projectScenario(h, schedule);
+    return rows.slice(0, conversionYears(h)).map((row) => {
       // Each year's own brackets, indexed 2% a year from the 2026 table.
       const brackets = forFiling(
-        indexedFederalTax(FALLBACK_FEDERAL_TAX, rows[i].calendarYear, 0.02).brackets,
+        indexedFederalTax(FALLBACK_FEDERAL_TAX, row.calendarYear, 0.02).brackets,
         "single",
         "federal brackets",
       );
-      const ceiling = bracketFillCeiling(brackets, 0.22);
-      expect(schedule[i]).toBe(
-        roundCents(Math.max(0, ceiling - rows[i].taxableIncome - 0.01)),
-      );
+      return {
+        conversion: row.conversion,
+        taxableIncome: row.taxableIncome,
+        topRate: row.federalTaxByBracket.filter((b) => b.tax > 0).at(-1)?.rate,
+        ceiling: bracketFillCeiling(brackets, 0.22),
+      };
+    });
+  }
+
+  it("fills each year up to the next bracket floor, past unused deductions", () => {
+    const h = householdWithConvertible(2_000_000);
+    h.optimizer.strategy = "fillBracket";
+    h.optimizer.targetBracketRate = 0.22;
+    for (const year of filledYears(h)) {
+      expect(year.taxableIncome).toBeLessThan(year.ceiling);
+      expect(year.taxableIncome).toBeGreaterThan(year.ceiling - 1);
+      // With no other income the deductions take the first dollars, so the
+      // conversion is more than the bracket's floor.
+      expect(year.conversion).toBeGreaterThan(year.ceiling);
+    }
+  });
+
+  it("never spills into the next bracket when the conversion phases out the senior deduction", () => {
+    const h = householdWithConvertible(2_000_000);
+    h.optimizer.strategy = "fillBracket";
+    h.optimizer.targetBracketRate = 0.22;
+    // $30k of pension: the no-conversion MAGI keeps the full $6,000 senior
+    // deduction, and the conversion takes MAGI well past its phase-out.
+    h.incomes = [
+      {
+        id: "pen",
+        label: "Pension",
+        ownerId: "p1",
+        kind: "pension",
+        monthlyAmount: 2_500,
+        growthRate: 0,
+        taxability: "full",
+      },
+    ];
+    const zeros = projectScenario(h, padToProjection(h, []));
+    expect(zeros[0].deductions.senior).toBe(6_000);
+    for (const year of filledYears(h)) {
+      expect(year.topRate).toBe(0.22);
+      expect(year.taxableIncome).toBeLessThan(year.ceiling);
+      expect(year.taxableIncome).toBeGreaterThan(year.ceiling - 1);
     }
   });
 
