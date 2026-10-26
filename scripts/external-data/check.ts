@@ -223,36 +223,61 @@ function isStateTaxError(message: string): boolean {
   );
 }
 
+interface ReturnsFile {
+  firstYear: number;
+  lastYear: number;
+  returns: Record<string, number>;
+}
+
 /**
- * The S&P 500 returns ship as a committed constant (no Mongo copy): every year
- * from the first to the last must be there, and the last must be last
- * calendar year, since the source adds each year in January.
+ * A yearly returns file that ships as a committed constant (no Mongo copy):
+ * every year from the first to the last must be there, and the last must be
+ * last calendar year, since the source adds each year in January.
  */
-function checkSp500(errors: string[], now = new Date()): void {
-  const file = "src/lib/config/data/sp500Returns.json";
+function checkReturnsFile(
+  name: string,
+  file: string,
+  errors: string[],
+  now = new Date(),
+): ReturnsFile | null {
   if (!fs.existsSync(file)) {
-    errors.push(`sp500: missing ${file}`);
-    return;
+    errors.push(`${name}: missing ${file}`);
+    return null;
   }
-  const data = JSON.parse(fs.readFileSync(file, "utf8")) as {
-    firstYear: number;
-    lastYear: number;
-    returns: Record<string, number>;
-  };
+  const data = JSON.parse(fs.readFileSync(file, "utf8")) as ReturnsFile;
   for (let year = data.firstYear; year <= data.lastYear; year++) {
     if (!Number.isFinite(data.returns[String(year)])) {
-      errors.push(`sp500: no return for ${year}`);
-      return;
+      errors.push(`${name}: no return for ${year}`);
+      return null;
     }
   }
   const expected = now.getUTCFullYear() - 1;
   if (data.lastYear < expected) {
     errors.push(
-      `sp500: returns end in ${data.lastYear}, expected ${expected}. Add it from the Damodaran histretSP page (docs/external-data.md, Dataset: sp500).`,
+      `${name}: returns end in ${data.lastYear}, expected ${expected}. Add it from the Damodaran histretSP page (docs/external-data.md, Dataset: ${name}).`,
     );
-    return;
+    return null;
   }
-  console.log(`sp500 returns ${data.firstYear}-${data.lastYear} OK`);
+  console.log(`${name} returns ${data.firstYear}-${data.lastYear} OK`);
+  return data;
+}
+
+/**
+ * The S&P 500 and 10-year Treasury returns: each must be current, and they
+ * must cover the same years, since the 50 / 50 history mixes them.
+ */
+function checkMarketReturns(errors: string[]): void {
+  const sp500 = checkReturnsFile("sp500", "src/lib/config/data/sp500Returns.json", errors);
+  const treasury = checkReturnsFile(
+    "treasury10y",
+    "src/lib/config/data/treasury10yReturns.json",
+    errors,
+  );
+  if (!sp500 || !treasury) return;
+  if (sp500.firstYear === treasury.firstYear && sp500.lastYear === treasury.lastYear) return;
+  errors.push(
+    `treasury10y: covers ${treasury.firstYear}-${treasury.lastYear} but sp500 covers ${sp500.firstYear}-${sp500.lastYear}. Update both together.`,
+  );
 }
 
 async function main(): Promise<void> {
@@ -265,7 +290,7 @@ async function main(): Promise<void> {
   for (const key of CHECKABLE) {
     await checkKey(key, expected, errors);
   }
-  checkSp500(errors);
+  checkMarketReturns(errors);
 
   if (errors.length > 0) {
     for (const e of errors) console.error(e);

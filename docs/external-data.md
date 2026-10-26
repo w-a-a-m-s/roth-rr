@@ -35,8 +35,9 @@ npm run external-data:check
 ```
 
 Today: `federal-tax` and `medicare` (year-vs-calendar); `state-income-tax`
-(year + all 51 jurisdictions + `reviewedAt` within 90 days); `sp500`
-(committed constant, last year of returns must be last calendar year).
+(year + all 51 jurisdictions + `reviewedAt` within 90 days); `sp500` and
+`treasury10y` (committed constants, last year of returns must be last
+calendar year, and both must cover the same years).
 
 ### When a dataset needs an update
 
@@ -213,6 +214,23 @@ fallback `year` lags the calendar year (same alarm as federal-tax).
   if their years are affected), and commit.
 - **How `check` decides it's stale:** fails when `lastYear` is before last
   calendar year (in 2027 the data must reach 2026).
+
+## Dataset: treasury10y (ships as a committed constant)
+
+- **What:** 10-year US Treasury bond total return for each calendar year
+  from 1950, for the 50 / 50 history (`assumptions.returnMode: "balanced"`
+  and an account's `returnSource: "balanced"`): half this, half the S&P 500,
+  rebalanced every January (`balancedReturn` in
+  `src/lib/config/marketHistory.ts`).
+- **Source:** the same Damodaran *histretSP* page as `sp500`, column
+  "US T. Bond (10-year)".
+- **Where it lives:** `src/lib/config/data/treasury10yReturns.json`, the same
+  shape as `sp500Returns.json`.
+- **How to update (each January):** together with `sp500`, from the same
+  page and the same row: add the new year, bump `lastYear` and
+  `sourceUpdated`, run `npm test`, commit.
+- **How `check` decides it's stale:** like `sp500`, and it also fails when
+  the two files don't cover the same years.
 
 ## Dataset: rmd (deferred, ships as a committed constant)
 

@@ -224,6 +224,23 @@ describe("migrateHousehold: market history returns", () => {
   });
 });
 
+describe("migrateHousehold: 50 / 50 history and account returns", () => {
+  it("keeps the 50 / 50 mode and a real account tag, drops anything else", () => {
+    const h = household([], []);
+    h.assumptions.returnMode = "balanced";
+    h.accounts = [
+      { id: "a", label: "IRA", ownerId: "p1", kind: "retirementTaxable", balance: 1, growthRate: 0.05, returnSource: "balanced" },
+      { id: "b", label: "Roth", ownerId: "p1", kind: "rothTaxFree", balance: 1, growthRate: 0.05 },
+    ];
+    (h.accounts[1] as { returnSource?: unknown }).returnSource = "crypto";
+    const out = migrateHousehold(h);
+    expect(out.assumptions.returnMode).toBe("balanced");
+    expect(out.accounts[0].returnSource).toBe("balanced");
+    // An old plan's accounts have no tag: they follow the plan's Returns.
+    expect(out.accounts[1]).not.toHaveProperty("returnSource");
+  });
+});
+
 describe("migrateHousehold: leftover money", () => {
   it("leaves an old plan uninvested, keeps a real choice, drops anything else", () => {
     expect(migrateHousehold(household([], [])).assumptions).not.toHaveProperty("leftoverInvestment");

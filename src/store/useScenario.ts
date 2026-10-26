@@ -44,6 +44,7 @@ import {
   applyFilingStatus,
   healAccountJoint,
   healGrowthStart,
+  healReturnSource,
   isGrowthStart,
   healRetirementType,
   maxPeople,
@@ -207,12 +208,14 @@ export function migrateHousehold(household: Household): Household {
     healAccountJoint(entry.item, legacy.filingStatus);
     healRetirementType(entry.item);
     healGrowthStart(entry.item);
+    healReturnSource(entry.item);
   }
 
   for (const acc of legacy.accounts ?? []) {
     healAccountJoint(acc, legacy.filingStatus);
     healRetirementType(acc);
     healGrowthStart(acc);
+    healReturnSource(acc);
     if (!Number.isFinite(acc.growthRate)) {
       acc.growthRate = DEFAULT_ACCOUNT_GROWTH[acc.kind] ?? 0;
     }
@@ -449,7 +452,7 @@ export function migrateHousehold(household: Household): Household {
   }
   // Return mode and the market history start are optional (fixed returns,
   // and 1950, when missing); anything unusable is dropped.
-  if (legacy.assumptions?.returnMode != null && legacy.assumptions.returnMode !== "fixed" && legacy.assumptions.returnMode !== "history") {
+  if (legacy.assumptions?.returnMode != null && legacy.assumptions.returnMode !== "fixed" && legacy.assumptions.returnMode !== "history" && legacy.assumptions.returnMode !== "balanced") {
     delete legacy.assumptions.returnMode;
   }
   if (legacy.assumptions?.historyStartYear != null && !Number.isInteger(legacy.assumptions.historyStartYear)) {

@@ -134,6 +134,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   deposits: "Deposits",
   growthRate: "Growth rate",
   growthStart: "Growth starts",
+  returnSource: "Returns",
   monthlyAmount: "Monthly amount",
   taxability: "Taxability",
   startYear: "Start year",
@@ -171,6 +172,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   taxIndexing: "Tax brackets grow",
   returnMode: "Returns",
   historyStartYear: "Market history starts",
+  leftoverInvestment: "Leftover money",
   allowEarlyWithdrawals: "Withdrawals before 59½",
   strategy: "Strategy",
   allowOverConvertible: "Allow over-convertible",
@@ -406,6 +408,15 @@ function formatScalar(
   }
   if (key === "retirementType" && isRetirementAccountType(value)) {
     return RETIREMENT_ACCOUNT_TYPE_LABELS[value as RetirementAccountType];
+  }
+  if (key === "returnMode" || key === "returnSource") {
+    if (value === "fixed") return key === "returnMode" ? "Fixed return" : "Fixed rate";
+    if (value === "history" || value === "sp500") return "S&P 500 history";
+    if (value === "balanced") return "50/50 history";
+  }
+  if (key === "leftoverInvestment") {
+    if (value === "sp500") return "S&P 500";
+    if (value === "moneyMarket") return "Money market";
   }
   if (key === "taxability") {
     if (value === "full") return "Fully taxable";

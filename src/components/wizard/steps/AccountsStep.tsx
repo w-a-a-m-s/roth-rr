@@ -20,10 +20,10 @@ import {
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { GrowthStartToggle } from "@/components/ui/GrowthStartToggle";
 import { ReturnsArticleLink } from "@/components/plan/ReturnsArticle";
+import { RETURN_SOURCE_LABEL } from "@/components/plan/MarketHistory";
 import {
-  MARKET_ACCOUNT_KINDS,
+  accountReturnSource,
   historyStartYear,
-  usesMarketHistory,
 } from "@/lib/engine/marketHistory";
 import { submitEditOnEnter } from "@/components/ui/submitEditOnEnter";
 import { StepTour } from "@/components/onboarding/StepTour";
@@ -33,6 +33,7 @@ import type {
   Deposit,
   DepositFrequency,
   RetirementAccountType,
+  ReturnSource,
 } from "@/lib/domain/types";
 import {
   AFTER_TAX_ACCOUNT_KINDS,
@@ -42,6 +43,7 @@ import {
   JOINT_OWNER_VALUE,
   RETIREMENT_ACCOUNT_TYPES,
   RETIREMENT_ACCOUNT_TYPE_LABELS,
+  RETURN_SOURCES,
   accountDepositEndYear,
   accountGrowthStart,
   accountOwnerLabel,
@@ -49,6 +51,9 @@ import {
   canAccountBeJoint,
 } from "@/lib/domain/household";
 import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
+
+/** Returns picker value for an account with no tag (it follows the plan). */
+const PLAN_RETURNS = "plan";
 import {
   depositAmountLabel,
   depositYearsLabel,
@@ -491,15 +496,38 @@ function AccountFields({
             value={account.growthRate}
             onChange={(growthRate) => updateAccount(account.id, { growthRate })}
           />
-          {usesMarketHistory(household) && MARKET_ACCOUNT_KINDS.includes(account.kind) ? (
+          {accountReturnSource(household, account) !== "fixed" ? (
             <p className="m-0 mt-1 text-[11px] leading-tight text-muted">
-              Market history is on: from the plan&apos;s first year this account follows the
-              S&amp;P 500 from {historyStartYear(household)}. This rate is used only before then.
+              From the plan&apos;s first year this account follows{" "}
+              {accountReturnSource(household, account) === "balanced"
+                ? "the 50% S&P 500 / 50% 10-year Treasury mix"
+                : "the S&P 500"}{" "}
+              from {historyStartYear(household)}. This rate is used only before then.
             </p>
           ) : null}
           {account.kind === "retirementTaxable" || account.kind === "rothTaxFree" ? (
             <ReturnsArticleLink className="mt-1" />
           ) : null}
+        </Field>
+        <Field
+          label="Returns"
+          help="What this account's yearly return follows. Plan's setting uses Returns on the Household step (history applies to IRAs, Roth and brokerage accounts; other kinds keep their rate). Fixed rate always uses the growth above. S&P 500 history and 50/50 history (half S&P 500, half 10-year Treasury) use those markets' actual returns from the year the Household step picks."
+        >
+          <Select
+            value={account.returnSource ?? PLAN_RETURNS}
+            onChange={(value) =>
+              updateAccount(account.id, {
+                returnSource: value === PLAN_RETURNS ? undefined : (value as ReturnSource),
+              })
+            }
+            options={[
+              {
+                value: PLAN_RETURNS,
+                label: `Plan's setting (${RETURN_SOURCE_LABEL[accountReturnSource(household, { kind: account.kind })]})`,
+              },
+              ...RETURN_SOURCES.map((source) => ({ value: source, label: RETURN_SOURCE_LABEL[source] })),
+            ]}
+          />
         </Field>
         <Field
           label="Growth starts"

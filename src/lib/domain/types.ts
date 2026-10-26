@@ -151,6 +151,13 @@ export interface Account {
   growthRate: number;
   /** When growth starts. Optional: unset uses `defaultGrowthStart`. */
   growthStart?: GrowthStart;
+  /**
+   * What this account's yearly return follows: its own `growthRate`, the
+   * S&P 500's history, or a 50% S&P 500 / 50% 10-year Treasury mix of it.
+   * Missing (the default) follows the plan's `returnMode` (market accounts
+   * only; other kinds stay fixed).
+   */
+  returnSource?: ReturnSource;
   /** Money paid into this account. Optional for older plans (defaults to []). */
   deposits?: Deposit[];
 }
@@ -438,7 +445,15 @@ export interface Assumptions {
 export type LeftoverInvestment = "sp500" | "moneyMarket";
 
 /** Fixed growth rates, or the S&P 500's actual yearly returns. */
-export type ReturnMode = "fixed" | "history";
+/**
+ * How the plan's market accounts grow: their own rates (`fixed`), the S&P
+ * 500's history (`history`), or the history of a 50% S&P 500 / 50% 10-year
+ * Treasury mix rebalanced each year (`balanced`).
+ */
+export type ReturnMode = "fixed" | "history" | "balanced";
+
+/** One account's return: fixed, S&P 500 history, or the 50 / 50 mix's. */
+export type ReturnSource = "fixed" | "sp500" | "balanced";
 
 /** How the per-year Roth conversion schedule is produced. */
 export type ConversionStrategy =

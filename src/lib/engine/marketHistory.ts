@@ -1,5 +1,10 @@
-import type { Account, AccountKind, Household } from "@/lib/domain/types";
-import { SP500_FIRST_YEAR, SP500_LAST_YEAR, sp500Return } from "@/lib/config/marketHistory";
+import type { Account, AccountKind, Household, ReturnSource } from "@/lib/domain/types";
+import {
+  SP500_FIRST_YEAR,
+  SP500_LAST_YEAR,
+  balancedReturn,
+  sp500Return,
+} from "@/lib/config/marketHistory";
 import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
 
 /**
@@ -9,9 +14,31 @@ import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
  */
 export const MARKET_ACCOUNT_KINDS: AccountKind[] = ["retirementTaxable", "rothTaxFree", "investment"];
 
-/** Whether the plan grows market accounts by S&P 500 history. */
+/** Whether the plan grows its market accounts by history (S&P 500 or the 50 / 50 mix). */
 export function usesMarketHistory(household: Pick<Household, "assumptions">): boolean {
-  return household.assumptions?.returnMode === "history";
+  const mode = household.assumptions?.returnMode;
+  return mode === "history" || mode === "balanced";
+}
+
+/**
+ * What an account's return follows: its own tag, else the plan's Returns
+ * for a market account, else its fixed rate.
+ */
+export function accountReturnSource(
+  household: Pick<Household, "assumptions">,
+  account: Pick<Account, "kind" | "returnSource">,
+): ReturnSource {
+  if (account.returnSource) return account.returnSource;
+  if (!MARKET_ACCOUNT_KINDS.includes(account.kind)) return "fixed";
+  const mode = household.assumptions?.returnMode;
+  if (mode === "history") return "sp500";
+  if (mode === "balanced") return "balanced";
+  return "fixed";
+}
+
+/** Whether any account in the plan follows history (so the start year matters). */
+export function anyHistoryReturns(household: Pick<Household, "assumptions" | "accounts">): boolean {
+  return household.accounts.some((acc) => accountReturnSource(household, acc) !== "fixed");
 }
 
 /** The first S&P 500 year the plan uses (its setting, or 1950). */
@@ -40,16 +67,19 @@ function fixedRate(account: Account): number {
 
 /**
  * An account's growth in plan year `planYearIndex` (0 is the plan's first
- * year): the S&P 500's return for that year in Market history mode when the
- * account is market-invested, else its own fixed rate. Years before the plan
- * starts (a negative index) always use the fixed rate.
+ * year): that history year's S&P 500 or 50 / 50 return when the account
+ * follows one (`accountReturnSource`), else its own fixed rate. Years before
+ * the plan starts (a negative index) always use the fixed rate.
  */
 export function accountGrowthForYear(
   household: Pick<Household, "assumptions">,
   account: Account,
   planYearIndex: number,
 ): number {
-  if (planYearIndex < 0 || !usesMarketHistory(household)) return fixedRate(account);
-  if (!MARKET_ACCOUNT_KINDS.includes(account.kind)) return fixedRate(account);
-  return sp500Return(historyYearFor(household, planYearIndex)) ?? fixedRate(account);
+  if (planYearIndex < 0) return fixedRate(account);
+  const source = accountReturnSource(household, account);
+  if (source === "fixed") return fixedRate(account);
+  const year = historyYearFor(household, planYearIndex);
+  const historical = source === "balanced" ? balancedReturn(year) : sp500Return(year);
+  return historical ?? fixedRate(account);
 }

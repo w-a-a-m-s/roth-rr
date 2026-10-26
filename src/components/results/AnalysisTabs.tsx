@@ -36,7 +36,7 @@ import { projectionStartYear, projectionYears } from "@/lib/engine/project";
 import { useScenario } from "@/store/useScenario";
 import { useUI, type AnalysisKind } from "@/store/useUI";
 import { ReturnsArticleLink } from "@/components/plan/ReturnsArticle";
-import { Sp500ReturnsLink } from "@/components/plan/MarketHistory";
+import { BalancedReturnsLink, Sp500ReturnsLink } from "@/components/plan/MarketHistory";
 
 const ANALYSES: { key: AnalysisKind; label: string }[] = [
   { key: "retirement", label: "Retirement" },
@@ -85,6 +85,8 @@ export function AnalysisTabs() {
         <ReturnsArticleLink />
         <span aria-hidden className="text-muted-3">·</span>
         <Sp500ReturnsLink />
+        <span aria-hidden className="text-muted-3">·</span>
+        <BalancedReturnsLink />
       </div>
     </div>
   );

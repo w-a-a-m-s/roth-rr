@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
   accountGrowthForYear,
+  accountReturnSource,
   historyStartYear,
   historyYearFor,
   usesMarketHistory,
 } from "@/lib/engine/marketHistory";
-import { SP500_FIRST_YEAR, SP500_LAST_YEAR, sp500Return, sp500Years } from "@/lib/config/marketHistory";
+import {
+  SP500_FIRST_YEAR,
+  SP500_LAST_YEAR,
+  balancedReturn,
+  sp500Return,
+  sp500Years,
+  treasury10yReturn,
+} from "@/lib/config/marketHistory";
 import { projectScenario, projectionYears } from "@/lib/engine/project";
 import type { Account, Household } from "@/lib/domain/types";
 
@@ -105,5 +113,59 @@ describe("market history in the projection", () => {
     expect(rows[0].balances.roth).toBeCloseTo(100_000 * (1 + sp500Return(2009)!), 4);
     // Fixed mode is unchanged by any of this.
     expect(run(plan())[0].balances.roth).toBeCloseTo(110_000, 4);
+  });
+});
+
+describe("50% S&P 500 / 50% 10-year Treasury history", () => {
+  const run = (h: Household) => projectScenario(h, new Array(projectionYears(h)).fill(0));
+
+  it("has a Treasury return for every S&P year, matching the source's known years", () => {
+    expect(sp500Years().every((y) => y.treasury != null && y.balanced != null)).toBe(true);
+    expect(treasury10yReturn(1950)).toBeCloseTo(0.0043, 6);
+    expect(treasury10yReturn(2008)).toBeCloseTo(0.201, 6);
+    expect(treasury10yReturn(2022)).toBeCloseTo(-0.1783, 6);
+    expect(treasury10yReturn(2025)).toBeCloseTo(0.078, 6);
+    // 2008: stocks -36.55%, bonds +20.10%, rebalanced 50 / 50.
+    expect(balancedReturn(2008)).toBeCloseTo((-0.3655 + 0.201) / 2, 6);
+  });
+
+  it("grows the plan's market accounts by the mix in 50 / 50 mode, CDs stay fixed", () => {
+    const h = plan(2008);
+    h.assumptions.returnMode = "balanced";
+    expect(usesMarketHistory(h)).toBe(true);
+    const rows = run(h);
+    expect(rows[0].balances.roth).toBeCloseTo(100_000 * (1 + balancedReturn(2008)!), 4);
+    expect(rows[1].balances.roth).toBeCloseTo(
+      100_000 * (1 + balancedReturn(2008)!) * (1 + balancedReturn(2009)!),
+      4,
+    );
+    expect(rows[0].balances.cd).toBeCloseTo(50_000 * 1.03, 4);
+  });
+
+  it("lets each account pick its own returns over the plan's", () => {
+    // The plan is on fixed returns; each account follows its own tag.
+    const h = plan();
+    h.assumptions.historyStartYear = 2008;
+    h.accounts = [
+      { ...roth, id: "fixed", returnSource: "fixed" },
+      { ...roth, id: "stocks", returnSource: "sp500" },
+      { ...roth, id: "mix", returnSource: "balanced" },
+      { ...roth, id: "plan" },
+      { ...cd, returnSource: "sp500" },
+    ];
+    const year0 = run(h)[0].balances;
+    expect(year0.fixed).toBeCloseTo(110_000, 4);
+    expect(year0.stocks).toBeCloseTo(100_000 * (1 + sp500Return(2008)!), 4);
+    expect(year0.mix).toBeCloseTo(100_000 * (1 + balancedReturn(2008)!), 4);
+    // No tag: the plan's fixed returns.
+    expect(year0.plan).toBeCloseTo(110_000, 4);
+    // Any account can be tagged, a CD too.
+    expect(year0.cd).toBeCloseTo(50_000 * (1 + sp500Return(2008)!), 4);
+    // A fixed tag holds even when the plan is on history.
+    h.assumptions.returnMode = "history";
+    const history0 = run(h)[0].balances;
+    expect(history0.fixed).toBeCloseTo(110_000, 4);
+    expect(history0.plan).toBeCloseTo(100_000 * (1 + sp500Return(2008)!), 4);
+    expect(accountReturnSource(h, { kind: "cd" })).toBe("fixed");
   });
 });

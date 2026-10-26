@@ -78,7 +78,7 @@ import {
   paysMedicarePartB,
 } from "@/lib/config/medicare";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
-import { accountGrowthForYear } from "@/lib/engine/marketHistory";
+import { accountGrowthForYear, usesMarketHistory } from "@/lib/engine/marketHistory";
 import { employmentTax, type EarnedIncome } from "@/lib/engine/employmentTax";
 import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
 import { netInvestmentIncomeTax } from "@/lib/engine/netInvestmentIncomeTax";
@@ -248,6 +248,8 @@ function leftoverAccount(household: Household): Account | null {
     balance: 0,
     costBasis: 0,
     growthRate: LEFTOVER_INVESTMENT_RATE[choice],
+    // It's an S&P 500 account even when the plan's history is the 50 / 50 mix.
+    returnSource: choice === "sp500" && usesMarketHistory(household) ? "sp500" : "fixed",
   };
 }
 

@@ -1,14 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import type { Household, ReturnMode } from "@/lib/domain/types";
+import type { Household, ReturnMode, ReturnSource } from "@/lib/domain/types";
 import {
   SP500_FIRST_YEAR,
   SP500_LAST_YEAR,
   SP500_SOURCE,
   sp500Years,
 } from "@/lib/config/marketHistory";
-import { historyStartYear, historyYearFor, usesMarketHistory } from "@/lib/engine/marketHistory";
+import {
+  anyHistoryReturns,
+  historyStartYear,
+  historyYearFor,
+} from "@/lib/engine/marketHistory";
 import { projectionStartYear, projectionYears } from "@/lib/engine/project";
 import { Field } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
@@ -18,10 +22,18 @@ import { useHousehold, useScenario } from "@/store/useScenario";
 
 const MODES: { value: ReturnMode; label: string }[] = [
   { value: "fixed", label: "Fixed return" },
-  { value: "history", label: "Market history" },
+  { value: "history", label: "S&P 500 history" },
+  { value: "balanced", label: "50/50 history" },
 ];
 
-/** Plan calendar years that use each S&P 500 year (more than one after a wrap). */
+/** What each account's Returns choice reads, for the Accounts step and the plan summary. */
+export const RETURN_SOURCE_LABEL: Record<ReturnSource, string> = {
+  fixed: "Fixed rate",
+  sp500: "S&P 500 history",
+  balanced: "50% S&P 500 / 50% 10-year Treasury history",
+};
+
+/** Plan calendar years that use each history year (more than one after a wrap). */
 function planYearsBySpYear(household: Household): Map<number, number[]> {
   const start = projectionStartYear(household);
   const n = projectionYears(household);
@@ -34,27 +46,45 @@ function planYearsBySpYear(household: Household): Map<number, number[]> {
   return map;
 }
 
-function ReturnsTable({ household }: { household: Household }) {
-  const used = usesMarketHistory(household) ? planYearsBySpYear(household) : new Map();
+/** Returns cell, red when negative. */
+function ReturnCell({ value }: { value?: number }) {
+  return (
+    <td className={`border-b border-border/60 py-1 pr-3 text-right ${value != null && value < 0 ? "text-danger" : ""}`}>
+      {value == null ? "" : formatPercent(value)}
+    </td>
+  );
+}
+
+/**
+ * Year-by-year returns: the S&P 500 alone, or the 50 / 50 mix next to the
+ * S&P 500 and the 10-year Treasury it's made of.
+ */
+function ReturnsTable({ household, mix }: { household: Household; mix: boolean }) {
+  const used = anyHistoryReturns(household) ? planYearsBySpYear(household) : new Map();
+  const th = "border-b border-border py-1.5 pr-3 text-right font-semibold";
   return (
     <div>
       <p className="m-0 mb-3 text-[12.5px] leading-relaxed text-muted-2">
-        Total return of the S&amp;P 500 each calendar year, dividends included, from{" "}
-        {SP500_FIRST_YEAR} to {SP500_LAST_YEAR}.
+        {mix
+          ? "Total return each calendar year of a portfolio half in the S&P 500 (dividends included) and half in 10-year US Treasury bonds, rebalanced to 50 / 50 every January, "
+          : "Total return of the S&P 500 each calendar year, dividends included, "}
+        from {SP500_FIRST_YEAR} to {SP500_LAST_YEAR}.
         {used.size > 0
           ? " Highlighted years are the ones this plan uses, with the plan year that uses each. Past the last year the sequence starts over at the first."
-          : " Turn on Market history to see which years the plan uses."}
+          : " Turn on a history return to see which years the plan uses."}
       </p>
       <table className="w-full border-collapse text-[12.5px] tabular-nums">
         <thead>
           <tr className="text-left text-muted-2">
             <th className="border-b border-border py-1.5 pr-3 font-semibold">Year</th>
-            <th className="border-b border-border py-1.5 pr-3 text-right font-semibold">S&amp;P 500 return</th>
+            {mix ? <th className={th}>50/50 return</th> : null}
+            <th className={th}>S&amp;P 500{mix ? "" : " return"}</th>
+            {mix ? <th className={th}>10-year Treasury</th> : null}
             <th className="border-b border-border py-1.5 font-semibold">Used in plan year</th>
           </tr>
         </thead>
         <tbody>
-          {sp500Years().map(({ year, total }) => {
+          {sp500Years().map(({ year, total, treasury, balanced }) => {
             const planYears = used.get(year);
             return (
               <tr
@@ -62,9 +92,9 @@ function ReturnsTable({ household }: { household: Household }) {
                 className={planYears ? "bg-[color-mix(in_srgb,var(--accent)_8%,#fff)] font-semibold" : ""}
               >
                 <td className="border-b border-border/60 py-1 pr-3">{year}</td>
-                <td className={`border-b border-border/60 py-1 pr-3 text-right ${total < 0 ? "text-danger" : ""}`}>
-                  {formatPercent(total)}
-                </td>
+                {mix ? <ReturnCell value={balanced} /> : null}
+                <ReturnCell value={total} />
+                {mix ? <ReturnCell value={treasury} /> : null}
                 <td className="border-b border-border/60 py-1 text-muted-2">{planYears?.join(", ") ?? ""}</td>
               </tr>
             );
@@ -82,8 +112,7 @@ function ReturnsTable({ household }: { household: Household }) {
   );
 }
 
-/** "See S&P 500 returns": opens the year-by-year table. */
-export function Sp500ReturnsLink() {
+function ReturnsLink({ mix }: { mix: boolean }) {
   const household = useHousehold();
   const [open, setOpen] = useState(false);
   return (
@@ -93,61 +122,79 @@ export function Sp500ReturnsLink() {
         onClick={() => setOpen(true)}
         className="self-start border-0 bg-transparent p-0 text-left text-[11.5px] font-semibold text-accent underline"
       >
-        See S&amp;P 500 returns
+        {mix ? "See 50/50 returns" : "See S&P 500 returns"}
       </button>
-      <Modal open={open} onClose={() => setOpen(false)} title="S&P 500 returns by year" size="md">
-        <ReturnsTable household={household} />
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={mix ? "50% S&P 500 / 50% 10-year Treasury returns by year" : "S&P 500 returns by year"}
+        size="md"
+      >
+        <ReturnsTable household={household} mix={mix} />
       </Modal>
     </>
   );
 }
 
+/** "See S&P 500 returns": opens the year-by-year table. */
+export function Sp500ReturnsLink() {
+  return <ReturnsLink mix={false} />;
+}
+
+/** "See 50/50 returns": the 50% S&P 500 / 50% 10-year Treasury table. */
+export function BalancedReturnsLink() {
+  return <ReturnsLink mix />;
+}
+
 /**
- * Fixed return / Market history for the plan's market accounts, the year the
- * history starts, and the link to the returns.
+ * Fixed return / S&P 500 history / 50/50 history for the plan's market
+ * accounts, the year the history starts, and the links to the returns.
  */
 export function MarketHistoryFields() {
   const household = useHousehold();
   const { setAssumptions } = useScenario();
-  const history = usesMarketHistory(household);
+  const mode = household.assumptions.returnMode ?? "fixed";
   const start = projectionStartYear(household);
   return (
     <>
       <Field
         label="Returns"
-        help="Fixed return grows each account by its own growth rate every year. Market history grows your IRAs, Roth and brokerage accounts by the S&P 500's actual return each year (dividends included), in order from the year you pick, so a bad stretch hits early withdrawals the way it really would. Savings, CDs, annuities, real estate and businesses keep their own rates."
+        help="Fixed return grows each account by its own growth rate every year. S&P 500 history grows your IRAs, Roth and brokerage accounts by the S&P 500's actual return each year (dividends included), in order from the year you pick, so a bad stretch hits early withdrawals the way it really would. 50/50 history does the same with a portfolio half in the S&P 500 and half in 10-year Treasury bonds, rebalanced every January. Savings, CDs, annuities, real estate and businesses keep their own rates. Any account can pick its own returns on the Accounts step."
       >
         <div
           role="radiogroup"
           aria-label="Returns"
           className="flex rounded-[9px] border border-border-2 bg-surface-muted p-0.5"
         >
-          {MODES.map((mode) => {
-            const on = (history ? "history" : "fixed") === mode.value;
+          {MODES.map((option) => {
+            const on = mode === option.value;
             return (
               <button
-                key={mode.value}
+                key={option.value}
                 type="button"
                 role="radio"
                 aria-checked={on}
                 onClick={() =>
-                  setAssumptions({ returnMode: mode.value === "history" ? "history" : undefined })
+                  setAssumptions({ returnMode: option.value === "fixed" ? undefined : option.value })
                 }
-                className={`flex-1 whitespace-nowrap rounded-[7px] px-2 py-1 text-base transition md:text-sm ${
+                className={`flex-1 rounded-[7px] px-2 py-1 text-base leading-tight transition md:text-sm ${
                   on ? "bg-white font-semibold text-foreground shadow-sm" : "text-muted hover:text-foreground"
                 }`}
               >
-                {mode.label}
+                {option.label}
               </button>
             );
           })}
         </div>
-        <Sp500ReturnsLink />
+        <div className="flex flex-wrap gap-x-3">
+          <Sp500ReturnsLink />
+          <BalancedReturnsLink />
+        </div>
       </Field>
-      {history ? (
+      {anyHistoryReturns(household) ? (
         <Field
           label="Market history starts"
-          help={`The S&P 500 year the plan's first year (${Number.isFinite(start) ? start : "year 1"}) uses; each later plan year uses the next one. Past ${SP500_LAST_YEAR} the sequence starts over at ${SP500_FIRST_YEAR}.`}
+          help={`The history year the plan's first year (${Number.isFinite(start) ? start : "year 1"}) uses; each later plan year uses the next one. Past ${SP500_LAST_YEAR} the sequence starts over at ${SP500_FIRST_YEAR}.`}
         >
           <YearSelect
             value={historyStartYear(household)}

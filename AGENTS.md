@@ -126,16 +126,24 @@ indexed yet.
 
 ## Market history returns
 
-`assumptions.returnMode: "history"` ("Returns: Market history" on the
-Household step) grows IRAs, Roth and brokerage accounts by the S&P 500's
-actual total return each year instead of their own rate: the plan's first
-year uses `historyStartYear`, each later year the next, wrapping to 1950
-after the last year (`lib/engine/marketHistory.ts`, data in
-`config/data/sp500Returns.json`, a committed constant in
-docs/external-data.md). Savings, CDs, annuities, DPP / MLP, real estate and
-businesses keep their own rates, and years before the plan start always use
-the fixed rate. Every place that grows an account must go through
-`accountGrowthForYear`: `project.ts`, `convertible.ts`, `depleteByRmd.ts`.
+`assumptions.returnMode` ("Returns" on the Household step) is `fixed` (the
+default), `history` (S&P 500 history) or `balanced` (50/50 history: half
+S&P 500, half 10-year Treasury, rebalanced every January). In a history mode
+IRAs, Roth and brokerage accounts grow by that year's actual total return
+instead of their own rate: the plan's first year uses `historyStartYear`,
+each later year the next, wrapping to 1950 after the last year
+(`lib/engine/marketHistory.ts`, data in `config/data/sp500Returns.json` and
+`treasury10yReturns.json`, committed constants in docs/external-data.md).
+
+Each account can override that with `returnSource` ("Returns" on the
+Accounts step): `fixed`, `sp500` or `balanced`, on any kind of account.
+Missing follows the plan (`accountReturnSource`); savings, CDs, annuities,
+DPP / MLP keep their own rates unless tagged. Real estate and businesses
+always keep their own rates, and years before the plan start always use the
+fixed rate. The leftover money's S&P 500 account follows the S&P 500 (not
+the mix) in either history mode. Every place that grows an account must go
+through `accountGrowthForYear`: `project.ts`, `convertible.ts`,
+`depleteByRmd.ts`.
 
 ## Estate value: step-up at death
 
@@ -490,7 +498,8 @@ user asks for a change:
    analysis (user's request) skips them as well: lease, cash or finance
    inputs, a summary table, a net cost chart and a year-by-year table.
    Under the links, an **Articles** line (user's request) opens "Rate of
-   returns for IRAs versus Roth IRAs" and "See S&P 500 returns" in pop-ups.
+   returns for IRAs versus Roth IRAs", "See S&P 500 returns" and "See 50/50
+   returns" in pop-ups.
 2. Results tabs: **Main | Summary | Graphic view | Main in detail analysis**.
    Each tab shows only its own sections; Main is the default.
    - **Main**: the Assets, Income & Taxes tables (No conversion, then With

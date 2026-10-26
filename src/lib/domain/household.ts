@@ -17,6 +17,7 @@ import type {
   Person,
   RealEstate,
   RetirementAccountType,
+  ReturnSource,
 } from "@/lib/domain/types";
 import { uid } from "@/lib/id";
 import { DEFAULT_LAND_SHARE, DEFAULT_PURCHASE_MONTH } from "@/lib/config/defaults";
@@ -281,6 +282,14 @@ export function accountGrowsInYear(
  * The old `afterRetirement` value (first growth the year after retiring)
  * becomes `retirement` (first growth in the retirement year).
  */
+export const RETURN_SOURCES: ReturnSource[] = ["fixed", "sp500", "balanced"];
+
+/** Drop a `returnSource` that isn't one we know (the plan's Returns applies). */
+export function healReturnSource(account: Account): void {
+  if (account.returnSource == null || RETURN_SOURCES.includes(account.returnSource)) return;
+  delete account.returnSource;
+}
+
 export function healGrowthStart(account: Account): void {
   if ((account.growthStart as string) === "afterRetirement") {
     account.growthStart = "retirement";

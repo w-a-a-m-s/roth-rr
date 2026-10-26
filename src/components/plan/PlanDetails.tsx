@@ -33,6 +33,7 @@ import { taxIndexingRate } from "@/lib/engine/taxIndexing";
 import { allowsEarlyWithdrawals } from "@/lib/engine/earlyWithdrawal";
 import { includesMedicarePremiums, includesOtherExpenses } from "@/lib/engine/otherExpenses";
 import { historyStartYear, usesMarketHistory } from "@/lib/engine/marketHistory";
+import { RETURN_SOURCE_LABEL } from "@/components/plan/MarketHistory";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import {
@@ -255,9 +256,11 @@ export function PlanDetails() {
         <Row
           label="Returns"
           value={
-            usesMarketHistory(household)
-              ? `S&P 500 history from ${historyStartYear(household)}`
-              : "Fixed return"
+            household.assumptions.returnMode === "balanced"
+              ? `50/50 history from ${historyStartYear(household)}`
+              : usesMarketHistory(household)
+                ? `S&P 500 history from ${historyStartYear(household)}`
+                : "Fixed return"
           }
         />
         <Row
@@ -289,6 +292,16 @@ export function PlanDetails() {
                 }
                 value={formatCurrency(acc.balance)}
               />
+              {acc.returnSource ? (
+                <Row
+                  label={<span className="pl-3 text-[11.5px] text-muted-3">Returns</span>}
+                  value={
+                    <span className="text-[11.5px] font-medium text-muted">
+                      {RETURN_SOURCE_LABEL[acc.returnSource]}
+                    </span>
+                  }
+                />
+              ) : null}
               {(acc.deposits ?? []).map((deposit) => (
                 <Row
                   key={deposit.id}
