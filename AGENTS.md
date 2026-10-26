@@ -156,8 +156,11 @@ adds one after-tax account (`LEFTOVER_ACCOUNT_ID`, a brokerage account for
 the S&P 500 so Market history moves it, savings for the money market) and
 puts each positive surplus in it at year end, as basis. S&P 500 growth is
 unrealized (it steps up at death); money market interest is ordinary income
-and investment income the year it's earned, inside `taxForYear`. A short
-year doesn't draw it. It counts in `afterTaxTotal`, so in the after-tax
+and investment income the year it's earned, inside `taxForYear`, and becomes
+basis so it isn't taxed again when drawn. A short year (spending above net
+income) draws it to cover the gap, grossed up for the tax on any S&P 500
+gain sold, the same way an event's top-up does (`coverShortYear` in
+`projectScenario`), until it's empty. It counts in `afterTaxTotal`, so in the after-tax
 assets and the inheritance.
 
 ## Taxable Social Security (provisional income)

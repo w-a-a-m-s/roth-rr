@@ -2695,13 +2695,42 @@ describe("leftover money", () => {
     );
   });
 
-  it("doesn't draw the savings in a short year", () => {
-    const h = saver("sp500");
-    // From 2028 expenses are $6,000 a month, more than the pension pays.
-    h.expenses.push({ id: "big", label: "Care", amount: 4_000, frequency: "monthly", growthRate: 0, startYear: 2028 });
+  /** The saver, with $4,000 a month more spending from 2030: short years. */
+  function shortFrom2030(choice: "sp500" | "moneyMarket"): Household {
+    const h = saver(choice);
+    h.expenses.push({ id: "big", label: "Care", amount: 4_000, frequency: "monthly", growthRate: 0, startYear: 2030 });
+    return h;
+  }
+
+  it("covers a short year from the S&P 500 savings, taxing the gain sold", () => {
+    const h = shortFrom2030("sp500");
     const rows = projectScenario(h, zeros(projectionYears(h)));
-    const short = rows.findIndex((r) => r.calendarYear === 2028);
-    expect(rows[short].surplus).toBeLessThan(0);
-    expect(rows[short].balances.__leftover__).toBeCloseTo(rows[short - 1].balances.__leftover__ * 1.08, 2);
+    const i = rows.findIndex((r) => r.calendarYear === 2030);
+    const take = rows[i].incomeMonthly["topup:__leftover__"] * 12;
+    expect(take).toBeGreaterThan(12_000);
+    // The draw covers the gap, the tax on its gain included.
+    expect(rows[i].surplus).toBeCloseTo(0, 2);
+    expect(rows[i].capitalGainsIncome).toBeGreaterThan(0);
+    expect(rows[i].balances.__leftover__).toBeCloseTo(rows[i - 1].balances.__leftover__ * 1.08 - take, 2);
+  });
+
+  it("covers a short year from the money market without taxing its interest again", () => {
+    const h = shortFrom2030("moneyMarket");
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    const i = rows.findIndex((r) => r.calendarYear === 2030);
+    expect(rows[i].incomeMonthly["topup:__leftover__"]).toBeGreaterThan(0);
+    expect(rows[i].surplus).toBeCloseTo(0, 2);
+    expect(rows[i].capitalGainsIncome).toBeCloseTo(0, 2);
+  });
+
+  it("stays short once the savings run out", () => {
+    // $10,000 a month of spending against a $5,000 pension.
+    const h = shortFrom2030("sp500");
+    h.expenses.push({ id: "more", label: "More care", amount: 4_000, frequency: "monthly", growthRate: 0, startYear: 2030 });
+    h.assumptions.finalAge = 85;
+    const rows = projectScenario(h, zeros(projectionYears(h)));
+    const last = rows[rows.length - 1];
+    expect(last.balances.__leftover__).toBeCloseTo(0, 2);
+    expect(last.surplus).toBeLessThan(0);
   });
 });

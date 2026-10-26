@@ -956,18 +956,19 @@ export function projectScenario(
     ...incomeAccounts.filter((acc) => acc.kind === "rothTaxFree"),
   ];
   /**
-   * Take `amount` from the accounts in top-up order, capped at what's there:
-   * each account's take, the ordinary income (tax-deferred, and DPP / MLP
-   * recapture) and the gains realized (after-tax, against remaining basis).
+   * Take `amount` from the accounts in `order` (top-up order by default),
+   * capped at what's there: each account's take, the ordinary income
+   * (tax-deferred, and DPP / MLP recapture) and the gains realized
+   * (after-tax, against remaining basis).
    */
-  const planTopUp = (amount: number, calendarYear: number) => {
+  const planTopUp = (amount: number, calendarYear: number, order = topUpOrder) => {
     const takes: Record<string, number> = {};
     let left = amount;
     let total = 0;
     let ordinary = 0;
     let gains = 0;
     let early = 0;
-    for (const acc of topUpOrder) {
+    for (const acc of order) {
       if (left <= 0) break;
       const penalized = isEarly(acc, calendarYear);
       if (penalized && !earlyAllowed) continue;
@@ -1073,6 +1074,10 @@ export function projectScenario(
     // earned (S&P 500 growth is unrealized, and steps up at death).
     const leftoverInterest =
       leftover?.kind === "savings" ? Math.max(0, balances[leftover.id] - leftoverBefore) : 0;
+    // Taxed interest is basis, so drawing it later isn't taxed again.
+    if (leftover && leftoverInterest > 0) {
+      basisRemaining[leftover.id] = (basisRemaining[leftover.id] ?? 0) + leftoverInterest;
+    }
 
     // 2) Account withdrawals reduce their source account and continue for as
     //    long as the income is active - including retirement draws past the
@@ -1705,40 +1710,42 @@ export function projectScenario(
     //     takes more from the accounts until it's covered (or they're empty),
     //     grossed up for the tax the extra adds. The rental-loss allowance
     //     keeps the MAGI it had before. Spending capacity covers every
-    //     short year this way (`coverShortfalls`).
-    if (eventIncome != null || options.coverShortfalls) {
+    //     short year this way (`coverShortfalls`). Otherwise a short year
+    //     draws only the saved leftover money, the same way.
+    const coverShortYear = (order: Account[]) => {
       const outflow = (monthlyExpenses + monthlyDeposits) * 12;
       const cashTax = (p: typeof priced) => p.taxes.annualTax - p.withheld;
       const baseTax = cashTax(priced);
       const gap = outflow - (totalMonthlyIncome * 12 - baseTax);
-      if (gap > 0.005) {
-        let target = gap;
-        let plan = planTopUp(target, calendarYear);
-        for (let k = 0; k < 50; k++) {
-          // Ran out of money to draw: take everything that's left.
-          if (plan.total < target - 0.005) break;
-          const next =
-            gap + cashTax(priceYear(plan.ordinary, plan.gains, plan.early)) - baseTax;
-          if (Math.abs(next - target) < 0.005) break;
-          target = next;
-          plan = planTopUp(target, calendarYear);
-        }
-        for (const [accId, take] of Object.entries(plan.takes)) {
-          const balBefore = Math.max(0, balances[accId]);
-          if (basisRemaining[accId] != null && balBefore > 0) {
-            realizeDraw(accounts.find((a) => a.id === accId)!, take, balBefore);
-          }
-          balances[accId] = balBefore - take;
-          incomeMonthly[eventTopUpKey(accId)] = take / 12;
-          totalMonthlyIncome += take / 12;
-        }
-        federalOrdinaryGross += plan.ordinary;
-        if (stateTaxesOrdinary) stateOrdinaryGross += plan.ordinary;
-        capitalGainsIncome += plan.gains;
-        earlyDistributions += plan.early;
-        priced = priceYear(0, 0);
+      if (!(gap > 0.005)) return;
+      let target = gap;
+      let plan = planTopUp(target, calendarYear, order);
+      for (let k = 0; k < 50; k++) {
+        // Ran out of money to draw: take everything that's left.
+        if (plan.total < target - 0.005) break;
+        const next =
+          gap + cashTax(priceYear(plan.ordinary, plan.gains, plan.early)) - baseTax;
+        if (Math.abs(next - target) < 0.005) break;
+        target = next;
+        plan = planTopUp(target, calendarYear, order);
       }
-    }
+      for (const [accId, take] of Object.entries(plan.takes)) {
+        const balBefore = Math.max(0, balances[accId]);
+        if (basisRemaining[accId] != null && balBefore > 0) {
+          realizeDraw(accounts.find((a) => a.id === accId)!, take, balBefore);
+        }
+        balances[accId] = balBefore - take;
+        incomeMonthly[eventTopUpKey(accId)] = take / 12;
+        totalMonthlyIncome += take / 12;
+      }
+      federalOrdinaryGross += plan.ordinary;
+      if (stateTaxesOrdinary) stateOrdinaryGross += plan.ordinary;
+      capitalGainsIncome += plan.gains;
+      earlyDistributions += plan.early;
+      priced = priceYear(0, 0);
+    };
+    if (eventIncome != null || options.coverShortfalls) coverShortYear(topUpOrder);
+    else if (leftover) coverShortYear([leftover]);
 
     const {
       grossTaxableIncome,
@@ -1785,7 +1792,7 @@ export function projectScenario(
     }
 
     // 6b) Leftover money: a year's surplus is saved at year end, so it
-    //     starts growing next year. A short year doesn't draw it.
+    //     starts growing next year. A short year drew it in 5c.
     const surplus = netMonthlyIncome - monthlyExpenses - monthlyDeposits;
     if (leftover && surplus > 0) {
       balances[leftover.id] += surplus * 12;

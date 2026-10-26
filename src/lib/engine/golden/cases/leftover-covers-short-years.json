@@ -1,0 +1,98 @@
+{
+  "name": "Leftover money covers later short years (S&P 500)",
+  "strategy": "manual",
+  "note": "Saves about $30k a year until care costs start in 2036, then each short year draws the saved S&P 500 money (gain taxed) until it runs out.",
+  "commit": "0cefabe",
+  "commitDate": "2026-10-25T23:32:35+00:00",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "people": [
+      {
+        "id": "p1",
+        "name": "Pat",
+        "birthYear": 1960,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ira",
+        "label": "IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 300000,
+        "growthRate": 0.05,
+        "retirementType": "ira"
+      }
+    ],
+    "incomes": [
+      {
+        "id": "pen",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 5000,
+        "growthRate": 0,
+        "taxability": "full"
+      }
+    ],
+    "realEstate": [],
+    "expenses": [
+      {
+        "id": "exp",
+        "label": "Living",
+        "amount": 2000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      },
+      {
+        "id": "care",
+        "label": "Care",
+        "amount": 6000,
+        "frequency": "monthly",
+        "growthRate": 0.02,
+        "startYear": 2036
+      }
+    ],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 88,
+      "leftoverInvestment": "sp500"
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        30000,
+        30000,
+        30000,
+        30000,
+        30000,
+        30000,
+        30000,
+        30000,
+        30000
+      ]
+    }
+  },
+  "expected": {
+    "baseline": {
+      "taxesTotal": 145787.88,
+      "medicareTotal": 57463.2,
+      "afterTaxAssetsAtRmd": 796634.28,
+      "inheritanceFinal": 818486.17
+    },
+    "roth": {
+      "taxesTotal": 140183.87,
+      "medicareTotal": 54540,
+      "afterTaxAssetsAtRmd": 893550.31,
+      "inheritanceFinal": 1207197.82
+    },
+    "deltas": {
+      "taxesTotal": -5604.01,
+      "medicareTotal": -2923.2,
+      "afterTaxAssetsAtRmd": 96916.03,
+      "inheritanceFinal": 388711.65
+    }
+  }
+}

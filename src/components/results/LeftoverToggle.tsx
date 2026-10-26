@@ -15,12 +15,12 @@ const OPTIONS: { key: LeftoverInvestment | undefined; label: string; help: strin
   {
     key: "sp500",
     label: `S&P 500 · ${formatPercent(LEFTOVER_INVESTMENT_RATE.sp500)}`,
-    help: "Each year's leftover money is added to one S&P 500 account growing 8% a year. Its gains aren't taxed: they step up at death.",
+    help: "Each year's leftover money is added to one S&P 500 account growing 8% a year. A year that spends more than its income draws it, and the gain sold is taxed. Gains left at death aren't taxed.",
   },
   {
     key: "moneyMarket",
     label: `Money market · ${formatPercent(LEFTOVER_INVESTMENT_RATE.moneyMarket)}`,
-    help: "Each year's leftover money is added to one money market account paying 3.3% a year. The interest is taxed every year.",
+    help: "Each year's leftover money is added to one money market account paying 3.3% a year. The interest is taxed every year. A year that spends more than its income draws it.",
   },
 ];
 

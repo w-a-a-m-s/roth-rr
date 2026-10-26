@@ -2,6 +2,7 @@ import type { Household, InsuranceKind } from "@/lib/domain/types";
 import { insurancePolicy } from "@/lib/domain/insurance";
 import { propertyLoans } from "@/lib/domain/propertyLoans";
 import { CAR_EXPENSE_KEY } from "@/lib/engine/otherExpenses";
+import { LEFTOVER_ACCOUNT_ID, LEFTOVER_INVESTMENT_LABEL } from "@/lib/config/defaults";
 
 const INSURANCE_INCOME_LABELS: Record<InsuranceKind, string> = {
   life: "Income from life insurance",
@@ -51,6 +52,10 @@ export function incomeLabel(household: Household, key: string): string {
   if (key.startsWith("draw:")) {
     const acc = household.accounts.find((a) => a.id === key.slice(5));
     return acc?.label?.trim() ? `Lifetime income · ${acc.label.trim()}` : "Lifetime income";
+  }
+  if (key === `topup:${LEFTOVER_ACCOUNT_ID}`) {
+    const choice = household.assumptions.leftoverInvestment;
+    return `Extra withdrawal · ${choice ? LEFTOVER_INVESTMENT_LABEL[choice] : "Leftover money"}`;
   }
   if (key.startsWith("topup:")) {
     const acc = household.accounts.find((a) => a.id === key.slice(6));
