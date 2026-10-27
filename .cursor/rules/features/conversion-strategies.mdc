@@ -118,6 +118,13 @@ Choosing Manual with no saved years copies the current live schedule
 so the year grid has numbers to edit. Each row has a "?" tooltip
 (`STRATEGY_HELP` in `labels.ts`).
 
+A **No conversion** button next to the Conversion strategy heading removes
+every conversion: `noConversionPatch` (`optimizer/util.ts`) sets Manual with
+$0 in every projection year and clears `earlyConversions`. The all-zero
+schedule counts as set, so the Manual default never refills it. The button
+shows pressed while `isNoConversion` holds; picking any strategy brings
+conversions back.
+
 Fill-bracket is one row that reads Fill {12% / 22% / 24%} bracket. The dollar
 is the selected rate; all three rates are precomputed.
 

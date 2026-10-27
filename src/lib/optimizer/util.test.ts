@@ -5,11 +5,15 @@ import { projectScenario } from "@/lib/engine/project";
 import {
   defaultConversionSchedule,
   hasManualConversionSchedule,
+  isNoConversion,
+  noConversionPatch,
   padToProjection,
   roundCents,
   spreadConversionEvenly,
 } from "@/lib/optimizer/util";
 import { manualSchedule } from "@/lib/optimizer/strategies/manual";
+import { buildConversionSchedule } from "@/lib/optimizer";
+import { projectionYears } from "@/lib/engine/project";
 
 describe("roundCents", () => {
   it("rounds to 2 decimal places", () => {
@@ -132,5 +136,32 @@ describe("default conversion when amount is unset", () => {
     const h = householdWithConvertible(100_000);
     h.optimizer.manualSchedule = [0, 0, 0, 0, 0, 0, 0, 0, 0];
     expect(manualSchedule(h).slice(0, 9)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  });
+});
+
+describe("No conversion button", () => {
+  it("removes every conversion, early ones included", () => {
+    const h = householdWithConvertible(100_000);
+    h.optimizer = {
+      strategy: "even",
+      earlyConversions: [{ year: 2026, amount: 20_000 }],
+    };
+    expect(isNoConversion(h)).toBe(false);
+    const next: Household = {
+      ...h,
+      optimizer: { ...h.optimizer, ...noConversionPatch(h) },
+    };
+    expect(next.optimizer.strategy).toBe("manual");
+    expect(next.optimizer.earlyConversions).toBeUndefined();
+    const schedule = buildConversionSchedule(next);
+    expect(schedule).toHaveLength(projectionYears(next));
+    expect(schedule.every((amount) => amount === 0)).toBe(true);
+    expect(isNoConversion(next)).toBe(true);
+  });
+
+  it("is not on for a Manual plan that still converts", () => {
+    const h = householdWithConvertible(100_000);
+    h.optimizer = { strategy: "manual", manualSchedule: [0, 5_000] };
+    expect(isNoConversion(h)).toBe(false);
   });
 });

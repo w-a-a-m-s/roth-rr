@@ -1,4 +1,4 @@
-import type { Household } from "@/lib/domain/types";
+import type { Household, OptimizerConfig } from "@/lib/domain/types";
 import {
   conversionYears,
   convertibleTotal,
@@ -47,6 +47,30 @@ export function spreadConversionEvenly(
 export function hasManualConversionSchedule(household: Household): boolean {
   const schedule = household.optimizer.manualSchedule;
   return schedule != null && schedule.length > 0;
+}
+
+/**
+ * The optimizer patch behind the "No conversion" button: Manual with every
+ * projection year at $0, and no typed early conversions. The all-zero schedule
+ * counts as set, so the Manual default spread never fills it back in.
+ */
+export function noConversionPatch(
+  household: Household,
+): Partial<OptimizerConfig> {
+  return {
+    strategy: "manual",
+    manualSchedule: Array.from({ length: projectionYears(household) }, () => 0),
+    earlyConversions: undefined,
+  };
+}
+
+/** True when the plan converts nothing: Manual, all $0, no early conversions. */
+export function isNoConversion(household: Household): boolean {
+  const { strategy, manualSchedule, earlyConversions } = household.optimizer;
+  if (strategy !== "manual") return false;
+  if (!hasManualConversionSchedule(household)) return false;
+  if (manualSchedule!.some((amount) => amount > 0)) return false;
+  return !(earlyConversions ?? []).some((c) => c.amount > 0);
 }
 
 /**

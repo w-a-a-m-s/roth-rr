@@ -12,7 +12,11 @@ import {
 } from "@/lib/optimizer/labels";
 import type { StrategyScore, StrategyScoreId } from "@/lib/optimizer/score";
 import { DEFAULT_MAX_MONTHLY_SHORTFALL } from "@/lib/optimizer/shortfall";
-import { hasManualConversionSchedule } from "@/lib/optimizer/util";
+import {
+  hasManualConversionSchedule,
+  isNoConversion,
+  noConversionPatch,
+} from "@/lib/optimizer/util";
 import { useStrategyScores } from "@/components/plan/useStrategyScores";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import {
@@ -66,6 +70,12 @@ export function ConversionStrategyMenu({
     });
   };
   const rate = resolveBracketRate(household.optimizer.targetBracketRate);
+  const noConversion = isNoConversion(household);
+  const clearConversions = () => {
+    if (readOnly || noConversion) return;
+    useUI.getState().closePlanDetails();
+    setOptimizer(noConversionPatch(household));
+  };
 
   const select = (
     strategy: ConversionStrategy,
@@ -121,9 +131,25 @@ export function ConversionStrategyMenu({
   return (
     <div className={className ?? "mb-5"}>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="m-0 text-[13.5px] font-bold text-foreground">
-          Conversion strategy
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="m-0 text-[13.5px] font-bold text-foreground">
+            Conversion strategy
+          </h3>
+          <button
+            type="button"
+            aria-pressed={noConversion}
+            disabled={readOnly}
+            onClick={clearConversions}
+            title="Remove every conversion: Manual with $0 in every year"
+            className={`h-[22px] rounded-[6px] border px-2 text-[11.5px] font-semibold transition-colors ${
+              noConversion
+                ? "border-accent bg-[color-mix(in_srgb,var(--accent)_8%,#fff)] text-foreground"
+                : "border-border bg-white text-muted-2 hover:text-foreground"
+            } ${readOnly || noConversion ? "cursor-default" : "cursor-pointer"}`}
+          >
+            No conversion
+          </button>
+        </div>
         <WorkingYearConversionsSwitch readOnly={readOnly} />
         <RmdYearConversionsSwitch readOnly={readOnly} />
         <div className="flex items-center gap-1.5">
