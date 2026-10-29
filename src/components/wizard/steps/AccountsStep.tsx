@@ -23,6 +23,7 @@ import { ReturnsArticleLink } from "@/components/plan/ReturnsArticle";
 import { RETURN_SOURCE_LABEL } from "@/components/plan/MarketHistory";
 import {
   accountReturnSource,
+  groupFixedRateForKind,
   historyStartYear,
 } from "@/lib/engine/marketHistory";
 import { submitEditOnEnter } from "@/components/ui/submitEditOnEnter";
@@ -604,7 +605,8 @@ function Group({
                   ownerId: firstOwner,
                   kind: addKind,
                   balance: 0,
-                  growthRate: DEFAULT_ACCOUNT_GROWTH[addKind],
+                  growthRate:
+                    groupFixedRateForKind(household, addKind) ?? DEFAULT_ACCOUNT_GROWTH[addKind],
                   ...(addKind === "retirementTaxable"
                     ? { retirementType: DEFAULT_RETIREMENT_ACCOUNT_TYPE }
                     : {}),

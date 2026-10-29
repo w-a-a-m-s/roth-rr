@@ -57,6 +57,7 @@ import {
   RETURN_GROUPS,
   RETURN_GROUP_KEY,
   RETURN_GROUP_KIND,
+  RETURN_GROUP_RATE_KEY,
   isReturnMode,
   type ReturnGroup,
 } from "@/lib/engine/marketHistory";
@@ -477,6 +478,9 @@ export function migrateHousehold(household: Household): Household {
     for (const group of RETURN_GROUPS) {
       const key = RETURN_GROUP_KEY[group];
       if (assumptions[key] != null && !isReturnMode(assumptions[key])) delete assumptions[key];
+      // A group's fixed return is optional; anything not a number is dropped.
+      const rateKey = RETURN_GROUP_RATE_KEY[group];
+      if (assumptions[rateKey] != null && !Number.isFinite(assumptions[rateKey])) delete assumptions[rateKey];
     }
   }
   if (legacy.assumptions?.historyStartYear != null && !Number.isInteger(legacy.assumptions.historyStartYear)) {
@@ -904,6 +908,12 @@ interface ScenarioState {
    * An account changed on the Accounts step after keeps its own choice.
    */
   setReturnMode: (group: ReturnGroup, mode: ReturnMode) => void;
+  /**
+   * Set one group's fixed return and write it onto every account of that
+   * group (and clear their own Returns choice so the rate applies). An
+   * account's rate changed after keeps its own.
+   */
+  setGroupFixedRate: (group: ReturnGroup, rate: number) => void;
   /**
    * Set (or clear, with undefined) the first projection year. A manual
    * conversion schedule is per projection year, so it shifts to keep each
@@ -1656,6 +1666,17 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       editActive((h) => ({
         ...h,
         assumptions: { ...h.assumptions, ...patch },
+      })),
+    setGroupFixedRate: (group, rate) =>
+      editActive((h) => ({
+        ...h,
+        assumptions: { ...h.assumptions, [RETURN_GROUP_RATE_KEY[group]]: rate },
+        accounts: h.accounts.map((acc) => {
+          if (acc.kind !== RETURN_GROUP_KIND[group]) return acc;
+          const { returnSource: _cleared, ...rest } = acc;
+          void _cleared;
+          return { ...rest, growthRate: rate };
+        }),
       })),
     setReturnMode: (group, mode) =>
       editActive((h) => ({

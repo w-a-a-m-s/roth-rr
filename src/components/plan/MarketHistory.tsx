@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Household, ReturnMode, ReturnSource } from "@/lib/domain/types";
+import type { AccountKind, Household, ReturnMode, ReturnSource } from "@/lib/domain/types";
 import {
   SP500_FIRST_YEAR,
   SP500_LAST_YEAR,
@@ -12,6 +12,7 @@ import {
   RETURN_GROUPS,
   RETURN_GROUP_KIND,
   anyHistoryReturns,
+  groupFixedRate,
   historyStartYear,
   historyYearFor,
   returnModeFor,
@@ -20,7 +21,8 @@ import {
 import { projectionStartYear, projectionYears } from "@/lib/engine/project";
 import { Field } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
-import { YearSelect } from "@/components/ui/inputs";
+import { PercentInput, YearSelect } from "@/components/ui/inputs";
+import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
 import { formatPercent } from "@/lib/format";
 import { useHousehold, useScenario } from "@/store/useScenario";
 
@@ -150,6 +152,14 @@ export function BalancedReturnsLink() {
   return <ReturnsLink mix />;
 }
 
+/** The rate every account of this kind shares, when they all have the same one. */
+function sharedRate(household: Household, kind: AccountKind): number | undefined {
+  const rates = new Set(
+    household.accounts.filter((acc) => acc.kind === kind).map((acc) => acc.growthRate),
+  );
+  return rates.size === 1 ? [...rates][0] : undefined;
+}
+
 const GROUP_LABEL: Record<ReturnGroup, string> = {
   retirement: "Retirement accounts",
   roth: "Roth accounts",
@@ -164,54 +174,71 @@ const GROUP_LABEL: Record<ReturnGroup, string> = {
  */
 export function MarketHistoryFields() {
   const household = useHousehold();
-  const { setAssumptions, setReturnMode } = useScenario();
+  const { setAssumptions, setReturnMode, setGroupFixedRate } = useScenario();
   const start = projectionStartYear(household);
   return (
     <>
       <Field
         label="Returns"
         className="lg:col-span-2"
-        help="Pick how each kind of account grows. Fixed return grows each account by its own growth rate every year. S&P 500 history grows the accounts by the S&P 500's actual return each year (dividends included), in order from the year you pick, so a bad stretch hits early withdrawals the way it really would. 50/50 history does the same with a portfolio half in the S&P 500 and half in 10-year Treasury bonds, rebalanced every January. A choice here applies to every account of that kind, replacing what each account had. Change an account's Returns on the Accounts step afterwards and that account keeps its own. Savings, CDs, annuities, real estate and businesses keep their own rates."
+        help="Pick how each kind of account grows. Fixed return grows each account by its own growth rate every year. Type a rate next to Fixed return to set it on every account of that kind, replacing each account's own rate; change an account's rate on the Accounts step afterwards and it keeps its own. S&P 500 history grows the accounts by the S&P 500's actual return each year (dividends included), in order from the year you pick, so a bad stretch hits early withdrawals the way it really would. 50/50 history does the same with a portfolio half in the S&P 500 and half in 10-year Treasury bonds, rebalanced every January. A choice here applies to every account of that kind, replacing what each account had. Change an account's Returns on the Accounts step afterwards and that account keeps its own. Savings, CDs, annuities, real estate and businesses keep their own rates."
       >
         <div className="flex flex-col gap-1.5">
           {RETURN_GROUPS.map((group) => {
             const mode = returnModeFor(household, group);
             const kind = RETURN_GROUP_KIND[group];
+            const fixedRate = groupFixedRate(household, group);
+            // Accounts that picked their own Returns, or (on a fixed return
+            // the plan set) their own rate after it.
             const ownChoice = household.accounts.filter(
-              (acc) => acc.kind === kind && acc.returnSource != null,
+              (acc) =>
+                acc.kind === kind &&
+                (acc.returnSource != null ||
+                  (mode === "fixed" && fixedRate != null && acc.growthRate !== fixedRate)),
             ).length;
             return (
-              <div key={group} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                <span className="shrink-0 text-xs text-foreground sm:w-[150px]">
+              <div key={group} className="flex flex-col gap-1">
+                <span className="text-xs text-foreground">
                   {GROUP_LABEL[group]}
                   {ownChoice > 0 ? (
-                    <span className="block text-[11px] text-muted">
-                      {ownChoice} set on its own
-                    </span>
+                    <span className="text-[11px] text-muted"> · {ownChoice} set on its own</span>
                   ) : null}
                 </span>
-                <div
-                  role="radiogroup"
-                  aria-label={`Returns for ${GROUP_LABEL[group].toLowerCase()}`}
-                  className="flex flex-1 rounded-[9px] border border-border-2 bg-surface-muted p-0.5"
-                >
-                  {MODES.map((option) => {
-                    const on = mode === option.value;
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        role="radio"
-                        aria-checked={on}
-                        onClick={() => setReturnMode(group, option.value)}
-                        className={`flex-1 rounded-[7px] px-2 py-1 text-base leading-tight transition md:text-sm ${
-                          on ? "bg-white font-semibold text-foreground shadow-sm" : "text-muted hover:text-foreground"
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    );
-                  })}
+                <div className="flex items-center gap-2">
+                  <div
+                    role="radiogroup"
+                    aria-label={`Returns for ${GROUP_LABEL[group].toLowerCase()}`}
+                    className="flex flex-1 rounded-[9px] border border-border-2 bg-surface-muted p-0.5"
+                  >
+                    {MODES.map((option) => {
+                      const on = mode === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => setReturnMode(group, option.value)}
+                          className={`flex-1 rounded-[7px] px-2 py-1 text-base leading-tight transition md:text-sm ${
+                            on ? "bg-white font-semibold text-foreground shadow-sm" : "text-muted hover:text-foreground"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {mode === "fixed" ? (
+                    <div
+                      className="w-[84px] shrink-0"
+                      aria-label={`Fixed return for ${GROUP_LABEL[group].toLowerCase()}`}
+                    >
+                      <PercentInput
+                        value={fixedRate ?? sharedRate(household, kind) ?? DEFAULT_ACCOUNT_GROWTH[kind] ?? 0}
+                        onChange={(rate) => setGroupFixedRate(group, rate)}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </div>
             );

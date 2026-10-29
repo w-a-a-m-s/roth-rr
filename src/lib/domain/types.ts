@@ -447,6 +447,15 @@ export interface Assumptions {
   retirementReturnMode?: ReturnMode;
   rothReturnMode?: ReturnMode;
   investmentReturnMode?: ReturnMode;
+  /**
+   * The fixed return set for each group on the Household step (decimal).
+   * Setting it writes that `growthRate` onto every account of the group and
+   * new accounts of that kind start at it; an account's rate changed after
+   * keeps its own. Missing until the user sets one.
+   */
+  retirementFixedRate?: number;
+  rothFixedRate?: number;
+  investmentFixedRate?: number;
   /** First S&P 500 year the plan uses in Market history mode (default 1950). */
   historyStartYear?: number;
   /**

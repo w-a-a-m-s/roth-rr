@@ -1289,3 +1289,15 @@ describe("migrateHousehold: pay off or invest, and spending capacity", () => {
     expect(healed).not.toHaveProperty("spendingCapacity");
   });
 });
+
+describe("migrateHousehold: fixed return by group", () => {
+  it("keeps a real rate and drops anything else", () => {
+    const h = household([], []);
+    h.assumptions.rothFixedRate = 0.06;
+    (h.assumptions as { investmentFixedRate?: unknown }).investmentFixedRate = "7%";
+    const out = migrateHousehold(h);
+    expect(out.assumptions.rothFixedRate).toBe(0.06);
+    expect(out.assumptions).not.toHaveProperty("investmentFixedRate");
+    expect(out.assumptions).not.toHaveProperty("retirementFixedRate");
+  });
+});

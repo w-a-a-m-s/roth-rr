@@ -75,3 +75,49 @@ describe("Returns by account group", () => {
     expect(source("roth")).toBe("fixed");
   });
 });
+
+describe("Fixed return by account group", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }));
+    useScenario.setState({
+      configs: [
+        {
+          id: "plan-1",
+          name: "Test",
+          createdAt: 0,
+          updatedAt: 0,
+          household: household(),
+          role: "admin",
+          isOwner: true,
+          shareCount: 1,
+        },
+      ],
+      activeId: "plan-1",
+      loaded: true,
+    });
+  });
+
+  const rate = (id: string) => active().accounts.find((a) => a.id === id)!.growthRate;
+
+  it("writes the rate onto every account of the group and follows it", () => {
+    useScenario.getState().setGroupFixedRate("retirement", 0.07);
+    expect(active().assumptions.retirementFixedRate).toBe(0.07);
+    expect(rate("ira")).toBe(0.07);
+    expect(rate("ira2")).toBe(0.07);
+    // The 50/50 tag on the 401(k) is cleared so the fixed rate applies.
+    expect(source("ira2")).toBe("fixed");
+    // Other groups keep their rates.
+    expect(rate("roth")).toBe(0.05);
+    expect(rate("brk")).toBe(0.05);
+  });
+
+  it("lets an account's rate changed afterwards keep its own", () => {
+    const { setGroupFixedRate, updateAccount } = useScenario.getState();
+    setGroupFixedRate("roth", 0.06);
+    updateAccount("roth", { growthRate: 0.09 });
+    expect(rate("roth")).toBe(0.09);
+    // Setting the group again replaces it.
+    setGroupFixedRate("roth", 0.04);
+    expect(rate("roth")).toBe(0.04);
+  });
+});

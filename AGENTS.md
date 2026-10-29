@@ -137,6 +137,12 @@ each later year the next, wrapping to 1950 after the last year
 `treasury10yReturns.json`, committed constants in docs/external-data.md).
 Plans from before the split had one `returnMode`; `migrateHousehold` copies
 it to all three groups.
+A group on Fixed return can also set its rate (`retirementFixedRate`,
+`rothFixedRate`, `investmentFixedRate`, the box next to Fixed return): the
+store's `setGroupFixedRate` writes it as the `growthRate` of every account in
+the group and clears their `returnSource`, and new accounts of that kind
+start at it. An account's rate changed after keeps its own. The engine only
+ever reads each account's `growthRate`.
 
 Each account can override that with `returnSource` ("Returns" on the
 Accounts step): `fixed`, `sp500` or `balanced`, on any kind of account.

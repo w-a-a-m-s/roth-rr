@@ -37,6 +37,31 @@ export const RETURN_GROUP_KEY = {
   investment: "investmentReturnMode",
 } as const satisfies Record<ReturnGroup, keyof Assumptions>;
 
+/** The assumption that holds each group's fixed return. */
+export const RETURN_GROUP_RATE_KEY = {
+  retirement: "retirementFixedRate",
+  roth: "rothFixedRate",
+  investment: "investmentFixedRate",
+} as const satisfies Record<ReturnGroup, keyof Assumptions>;
+
+/** A group's fixed return when the plan set one. */
+export function groupFixedRate(
+  household: Pick<Household, "assumptions">,
+  group: ReturnGroup,
+): number | undefined {
+  const rate = household.assumptions?.[RETURN_GROUP_RATE_KEY[group]];
+  return Number.isFinite(rate) ? rate : undefined;
+}
+
+/** The fixed return a new account of this kind starts at, when its group has one. */
+export function groupFixedRateForKind(
+  household: Pick<Household, "assumptions">,
+  kind: AccountKind,
+): number | undefined {
+  const group = returnGroupOf(kind);
+  return group ? groupFixedRate(household, group) : undefined;
+}
+
 export function isReturnMode(value: unknown): value is ReturnMode {
   return value === "fixed" || value === "history" || value === "balanced";
 }
@@ -50,7 +75,7 @@ export function returnModeFor(
   return isReturnMode(mode) ? mode : "fixed";
 }
 
-function returnGroupOf(kind: AccountKind): ReturnGroup | null {
+export function returnGroupOf(kind: AccountKind): ReturnGroup | null {
   return RETURN_GROUPS.find((group) => RETURN_GROUP_KIND[group] === kind) ?? null;
 }
 
