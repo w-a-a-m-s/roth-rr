@@ -44,18 +44,28 @@ export function LongTermCareImpact({ impact }: { impact: LongTermCareAssetImpact
 	);
 }
 
-/** Whether the year's income after tax pays for the care and the rest of the spending. */
+/** Back-to-back years read as a range; with a gap, list them. */
+function yearList(years: number[]): string {
+	if (years.length === 1) return String(years[0]);
+	const contiguous = years.every((y, i) => i === 0 || y === years[i - 1] + 1);
+	return contiguous ? `${years[0]} to ${years[years.length - 1]}` : years.join(', ');
+}
+
+/**
+ * Whether the plan can pay for the care years: from income, or from savings
+ * when income falls short. Not sufficient only once the accounts run dry and
+ * spending is left unpaid.
+ */
 function CashFlowCard({ cashFlow, years }: { cashFlow: LongTermCareAssetImpact['cashFlow']; years: string }) {
-	const { shortYears, fromAccounts, uncovered } = cashFlow;
-	const sufficient = shortYears.length === 0;
-	// Back-to-back years read as a range; with a gap, list them.
-	const contiguous = shortYears.every((y, i) => i === 0 || y === shortYears[i - 1] + 1);
-	const shortRange =
-		shortYears.length === 1
-			? String(shortYears[0])
-			: contiguous
-				? `${shortYears[0]} to ${shortYears[shortYears.length - 1]}`
-				: shortYears.join(', ');
+	const { shortYears, fromAccounts, unpaidYears, uncovered } = cashFlow;
+	const sufficient = unpaidYears.length === 0;
+	let detail = `Income after tax covers the care and the rest of the spending every year (${years}).`;
+	if (shortYears.length > 0) {
+		detail = `Income alone falls short in ${shortYears.length} of ${cashFlow.years} care years (${yearList(shortYears)}), and savings cover it with ${formatCurrency(fromAccounts)} more, tax included.`;
+	}
+	if (!sufficient) {
+		detail = `Savings run out in ${unpaidYears[0]}: ${formatCurrency(uncovered)} of spending is left unpaid (${yearList(unpaidYears)}). Before that, ${formatCurrency(fromAccounts)} came out of savings.`;
+	}
 
 	return (
 		<div className="rounded-2xl border border-border bg-white px-5 py-4">
@@ -63,12 +73,7 @@ function CashFlowCard({ cashFlow, years }: { cashFlow: LongTermCareAssetImpact['
 			<div className={`mt-1 font-serif text-[32px] font-medium leading-none ${sufficient ? 'text-success' : 'text-danger'}`}>
 				{sufficient ? 'Sufficient' : 'Not sufficient'}
 			</div>
-			<p className="m-0 mt-1.5 text-[12.5px] leading-snug text-muted-3">
-				{sufficient
-					? `Income after tax covers the care and the rest of the spending every year (${years}).`
-					: `Income falls short in ${shortYears.length} of ${cashFlow.years} care years (${shortRange}), so ${formatCurrency(fromAccounts)} more comes out of savings, tax on it included.`}
-				{uncovered > 0 ? ` Once the accounts run out, ${formatCurrency(uncovered)} is left unpaid.` : null}
-			</p>
+			<p className="m-0 mt-1.5 text-[12.5px] leading-snug text-muted-3">{detail}</p>
 		</div>
 	);
 }

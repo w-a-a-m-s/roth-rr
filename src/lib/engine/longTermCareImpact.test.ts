@@ -79,7 +79,21 @@ describe("long-term care asset impact", () => {
       .reduce((sum, r) => sum + (r.incomeMonthly["topup:ira"] ?? 0) * 12, 0);
     expect(impact.cashFlow.fromAccounts).toBeCloseTo(topUps, 6);
     expect(impact.cashFlow.fromAccounts).toBeGreaterThan(0);
+    expect(impact.cashFlow.unpaidYears).toEqual([]);
     expect(impact.cashFlow.uncovered).toBe(0);
+  });
+
+  it("leaves spending unpaid once the accounts run dry", () => {
+    const h = single();
+    h.accounts[0].balance = 20_000;
+    const careRows = rows(h, care);
+    const impact = longTermCareAssetImpact(careRows, rows(h), resolveLongTermCare(h, care))!;
+    const unpaid = careRows
+      .filter((r) => r.calendarYear >= 2030 && r.calendarYear <= 2032 && r.surplus < 0)
+      .map((r) => r.calendarYear);
+    expect(unpaid.length).toBeGreaterThan(0);
+    expect(impact.cashFlow.unpaidYears).toEqual(unpaid);
+    expect(impact.cashFlow.uncovered).toBeGreaterThan(0);
   });
 
   it("calls the cash flow sufficient when income covers care", () => {

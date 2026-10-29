@@ -45,6 +45,11 @@ export interface LongTermCareCashFlow {
   shortYears: number[];
   /** Extra drawn from the accounts over those years, tax on the draws included. */
   fromAccounts: number;
+  /**
+   * Care years the accounts couldn't cover either: they ran dry and spending
+   * was left unpaid. The cash flow is sufficient while this is empty.
+   */
+  unpaidYears: number[];
   /** Spending left unpaid once the accounts ran dry. */
   uncovered: number;
 }
@@ -97,6 +102,7 @@ export function longTermCareAssetImpact(
  */
 function careCashFlow(rows: ProjectionRow[]): LongTermCareCashFlow {
   const shortYears: number[] = [];
+  const unpaidYears: number[] = [];
   let fromAccounts = 0;
   let uncovered = 0;
   for (const row of rows) {
@@ -110,7 +116,9 @@ function careCashFlow(rows: ProjectionRow[]): LongTermCareCashFlow {
     if (topUp < 0.5 && unpaid === 0) continue;
     shortYears.push(row.calendarYear);
     fromAccounts += topUp;
+    if (unpaid === 0) continue;
+    unpaidYears.push(row.calendarYear);
     uncovered += unpaid;
   }
-  return { years: rows.length, shortYears, fromAccounts, uncovered };
+  return { years: rows.length, shortYears, fromAccounts, unpaidYears, uncovered };
 }
