@@ -38,6 +38,7 @@ import { projectionStartYear } from "@/lib/engine/project";
 import { runScenario } from "@/lib/engine/runScenario";
 import { INCOME_TABLE_GROWTH, incomeTableRate } from "@/lib/engine/incomeTable";
 import { GrowthFromToggle } from "@/components/ui/GrowthFromToggle";
+import { IncomeTableLink } from "@/components/plan/IncomeTable";
 import { SOCIAL_SECURITY_MAX_TAXABLE_SHARE } from "@/lib/config/federalTax";
 import { DEFAULT_INCOME_GROWTH } from "@/lib/config/defaults";
 import { formatCurrency, formatPercent } from "@/lib/format";
@@ -310,6 +311,10 @@ function IncomeFields({
                 })
               }
               options={AMOUNT_SOURCE_OPTIONS}
+            />
+            <IncomeTableLink
+              className="mt-1"
+              highlightAges={table?.age != null ? [table.age] : []}
             />
           </Field>
         ) : null}

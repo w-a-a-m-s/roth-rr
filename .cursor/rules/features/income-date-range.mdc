@@ -75,3 +75,8 @@ immediate payout column; 5% under 59). It never grows, and `monthlyAmount` /
 `withdrawalAnnualForYear` for the draw. The Income step shows the rate, the
 owner's age, the no-conversion monthly amount and the 8% in a note on the
 card. `migrateHousehold` drops the field from other kinds and bad values.
+
+"See the income table" (`components/plan/IncomeTable.tsx`, rows from
+`incomeTableRows`) opens the whole table by age in a pop-up: under the Amount
+from choice on the Income step and under the Life insurance summary. It
+highlights the ages the plan uses.

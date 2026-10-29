@@ -62,3 +62,30 @@ export function lifeInsurancePayoutRate(age: number): number {
   if (whole < YOUNGEST) return LIFE_INSURANCE_PAYOUT_UNDER_59;
   return LIFE_INSURANCE_PAYOUT_BY_AGE[Math.min(whole, OLDEST)];
 }
+
+/** One row of the income table as the app shows it. */
+export interface IncomeTableRow {
+  /** "Under 59", "59" ... "86", "87+". */
+  ageLabel: string;
+  rate: number;
+  /** The ages the row covers, inclusive (`max` Infinity for the last row). */
+  minAge: number;
+  maxAge: number;
+}
+
+/** The whole table by age, with the under-59 and past-86 rows around it. */
+export function incomeTableRows(): IncomeTableRow[] {
+  const rows: IncomeTableRow[] = [
+    { ageLabel: `Under ${YOUNGEST}`, rate: LIFE_INSURANCE_PAYOUT_UNDER_59, minAge: -Infinity, maxAge: YOUNGEST - 1 },
+  ];
+  for (let age = YOUNGEST; age <= OLDEST; age++) {
+    rows.push({ ageLabel: String(age), rate: LIFE_INSURANCE_PAYOUT_BY_AGE[age], minAge: age, maxAge: age });
+  }
+  rows.push({
+    ageLabel: `${OLDEST + 1}+`,
+    rate: LIFE_INSURANCE_PAYOUT_BY_AGE[OLDEST],
+    minAge: OLDEST + 1,
+    maxAge: Infinity,
+  });
+  return rows;
+}

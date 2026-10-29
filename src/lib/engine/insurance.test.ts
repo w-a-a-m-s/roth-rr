@@ -9,7 +9,7 @@ import type {
 import type { ProjectionOptions } from "@/lib/engine/types";
 import { projectScenario, projectionYears } from "@/lib/engine/project";
 import { calculate } from "@/lib/calculate";
-import { lifeInsurancePayoutRate } from "@/lib/config/lifeInsurancePayout";
+import { incomeTableRows, lifeInsurancePayoutRate } from "@/lib/config/lifeInsurancePayout";
 import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
 import {
   disabilityBenefitMonths,
@@ -376,5 +376,20 @@ describe("a disability before the plan starts", () => {
 
   it("leaves Retirement starting at the plan start", () => {
     expect(rows(h)[0].calendarYear).toBe(2036);
+  });
+});
+
+describe("income table rows", () => {
+  it("lists under 59, every age 59 to 86, then 87+ at the age 86 rate", () => {
+    const rows = incomeTableRows();
+    expect(rows).toHaveLength(30);
+    expect(rows[0]).toMatchObject({ ageLabel: "Under 59", rate: 0.05 });
+    expect(rows[1]).toMatchObject({ ageLabel: "59", rate: 0.052 });
+    expect(rows[28]).toMatchObject({ ageLabel: "86", rate: 0.078 });
+    expect(rows[29]).toMatchObject({ ageLabel: "87+", rate: 0.078 });
+    for (const row of rows) {
+      const age = Number.isFinite(row.minAge) ? row.minAge : 40;
+      expect(row.rate).toBe(lifeInsurancePayoutRate(age));
+    }
   });
 });

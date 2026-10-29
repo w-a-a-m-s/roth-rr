@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import type { Household } from "@/lib/domain/types";
 import { lifeInsuranceSummary, type LifeSummaryTotals } from "@/lib/domain/insurance";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { IncomeTableLink } from "@/components/plan/IncomeTable";
 
 const TH_BASE = "px-3 py-2 text-[11.5px] font-bold text-white whitespace-nowrap";
 const TH = `${TH_BASE} text-right`;
@@ -86,6 +87,10 @@ export function LifeInsuranceSummary({ household }: { household: Household }) {
         their age (5% under 59), for life. Premiums and cash value are for
         reference and don&apos;t change the projection.
       </p>
+      <IncomeTableLink
+        className="px-1"
+        highlightAges={groups.flatMap((g) => (g.age != null ? [g.age] : []))}
+      />
     </div>
   );
 }
