@@ -10,6 +10,7 @@ import { DualScroll } from "@/components/results/DualScroll";
 import { DisplayFromToggle } from "@/components/results/DisplayFromToggle";
 import { LeftoverToggle } from "@/components/results/LeftoverToggle";
 import {
+  INCOME_TINT_ROW,
   buildSnapshotTable,
   type SnapshotFrom,
   type SnapshotAssetGroup,
@@ -65,11 +66,7 @@ const TINT_ROW: Record<SnapshotTint, string> = {
   life: "bg-[#DCEFF2]",
   disability: "bg-[#FBE6D4]",
   longTermCare: "bg-[#F0DDEA]",
-  // Income by source: fixed income a deeper green than the section, regular
-  // account withdrawals the retirement assets' blue, an event's extra draws amber.
-  fixedIncome: "bg-[#D9EDE1]",
-  accountDraw: "bg-[#E3EBF5]",
-  eventDraw: "bg-[#FBEBCF]",
+  ...INCOME_TINT_ROW,
   // After-tax accounts by type: neighboring shades of the regular group's sand.
   brokerage: "bg-[#F6F1E4]",
   annuity: "bg-[#F1E7D1]",

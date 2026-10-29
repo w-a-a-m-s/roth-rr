@@ -6,6 +6,7 @@ import { primaryPersonId } from "@/lib/engine/project";
 import modernSample from "@/lib/engine/golden/cases/modern-sample.json";
 import {
   buildSnapshotTable,
+  incomeSourceTint,
   incomeTint,
   scenarioFrom,
   snapshotFromYear,
@@ -330,5 +331,8 @@ describe("incomeTint", () => {
     expect(incomeTint(h, "ltci:p1")).toBe("longTermCare");
     expect(incomeTint(h, "pay")).toBeUndefined();
     expect(incomeTint(h, "re:house")).toBeUndefined();
+    // The year-by-year table only takes the source shades.
+    expect(incomeSourceTint(h, "ltci:p1")).toBeUndefined();
+    expect(incomeSourceTint(h, "ss")).toBe("fixedIncome");
   });
 });

@@ -21,6 +21,7 @@ import {
   lifeProceedsLabel,
 } from "@/components/results/incomeLabels";
 import { useTopScrollbar } from "@/components/results/useTopScrollbar";
+import { INCOME_TINT_ROW, incomeSourceTint } from "@/components/results/snapshotTable";
 import { MARK_CELL, MarkTag, ageMark, firstRmdYear, type AgeMark } from "@/components/results/AgeMarks";
 import { surplusLabel } from "@/components/results/chartUtils";
 
@@ -119,6 +120,8 @@ interface LineDef {
   signed?: boolean;
   /** Highlight a person's retirement and first RMD year (age rows). */
   mark?: (row: Row) => AgeMark | null;
+  /** Row background in place of the zebra stripes (income by source). */
+  rowClass?: string;
 }
 
 interface Section {
@@ -191,12 +194,17 @@ function buildIncomeChildren(
   unit: "mo" | "yr"
 ): LineDef[] {
   const scale = unit === "yr" ? 12 : 1;
-  return incomeDetailKeys(scenario, household).map((key) => ({
-    key: `income-${unit}-${key}`,
-    label: incomeLabel(household, key),
-    unit,
-    value: (r) => (r.incomeMonthly[key] ?? 0) * scale,
-  }));
+  return incomeDetailKeys(scenario, household).map((key) => {
+    // Same source shades as the Assets, Income & Taxes table.
+    const tint = incomeSourceTint(household, key);
+    return {
+      key: `income-${unit}-${key}`,
+      label: incomeLabel(household, key),
+      unit,
+      value: (r) => (r.incomeMonthly[key] ?? 0) * scale,
+      rowClass: tint ? INCOME_TINT_ROW[tint] : undefined,
+    };
+  });
 }
 
 function depositLabel(household: Household, key: string): string {
@@ -1054,7 +1062,7 @@ function LineRows({
   return (
     <>
       <tr
-        className={`group border-t border-border-subtle odd:bg-surface even:bg-card ${
+        className={`group border-t border-border-subtle ${line.rowClass ?? "odd:bg-surface even:bg-card"} ${
           hasChildren ? "cursor-pointer" : ""
         }`}
         onClick={hasChildren ? onToggle : undefined}

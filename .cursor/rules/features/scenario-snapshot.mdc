@@ -28,10 +28,12 @@ both to a year.
   `subtotal`; other sections leave them unset. Income (monthly, per
   source, RMD rows kept when they pay anywhere in the projection; each line
   shaded by source via `incomeTint`, at the user's request: fixed income
-  (pensions, military pension, Social Security) a deeper green, regular
+  (pensions, military pension, Social Security) sage, regular
   withdrawals (scheduled draws, RMDs) blue, an event's extra draws
   (`draw:` lifetime income, `topup:` extra withdrawals, e.g. long-term care)
-  amber, insurance its own color, everything else the section green), cash flow
+  amber, insurance its own color, everything else the section green; colors
+  in `INCOME_TINT_ROW`, shared with the year-by-year table's income detail
+  rows via `incomeSourceTint`), cash flow
   (monthly; a deposits row shows when the plan has deposits, since surplus
   nets them).
 - It sits above the year-by-year table: nothing may go below that table in

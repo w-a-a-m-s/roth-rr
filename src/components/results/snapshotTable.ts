@@ -40,6 +40,18 @@ export type IncomeTint = "fixedIncome" | "accountDraw" | "eventDraw";
 
 const FIXED_INCOME_KINDS: IncomeKind[] = ["pension", "militaryPension", "socialSecurity"];
 
+/**
+ * Row background per income source, shared by the Assets, Income & Taxes
+ * table and the year-by-year table: fixed income a soft sage (apart from the
+ * income section's own green), regular account withdrawals the retirement
+ * assets' blue, an event's extra draws amber.
+ */
+export const INCOME_TINT_ROW: Record<IncomeTint, string> = {
+  fixedIncome: "bg-[#E4EFD3]",
+  accountDraw: "bg-[#E1EAF6]",
+  eventDraw: "bg-[#FBEBCF]",
+};
+
 /** After-tax accounts are grouped by type, each type in its own shade. */
 export type AfterTaxTint = "brokerage" | "annuity" | "cash" | "dpp";
 
@@ -56,8 +68,12 @@ const AFTER_TAX_TINT: Partial<Record<AccountKind, AfterTaxTint>> = {
  * `IncomeTint`. Salary, business, rent and other income keep the section's.
  */
 export function incomeTint(household: Household, key: string): SnapshotTint | undefined {
-  const kind = insuranceKeyKind(key);
-  if (kind) return kind;
+  return insuranceKeyKind(key) ?? incomeSourceTint(household, key);
+}
+
+/** Fixed income, a regular account withdrawal, or an event's extra draw. */
+export function incomeSourceTint(household: Household, key: string): IncomeTint | undefined {
+  if (insuranceKeyKind(key)) return undefined;
   if (key.startsWith("draw:") || key.startsWith("topup:")) return "eventDraw";
   if (key.startsWith("rmd:")) return "accountDraw";
   const income = household.incomes.find((i) => i.id === key);
