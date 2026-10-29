@@ -9,9 +9,13 @@ import {
   sp500Years,
 } from "@/lib/config/marketHistory";
 import {
+  RETURN_GROUPS,
+  RETURN_GROUP_KIND,
   anyHistoryReturns,
   historyStartYear,
   historyYearFor,
+  returnModeFor,
+  type ReturnGroup,
 } from "@/lib/engine/marketHistory";
 import { projectionStartYear, projectionYears } from "@/lib/engine/project";
 import { Field } from "@/components/ui/Field";
@@ -146,43 +150,70 @@ export function BalancedReturnsLink() {
   return <ReturnsLink mix />;
 }
 
+const GROUP_LABEL: Record<ReturnGroup, string> = {
+  retirement: "Retirement accounts",
+  roth: "Roth accounts",
+  investment: "Investment accounts",
+};
+
 /**
- * Fixed return / S&P 500 history / 50/50 history for the plan's market
- * accounts, the year the history starts, and the links to the returns.
+ * Fixed return / S&P 500 history / 50/50 history for each group of market
+ * accounts (retirement, Roth, investment), the year the history starts, and
+ * the links to the returns. Picking one resets that group's accounts to it;
+ * an account changed on the Accounts step after keeps its own.
  */
 export function MarketHistoryFields() {
   const household = useHousehold();
-  const { setAssumptions } = useScenario();
-  const mode = household.assumptions.returnMode ?? "fixed";
+  const { setAssumptions, setReturnMode } = useScenario();
   const start = projectionStartYear(household);
   return (
     <>
       <Field
         label="Returns"
-        help="Fixed return grows each account by its own growth rate every year. S&P 500 history grows your IRAs, Roth and brokerage accounts by the S&P 500's actual return each year (dividends included), in order from the year you pick, so a bad stretch hits early withdrawals the way it really would. 50/50 history does the same with a portfolio half in the S&P 500 and half in 10-year Treasury bonds, rebalanced every January. Savings, CDs, annuities, real estate and businesses keep their own rates. Any account can pick its own returns on the Accounts step."
+        className="lg:col-span-2"
+        help="Pick how each kind of account grows. Fixed return grows each account by its own growth rate every year. S&P 500 history grows the accounts by the S&P 500's actual return each year (dividends included), in order from the year you pick, so a bad stretch hits early withdrawals the way it really would. 50/50 history does the same with a portfolio half in the S&P 500 and half in 10-year Treasury bonds, rebalanced every January. A choice here applies to every account of that kind, replacing what each account had. Change an account's Returns on the Accounts step afterwards and that account keeps its own. Savings, CDs, annuities, real estate and businesses keep their own rates."
       >
-        <div
-          role="radiogroup"
-          aria-label="Returns"
-          className="flex rounded-[9px] border border-border-2 bg-surface-muted p-0.5"
-        >
-          {MODES.map((option) => {
-            const on = mode === option.value;
+        <div className="flex flex-col gap-1.5">
+          {RETURN_GROUPS.map((group) => {
+            const mode = returnModeFor(household, group);
+            const kind = RETURN_GROUP_KIND[group];
+            const ownChoice = household.accounts.filter(
+              (acc) => acc.kind === kind && acc.returnSource != null,
+            ).length;
             return (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                onClick={() =>
-                  setAssumptions({ returnMode: option.value === "fixed" ? undefined : option.value })
-                }
-                className={`flex-1 rounded-[7px] px-2 py-1 text-base leading-tight transition md:text-sm ${
-                  on ? "bg-white font-semibold text-foreground shadow-sm" : "text-muted hover:text-foreground"
-                }`}
-              >
-                {option.label}
-              </button>
+              <div key={group} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                <span className="shrink-0 text-xs text-foreground sm:w-[150px]">
+                  {GROUP_LABEL[group]}
+                  {ownChoice > 0 ? (
+                    <span className="block text-[11px] text-muted">
+                      {ownChoice} set on its own
+                    </span>
+                  ) : null}
+                </span>
+                <div
+                  role="radiogroup"
+                  aria-label={`Returns for ${GROUP_LABEL[group].toLowerCase()}`}
+                  className="flex flex-1 rounded-[9px] border border-border-2 bg-surface-muted p-0.5"
+                >
+                  {MODES.map((option) => {
+                    const on = mode === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={on}
+                        onClick={() => setReturnMode(group, option.value)}
+                        className={`flex-1 rounded-[7px] px-2 py-1 text-base leading-tight transition md:text-sm ${
+                          on ? "bg-white font-semibold text-foreground shadow-sm" : "text-muted hover:text-foreground"
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </div>

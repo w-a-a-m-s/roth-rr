@@ -1,4 +1,11 @@
-import type { Account, AccountKind, Household, ReturnSource } from "@/lib/domain/types";
+import type {
+  Account,
+  AccountKind,
+  Assumptions,
+  Household,
+  ReturnMode,
+  ReturnSource,
+} from "@/lib/domain/types";
 import {
   SP500_FIRST_YEAR,
   SP500_LAST_YEAR,
@@ -8,20 +15,52 @@ import {
 import { DEFAULT_ACCOUNT_GROWTH } from "@/lib/config/defaults";
 
 /**
- * Accounts invested in the market, which follow the S&P 500 in Market
- * history mode. Savings, CDs, annuities and DPP / MLP accounts keep their
- * own fixed rate.
+ * The groups the Household step's Returns sets, one per market account kind.
+ * Savings, CDs, annuities and DPP / MLP accounts keep their own fixed rate
+ * unless the account picks history itself.
  */
-export const MARKET_ACCOUNT_KINDS: AccountKind[] = ["retirementTaxable", "rothTaxFree", "investment"];
+export type ReturnGroup = "retirement" | "roth" | "investment";
 
-/** Whether the plan grows its market accounts by history (S&P 500 or the 50 / 50 mix). */
+export const RETURN_GROUPS: ReturnGroup[] = ["retirement", "roth", "investment"];
+
+/** The account kind each Returns group covers. */
+export const RETURN_GROUP_KIND: Record<ReturnGroup, AccountKind> = {
+  retirement: "retirementTaxable",
+  roth: "rothTaxFree",
+  investment: "investment",
+};
+
+/** The assumption that holds each group's Returns. */
+export const RETURN_GROUP_KEY = {
+  retirement: "retirementReturnMode",
+  roth: "rothReturnMode",
+  investment: "investmentReturnMode",
+} as const satisfies Record<ReturnGroup, keyof Assumptions>;
+
+export function isReturnMode(value: unknown): value is ReturnMode {
+  return value === "fixed" || value === "history" || value === "balanced";
+}
+
+/** A group's Returns: fixed when unset. */
+export function returnModeFor(
+  household: Pick<Household, "assumptions">,
+  group: ReturnGroup,
+): ReturnMode {
+  const mode = household.assumptions?.[RETURN_GROUP_KEY[group]];
+  return isReturnMode(mode) ? mode : "fixed";
+}
+
+function returnGroupOf(kind: AccountKind): ReturnGroup | null {
+  return RETURN_GROUPS.find((group) => RETURN_GROUP_KIND[group] === kind) ?? null;
+}
+
+/** Whether any group grows by history (S&P 500 or the 50 / 50 mix). */
 export function usesMarketHistory(household: Pick<Household, "assumptions">): boolean {
-  const mode = household.assumptions?.returnMode;
-  return mode === "history" || mode === "balanced";
+  return RETURN_GROUPS.some((group) => returnModeFor(household, group) !== "fixed");
 }
 
 /**
- * What an account's return follows: its own tag, else the plan's Returns
+ * What an account's return follows: its own tag, else its group's Returns
  * for a market account, else its fixed rate.
  */
 export function accountReturnSource(
@@ -29,8 +68,9 @@ export function accountReturnSource(
   account: Pick<Account, "kind" | "returnSource">,
 ): ReturnSource {
   if (account.returnSource) return account.returnSource;
-  if (!MARKET_ACCOUNT_KINDS.includes(account.kind)) return "fixed";
-  const mode = household.assumptions?.returnMode;
+  const group = returnGroupOf(account.kind);
+  if (!group) return "fixed";
+  const mode = returnModeFor(household, group);
   if (mode === "history") return "sp500";
   if (mode === "balanced") return "balanced";
   return "fixed";

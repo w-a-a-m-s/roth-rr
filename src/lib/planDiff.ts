@@ -171,7 +171,9 @@ const PROPERTY_LABELS: Record<string, string> = {
   expenseGrowth: "Expense growth",
   finalAge: "Final age",
   taxIndexing: "Tax brackets grow",
-  returnMode: "Returns",
+  retirementReturnMode: "Returns: retirement accounts",
+  rothReturnMode: "Returns: Roth accounts",
+  investmentReturnMode: "Returns: investment accounts",
   historyStartYear: "Market history starts",
   leftoverInvestment: "Leftover money",
   allowEarlyWithdrawals: "Withdrawals before 59½",
@@ -410,8 +412,8 @@ function formatScalar(
   if (key === "retirementType" && isRetirementAccountType(value)) {
     return RETIREMENT_ACCOUNT_TYPE_LABELS[value as RetirementAccountType];
   }
-  if (key === "returnMode" || key === "returnSource") {
-    if (value === "fixed") return key === "returnMode" ? "Fixed return" : "Fixed rate";
+  if (key.endsWith("ReturnMode") || key === "returnSource") {
+    if (value === "fixed") return key === "returnSource" ? "Fixed rate" : "Fixed return";
     if (value === "history" || value === "sp500") return "S&P 500 history";
     if (value === "balanced") return "50/50 history";
   }

@@ -511,7 +511,7 @@ function AccountFields({
         </Field>
         <Field
           label="Returns"
-          help="What this account's yearly return follows. Plan's setting uses Returns on the Household step (history applies to IRAs, Roth and brokerage accounts; other kinds keep their rate). Fixed rate always uses the growth above. S&P 500 history and 50/50 history (half S&P 500, half 10-year Treasury) use those markets' actual returns from the year the Household step picks."
+          help="What this account's yearly return follows. Household setting uses Returns on the Household step for this kind of account (retirement, Roth or investment; other kinds keep their rate). Changing Returns there for this kind resets the account back to it. Fixed rate always uses the growth above. S&P 500 history and 50/50 history (half S&P 500, half 10-year Treasury) use those markets' actual returns from the year the Household step picks."
         >
           <Select
             value={account.returnSource ?? PLAN_RETURNS}
@@ -523,7 +523,7 @@ function AccountFields({
             options={[
               {
                 value: PLAN_RETURNS,
-                label: `Plan's setting (${RETURN_SOURCE_LABEL[accountReturnSource(household, { kind: account.kind })]})`,
+                label: `Household setting (${RETURN_SOURCE_LABEL[accountReturnSource(household, { kind: account.kind })]})`,
               },
               ...RETURN_SOURCES.map((source) => ({ value: source, label: RETURN_SOURCE_LABEL[source] })),
             ]}

@@ -200,7 +200,9 @@ fallback `year` lags the calendar year (same alarm as federal-tax).
 ## Dataset: sp500 (ships as a committed constant)
 
 - **What:** S&P 500 total return (dividends included) for each calendar year
-  from 1950, for the "Market history" return mode (`assumptions.returnMode`).
+  from 1950, for the S&P 500 history Returns (`assumptions.retirementReturnMode` /
+  `rothReturnMode` / `investmentReturnMode: "history"`, or an account's
+  `returnSource: "sp500"`).
 - **Source:** Aswath Damodaran, NYU Stern, *Historical Returns on Stocks, Bonds
   and Bills* (`histretSP`), column "S&P 500 (includes dividends)":
   <https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html>.
@@ -218,8 +220,8 @@ fallback `year` lags the calendar year (same alarm as federal-tax).
 ## Dataset: treasury10y (ships as a committed constant)
 
 - **What:** 10-year US Treasury bond total return for each calendar year
-  from 1950, for the 50 / 50 history (`assumptions.returnMode: "balanced"`
-  and an account's `returnSource: "balanced"`): half this, half the S&P 500,
+  from 1950, for the 50 / 50 history (a group's Returns set to `"balanced"`,
+  or an account's `returnSource: "balanced"`): half this, half the S&P 500,
   rebalanced every January (`balancedReturn` in
   `src/lib/config/marketHistory.ts`).
 - **Source:** the same Damodaran *histretSP* page as `sp500`, column

@@ -213,8 +213,10 @@
     "assumptions": {
       "expenseGrowth": 0.02,
       "finalAge": 85,
-      "returnMode": "balanced",
-      "historyStartYear": 1966
+      "historyStartYear": 1966,
+      "retirementReturnMode": "balanced",
+      "rothReturnMode": "balanced",
+      "investmentReturnMode": "balanced"
     },
     "optimizer": {
       "strategy": "manual",

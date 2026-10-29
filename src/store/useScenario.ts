@@ -24,6 +24,7 @@ import type {
   OptimizerConfig,
   Person,
   RealEstate,
+  ReturnMode,
   SavedConfig,
   UsStateCode,
 } from "@/lib/domain/types";
@@ -52,6 +53,13 @@ import {
 } from "@/lib/domain/household";
 import { isUsStateCode } from "@/lib/config/stateTax";
 import { projectionStartYear } from "@/lib/engine/project";
+import {
+  RETURN_GROUPS,
+  RETURN_GROUP_KEY,
+  RETURN_GROUP_KIND,
+  isReturnMode,
+  type ReturnGroup,
+} from "@/lib/engine/marketHistory";
 import { isPropertyLoanKind } from "@/lib/domain/propertyLoans";
 import { shiftSchedule } from "@/lib/optimizer/shiftSchedule";
 import {
@@ -454,10 +462,22 @@ export function migrateHousehold(household: Household): Household {
   if (legacy.assumptions && "rmdRate" in legacy.assumptions) {
     delete (legacy.assumptions as { rmdRate?: number }).rmdRate;
   }
-  // Return mode and the market history start are optional (fixed returns,
-  // and 1950, when missing); anything unusable is dropped.
-  if (legacy.assumptions?.returnMode != null && legacy.assumptions.returnMode !== "fixed" && legacy.assumptions.returnMode !== "history" && legacy.assumptions.returnMode !== "balanced") {
-    delete legacy.assumptions.returnMode;
+  // Returns are set per group now (retirement, Roth, investment accounts).
+  // An older plan's one plan-wide `returnMode` becomes all three; groups and
+  // the market history start are optional (fixed returns, and 1950, when
+  // missing) and anything unusable is dropped.
+  if (legacy.assumptions) {
+    const assumptions = legacy.assumptions as Assumptions & { returnMode?: unknown };
+    const legacyMode = assumptions.returnMode;
+    delete assumptions.returnMode;
+    const anyGroup = RETURN_GROUPS.some((group) => assumptions[RETURN_GROUP_KEY[group]] != null);
+    if (!anyGroup && (legacyMode === "history" || legacyMode === "balanced")) {
+      for (const group of RETURN_GROUPS) assumptions[RETURN_GROUP_KEY[group]] = legacyMode;
+    }
+    for (const group of RETURN_GROUPS) {
+      const key = RETURN_GROUP_KEY[group];
+      if (assumptions[key] != null && !isReturnMode(assumptions[key])) delete assumptions[key];
+    }
   }
   if (legacy.assumptions?.historyStartYear != null && !Number.isInteger(legacy.assumptions.historyStartYear)) {
     delete legacy.assumptions.historyStartYear;
@@ -878,6 +898,12 @@ interface ScenarioState {
   restoreBusiness: (id: string) => void;
   discardDeletedBusiness: (id: string) => void;
   setAssumptions: (patch: Partial<Assumptions>) => void;
+  /**
+   * Set one group's Returns (retirement, Roth or investment accounts) and
+   * clear the Returns choice on that group's accounts, so they all follow it.
+   * An account changed on the Accounts step after keeps its own choice.
+   */
+  setReturnMode: (group: ReturnGroup, mode: ReturnMode) => void;
   /**
    * Set (or clear, with undefined) the first projection year. A manual
    * conversion schedule is per projection year, so it shifts to keep each
@@ -1630,6 +1656,20 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       editActive((h) => ({
         ...h,
         assumptions: { ...h.assumptions, ...patch },
+      })),
+    setReturnMode: (group, mode) =>
+      editActive((h) => ({
+        ...h,
+        assumptions: {
+          ...h.assumptions,
+          [RETURN_GROUP_KEY[group]]: mode === "fixed" ? undefined : mode,
+        },
+        accounts: h.accounts.map((acc) => {
+          if (acc.kind !== RETURN_GROUP_KIND[group] || acc.returnSource == null) return acc;
+          const { returnSource: _cleared, ...rest } = acc;
+          void _cleared;
+          return rest;
+        }),
       })),
     setProjectionStart: (year) =>
       editActive((h) => {

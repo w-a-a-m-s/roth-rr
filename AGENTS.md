@@ -126,18 +126,25 @@ indexed yet.
 
 ## Market history returns
 
-`assumptions.returnMode` ("Returns" on the Household step) is `fixed` (the
-default), `history` (S&P 500 history) or `balanced` (50/50 history: half
-S&P 500, half 10-year Treasury, rebalanced every January). In a history mode
-IRAs, Roth and brokerage accounts grow by that year's actual total return
-instead of their own rate: the plan's first year uses `historyStartYear`,
+"Returns" on the Household step is set per group of accounts:
+`assumptions.retirementReturnMode` (tax-deferred), `rothReturnMode` and
+`investmentReturnMode` (brokerage), each `fixed` (the default), `history`
+(S&P 500 history) or `balanced` (50/50 history: half S&P 500, half 10-year
+Treasury, rebalanced every January). A group in a history mode grows by that
+year's actual total return instead of each account's own rate: the plan's first year uses `historyStartYear`,
 each later year the next, wrapping to 1950 after the last year
 (`lib/engine/marketHistory.ts`, data in `config/data/sp500Returns.json` and
 `treasury10yReturns.json`, committed constants in docs/external-data.md).
+Plans from before the split had one `returnMode`; `migrateHousehold` copies
+it to all three groups.
 
 Each account can override that with `returnSource` ("Returns" on the
 Accounts step): `fixed`, `sp500` or `balanced`, on any kind of account.
-Missing follows the plan (`accountReturnSource`); savings, CDs, annuities,
+Missing follows its group (`accountReturnSource`). The latest change wins:
+picking a group's Returns (`setReturnMode` in the store) clears
+`returnSource` on that group's accounts, and an account changed after keeps
+its own. An account paying an income-table withdrawal grows 8% from the
+income's start whatever its Returns. savings, CDs, annuities,
 DPP / MLP keep their own rates unless tagged. Real estate and businesses
 always keep their own rates, and years before the plan start always use the
 fixed rate. The leftover money's S&P 500 account follows the S&P 500 (not

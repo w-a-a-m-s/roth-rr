@@ -210,31 +210,52 @@ describe("migrateHousehold: Medicare premiums switch", () => {
 describe("migrateHousehold: market history returns", () => {
   it("keeps a real return mode and start year, drops anything else", () => {
     const h = household([], []);
-    h.assumptions.returnMode = "history";
+    h.assumptions.rothReturnMode = "history";
     h.assumptions.historyStartYear = 1989;
     const out = migrateHousehold(h);
-    expect(out.assumptions.returnMode).toBe("history");
+    expect(out.assumptions.rothReturnMode).toBe("history");
+    expect(out.assumptions).not.toHaveProperty("retirementReturnMode");
     expect(out.assumptions.historyStartYear).toBe(1989);
     const bad = household([], []);
+    (bad.assumptions as { investmentReturnMode?: unknown }).investmentReturnMode = "monte";
     (bad.assumptions as { returnMode?: unknown }).returnMode = "monte";
     (bad.assumptions as { historyStartYear?: unknown }).historyStartYear = 1989.5;
     const healed = migrateHousehold(bad);
+    expect(healed.assumptions).not.toHaveProperty("investmentReturnMode");
     expect(healed.assumptions).not.toHaveProperty("returnMode");
+    expect(healed.assumptions).not.toHaveProperty("retirementReturnMode");
     expect(healed.assumptions).not.toHaveProperty("historyStartYear");
+  });
+
+  it("turns an older plan's one Returns into all three groups", () => {
+    const h = household([], []);
+    (h.assumptions as { returnMode?: unknown }).returnMode = "history";
+    const out = migrateHousehold(h);
+    expect(out.assumptions).not.toHaveProperty("returnMode");
+    expect(out.assumptions.retirementReturnMode).toBe("history");
+    expect(out.assumptions.rothReturnMode).toBe("history");
+    expect(out.assumptions.investmentReturnMode).toBe("history");
+    const fixed = household([], []);
+    (fixed.assumptions as { returnMode?: unknown }).returnMode = "fixed";
+    const fixedOut = migrateHousehold(fixed);
+    expect(fixedOut.assumptions).not.toHaveProperty("returnMode");
+    expect(fixedOut.assumptions).not.toHaveProperty("retirementReturnMode");
   });
 });
 
 describe("migrateHousehold: 50 / 50 history and account returns", () => {
   it("keeps the 50 / 50 mode and a real account tag, drops anything else", () => {
     const h = household([], []);
-    h.assumptions.returnMode = "balanced";
+    (h.assumptions as { returnMode?: unknown }).returnMode = "balanced";
     h.accounts = [
       { id: "a", label: "IRA", ownerId: "p1", kind: "retirementTaxable", balance: 1, growthRate: 0.05, returnSource: "balanced" },
       { id: "b", label: "Roth", ownerId: "p1", kind: "rothTaxFree", balance: 1, growthRate: 0.05 },
     ];
     (h.accounts[1] as { returnSource?: unknown }).returnSource = "crypto";
     const out = migrateHousehold(h);
-    expect(out.assumptions.returnMode).toBe("balanced");
+    expect(out.assumptions.retirementReturnMode).toBe("balanced");
+    expect(out.assumptions.rothReturnMode).toBe("balanced");
+    expect(out.assumptions.investmentReturnMode).toBe("balanced");
     expect(out.accounts[0].returnSource).toBe("balanced");
     // An old plan's accounts have no tag: they follow the plan's Returns.
     expect(out.accounts[1]).not.toHaveProperty("returnSource");

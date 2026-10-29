@@ -33,7 +33,7 @@ function plan(history?: number): Household {
     assumptions: {
       expenseGrowth: 0,
       finalAge: 80,
-      ...(history != null ? { returnMode: "history" as const, historyStartYear: history } : {}),
+      ...(history != null ? { retirementReturnMode: "history" as const, rothReturnMode: "history" as const, investmentReturnMode: "history" as const, historyStartYear: history } : {}),
     },
     optimizer: { strategy: "manual" },
   };
@@ -131,7 +131,9 @@ describe("50% S&P 500 / 50% 10-year Treasury history", () => {
 
   it("grows the plan's market accounts by the mix in 50 / 50 mode, CDs stay fixed", () => {
     const h = plan(2008);
-    h.assumptions.returnMode = "balanced";
+    h.assumptions.retirementReturnMode = "balanced";
+    h.assumptions.rothReturnMode = "balanced";
+    h.assumptions.investmentReturnMode = "balanced";
     expect(usesMarketHistory(h)).toBe(true);
     const rows = run(h);
     expect(rows[0].balances.roth).toBeCloseTo(100_000 * (1 + balancedReturn(2008)!), 4);
@@ -162,10 +164,28 @@ describe("50% S&P 500 / 50% 10-year Treasury history", () => {
     // Any account can be tagged, a CD too.
     expect(year0.cd).toBeCloseTo(50_000 * (1 + sp500Return(2008)!), 4);
     // A fixed tag holds even when the plan is on history.
-    h.assumptions.returnMode = "history";
+    h.assumptions.rothReturnMode = "history";
     const history0 = run(h)[0].balances;
     expect(history0.fixed).toBeCloseTo(110_000, 4);
     expect(history0.plan).toBeCloseTo(100_000 * (1 + sp500Return(2008)!), 4);
     expect(accountReturnSource(h, { kind: "cd" })).toBe("fixed");
+  });
+});
+
+describe("Returns by account group", () => {
+  const run = (h: Household) => projectScenario(h, new Array(projectionYears(h)).fill(0));
+
+  it("grows each group by its own Returns", () => {
+    const h = plan();
+    h.assumptions.historyStartYear = 2008;
+    h.assumptions.retirementReturnMode = "history";
+    h.assumptions.rothReturnMode = "balanced";
+    expect(accountReturnSource(h, { kind: "retirementTaxable" })).toBe("sp500");
+    expect(accountReturnSource(h, { kind: "rothTaxFree" })).toBe("balanced");
+    expect(accountReturnSource(h, { kind: "investment" })).toBe("fixed");
+    expect(accountReturnSource(h, { kind: "cd" })).toBe("fixed");
+    const year0 = run(h)[0].balances;
+    expect(year0.roth).toBeCloseTo(100_000 * (1 + balancedReturn(2008)!), 4);
+    expect(year0.cd).toBeCloseTo(50_000 * 1.03, 4);
   });
 });

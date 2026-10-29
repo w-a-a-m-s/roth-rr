@@ -32,7 +32,14 @@ import { primaryPersonId, projectionStartYear } from "@/lib/engine/project";
 import { taxIndexingRate } from "@/lib/engine/taxIndexing";
 import { allowsEarlyWithdrawals } from "@/lib/engine/earlyWithdrawal";
 import { includesMedicarePremiums, includesOtherExpenses } from "@/lib/engine/otherExpenses";
-import { historyStartYear, usesMarketHistory } from "@/lib/engine/marketHistory";
+import {
+  RETURN_GROUPS,
+  historyStartYear,
+  returnModeFor,
+  usesMarketHistory,
+  type ReturnGroup,
+} from "@/lib/engine/marketHistory";
+import type { ReturnMode } from "@/lib/domain/types";
 import { RETURN_SOURCE_LABEL } from "@/components/plan/MarketHistory";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { buildConversionSchedule } from "@/lib/optimizer";
@@ -46,6 +53,18 @@ import { buildTimeline } from "@/lib/timeline";
 import { useHousehold } from "@/store/useScenario";
 import { useExternalData } from "@/store/useExternalData";
 import { useUI } from "@/store/useUI";
+
+const RETURN_GROUP_ROW_LABEL: Record<ReturnGroup, string> = {
+  retirement: "retirement",
+  roth: "Roth",
+  investment: "investment",
+};
+
+const RETURN_MODE_SUMMARY: Record<ReturnMode, string> = {
+  fixed: "Fixed return",
+  history: "S&P 500 history",
+  balanced: "50/50 history",
+};
 
 const ACCOUNT_KIND_LABELS: Record<AccountKind, string> = {
   retirementTaxable: "Taxable retirement",
@@ -253,16 +272,16 @@ export function PlanDetails() {
         <Row label="RMD age" value={primaryRmdAge(household) ?? "-"} />
         <Row label="Project to age" value={a.finalAge} />
         <Row label="Tax brackets grow" value={`${formatPercent(taxIndexingRate(household))} a year`} />
-        <Row
-          label="Returns"
-          value={
-            household.assumptions.returnMode === "balanced"
-              ? `50/50 history from ${historyStartYear(household)}`
-              : usesMarketHistory(household)
-                ? `S&P 500 history from ${historyStartYear(household)}`
-                : "Fixed return"
-          }
-        />
+        {RETURN_GROUPS.map((group) => (
+          <Row
+            key={group}
+            label={`Returns: ${RETURN_GROUP_ROW_LABEL[group]}`}
+            value={RETURN_MODE_SUMMARY[returnModeFor(household, group)]}
+          />
+        ))}
+        {usesMarketHistory(household) ? (
+          <Row label="Market history starts" value={historyStartYear(household)} />
+        ) : null}
         <Row
           label="Withdrawals before 59½"
           value={allowsEarlyWithdrawals(household) ? "Allowed (10% penalty)" : "Not allowed"}

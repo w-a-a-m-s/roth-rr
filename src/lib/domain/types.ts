@@ -435,12 +435,18 @@ export interface Assumptions {
    */
   taxIndexing?: number;
   /**
-   * How market-invested accounts (IRAs, Roth, brokerage) grow: `fixed` (the
-   * default when unset) uses each account's own growth rate every year;
-   * `history` uses the S&P 500's actual yearly returns, starting with
-   * `historyStartYear` in the plan's first year.
+   * How each group of market accounts grows ("Returns" on the Household
+   * step): retirement (tax-deferred), Roth, and investment (brokerage).
+   * `fixed` (the default when unset) uses each account's own growth rate;
+   * `history` the S&P 500's actual yearly returns and `balanced` the 50 / 50
+   * mix, starting with `historyStartYear` in the plan's first year. Picking
+   * one clears the Returns choice on that group's accounts, so the latest
+   * change wins: an account picked on the Accounts step after keeps its own.
+   * These replaced one plan-wide `returnMode` (`migrateHousehold`).
    */
-  returnMode?: ReturnMode;
+  retirementReturnMode?: ReturnMode;
+  rothReturnMode?: ReturnMode;
+  investmentReturnMode?: ReturnMode;
   /** First S&P 500 year the plan uses in Market history mode (default 1950). */
   historyStartYear?: number;
   /**
