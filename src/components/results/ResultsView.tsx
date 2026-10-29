@@ -27,6 +27,8 @@ import { MedicareAnalysis } from '@/components/results/MedicareAnalysis';
 import { MortgagePayoffAnalysis } from '@/components/results/MortgagePayoffAnalysis';
 import { SpendingCapacityAnalysis } from '@/components/results/SpendingCapacityAnalysis';
 import { LifeInsuranceSummary } from '@/components/wizard/steps/LifeInsuranceSummary';
+import { LongTermCareImpact } from '@/components/results/LongTermCareImpact';
+import { longTermCareAssetImpact } from '@/lib/engine/longTermCareImpact';
 import { AnalysisTabs, DisabilityControls, LongTermCareControls, SurvivorshipControls } from '@/components/results/AnalysisTabs';
 import { disabilityEvent, resolveDisability } from '@/lib/domain/insurance';
 import { longTermCareSettings, resolveLongTermCare } from '@/lib/domain/longTermCare';
@@ -70,6 +72,17 @@ export function ResultsView() {
 				: null,
 		[household, ready, refsReady, refs, options, analysis],
 	);
+	// Long-term care's Main compares total assets with the same plan without
+	// care (the Retirement run).
+	const careImpact = useMemo(() => {
+		if (analysis !== 'longTermCare' || !comparison) return null;
+		const noCare = calculate(household, refs);
+		return longTermCareAssetImpact(
+			comparison.baseline.rows,
+			noCare.baseline.rows,
+			resolveLongTermCare(household, careSettings),
+		);
+	}, [analysis, comparison, household, refs, careSettings]);
 	const [tab, setTab] = useState<'baseline' | 'roth'>('baseline');
 	// Clients land on Main (the tables); Summary, Graphic view and the
 	// year-by-year detail are tabs.
@@ -265,6 +278,7 @@ export function ResultsView() {
 
 			{view === 'main' ? (
 				<section className="flex flex-col gap-4">
+					{careImpact ? <LongTermCareImpact impact={careImpact} /> : null}
 					<ScenarioSnapshot
 						key={comparison.baseline.rows[0]?.calendarYear}
 						initialYear={comparison.baseline.rows[0]?.calendarYear}
