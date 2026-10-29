@@ -81,6 +81,21 @@ describe("long-term care asset impact", () => {
     expect(impact.cashFlow.fromAccounts).toBeGreaterThan(0);
     expect(impact.cashFlow.unpaidYears).toEqual([]);
     expect(impact.cashFlow.uncovered).toBe(0);
+    expect(impact.cashFlow.savingsRunOutYear).toBeNull();
+    expect(impact.cashFlow.planEndYear).toBe(careRows[careRows.length - 1].calendarYear);
+  });
+
+  it("finds savings running out after care ends", () => {
+    // Enough to get through care, then spending above income drains the rest.
+    const h = single();
+    h.accounts[0].balance = 275_000;
+    h.expenses[0].amount = 6_000;
+    const careRows = rows(h, care);
+    const impact = longTermCareAssetImpact(careRows, rows(h), resolveLongTermCare(h, care))!;
+    const firstUnpaid = careRows.find((r) => r.calendarYear >= 2030 && r.surplus * 12 <= -0.5)!.calendarYear;
+    expect(impact.cashFlow.unpaidYears).toEqual([]);
+    expect(firstUnpaid).toBeGreaterThan(2032);
+    expect(impact.cashFlow.savingsRunOutYear).toBe(firstUnpaid);
   });
 
   it("leaves spending unpaid once the accounts run dry", () => {
@@ -94,6 +109,7 @@ describe("long-term care asset impact", () => {
     expect(unpaid.length).toBeGreaterThan(0);
     expect(impact.cashFlow.unpaidYears).toEqual(unpaid);
     expect(impact.cashFlow.uncovered).toBeGreaterThan(0);
+    expect(impact.cashFlow.savingsRunOutYear).toBe(unpaid[0]);
   });
 
   it("calls the cash flow sufficient when income covers care", () => {

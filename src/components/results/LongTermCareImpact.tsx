@@ -57,15 +57,17 @@ function yearList(years: number[]): string {
  * spending is left unpaid.
  */
 function CashFlowCard({ cashFlow, years }: { cashFlow: LongTermCareAssetImpact['cashFlow']; years: string }) {
-	const { shortYears, fromAccounts, unpaidYears, uncovered } = cashFlow;
+	const { shortYears, fromAccounts, unpaidYears, uncovered, savingsRunOutYear, planEndYear } = cashFlow;
 	const sufficient = unpaidYears.length === 0;
 	let detail = `Income after tax covers the care and the rest of the spending every year (${years}).`;
 	if (shortYears.length > 0) {
 		detail = `Income alone falls short in ${shortYears.length} of ${cashFlow.years} care years (${yearList(shortYears)}), and savings cover it with ${formatCurrency(fromAccounts)} more, tax included.`;
 	}
 	if (!sufficient) {
-		detail = `Savings run out in ${unpaidYears[0]}: ${formatCurrency(uncovered)} of spending is left unpaid (${yearList(unpaidYears)}). Before that, ${formatCurrency(fromAccounts)} came out of savings.`;
+		detail = `${formatCurrency(uncovered)} of care-year spending is left unpaid (${yearList(unpaidYears)}). Before that, ${formatCurrency(fromAccounts)} came out of savings.`;
 	}
+	const runOut =
+		savingsRunOutYear == null ? `Savings last through ${planEndYear}` : `Savings run out in ${savingsRunOutYear}`;
 
 	return (
 		<div className="rounded-2xl border border-border bg-white px-5 py-4">
@@ -73,7 +75,10 @@ function CashFlowCard({ cashFlow, years }: { cashFlow: LongTermCareAssetImpact['
 			<div className={`mt-1 font-serif text-[32px] font-medium leading-none ${sufficient ? 'text-success' : 'text-danger'}`}>
 				{sufficient ? 'Sufficient' : 'Not sufficient'}
 			</div>
-			<p className="m-0 mt-1.5 text-[12.5px] leading-snug text-muted-3">{detail}</p>
+			<p className={`m-0 mt-1.5 text-[12.5px] font-semibold ${savingsRunOutYear == null ? 'text-success' : 'text-danger'}`}>
+				{runOut}
+			</p>
+			<p className="m-0 mt-1 text-[12.5px] leading-snug text-muted-3">{detail}</p>
 		</div>
 	);
 }

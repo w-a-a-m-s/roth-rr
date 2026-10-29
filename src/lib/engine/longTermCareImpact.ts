@@ -52,6 +52,13 @@ export interface LongTermCareCashFlow {
   unpaidYears: number[];
   /** Spending left unpaid once the accounts ran dry. */
   uncovered: number;
+  /**
+   * First year from the start of care, through the end of the plan, that the
+   * accounts can't cover: savings ran out. Null when they last.
+   */
+  savingsRunOutYear: number | null;
+  /** Last projection year, for "savings last through". */
+  planEndYear: number;
 }
 
 /**
@@ -92,15 +99,30 @@ export function longTermCareAssetImpact(
     drop: before - after,
     withoutCare,
     shortfall: withoutCare - after,
-    cashFlow: careCashFlow(careYears),
+    cashFlow: {
+      ...careCashFlow(careYears),
+      savingsRunOutYear:
+        careRows.find((r) => r.calendarYear >= firstYear && isUnpaid(r))?.calendarYear ?? null,
+      planEndYear: projectionEnd,
+    },
   };
+}
+
+/**
+ * Spending left unpaid: the year ends below zero even after the top-ups. The
+ * tax gross-up can leave a few cents either way.
+ */
+function isUnpaid(row: ProjectionRow): boolean {
+  return -row.surplus * 12 >= 0.5;
 }
 
 /**
  * A care year is short when the plan had to top it up from the accounts
  * (`topup:<accountId>` income) or still ended below zero once they were empty.
  */
-function careCashFlow(rows: ProjectionRow[]): LongTermCareCashFlow {
+function careCashFlow(
+  rows: ProjectionRow[],
+): Omit<LongTermCareCashFlow, "savingsRunOutYear" | "planEndYear"> {
   const shortYears: number[] = [];
   const unpaidYears: number[] = [];
   let fromAccounts = 0;
@@ -111,8 +133,7 @@ function careCashFlow(rows: ProjectionRow[]): LongTermCareCashFlow {
       if (!key.startsWith(TOP_UP_PREFIX)) continue;
       topUp += monthly * 12;
     }
-    // The tax gross-up can leave a few cents of surplus either way.
-    const unpaid = -row.surplus * 12 >= 0.5 ? -row.surplus * 12 : 0;
+    const unpaid = isUnpaid(row) ? -row.surplus * 12 : 0;
     if (topUp < 0.5 && unpaid === 0) continue;
     shortYears.push(row.calendarYear);
     fromAccounts += topUp;

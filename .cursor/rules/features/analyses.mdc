@@ -195,6 +195,9 @@ instead of Total impact. Retirement still compares the two.
   income alone fell short and the top-ups (`topup:*` income) covered it are
   listed with what they took. It's Not sufficient only once the accounts run
   dry and spending is left unpaid (a negative surplus), per the user.
+  It also says the year savings run out (`savingsRunOutYear`: the first
+  unpaid year from the start of care to the plan's end, since top-ups keep
+  running after care), or "Savings last through" the last plan year.
 - Care costs aren't deducted as medical expenses (no itemizing in the model).
 
 ## Results layout (what clients see first)
