@@ -871,6 +871,13 @@ export interface LongTermCareSettings {
   inflation: number;
   /** Per-person start age and length; anyone missing uses the defaults. */
   periods: CarePeriod[];
+  /**
+   * LTC rider: the accounts it's on pay twice the lifetime income from the
+   * first care year, and what's left grows 4% a year instead of 8%.
+   */
+  rider?: boolean;
+  /** Accounts the rider is on. Missing means every account. */
+  riderAccountIds?: string[];
 }
 
 /** Pay off the mortgage or invest inputs. Rates are decimals. */

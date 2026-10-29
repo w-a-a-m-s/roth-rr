@@ -199,6 +199,13 @@ instead of Total impact. Retirement still compares the two.
   unpaid year from the start of care to the plan's end, since top-ups keep
   running after care), or "Savings last through" the last plan year.
 - Care costs aren't deducted as medical expenses (no itemizing in the model).
+- LTC rider (user's request): a switch on the tab (`rider`) plus a checkbox
+  per account (`riderAccountIds`, missing means every account), healed in
+  `longTermCareSettings`, resolved to `ResolvedCare.riderAccountIds` via
+  `hasCareRider`. An account with the rider pays
+  `LTC_RIDER_INCOME_MULTIPLIER` (2x) the lifetime income from the first care
+  year, and what's left grows `LTC_RIDER_GROWTH` (4%) instead of 8%. Off by
+  default, so older plans don't change.
 
 ## Results layout (what clients see first)
 

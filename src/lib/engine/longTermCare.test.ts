@@ -222,3 +222,51 @@ it("changes nothing in the Retirement analysis", () => {
   const h = { ...couple(), longTermCare: settings({ who: "both" }) };
   expect(calculate(h)).toEqual(calculate({ ...h, longTermCare: undefined }));
 });
+
+describe("LTC rider", () => {
+  // Two IRAs so one can carry the rider and the other not. Alex's care starts
+  // at 80 (2030).
+  function withTwoAccounts(): Household {
+    const h = couple();
+    h.accounts = [
+      { id: "ira", label: "IRA", ownerId: "a", kind: "retirementTaxable", balance: 400_000, growthRate: 0.05, retirementType: "ira" },
+      { id: "ira2", label: "IRA 2", ownerId: "a", kind: "retirementTaxable", balance: 400_000, growthRate: 0.05, retirementType: "ira" },
+    ];
+    return h;
+  }
+  const care = (patch: Partial<LongTermCareSettings>) =>
+    settings({ periods: [{ personId: "a", startAge: 80, years: 3 }], ...patch });
+
+  it("doubles the lifetime income and grows 4% on the accounts it's on", () => {
+    const h = withTwoAccounts();
+    const off = rows(h, care({}));
+    const on = rows(h, care({ rider: true, riderAccountIds: ["ira"] }));
+    // Same January balance in the first care year, so the income is exactly 2x.
+    expect(at(on, 2030).incomeMonthly["draw:ira"]).toBeCloseTo(2 * at(off, 2030).incomeMonthly["draw:ira"], 6);
+    // The account without the rider is untouched in the first care year.
+    expect(at(on, 2030).incomeMonthly["draw:ira2"]).toBeCloseTo(at(off, 2030).incomeMonthly["draw:ira2"], 6);
+    // From then on the rider account grows 4%: next January's balance is last
+    // year-end's times 1.04 (the draws come out after growth).
+    const end2030 = at(on, 2030).balances.ira;
+    const takenIn2031 = 12 * at(on, 2031).incomeMonthly["draw:ira"] + 12 * (at(on, 2031).incomeMonthly["rmd:ira"] ?? 0)
+      + 12 * (at(on, 2031).incomeMonthly["topup:ira"] ?? 0);
+    expect(at(on, 2031).balances.ira).toBeCloseTo(Math.max(0, end2030 * 1.04 - takenIn2031), 2);
+  });
+
+  it("covers every account when none are picked, and nothing when it's off", () => {
+    const h = withTwoAccounts();
+    const all = resolveLongTermCare(h, care({ rider: true }))!;
+    expect(all.riderAccountIds).toEqual(["ira", "ira2"]);
+    expect(resolveLongTermCare(h, care({ rider: false, riderAccountIds: ["ira"] }))!.riderAccountIds).toEqual([]);
+  });
+
+  it("is healed on read: off by default, unknown accounts dropped", () => {
+    const h = withTwoAccounts();
+    h.longTermCare = care({});
+    expect(longTermCareSettings(h)!.rider).toBe(false);
+    h.longTermCare = care({ rider: true, riderAccountIds: ["ira2", "gone"] });
+    const healed = longTermCareSettings(h)!;
+    expect(healed.rider).toBe(true);
+    expect(healed.riderAccountIds).toEqual(["ira2"]);
+  });
+});

@@ -23,7 +23,10 @@ import {
   INDIVIDUAL_CARE_EXPENSE_SHARES,
   CARE_MONTHLY_COST,
   CARE_TYPE_LABELS,
+  LTC_RIDER_GROWTH,
+  LTC_RIDER_INCOME_MULTIPLIER,
   carePeriodFor,
+  hasCareRider,
   peopleInCare,
 } from "@/lib/domain/longTermCare";
 import { formatCurrency, formatPercent } from "@/lib/format";
@@ -435,6 +438,7 @@ export function LongTermCareControls({
           "Care length defaults to 3 years for men and 5 for women (set in Household).",
         ].join(" ")}
       </p>
+      <CareRiderControls household={household} settings={settings} />
       {policies.length > 0 ? (
         <p className="m-0 rounded-lg bg-card px-3 py-2 text-[13px] leading-relaxed text-muted">
           <strong className="text-foreground">Long-term care insurance:</strong>{" "}
@@ -447,6 +451,74 @@ export function LongTermCareControls({
           . Benefits never pay more than the care costs, never outlast the care,
           and are tax free. They show as their own income line.
         </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * LTC rider: a switch, then one checkbox per account. An account with the
+ * rider pays twice the lifetime income during care and grows 4% instead of 8%.
+ */
+function CareRiderControls({
+  household,
+  settings,
+}: {
+  household: Household;
+  settings: LongTermCareSettings;
+}) {
+  const setLongTermCare = useScenario((s) => s.setLongTermCare);
+  const on = settings.rider === true;
+  const accounts = household.accounts;
+  const toggleAccount = (accountId: string) => {
+    const current = accounts.filter((a) => hasCareRider(settings, a.id)).map((a) => a.id);
+    const next = current.includes(accountId)
+      ? current.filter((id) => id !== accountId)
+      : [...current, accountId];
+    setLongTermCare({ ...settings, riderAccountIds: next });
+  };
+
+  return (
+    <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-card px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-[13px] font-semibold text-foreground">LTC rider</div>
+          <div className="mt-0.5 text-[12px] leading-snug text-muted">
+            {`Accounts with the rider pay ${LTC_RIDER_INCOME_MULTIPLIER}x the lifetime income during care, and what's left grows ${formatPercent(LTC_RIDER_GROWTH)} a year instead of 8%.`}
+          </div>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={on}
+          aria-label="LTC rider"
+          onClick={() => setLongTermCare({ ...settings, rider: !on })}
+          className={`relative h-[22px] w-[40px] shrink-0 cursor-pointer rounded-full border-0 transition-colors ${
+            on ? "bg-accent" : "bg-border-2"
+          }`}
+        >
+          <span
+            className={`absolute top-[3px] left-[3px] h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+              on ? "translate-x-[18px]" : "translate-x-0"
+            }`}
+          />
+        </button>
+      </div>
+      {on && accounts.length > 0 ? (
+        <fieldset className="m-0 flex flex-wrap gap-x-4 gap-y-1.5 border-0 p-0">
+          <legend className="mb-1 p-0 text-[12.5px] font-semibold text-muted-2">On these accounts</legend>
+          {accounts.map((acc) => (
+            <label key={acc.id} className="flex cursor-pointer items-center gap-1.5 text-[13px] text-foreground">
+              <input
+                type="checkbox"
+                checked={hasCareRider(settings, acc.id)}
+                onChange={() => toggleAccount(acc.id)}
+                className="h-4 w-4 accent-[var(--accent)]"
+              />
+              {acc.label || "Account"}
+            </label>
+          ))}
+        </fieldset>
       ) : null}
     </div>
   );

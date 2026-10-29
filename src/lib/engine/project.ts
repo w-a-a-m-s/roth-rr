@@ -28,6 +28,8 @@ import {
   careExpenseKey,
   careForYear,
   resolveLongTermCare,
+  LTC_RIDER_GROWTH,
+  LTC_RIDER_INCOME_MULTIPLIER,
 } from "@/lib/domain/longTermCare";
 import {
   SURVIVOR_EXPENSE_SHARE,
@@ -939,7 +941,8 @@ export function projectScenario(
   // retirement account pays a fixed lifetime income, like the life insurance
   // proceeds: its balance that January times the payout table's rate for the
   // age of the person it pays. What's left grows 8% a year. The income is
-  // guaranteed, so it keeps paying if the balance runs out.
+  // guaranteed, so it keeps paying if the balance runs out. In Long-term care,
+  // an account with the LTC rider pays twice that income and grows 4%.
   const careStart =
     care && care.stays.length > 0
       ? Math.min(...care.stays.map((stay) => stay.firstYear))
@@ -948,6 +951,7 @@ export function projectScenario(
     (y): y is number => y != null,
   );
   const eventStart = eventYears.length > 0 ? Math.min(...eventYears) : null;
+  const riderAccounts = new Set(care?.riderAccountIds ?? []);
   const incomeAccounts = accounts.filter(
     (acc) =>
       AFTER_TAX_KINDS.includes(acc.kind) ||
@@ -1065,7 +1069,9 @@ export function projectScenario(
       for (const acc of incomeAccounts) {
         const base = Math.max(0, balances[acc.id]);
         if (!(base > 0)) continue;
-        eventIncome[acc.id] = base * lifeInsurancePayoutRate(incomeRecipientAge(acc, calendarYear));
+        const rider = riderAccounts.has(acc.id) ? LTC_RIDER_INCOME_MULTIPLIER : 1;
+        eventIncome[acc.id] =
+          base * lifeInsurancePayoutRate(incomeRecipientAge(acc, calendarYear)) * rider;
       }
     }
     fixIncomeTableAmounts(household, calendarYear, balances, tableIncome);
@@ -1074,7 +1080,8 @@ export function projectScenario(
     const leftoverBefore = leftover ? balances[leftover.id] : 0;
     for (const acc of accounts) {
       if (eventIncome?.[acc.id] != null) {
-        balances[acc.id] *= Math.pow(1 + LIFE_INSURANCE_PROCEEDS_GROWTH, yearFraction);
+        const growth = riderAccounts.has(acc.id) ? LTC_RIDER_GROWTH : LIFE_INSURANCE_PROCEEDS_GROWTH;
+        balances[acc.id] *= Math.pow(1 + growth, yearFraction);
         continue;
       }
       if (tableAccounts.has(acc.id)) {

@@ -18,6 +18,11 @@ export const CARE_TYPE_LABELS: Record<CareType, string> = {
 };
 
 export const DEFAULT_CARE_INFLATION = 0.03;
+
+/** An LTC rider doubles an account's lifetime income during care... */
+export const LTC_RIDER_INCOME_MULTIPLIER = 2;
+/** ...and what's left in it grows 4% a year instead of 8%. */
+export const LTC_RIDER_GROWTH = 0.04;
 export const DEFAULT_CARE_START_AGE = 80;
 
 /**
@@ -87,7 +92,21 @@ export function longTermCareSettings(household: Household): LongTermCareSettings
     careType: saved.careType === "nursing" ? "nursing" : "home",
     inflation: Number.isFinite(saved.inflation) ? saved.inflation : DEFAULT_CARE_INFLATION,
     periods: (saved.periods ?? []).filter((p) => known(p.personId)),
+    rider: saved.rider === true,
+    ...(saved.riderAccountIds
+      ? {
+          riderAccountIds: saved.riderAccountIds.filter((id) =>
+            household.accounts.some((a) => a.id === id),
+          ),
+        }
+      : {}),
   };
+}
+
+/** Whether the LTC rider is on this account. */
+export function hasCareRider(settings: LongTermCareSettings | null | undefined, accountId: string): boolean {
+  if (!settings?.rider) return false;
+  return settings.riderAccountIds == null || settings.riderAccountIds.includes(accountId);
 }
 
 /** Start age and years for one person, saved or default. */
@@ -124,6 +143,8 @@ export interface ResolvedCare {
   inflation: number;
   /** One-person household: other expenses follow `INDIVIDUAL_CARE_EXPENSE_SHARES`. */
   individual: boolean;
+  /** Accounts with the LTC rider on (`hasCareRider`). */
+  riderAccountIds: string[];
   /** Each stay's monthly cost is in first-projection-year dollars. */
   stays: {
     personId: string;
@@ -158,6 +179,7 @@ export function resolveLongTermCare(
   return {
     inflation: settings.inflation,
     individual: household.people.length === 1,
+    riderAccountIds: household.accounts.filter((a) => hasCareRider(settings, a.id)).map((a) => a.id),
     stays,
   };
 }
