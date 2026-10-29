@@ -29,7 +29,7 @@ both to a year.
   source, RMD rows kept when they pay anywhere in the projection; each line
   shaded by source via `incomeTint`, at the user's request: fixed income
   (pensions, military pension, Social Security) sage, regular
-  withdrawals (scheduled draws, RMDs) blue, an event's extra draws
+  withdrawals (scheduled draws) blue, RMDs lavender, an event's extra draws
   (`draw:` lifetime income, `topup:` extra withdrawals, e.g. long-term care)
   amber, insurance its own color, everything else the section green; colors
   in `INCOME_TINT_ROW`, shared with the year-by-year table's income detail

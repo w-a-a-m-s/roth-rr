@@ -321,9 +321,10 @@ describe("incomeTint", () => {
     ],
   } as unknown as Household;
 
-  it("shades fixed income, regular withdrawals and an event's extra draws apart", () => {
+  it("shades fixed income, regular withdrawals, RMDs and an event's extra draws apart", () => {
     expect(["pen", "mil", "ss"].map((k) => incomeTint(h, k))).toEqual(["fixedIncome", "fixedIncome", "fixedIncome"]);
-    expect(["draw", "roth", "rmd:ira"].map((k) => incomeTint(h, k))).toEqual(["accountDraw", "accountDraw", "accountDraw"]);
+    expect(["draw", "roth"].map((k) => incomeTint(h, k))).toEqual(["accountDraw", "accountDraw"]);
+    expect(incomeTint(h, "rmd:ira")).toBe("rmd");
     expect(["draw:ira", "topup:ira"].map((k) => incomeTint(h, k))).toEqual(["eventDraw", "eventDraw"]);
   });
 
