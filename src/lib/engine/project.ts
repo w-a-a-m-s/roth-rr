@@ -942,7 +942,9 @@ export function projectScenario(
   // proceeds: its balance that January times the payout table's rate for the
   // age of the person it pays. What's left grows 8% a year. The income is
   // guaranteed, so it keeps paying if the balance runs out. In Long-term care,
-  // an account with the LTC rider pays twice that income and grows 4%.
+  // an account with the LTC rider pays twice that income and grows 4% in the
+  // years its owner is in care (either spouse for a joint account), then goes
+  // back to the normal income and 8%.
   const careStart =
     care && care.stays.length > 0
       ? Math.min(...care.stays.map((stay) => stay.firstYear))
@@ -952,6 +954,18 @@ export function projectScenario(
   );
   const eventStart = eventYears.length > 0 ? Math.min(...eventYears) : null;
   const riderAccounts = new Set(care?.riderAccountIds ?? []);
+  const riderActive = (accId: string, calendarYear: number) => {
+    if (!riderAccounts.has(accId)) return false;
+    const acc = accounts.find((a) => a.id === accId);
+    if (!acc) return false;
+    const joint = isJointAccount(acc, planFiling);
+    return (care?.stays ?? []).some(
+      (stay) =>
+        calendarYear >= stay.firstYear &&
+        calendarYear <= stay.lastYear &&
+        (joint || stay.personId === acc.ownerId),
+    );
+  };
   const incomeAccounts = accounts.filter(
     (acc) =>
       AFTER_TAX_KINDS.includes(acc.kind) ||
@@ -1069,10 +1083,15 @@ export function projectScenario(
       for (const acc of incomeAccounts) {
         const base = Math.max(0, balances[acc.id]);
         if (!(base > 0)) continue;
-        const rider = riderAccounts.has(acc.id) ? LTC_RIDER_INCOME_MULTIPLIER : 1;
-        eventIncome[acc.id] =
-          base * lifeInsurancePayoutRate(incomeRecipientAge(acc, calendarYear)) * rider;
+        eventIncome[acc.id] = base * lifeInsurancePayoutRate(incomeRecipientAge(acc, calendarYear));
       }
+    }
+    // This year's event income: doubled on a rider account while its owner is in care.
+    const yearEventIncome: Record<string, number> = {};
+    for (const [accId, income] of Object.entries(eventIncome ?? {})) {
+      yearEventIncome[accId] = riderActive(accId, calendarYear)
+        ? income * LTC_RIDER_INCOME_MULTIPLIER
+        : income;
     }
     fixIncomeTableAmounts(household, calendarYear, balances, tableIncome);
     const tableAccounts = incomeTableAccountIds(household, tableIncome);
@@ -1080,7 +1099,7 @@ export function projectScenario(
     const leftoverBefore = leftover ? balances[leftover.id] : 0;
     for (const acc of accounts) {
       if (eventIncome?.[acc.id] != null) {
-        const growth = riderAccounts.has(acc.id) ? LTC_RIDER_GROWTH : LIFE_INSURANCE_PROCEEDS_GROWTH;
+        const growth = riderActive(acc.id, calendarYear) ? LTC_RIDER_GROWTH : LIFE_INSURANCE_PROCEEDS_GROWTH;
         balances[acc.id] *= Math.pow(1 + growth, yearFraction);
         continue;
       }
@@ -1177,7 +1196,7 @@ export function projectScenario(
     // 2b) The event's fixed income out of each account. Past what the balance
     //     holds it's still paid (guaranteed), taxed like the account's money.
     let eventOrdinary = 0;
-    for (const [accId, income] of Object.entries(eventIncome ?? {})) {
+    for (const [accId, income] of Object.entries(yearEventIncome)) {
       const acc = incomeAccounts.find((a) => a.id === accId)!;
       const balBefore = Math.max(0, balances[accId]);
       const take = Math.min(balBefore, income);
@@ -1212,7 +1231,7 @@ export function projectScenario(
       rmdRequired[acc.id] = Math.max(
         0,
         base / uniformLifetimeDenominator(ages[ownerId]) -
-          (eventIncome?.[acc.id] ?? 0) -
+          (yearEventIncome[acc.id] ?? 0) -
           (drawnByAccount[acc.id] ?? 0),
       );
     }
@@ -1326,7 +1345,7 @@ export function projectScenario(
     // income before deductions, like a pre-tax contribution below.
     const employment = employmentTax(earnedByPerson, fs, federal.socialSecurityWageBase);
 
-    for (const [accId, income] of Object.entries(eventIncome ?? {})) {
+    for (const [accId, income] of Object.entries(yearEventIncome)) {
       totalMonthlyIncome += income / 12;
       incomeMonthly[eventWithdrawalKey(accId)] = income / 12;
     }

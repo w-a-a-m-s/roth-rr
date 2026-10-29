@@ -253,6 +253,30 @@ describe("LTC rider", () => {
     expect(at(on, 2031).balances.ira).toBeCloseTo(Math.max(0, end2030 * 1.04 - takenIn2031), 2);
   });
 
+  it("goes back to the normal income and 8% once care ends", () => {
+    const h = withTwoAccounts();
+    const off = rows(h, care({}));
+    const on = rows(h, care({ rider: true, riderAccountIds: ["ira"] }));
+    // Care runs 2030 to 2032. In 2033 the income is the normal (undoubled)
+    // amount: the same fixed figure the plan without the rider pays.
+    expect(at(on, 2032).incomeMonthly["draw:ira"]).toBeCloseTo(2 * at(off, 2032).incomeMonthly["draw:ira"], 6);
+    expect(at(on, 2033).incomeMonthly["draw:ira"]).toBeCloseTo(at(off, 2033).incomeMonthly["draw:ira"], 6);
+    // And the balance grows 8% again.
+    const end2032 = at(on, 2032).balances.ira;
+    const r = at(on, 2033);
+    const taken = 12 * ((r.incomeMonthly["draw:ira"] ?? 0) + (r.incomeMonthly["rmd:ira"] ?? 0) + (r.incomeMonthly["topup:ira"] ?? 0));
+    expect(r.balances.ira).toBeCloseTo(Math.max(0, end2032 * 1.08 - taken), 2);
+  });
+
+  it("only doubles while the account's owner is in care", () => {
+    // The rider is on Sam's account, but only Alex is in care.
+    const h = withTwoAccounts();
+    h.accounts[1].ownerId = "b";
+    const off = rows(h, care({}));
+    const on = rows(h, care({ rider: true, riderAccountIds: ["ira2"] }));
+    expect(at(on, 2030).incomeMonthly["draw:ira2"]).toBeCloseTo(at(off, 2030).incomeMonthly["draw:ira2"], 6);
+  });
+
   it("covers every account when none are picked, and nothing when it's off", () => {
     const h = withTwoAccounts();
     const all = resolveLongTermCare(h, care({ rider: true }))!;

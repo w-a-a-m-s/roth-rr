@@ -19,7 +19,7 @@ export const CARE_TYPE_LABELS: Record<CareType, string> = {
 
 export const DEFAULT_CARE_INFLATION = 0.03;
 
-/** An LTC rider doubles an account's lifetime income during care... */
+/** An LTC rider doubles an account's lifetime income while its owner is in care... */
 export const LTC_RIDER_INCOME_MULTIPLIER = 2;
 /** ...and what's left in it grows 4% a year instead of 8%. */
 export const LTC_RIDER_GROWTH = 0.04;

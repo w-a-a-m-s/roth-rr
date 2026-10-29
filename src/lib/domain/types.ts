@@ -872,8 +872,8 @@ export interface LongTermCareSettings {
   /** Per-person start age and length; anyone missing uses the defaults. */
   periods: CarePeriod[];
   /**
-   * LTC rider: the accounts it's on pay twice the lifetime income from the
-   * first care year, and what's left grows 4% a year instead of 8%.
+   * LTC rider: while the owner is in care, the accounts it's on pay twice the
+   * lifetime income and what's left grows 4% a year instead of 8%.
    */
   rider?: boolean;
   /** Accounts the rider is on. Missing means every account. */

@@ -457,8 +457,9 @@ export function LongTermCareControls({
 }
 
 /**
- * LTC rider: a switch, then one checkbox per account. An account with the
- * rider pays twice the lifetime income during care and grows 4% instead of 8%.
+ * LTC rider: a switch, then one checkbox per account. While its owner is in
+ * care, an account with the rider pays twice the lifetime income and grows 4%
+ * instead of 8%.
  */
 function CareRiderControls({
   household,
@@ -484,7 +485,7 @@ function CareRiderControls({
         <div className="min-w-0">
           <div className="text-[13px] font-semibold text-foreground">LTC rider</div>
           <div className="mt-0.5 text-[12px] leading-snug text-muted">
-            {`Accounts with the rider pay ${LTC_RIDER_INCOME_MULTIPLIER}x the lifetime income during care, and what's left grows ${formatPercent(LTC_RIDER_GROWTH)} a year instead of 8%.`}
+            {`While the owner is in care, an account with the rider pays ${LTC_RIDER_INCOME_MULTIPLIER}x the lifetime income and what's left grows ${formatPercent(LTC_RIDER_GROWTH)} a year instead of 8%. After care, it's back to the normal income and 8%.`}
           </div>
         </div>
         <button
