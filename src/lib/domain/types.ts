@@ -179,7 +179,7 @@ export type IncomeKind =
   | "disabilityInsurance" // disability insurance benefit (see `disabilityWaitingDays`, `disabilityCoverage`)
   // Account withdrawals: income tied to a specific account (chosen via
   // `drawsFromAccountId`) whose amount reduces that account's balance.
-  | "retirementDraw" // withdraw from a tax-deferred retirement account (taxable; continues past RMD age in addition to RMDs)
+  | "retirementDraw" // withdraw from a tax-deferred retirement account (taxable; continues past RMD age and counts toward the RMD)
   | "rothWithdrawal" // withdraw from a Roth account (tax-free)
   | "afterTaxWithdrawal" // withdraw from an after-tax account (basis tax-free; gains taxed as long-term capital gains)
   | "other";
@@ -233,7 +233,8 @@ export interface IncomeSource {
   /**
    * For account-withdrawal kinds (`retirementDraw`, `rothWithdrawal`,
    * `afterTaxWithdrawal`): the account the withdrawal depletes. A retirement
-   * draw keeps running past the RMD age, on top of the forced RMD.
+   * draw keeps running past the RMD age and counts toward that account's RMD,
+   * so only what's still owed above it is forced out.
    */
   drawsFromAccountId?: string;
   /**

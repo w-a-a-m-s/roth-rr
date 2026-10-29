@@ -122,7 +122,9 @@ export function convertibleTotal(
       balances[acc.id] *= 1 + accountGrowthForYear(household, acc, i);
     }
 
-    // Retirement draws deplete their source accounts (same caps as the engine).
+    // Retirement draws deplete their source accounts (same caps as the engine),
+    // and count toward the account's RMD.
+    const drawnByAccount: Record<string, number> = {};
     for (const income of household.incomes) {
       if (income.kind !== "retirementDraw") continue;
       if (!isIncomeActive(income, calendarYear)) continue;
@@ -139,6 +141,7 @@ export function convertibleTotal(
       const share = i === 0 ? firstYearGrowthFraction(start, asOfDate) : 1;
       const take = Math.min(Math.max(0, balances[accId]), Math.max(0, withdraw) * share);
       balances[accId] -= take;
+      drawnByAccount[accId] = (drawnByAccount[accId] ?? 0) + take;
     }
 
     // Deposits land after growth and withdrawals, same as in `projectScenario`,
@@ -154,7 +157,11 @@ export function convertibleTotal(
       const rmdAge = personRmdAge(owner);
       const age = calendarYear - (owner?.birthYear ?? NaN);
       if (rmdAge == null || !(age >= rmdAge)) continue;
-      const required = Math.max(0, priorYearEnd[acc.id] ?? 0) / uniformLifetimeDenominator(age);
+      const required = Math.max(
+        0,
+        Math.max(0, priorYearEnd[acc.id] ?? 0) / uniformLifetimeDenominator(age) -
+          (drawnByAccount[acc.id] ?? 0),
+      );
       balances[acc.id] = Math.max(0, balances[acc.id] - required);
     }
     priorYearEnd = { ...balances };

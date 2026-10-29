@@ -2,8 +2,8 @@
   "name": "50/50 history (S&P 500 and 10-year Treasury) from 1966",
   "strategy": "manual",
   "note": "Same plan as market-history-1966, with Returns set to 50/50 history: market accounts grow by half the S&P 500 and half the 10-year Treasury each year from 1966.",
-  "commit": "dfb8a84",
-  "commitDate": "2026-10-26T01:05:05+00:00",
+  "commit": "d417cad",
+  "commitDate": "2026-10-29T21:37:10+00:00",
   "household": {
     "filingStatus": "mfj",
     "expenses": [
@@ -234,10 +234,10 @@
   },
   "expected": {
     "baseline": {
-      "taxesTotal": 1010316.89,
-      "medicareTotal": 166533.6,
-      "afterTaxAssetsAtRmd": 4136541.15,
-      "inheritanceFinal": 8034094.79
+      "taxesTotal": 989947.22,
+      "medicareTotal": 163612.8,
+      "afterTaxAssetsAtRmd": 4144101.15,
+      "inheritanceFinal": 8174921.7
     },
     "roth": {
       "taxesTotal": 1017756.56,
@@ -246,10 +246,10 @@
       "inheritanceFinal": 11668780.63
     },
     "deltas": {
-      "taxesTotal": 7439.67,
-      "medicareTotal": 10716,
-      "afterTaxAssetsAtRmd": 727743.97,
-      "inheritanceFinal": 3634685.84
+      "taxesTotal": 27809.34,
+      "medicareTotal": 13636.8,
+      "afterTaxAssetsAtRmd": 720183.97,
+      "inheritanceFinal": 3493858.93
     }
   }
 }

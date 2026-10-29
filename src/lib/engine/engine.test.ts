@@ -1220,77 +1220,86 @@ describe("RMDs deplete tax-deferred balances", () => {
 });
 
 describe("scheduled draws and growth continue past the RMD age", () => {
-  it("keeps the retirement draw, compounds the balance, and takes the RMD on top", () => {
-    // $100k account growing 5%/yr, $1k/mo scheduled draw, RMDs from age 73.
-    // Each year: grow, take the $12k draw, then take a full RMD figured on the
-    // prior December 31 balance (the draw doesn't shrink it). Both incomes must
-    // appear as separate lines.
-    const household = {
-      filingStatus: "single" as const,
-      residenceState: "FL" as const,
-      people: [
-        {
-          id: "p1",
-          name: "Maggie",
-          birthYear: 1953,
-          retirementYear: 2026,
-        },
-      ],
-      accounts: [
-        {
-          id: "drop",
-          label: "DROP",
-          ownerId: "p1",
-          kind: "retirementTaxable" as const,
-          balance: 100_000,
-          growthRate: 0.05,
-        },
-      ],
-      incomes: [
-        {
-          id: "draw",
-          label: "Income from retirement assets",
-          ownerId: "p1",
-          kind: "retirementDraw" as const,
-          monthlyAmount: 1_000,
-          growthRate: 0,
-          taxability: "full" as const,
-          drawsFromAccountId: "drop",
-        },
-      ],
-      realEstate: [],
-      expenses: [],
-      assumptions: {
-        expenseGrowth: 0,
-        finalAge: 75,
+  const household = (monthlyDraw: number) => ({
+    filingStatus: "single" as const,
+    residenceState: "FL" as const,
+    people: [
+      {
+        id: "p1",
+        name: "Maggie",
+        birthYear: 1953,
+        retirementYear: 2026,
       },
-      optimizer: {
-        strategy: "manual" as const,
-        manualSchedule: [0, 0, 0],
+    ],
+    accounts: [
+      {
+        id: "drop",
+        label: "DROP",
+        ownerId: "p1",
+        kind: "retirementTaxable" as const,
+        balance: 100_000,
+        growthRate: 0.05,
       },
-    };
-    const rows = projectScenario(household, zeros(projectionYears(household)));
-    // 2026 (age 73): grow 5% first, then the $12k draw, then the RMD on the
-    // $100k opening (prior-year-end) balance (1/26.5), not on the post-draw
-    // remainder.
+    ],
+    incomes: [
+      {
+        id: "draw",
+        label: "Income from retirement assets",
+        ownerId: "p1",
+        kind: "retirementDraw" as const,
+        monthlyAmount: monthlyDraw,
+        growthRate: 0,
+        taxability: "full" as const,
+        drawsFromAccountId: "drop",
+      },
+    ],
+    realEstate: [],
+    expenses: [],
+    assumptions: {
+      expenseGrowth: 0,
+      finalAge: 75,
+    },
+    optimizer: {
+      strategy: "manual" as const,
+      manualSchedule: [0, 0, 0],
+    },
+  });
+
+  it("keeps the retirement draw, compounds the balance, and takes only the RMD the draw leaves owed", () => {
+    // $100k account growing 5%/yr, $200/mo scheduled draw, RMDs from age 73.
+    // Each year: grow, take the $2,400 draw, then take what's left of the RMD
+    // figured on the prior December 31 balance: the draw counts toward it.
+    const rows = projectScenario(household(200), zeros(projectionYears(household(200))));
+    // 2026 (age 73): grow 5% first, then the draw, then the RMD on the $100k
+    // opening (prior-year-end) balance (1/26.5) less the draw.
     expect(rows[0].ages.p1).toBe(73);
     const grown0 = 100_000 * 1.05;
-    const afterDraw0 = grown0 - 12_000;
-    const rmd0 = 100_000 / 26.5;
+    const afterDraw0 = grown0 - 2_400;
+    const rmd0 = 100_000 / 26.5 - 2_400;
     const bal0 = afterDraw0 - rmd0;
-    expect(rows[0].incomeMonthly.draw).toBeCloseTo(1_000, 6);
+    expect(rows[0].incomeMonthly.draw).toBeCloseTo(200, 6);
     expect(rows[0].incomeMonthly["rmd:drop"]).toBeCloseTo(rmd0 / 12, 6);
     expect(rows[0].balances.drop).toBeCloseTo(bal0, 2);
-    expect(rows[0].grossTaxableIncome).toBeCloseTo(12_000 + rmd0, 2);
+    // Draw plus RMD line add up to the full required amount.
+    expect(rows[0].grossTaxableIncome).toBeCloseTo(100_000 / 26.5, 2);
     // 2027 (age 74): the remaining balance still compounds at 5% before the
-    // draw is taken, but the RMD divides last year's closing balance by 25.5,
-    // so neither this year's growth nor this year's draw changes it.
+    // draw is taken, and the RMD divides last year's closing balance by 25.5.
     const grown1 = bal0 * 1.05;
-    const afterDraw1 = grown1 - 12_000;
-    const rmd1 = bal0 / 25.5;
-    expect(rows[1].incomeMonthly.draw).toBeCloseTo(1_000, 6);
+    const afterDraw1 = grown1 - 2_400;
+    const rmd1 = bal0 / 25.5 - 2_400;
+    expect(rows[1].incomeMonthly.draw).toBeCloseTo(200, 6);
     expect(rows[1].incomeMonthly["rmd:drop"]).toBeCloseTo(rmd1 / 12, 6);
     expect(rows[1].balances.drop).toBeCloseTo(afterDraw1 - rmd1, 2);
+  });
+
+  it("takes no extra RMD when the scheduled draw already covers it", () => {
+    // $12k a year is more than the $3,774 required at 73, so the draw
+    // satisfies the RMD and nothing else comes out.
+    const rows = projectScenario(household(1_000), zeros(projectionYears(household(1_000))));
+    expect(rows[0].incomeMonthly.draw).toBeCloseTo(1_000, 6);
+    expect(rows[0].incomeMonthly["rmd:drop"] ?? 0).toBe(0);
+    expect(rows[0].balances.drop).toBeCloseTo(100_000 * 1.05 - 12_000, 2);
+    expect(rows[0].grossTaxableIncome).toBeCloseTo(12_000, 2);
   });
 });
 

@@ -1133,6 +1133,9 @@ export function projectScenario(
       return draw;
     };
     const withdrawalTaken: Record<string, number> = {};
+    // Scheduled draws out of each tax-deferred account this year: they count
+    // toward its RMD (any distribution in the year does, per the IRS).
+    const drawnByAccount: Record<string, number> = {};
     // Draws a 10% early withdrawal penalty applies to (allowed plans only).
     let earlyDistributions = 0;
     for (const income of household.incomes) {
@@ -1159,6 +1162,9 @@ export function projectScenario(
       }
       balances[accId] -= take;
       withdrawalTaken[income.id] = drawnBeforeToday + take;
+      if (income.kind === "retirementDraw") {
+        drawnByAccount[accId] = (drawnByAccount[accId] ?? 0) + drawnBeforeToday + take;
+      }
       if (penalized) earlyDistributions += drawnBeforeToday + take;
     }
     // 2b) The event's fixed income out of each account. Past what the balance
@@ -1194,10 +1200,13 @@ export function projectScenario(
       const ownerRmdAge = personRmdAge(owner);
       if (ownerRmdAge == null || ages[ownerId] < ownerRmdAge) continue;
       const base = Math.max(0, priorYearEndBalances[acc.id] ?? 0);
-      // The event's income from this account counts toward its RMD.
+      // The event's income and the year's scheduled draws from this account
+      // count toward its RMD, so only what's still owed above them is taken.
       rmdRequired[acc.id] = Math.max(
         0,
-        base / uniformLifetimeDenominator(ages[ownerId]) - (eventIncome?.[acc.id] ?? 0),
+        base / uniformLifetimeDenominator(ages[ownerId]) -
+          (eventIncome?.[acc.id] ?? 0) -
+          (drawnByAccount[acc.id] ?? 0),
       );
     }
 
@@ -1322,9 +1331,9 @@ export function projectScenario(
     // the owner's Uniform Lifetime denominator for their age this year, so
     // growth, scheduled draws and conversions taken during the year don't change
     // what's required. Capped at what's actually left so the account can't go
-    // negative, then withdrawn so the account declines. It is taken in addition
-    // to any scheduled retirement draw; both show as separate income lines. No
-    // birth year → no forced RMD.
+    // negative, then withdrawn so the account declines. A scheduled retirement
+    // draw from the account counts toward it, so the RMD line is only what's
+    // owed above the draw. No birth year → no forced RMD.
     for (const acc of retirementAccounts) {
       const required = rmdRequired[acc.id];
       if (required == null) continue;

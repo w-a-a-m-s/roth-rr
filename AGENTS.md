@@ -74,7 +74,10 @@ Growth, scheduled draws, and conversions taken *during* the year don't change
 that year's RMD, so `projectScenario` carries a `priorYearEndBalances` snapshot
 rather than reading the live balance. And because the base can exceed what's
 left in a depleting account, the take is capped at the current balance so a
-balance never goes negative.
+balance never goes negative. Any distribution from the account in the year counts toward
+its RMD, so a scheduled retirement draw (and an event's lifetime income)
+comes off the required amount: the `rmd:` line is only what's still owed
+above them (`projectScenario` and `convertibleTotal` both do this).
 
 The projection starts at the earliest retirement year by default. A plan can
 pick any start year instead (`assumptions.startYear`, "Projection starts" on
