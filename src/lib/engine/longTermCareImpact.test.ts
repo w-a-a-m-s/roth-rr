@@ -66,6 +66,30 @@ describe("long-term care asset impact", () => {
     expect(impact.before).toBeCloseTo(rowTotalAssets(careRows[0]), 6);
   });
 
+  it("flags care years the income can't cover and what the accounts paid", () => {
+    const h = single();
+    const careRows = rows(h, care);
+    const impact = longTermCareAssetImpact(careRows, rows(h), resolveLongTermCare(h, care))!;
+    // $4,000 of Social Security doesn't pay for $6,000 of home care plus the
+    // rest of the spending, so every care year draws on the IRA.
+    expect(impact.cashFlow.years).toBe(3);
+    expect(impact.cashFlow.shortYears).toEqual([2030, 2031, 2032]);
+    const topUps = careRows
+      .filter((r) => r.calendarYear >= 2030 && r.calendarYear <= 2032)
+      .reduce((sum, r) => sum + (r.incomeMonthly["topup:ira"] ?? 0) * 12, 0);
+    expect(impact.cashFlow.fromAccounts).toBeCloseTo(topUps, 6);
+    expect(impact.cashFlow.fromAccounts).toBeGreaterThan(0);
+    expect(impact.cashFlow.uncovered).toBe(0);
+  });
+
+  it("calls the cash flow sufficient when income covers care", () => {
+    const h = single();
+    h.incomes[0].monthlyAmount = 20_000;
+    const impact = longTermCareAssetImpact(rows(h, care), rows(h), resolveLongTermCare(h, care))!;
+    expect(impact.cashFlow.shortYears).toEqual([]);
+    expect(impact.cashFlow.fromAccounts).toBe(0);
+  });
+
   it("is null without care", () => {
     const h = single();
     expect(longTermCareAssetImpact(rows(h), rows(h), null)).toBeNull();

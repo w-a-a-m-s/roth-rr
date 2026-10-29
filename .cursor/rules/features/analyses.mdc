@@ -190,6 +190,10 @@ instead of Total impact. Retirement still compares the two.
   to last stay), and how much less that is than the same plan without care
   (the Retirement run's no-conversion scenario) at that year-end. Either can
   flip to "went up" / "More than" when growth outpaces the care costs.
+  A third card, Cash flow during care (user's request), says Sufficient
+  when income after tax covers spending every care year, otherwise how many
+  years fell short, what the top-ups (`topup:*` income) took from savings,
+  and anything left unpaid once the accounts ran dry.
 - Care costs aren't deducted as medical expenses (no itemizing in the model).
 
 ## Results layout (what clients see first)

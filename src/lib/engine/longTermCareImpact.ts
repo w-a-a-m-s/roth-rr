@@ -1,5 +1,8 @@
+import { eventTopUpKey } from "@/lib/domain/household";
 import type { ResolvedCare } from "@/lib/domain/longTermCare";
 import type { ProjectionRow } from "@/lib/engine/types";
+
+const TOP_UP_PREFIX = eventTopUpKey("");
 
 /** Every asset on a row: tax-deferred, Roth, after-tax, real-estate and business equity. */
 export function rowTotalAssets(row: ProjectionRow): number {
@@ -27,6 +30,23 @@ export interface LongTermCareAssetImpact {
   withoutCare: number;
   /** `withoutCare - after`: how much less there is because of the care. */
   shortfall: number;
+  /** Whether the year's income covers the spending through the care years. */
+  cashFlow: LongTermCareCashFlow;
+}
+
+/** Cash flow over the care years. */
+export interface LongTermCareCashFlow {
+  /** Care years in the projection. */
+  years: number;
+  /**
+   * Care years where income after tax didn't cover spending and deposits, so
+   * the plan drew extra from the accounts (or couldn't cover it at all).
+   */
+  shortYears: number[];
+  /** Extra drawn from the accounts over those years, tax on the draws included. */
+  fromAccounts: number;
+  /** Spending left unpaid once the accounts ran dry. */
+  uncovered: number;
 }
 
 /**
@@ -56,6 +76,9 @@ export function longTermCareAssetImpact(
   const before = rowTotalAssets(startRow);
   const after = rowTotalAssets(endRow);
   const withoutCare = rowTotalAssets(noCareEndRow);
+  const careYears = careRows.filter(
+    (r) => r.calendarYear >= firstYear && r.calendarYear <= endYear,
+  );
   return {
     firstYear,
     lastYear: endYear,
@@ -64,5 +87,30 @@ export function longTermCareAssetImpact(
     drop: before - after,
     withoutCare,
     shortfall: withoutCare - after,
+    cashFlow: careCashFlow(careYears),
   };
+}
+
+/**
+ * A care year is short when the plan had to top it up from the accounts
+ * (`topup:<accountId>` income) or still ended below zero once they were empty.
+ */
+function careCashFlow(rows: ProjectionRow[]): LongTermCareCashFlow {
+  const shortYears: number[] = [];
+  let fromAccounts = 0;
+  let uncovered = 0;
+  for (const row of rows) {
+    let topUp = 0;
+    for (const [key, monthly] of Object.entries(row.incomeMonthly)) {
+      if (!key.startsWith(TOP_UP_PREFIX)) continue;
+      topUp += monthly * 12;
+    }
+    // The tax gross-up can leave a few cents of surplus either way.
+    const unpaid = -row.surplus * 12 >= 0.5 ? -row.surplus * 12 : 0;
+    if (topUp < 0.5 && unpaid === 0) continue;
+    shortYears.push(row.calendarYear);
+    fromAccounts += topUp;
+    uncovered += unpaid;
+  }
+  return { years: rows.length, shortYears, fromAccounts, uncovered };
 }
