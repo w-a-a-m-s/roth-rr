@@ -29,7 +29,7 @@ per-insured and household totals.
   inheritance include it). From the next year it grows 8% a year
   (`LIFE_INSURANCE_PROCEEDS_GROWTH`), and pays a fixed lifetime income of
   face x rate (`incomeMonthly["life:<id>"]`), even if the balance runs out.
-- Rate: Transamerica RILA Income Advantage with Step-Up, Single Life,
+- Rate: Transamerica RILA Income Advantage with Step-Up, Joint Life (1.55% fee, flyer 10/26 page 2),
   "Immediate Payout %" by the insured's age at death
   (`config/lifeInsurancePayout.ts`). Under 59: 5%. Past 86: the 86 rate.
 - Tax: annuity LIFO. Earnings (balance over remaining basis) come out first

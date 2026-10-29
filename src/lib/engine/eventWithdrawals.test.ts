@@ -55,16 +55,16 @@ describe("lifetime income once an event happens", () => {
   it("starts the year after a death at the survivor's payout rate", () => {
     const r = rows(couple(), death);
     expect(draws(at(r, 2030))).toEqual([]);
-    // Sam is 69 in 2031: 6.7% of each balance on January 1.
+    // Sam is 69 in 2031: 6.2% of each balance on January 1.
     const y = at(r, 2031);
-    expect(y.incomeMonthly["draw:brk"] * 12).toBeCloseTo(50_000 * 0.067, 6);
-    expect(y.incomeMonthly["draw:ira"] * 12).toBeCloseTo(300_000 * 0.067, 6);
-    expect(y.incomeMonthly["draw:roth"] * 12).toBeCloseTo(100_000 * 0.067, 6);
+    expect(y.incomeMonthly["draw:brk"] * 12).toBeCloseTo(50_000 * 0.062, 6);
+    expect(y.incomeMonthly["draw:ira"] * 12).toBeCloseTo(300_000 * 0.062, 6);
+    expect(y.incomeMonthly["draw:roth"] * 12).toBeCloseTo(100_000 * 0.062, 6);
   });
 
   it("grows what's left at 8% and keeps the income fixed", () => {
     const r = rows(couple(), death);
-    const income = 300_000 * 0.067;
+    const income = 300_000 * 0.062;
     expect(at(r, 2031).balances.ira).toBeCloseTo(300_000 * 1.08 - income, 6);
     expect(at(r, 2032).balances.ira).toBeCloseTo((300_000 * 1.08 - income) * 1.08 - income, 6);
     expect(at(r, 2045).incomeMonthly["draw:ira"] * 12).toBeCloseTo(income, 6);
@@ -76,12 +76,12 @@ describe("lifetime income once an event happens", () => {
     // Roth income is tax free.
     // Social Security's taxable part comes from provisional income: the IRA
     // income plus the gains, plus half the benefits.
-    const ordinary = 300_000 * 0.067;
+    const ordinary = 300_000 * 0.062;
     const ss = taxableSocialSecurity(36_000, ordinary + y.capitalGainsIncome, y.filingStatus);
     expect(y.socialSecurityTaxable).toBeCloseTo(ss, 6);
     expect(y.grossTaxableIncome).toBeCloseTo(ss + ordinary, 6);
     expect(y.capitalGainsIncome).toBeCloseTo(
-      50_000 * 0.067 + y.incomeMonthly["topup:brk"] * 12,
+      50_000 * 0.062 + y.incomeMonthly["topup:brk"] * 12,
       6,
     );
   });
@@ -127,7 +127,7 @@ describe("lifetime income once an event happens", () => {
   });
 
   it("counts the income toward the RMD", () => {
-    // Sam's RMD age is 75 (2037): 6.7% beats the required ~4%.
+    // Sam's RMD age is 75 (2037): 6.2% beats the required ~4%.
     expect(at(rows(couple(), death), 2040).incomeMonthly["rmd:ira"]).toBeUndefined();
     expect(at(rows(couple()), 2040).incomeMonthly["rmd:ira"]).toBeGreaterThan(0);
   });
@@ -143,7 +143,7 @@ describe("lifetime income once an event happens", () => {
   });
 
   it("starts in the first year of long-term care at the owner's age", () => {
-    // Alex in home care from 75 (2035): 7.3%.
+    // Alex in home care from 75 (2035): 6.8%.
     const care: ProjectionOptions = {
       longTermCare: {
         who: "one",
@@ -156,9 +156,9 @@ describe("lifetime income once an event happens", () => {
     const r = rows(couple(), care);
     expect(draws(at(r, 2034))).toEqual([]);
     const ira = at(r, 2034).balances.ira;
-    expect(at(r, 2035).incomeMonthly["draw:ira"] * 12).toBeCloseTo(ira * 0.073, 6);
+    expect(at(r, 2035).incomeMonthly["draw:ira"] * 12).toBeCloseTo(ira * 0.068, 6);
     // Care is over, but the income keeps paying.
-    expect(at(r, 2040).incomeMonthly["draw:ira"] * 12).toBeCloseTo(ira * 0.073, 6);
+    expect(at(r, 2040).incomeMonthly["draw:ira"] * 12).toBeCloseTo(ira * 0.068, 6);
   });
 
   it("takes more to cover a long-term care year still short, until the accounts run dry", () => {

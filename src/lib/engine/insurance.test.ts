@@ -103,16 +103,16 @@ describe("insurance never touches Retirement", () => {
 
 describe("life insurance payout table", () => {
   it("reads the immediate payout column by age at death", () => {
-    expect(lifeInsurancePayoutRate(59)).toBe(0.057);
-    expect(lifeInsurancePayoutRate(65)).toBe(0.063);
-    expect(lifeInsurancePayoutRate(80)).toBe(0.078);
-    expect(lifeInsurancePayoutRate(86)).toBe(0.083);
+    expect(lifeInsurancePayoutRate(59)).toBe(0.052);
+    expect(lifeInsurancePayoutRate(65)).toBe(0.058);
+    expect(lifeInsurancePayoutRate(80)).toBe(0.073);
+    expect(lifeInsurancePayoutRate(86)).toBe(0.078);
   });
 
   it("pays 5% under 59 and holds the age 86 rate after that", () => {
     expect(lifeInsurancePayoutRate(45)).toBe(0.05);
     expect(lifeInsurancePayoutRate(58)).toBe(0.05);
-    expect(lifeInsurancePayoutRate(92)).toBe(0.083);
+    expect(lifeInsurancePayoutRate(92)).toBe(0.078);
   });
 });
 
@@ -123,15 +123,15 @@ describe("life insurance in Survivorship", () => {
   const withLife = rows(couple([life()]), options);
   const key = "life:life1";
 
-  it("pays face times the age 80 rate (7.8%) for life from the year after the death", () => {
+  it("pays face times the age 80 rate (7.3%) for life from the year after the death", () => {
     expect(at(withLife, 2030).incomeMonthly[key]).toBeUndefined();
-    expect(at(withLife, 2031).incomeMonthly[key]).toBeCloseTo(78_000 / 12, 6);
-    expect(at(withLife, 2045).incomeMonthly[key]).toBeCloseTo(78_000 / 12, 6);
+    expect(at(withLife, 2031).incomeMonthly[key]).toBeCloseTo(73_000 / 12, 6);
+    expect(at(withLife, 2045).incomeMonthly[key]).toBeCloseTo(73_000 / 12, 6);
   });
 
   it("invests the death benefit at 8% and draws the income from it", () => {
-    expect(at(withLife, 2031).balances[key]).toBeCloseTo(1_000_000 * 1.08 - 78_000, 4);
-    expect(at(withLife, 2032).balances[key]).toBeCloseTo((1_000_000 * 1.08 - 78_000) * 1.08 - 78_000, 4);
+    expect(at(withLife, 2031).balances[key]).toBeCloseTo(1_000_000 * 1.08 - 73_000, 4);
+    expect(at(withLife, 2032).balances[key]).toBeCloseTo((1_000_000 * 1.08 - 73_000) * 1.08 - 73_000, 4);
   });
 
   it("shows the death benefit in assets in the year of death, with no income yet", () => {
@@ -142,14 +142,14 @@ describe("life insurance in Survivorship", () => {
 
   it("counts the proceeds as after-tax assets", () => {
     const y = 2031;
-    expect(at(withLife, y).afterTaxTotal - at(without, y).afterTaxTotal).toBeCloseTo(1_002_000, 4);
+    expect(at(withLife, y).afterTaxTotal - at(without, y).afterTaxTotal).toBeCloseTo(1_007_000, 4);
   });
 
   it("taxes earnings first, as ordinary income", () => {
     // 2031: $80,000 of earnings on $1,000,000, so all $78,000 is taxable.
     // (It also makes more of the Social Security taxable, so leave that out.)
     const other = (r: (typeof without)[number]) => r.grossTaxableIncome - r.socialSecurityTaxable;
-    expect(other(at(withLife, 2031)) - other(at(without, 2031))).toBeCloseTo(78_000, 4);
+    expect(other(at(withLife, 2031)) - other(at(without, 2031))).toBeCloseTo(73_000, 4);
     expect(at(withLife, 2031).socialSecurityTaxable).toBeGreaterThan(
       at(without, 2031).socialSecurityTaxable,
     );
@@ -162,7 +162,7 @@ describe("life insurance in Survivorship", () => {
     expect(rows(couple([expired]), options)).toEqual(without);
     const current = life({ policyType: "term", termYears: 10, issueYear: 2025 });
     expect(lifePolicyInForce(current, 2030)).toBe(true);
-    expect(at(rows(couple([current]), options), 2031).incomeMonthly[key]).toBeCloseTo(78_000 / 12, 6);
+    expect(at(rows(couple([current]), options), 2031).incomeMonthly[key]).toBeCloseTo(73_000 / 12, 6);
   });
 
   it("uses 5% for a death before 59", () => {
@@ -322,13 +322,13 @@ describe("life insurance summary", () => {
     life({ id: "old", label: "Old", policyType: "term", termYears: 10, issueYear: 2000, permanentType: undefined, faceAmount: 250_000, premium: 300, premiumFrequency: "annual" }),
     life({ id: "s", label: "Sam's", insuredId: "b", faceAmount: 300_000 }),
   ]);
-  // In 2026 Alex is 76 (7.4%) and Sam is 74 (7.2%).
+  // In 2026 Alex is 76 (6.9%) and Sam is 74 (6.7%).
   const { groups, totals } = lifeInsuranceSummary(h, 2026);
 
   it("groups policies by insured in plan order", () => {
     expect(groups.map((g) => [g.name, g.age, g.payoutRate])).toEqual([
-      ["Alex", 76, 0.074],
-      ["Sam", 74, 0.072],
+      ["Alex", 76, 0.069],
+      ["Sam", 74, 0.067],
     ]);
     expect(groups[0].rows.map((r) => r.coverage)).toEqual(["Lifetime", "2020 to 2039", "Ended 2009"]);
   });
@@ -337,17 +337,18 @@ describe("life insurance summary", () => {
     const old = groups[0].rows.find((r) => r.policyId === "old")!;
     expect(old.inForce).toBe(false);
     expect(old.annualIncome).toBe(0);
-    expect(groups[0].totals).toEqual({
+    const { annualIncome, ...rest } = groups[0].totals;
+    expect(rest).toEqual({
       faceAmount: 1_500_000,
       cashValue: 80_000,
       annualPremium: 12_900,
-      annualIncome: 1_500_000 * 0.074,
     });
+    expect(annualIncome).toBeCloseTo(1_500_000 * 0.069, 6);
   });
 
   it("adds every insured into the household total", () => {
     expect(totals.faceAmount).toBe(1_800_000);
-    expect(totals.annualIncome).toBeCloseTo(1_500_000 * 0.074 + 300_000 * 0.072, 6);
+    expect(totals.annualIncome).toBeCloseTo(1_500_000 * 0.069 + 300_000 * 0.067, 6);
   });
 });
 

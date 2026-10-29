@@ -41,6 +41,7 @@ import {
   isDisabilityCoverage,
   isDisabilityWaitingDays,
   isPensionIncome,
+  usesIncomeTable,
   applyFilingStatus,
   healAccountJoint,
   healGrowthStart,
@@ -302,6 +303,9 @@ export function migrateHousehold(household: Household): Household {
     ) {
       delete inc.pensionPayout;
     }
+    // The income table only applies to account withdrawals. Anything else,
+    // or a bad value, falls back to the entered amount.
+    if (!usesIncomeTable(inc)) delete inc.amountSource;
     // Disability settings only belong on disability insurance; bad values
     // are dropped so the defaults (90 days, full) apply.
     const isDisability = inc.kind === "disabilityInsurance";

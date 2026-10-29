@@ -1,6 +1,6 @@
 ---
 description: Income start/end years and growth from the start year
-globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/lib/domain/survivorship.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/optimizer/strategies/depleteByRmd.ts,src/components/wizard/steps/IncomeStep.tsx,src/store/useScenario.ts
+globs: src/lib/domain/types.ts,src/lib/domain/household.ts,src/lib/domain/survivorship.ts,src/lib/engine/project.ts,src/lib/engine/convertible.ts,src/lib/optimizer/strategies/depleteByRmd.ts,src/lib/engine/incomeTable.ts,src/components/wizard/steps/IncomeStep.tsx,src/store/useScenario.ts
 alwaysApply: false
 ---
 
@@ -58,3 +58,20 @@ months that year. New disability lines default to tax free (individual
 policy); employer-paid plans switch to taxable. The benefit stops when its
 owner passes (Survivorship). `migrateHousehold` strips the fields from
 other kinds and drops bad values.
+
+## Income table (account withdrawals)
+
+A withdrawal (`retirementDraw`, `rothWithdrawal`, `afterTaxWithdrawal`) can
+set `amountSource: "incomeTable"` ("Amount from" on the Income step; missing
+means the entered amount). In its first paying year (its start year, or the
+projection start) the yearly amount is fixed at the source account's January
+balance, before that year's growth, times `lifeInsurancePayoutRate` for the
+owner's age that year (`config/lifeInsurancePayout.ts`, the Joint Life
+immediate payout column; 5% under 59). It never grows, and `monthlyAmount` /
+`growthRate` / `growthFrom` are ignored. From that year the account grows
+`INCOME_TABLE_GROWTH` (8%) instead of its own rate or market history.
+`lib/engine/incomeTable.ts` holds it; `project.ts`, `convertible.ts` and
+`depleteByRmd.ts` all call `fixIncomeTableAmounts` before growth and
+`withdrawalAnnualForYear` for the draw. The Income step shows the rate, the
+owner's age, the no-conversion monthly amount and the 8% in a note on the
+card. `migrateHousehold` drops the field from other kinds and bad values.

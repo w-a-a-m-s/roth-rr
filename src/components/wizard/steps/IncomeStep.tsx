@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useHousehold, useScenario } from "@/store/useScenario";
+import { useExternalData } from "@/store/useExternalData";
 import { Field } from "@/components/ui/Field";
 import {
   MoneyInput,
@@ -15,6 +16,7 @@ import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { StepTour } from "@/components/onboarding/StepTour";
 import type {
   DisabilityCoverage,
+  IncomeAmountSource,
   IncomeKind,
   IncomeSource,
   Taxability,
@@ -29,7 +31,12 @@ import {
   incomeGrowthFrom,
   isWithdrawalIncome,
   pensionPayout,
+  usesIncomeTable,
 } from "@/lib/domain/household";
+import type { ProjectionRow } from "@/lib/engine/types";
+import { projectionStartYear } from "@/lib/engine/project";
+import { runScenario } from "@/lib/engine/runScenario";
+import { INCOME_TABLE_GROWTH, incomeTableRate } from "@/lib/engine/incomeTable";
 import { GrowthFromToggle } from "@/components/ui/GrowthFromToggle";
 import { SOCIAL_SECURITY_MAX_TAXABLE_SHARE } from "@/lib/config/federalTax";
 import { DEFAULT_INCOME_GROWTH } from "@/lib/config/defaults";
@@ -49,6 +56,11 @@ const KIND_OPTIONS: { value: IncomeKind; label: string }[] = [
   { value: "retirementDraw", label: "Withdraw from retirement account" },
   { value: "rothWithdrawal", label: "Withdraw from Roth account" },
   { value: "other", label: "Other" },
+];
+
+const AMOUNT_SOURCE_OPTIONS: { value: IncomeAmountSource; label: string }[] = [
+  { value: "entered", label: "Enter an amount" },
+  { value: "incomeTable", label: "Income table (by age)" },
 ];
 
 const TAXABILITY_OPTIONS: { value: Taxability; label: string }[] = [
@@ -93,16 +105,42 @@ function activeYearsLabel(income: IncomeSource): string {
   return `${start} - ${end}`;
 }
 
+/**
+ * What an income-table withdrawal pays: the payout rate for the owner's age
+ * in the income's first year, and the yearly amount the no-conversion
+ * projection fixes from the account's balance that January.
+ */
+function incomeTableTerms(
+  household: ReturnType<typeof useHousehold>,
+  income: IncomeSource,
+  rows: ProjectionRow[] | null,
+) {
+  const planStart = projectionStartYear(household);
+  const year = Math.max(income.startYear ?? planStart, planStart);
+  const owner = household.people.find((p) => p.id === income.ownerId);
+  const age = owner?.birthYear != null ? year - owner.birthYear : null;
+  const row = rows?.find((r) => (r.incomeMonthly[income.id] ?? 0) > 0);
+  return {
+    year,
+    age,
+    rate: incomeTableRate(household, income, year),
+    monthly: row ? row.incomeMonthly[income.id] : null,
+  };
+}
+
 function IncomeFields({
   income,
   editing,
   onEdit,
   onDone,
+  baselineRows,
 }: {
   income: IncomeSource;
   editing: boolean;
   onEdit: () => void;
   onDone: () => void;
+  /** No-conversion projection, only when some income uses the table. */
+  baselineRows: ProjectionRow[] | null;
 }) {
   const household = useHousehold();
   const { updateIncome, removeIncome } = useScenario();
@@ -121,6 +159,10 @@ function IncomeFields({
   const isDisability = income.kind === "disabilityInsurance";
   const businesses = household.businesses ?? [];
   const linkedBusiness = businesses.find((b) => b.id === income.businessId);
+  const onTable = usesIncomeTable(income);
+  const table = onTable ? incomeTableTerms(household, income, baselineRows) : null;
+  const tableRate = table ? formatPercent(table.rate) : "";
+  const tableGrowth = formatPercent(INCOME_TABLE_GROWTH);
 
   // Changing the type to a withdrawal kind must also pick a source account.
   // Without this the "From account" select would show the first option while
@@ -151,6 +193,8 @@ function IncomeFields({
     const nextKinds = WITHDRAWAL_SOURCE_KINDS[kind];
     if (!nextKinds) {
       if (income.drawsFromAccountId) patch.drawsFromAccountId = undefined;
+      // The income table only applies to account withdrawals.
+      if (income.amountSource) patch.amountSource = undefined;
       updateIncome(income.id, patch);
       return;
     }
@@ -180,14 +224,24 @@ function IncomeFields({
           <ReadStat label="Owner" value={ownerName} />
           <ReadStat
             label={isDisability ? "Monthly benefit" : "Monthly amount"}
-            value={formatCurrency(income.monthlyAmount)}
+            value={
+              table
+                ? `Income table, ${tableRate} a year${
+                    table.monthly != null ? ` (about ${formatCurrency(table.monthly)})` : ""
+                  }`
+                : formatCurrency(income.monthlyAmount)
+            }
           />
           <ReadStat label="Taxability" value={taxabilityLabel(income)} />
           <ReadStat
             label="Annual growth"
-            value={`${formatPercent(income.growthRate)} from ${
-              incomeGrowthFrom(income) === "today" ? "today" : "its start"
-            }`}
+            value={
+              table
+                ? `Income fixed, account grows ${tableGrowth}`
+                : `${formatPercent(income.growthRate)} from ${
+                    incomeGrowthFrom(income) === "today" ? "today" : "its start"
+                  }`
+            }
           />
           <ReadStat
             label={isDisability ? "Benefit period" : "Active years"}
@@ -243,6 +297,22 @@ function IncomeFields({
             }))}
           />
         </Field>
+        {sourceKinds ? (
+          <Field
+            label="Amount from"
+            help="Enter an amount, or take it from the income table: the account's balance when the income starts times the payout rate for the owner's age that year, fixed for life. The account then grows 8% a year. It's the Joint Life immediate payout column of Transamerica's income withdrawal table (5% under 59)."
+          >
+            <Select
+              value={income.amountSource ?? "entered"}
+              onChange={(source) =>
+                updateIncome(income.id, {
+                  amountSource: source === "incomeTable" ? "incomeTable" : undefined,
+                })
+              }
+              options={AMOUNT_SOURCE_OPTIONS}
+            />
+          </Field>
+        ) : null}
         <Field
           label={isDisability ? "Monthly benefit" : "Monthly amount"}
           help={
@@ -251,12 +321,18 @@ function IncomeFields({
               : undefined
           }
         >
-          <MoneyInput
-            value={income.monthlyAmount}
-            onChange={(monthlyAmount) =>
-              updateIncome(income.id, { monthlyAmount })
-            }
-          />
+          {table ? (
+            <div className="flex h-9 items-center rounded-md border border-border bg-card px-2.5 text-sm text-muted">
+              {table.monthly != null ? `About ${formatCurrency(table.monthly)}` : "From the table"}
+            </div>
+          ) : (
+            <MoneyInput
+              value={income.monthlyAmount}
+              onChange={(monthlyAmount) =>
+                updateIncome(income.id, { monthlyAmount })
+              }
+            />
+          )}
         </Field>
         {income.kind === "socialSecurity" ? (
           <Field
@@ -288,13 +364,24 @@ function IncomeFields({
             />
           </Field>
         )}
-        <Field label="Annual growth">
-          <PercentInput
-            value={income.growthRate}
-            onChange={(growthRate) => updateIncome(income.id, { growthRate })}
-          />
-        </Field>
-        <Field
+        {table ? (
+          <Field
+            label="Annual growth"
+            help="On the income table the income stays the same every year, and the account it draws from grows 8% a year once the income starts."
+          >
+            <div className="flex h-9 items-center rounded-md border border-border bg-card px-2.5 text-sm text-muted">
+              Account grows {tableGrowth}
+            </div>
+          </Field>
+        ) : (
+          <Field label="Annual growth">
+            <PercentInput
+              value={income.growthRate}
+              onChange={(growthRate) => updateIncome(income.id, { growthRate })}
+            />
+          </Field>
+        )}
+        {table ? null : <Field
           label="Growth starts"
           help="Today: the amount is in today's dollars (like a Social Security statement or today's salary), and the yearly growth compounds from now, so it has grown by the time the income starts. Income start: the amount is what you'll get in its first year, and growth starts after that."
         >
@@ -305,7 +392,7 @@ function IncomeFields({
               updateIncome(income.id, { growthFrom: fromToday ? "today" : undefined })
             }
           />
-        </Field>
+        </Field>}
         {payout ? (
           <Field
             label="Survivorship"
@@ -440,6 +527,14 @@ function IncomeFields({
           </div>
         </Field>
       </div>
+      {table ? (
+        <p className="mt-2.5 mb-0 rounded-lg bg-accent-soft px-3 py-2 text-[13px] leading-relaxed text-foreground">
+          <strong>Income table:</strong> pays {tableRate} of the account a year
+          {table.age != null ? ` (${ownerName} is ${table.age} in ${table.year})` : ` from ${table.year}`}
+          {table.monthly != null ? `, about ${formatCurrency(table.monthly)}/mo` : ""}, fixed
+          for life. Growth: the account grows {tableGrowth} a year from {table.year}.
+        </p>
+      ) : null}
     </EntityCard>
   );
 }
@@ -448,6 +543,14 @@ export function IncomeStep() {
   const household = useHousehold();
   const { addIncome, restoreIncome, discardDeletedIncome } = useScenario();
   const firstOwner = household.people[0]?.id ?? "";
+  const refs = useExternalData((s) => s.refs);
+  const anyOnTable = household.incomes.some(usesIncomeTable);
+  // The table's amount depends on the account's balance when the income
+  // starts, so it's read off the no-conversion projection.
+  const baselineRows = useMemo(
+    () => (anyOnTable ? runScenario(household, [], "No conversion", refs).rows : null),
+    [anyOnTable, household, refs],
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const addButtonRef = useRef<HTMLDivElement>(null);
 
@@ -494,6 +597,7 @@ export function IncomeStep() {
           editing={editingId === income.id}
           onEdit={() => setEditingId(income.id)}
           onDone={() => setEditingId(null)}
+          baselineRows={baselineRows}
         />
       ))}
     </div>

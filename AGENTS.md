@@ -184,6 +184,17 @@ conversions, top-ups and the conversion-tax pricing all move it (the "tax
 torpedo"). The $25k rental-loss allowance tests MAGI without it, as 469(i)
 does. State tax still uses each state's own `socialSecurityTaxablePct`.
 
+## Income table withdrawals
+
+An account withdrawal on the Income step can take its amount from the income
+table (`amountSource: "incomeTable"`): the account's January balance in the
+income's first year times the payout rate for the owner's age that year
+(`config/lifeInsurancePayout.ts`, Transamerica's Joint Life immediate payout
+column), fixed for life, and the account grows 8% a year from then on. The
+same table pays Survivorship / Long-term care lifetime income and life
+insurance. Details in the income date range feature guide
+(`lib/engine/incomeTable.ts`).
+
 ## Net investment income tax (3.8%)
 
 `netInvestmentIncomeTax` (`lib/engine/netInvestmentIncomeTax.ts`, Form 8960):

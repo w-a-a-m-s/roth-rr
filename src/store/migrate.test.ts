@@ -1093,6 +1093,43 @@ describe("migrateHousehold: pension payout", () => {
   });
 });
 
+describe("migrateHousehold: income table", () => {
+  it("leaves an older withdrawal without a source, which reads as the entered amount", () => {
+    const out = migrateHousehold(
+      household([], [income({ id: "draw", kind: "retirementDraw" })]),
+    );
+    expect(out.incomes[0]).not.toHaveProperty("amountSource");
+  });
+
+  it("keeps the income table on an account withdrawal", () => {
+    const out = migrateHousehold(
+      household(
+        [],
+        [income({ id: "draw", kind: "retirementDraw", amountSource: "incomeTable" })],
+      ),
+    );
+    expect(out.incomes[0].amountSource).toBe("incomeTable");
+  });
+
+  it("drops it from incomes that aren't withdrawals, and bad values", () => {
+    const out = migrateHousehold(
+      household(
+        [],
+        [
+          income({ id: "pen", kind: "pension", amountSource: "incomeTable" }),
+          income({
+            id: "draw",
+            kind: "retirementDraw",
+            amountSource: "table" as unknown as "incomeTable",
+          }),
+        ],
+      ),
+    );
+    expect(out.incomes[0]).not.toHaveProperty("amountSource");
+    expect(out.incomes[1]).not.toHaveProperty("amountSource");
+  });
+});
+
 describe("migrateHousehold: survivorship setting", () => {
   it("keeps a setting that names someone in the plan", () => {
     const h = household([], []);

@@ -1,0 +1,180 @@
+{
+  "name": "Income table withdrawal (age payout, account grows 8%)",
+  "strategy": "manual",
+  "note": "The VOYA 403(b) draw takes its amount from the income table: Andre is 70 in 2034, so it pays 6.3% (Joint Life immediate payout) of the account's January 2034 balance, fixed for life, and the account grows 8% a year from 2034 instead of its own rate. The other two 403(b) draws keep their entered amounts. Manual conversions of $60k a year for 2034 to 2039.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-bt9wpt1",
+        "label": "Living expenses",
+        "amount": 8000,
+        "frequency": "monthly",
+        "growthRate": 0.02,
+        "startYear": 2034
+      }
+    ],
+    "people": [
+      {
+        "id": "p-lqqo0k7",
+        "name": "Andre",
+        "birthYear": 1964,
+        "retirementYear": 2034
+      }
+    ],
+    "accounts": [
+      {
+        "id": "acc-nimanpz",
+        "label": "VOYA 403(b) HCA",
+        "ownerId": "p-lqqo0k7",
+        "kind": "retirementTaxable",
+        "balance": 500000,
+        "growthRate": 0.08,
+        "retirementType": "403b",
+        "growthStart": "planStart",
+        "deposits": []
+      },
+      {
+        "id": "acc-z033qqw",
+        "label": "Fidelity 403(b)",
+        "ownerId": "p-lqqo0k7",
+        "kind": "retirementTaxable",
+        "balance": 20000,
+        "growthRate": 0.08,
+        "retirementType": "403b",
+        "growthStart": "planStart",
+        "deposits": []
+      },
+      {
+        "id": "acc-lkl2nkn",
+        "label": "Baptist",
+        "ownerId": "p-lqqo0k7",
+        "kind": "retirementTaxable",
+        "balance": 290000,
+        "growthRate": 0.08,
+        "retirementType": "403b",
+        "growthStart": "planStart",
+        "deposits": []
+      },
+      {
+        "id": "acc-71y0fna",
+        "label": "Chase",
+        "ownerId": "p-lqqo0k7",
+        "kind": "investment",
+        "balance": 1000000,
+        "growthRate": 0.08,
+        "costBasis": 0,
+        "deposits": []
+      },
+      {
+        "id": "acc-9aldf6o",
+        "label": "Citi",
+        "ownerId": "p-lqqo0k7",
+        "kind": "investment",
+        "balance": 83000,
+        "growthRate": 0.08,
+        "costBasis": 0,
+        "deposits": []
+      },
+      {
+        "id": "acc-da0ky5d",
+        "label": "Cash",
+        "ownerId": "p-lqqo0k7",
+        "kind": "savings",
+        "balance": 100000,
+        "growthRate": 0.08,
+        "costBasis": 0,
+        "deposits": []
+      }
+    ],
+    "incomes": [
+      {
+        "id": "inc-nz3w30i",
+        "label": "Social Security",
+        "ownerId": "p-lqqo0k7",
+        "kind": "socialSecurity",
+        "monthlyAmount": 4000,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2034
+      },
+      {
+        "id": "inc-fg9kh5a",
+        "label": "VOYA 403(b) HCA income table",
+        "ownerId": "p-lqqo0k7",
+        "kind": "retirementDraw",
+        "monthlyAmount": 2083,
+        "growthRate": 0,
+        "taxability": "full",
+        "drawsFromAccountId": "acc-nimanpz",
+        "startYear": 2034,
+        "amountSource": "incomeTable"
+      },
+      {
+        "id": "inc-tx9jkw0",
+        "label": "Fidelity 403(b) 5% withdrawal",
+        "ownerId": "p-lqqo0k7",
+        "kind": "retirementDraw",
+        "monthlyAmount": 83,
+        "growthRate": 0,
+        "taxability": "full",
+        "drawsFromAccountId": "acc-z033qqw",
+        "startYear": 2034
+      },
+      {
+        "id": "inc-4ri7g8i",
+        "label": "Baptist 5% withdrawal",
+        "ownerId": "p-lqqo0k7",
+        "kind": "retirementDraw",
+        "monthlyAmount": 1208,
+        "growthRate": 0,
+        "taxability": "full",
+        "drawsFromAccountId": "acc-lkl2nkn",
+        "startYear": 2034
+      }
+    ],
+    "realEstate": [],
+    "realEstateProfessional": false,
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 90
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        60000,
+        60000,
+        60000,
+        60000,
+        60000,
+        60000
+      ]
+    },
+    "insurance": [],
+    "mortgages": [],
+    "businesses": []
+  },
+  "commit": "ee96033",
+  "commitDate": "2026-10-27T17:27:44+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 298753.56,
+      "medicareTotal": 77916,
+      "afterTaxAssetsAtRmd": 2503428.98,
+      "inheritanceFinal": 6307999.36
+    },
+    "roth": {
+      "taxesTotal": 226249.2,
+      "medicareTotal": 74995.2,
+      "afterTaxAssetsAtRmd": 2647279.8,
+      "inheritanceFinal": 7357294.67
+    },
+    "deltas": {
+      "taxesTotal": -72504.36,
+      "medicareTotal": -2920.8,
+      "afterTaxAssetsAtRmd": 143850.82,
+      "inheritanceFinal": 1049295.31
+    }
+  }
+}

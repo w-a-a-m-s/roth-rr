@@ -199,6 +199,13 @@ export type DisabilityCoverage = "full" | "partial";
 /** Where an income's yearly growth starts compounding. */
 export type IncomeGrowthFrom = "today" | "incomeStart";
 
+/**
+ * Where an account withdrawal's amount comes from: `entered` (the monthly
+ * amount) or `incomeTable` (the source balance times the payout table's rate
+ * for the owner's age, see `lib/config/lifeInsurancePayout.ts`).
+ */
+export type IncomeAmountSource = "entered" | "incomeTable";
+
 export interface IncomeSource {
   id: string;
   label: string;
@@ -229,6 +236,14 @@ export interface IncomeSource {
    * draw keeps running past the RMD age, on top of the forced RMD.
    */
   drawsFromAccountId?: string;
+  /**
+   * Account-withdrawal kinds only. `incomeTable`: the yearly income is the
+   * source account's January balance in the income's first year times the
+   * payout table's rate for the owner's age that year, fixed for life (no
+   * growth), and from that year the account grows 8% a year. Missing means
+   * `entered` (`monthlyAmount` and `growthRate` apply).
+   */
+  amountSource?: IncomeAmountSource;
   /**
    * Pension kinds only (`pension`, `militaryPension`). Missing means
    * `lifeOnly`, the default for new and older plans.

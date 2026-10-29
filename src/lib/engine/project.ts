@@ -79,6 +79,12 @@ import {
 } from "@/lib/config/medicare";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
 import { accountGrowthForYear, usesMarketHistory } from "@/lib/engine/marketHistory";
+import {
+  INCOME_TABLE_GROWTH,
+  fixIncomeTableAmounts,
+  incomeTableAccountIds,
+  withdrawalAnnualForYear,
+} from "@/lib/engine/incomeTable";
 import { employmentTax, type EarnedIncome } from "@/lib/engine/employmentTax";
 import { taxableSocialSecurity } from "@/lib/engine/socialSecurityTax";
 import { netInvestmentIncomeTax } from "@/lib/engine/netInvestmentIncomeTax";
@@ -950,6 +956,9 @@ export function projectScenario(
   );
   // Yearly income per account, fixed the year the event starts.
   let eventIncome: Record<string, number> | null = null;
+  // Withdrawals on the income table: yearly amount per income, fixed the
+  // first year each pays (see `lib/engine/incomeTable.ts`).
+  const tableIncome: Record<string, number> = {};
   // A year still short after that income takes more from the same accounts:
   // after-tax first, then tax-deferred, then Roth.
   const topUpOrder = [
@@ -1059,11 +1068,17 @@ export function projectScenario(
         eventIncome[acc.id] = base * lifeInsurancePayoutRate(incomeRecipientAge(acc, calendarYear));
       }
     }
+    fixIncomeTableAmounts(household, calendarYear, balances, tableIncome);
+    const tableAccounts = incomeTableAccountIds(household, tableIncome);
     const yearFraction = i === 0 ? firstYearGrowth : 1;
     const leftoverBefore = leftover ? balances[leftover.id] : 0;
     for (const acc of accounts) {
       if (eventIncome?.[acc.id] != null) {
         balances[acc.id] *= Math.pow(1 + LIFE_INSURANCE_PROCEEDS_GROWTH, yearFraction);
+        continue;
+      }
+      if (tableAccounts.has(acc.id)) {
+        balances[acc.id] *= Math.pow(1 + INCOME_TABLE_GROWTH, yearFraction);
         continue;
       }
       if (!accountGrowsInYear(acc, household.people, calendarYear, planStart)) {
@@ -1128,7 +1143,10 @@ export function projectScenario(
       const source = accounts.find((a) => a.id === accId);
       const penalized = source != null && isEarly(source, calendarYear);
       if (penalized && !earlyAllowed) continue;
-      const withdraw = Math.max(0, incomeMonthlyForYear(income, calendarYear, planStart, todayYear) * 12);
+      const withdraw = Math.max(
+        0,
+        withdrawalAnnualForYear(income, calendarYear, planStart, todayYear, tableIncome),
+      );
       // Balances are entered today, so year 0's draws before today are
       // already out of them: only the part of the year left comes out of the
       // balance. The year's income and tax still count the whole year's draw.

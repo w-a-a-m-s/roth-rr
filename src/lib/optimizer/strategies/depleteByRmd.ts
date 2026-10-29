@@ -1,10 +1,15 @@
 import type { Household } from "@/lib/domain/types";
 import { accountGrowthForYear } from "@/lib/engine/marketHistory";
 import {
+  INCOME_TABLE_GROWTH,
+  fixIncomeTableAmounts,
+  incomeTableAccountIds,
+  withdrawalAnnualForYear,
+} from "@/lib/engine/incomeTable";
+import {
   contributionAccounts,
   asOfYear,
   firstYearGrowthFraction,
-  incomeMonthlyForYear,
   isIncomeActive,
 } from "@/lib/domain/household";
 import { allowsRmdYearConversions, personRmdAge } from "@/lib/domain/rmd";
@@ -66,12 +71,19 @@ export function depleteByRmdSchedule(
   // Years before retirement are manual only: balances still grow and pay
   // draws there, but nothing converts.
   const first = strategyStartIndex(household);
+  // Table incomes' fixed yearly amounts (see `lib/engine/incomeTable.ts`).
+  const tableIncome: Record<string, number> = {};
 
   for (let i = 0; i < years; i++) {
     const calendarYear = start + i;
 
+    fixIncomeTableAmounts(household, calendarYear, balances, tableIncome);
+    const tableAccounts = incomeTableAccountIds(household, tableIncome);
     for (const acc of retirementAccounts) {
-      balances[acc.id] *= 1 + accountGrowthForYear(household, acc, i);
+      const rate = tableAccounts.has(acc.id)
+        ? INCOME_TABLE_GROWTH
+        : accountGrowthForYear(household, acc, i);
+      balances[acc.id] *= 1 + rate;
     }
 
     for (const income of household.incomes) {
@@ -79,7 +91,13 @@ export function depleteByRmdSchedule(
       if (!isIncomeActive(income, calendarYear)) continue;
       const accId = income.drawsFromAccountId;
       if (!accId || balances[accId] == null) continue;
-      const withdraw = incomeMonthlyForYear(income, calendarYear, start, asOfYear(asOfDate)) * 12;
+      const withdraw = withdrawalAnnualForYear(
+        income,
+        calendarYear,
+        start,
+        asOfYear(asOfDate),
+        tableIncome,
+      );
       // Year 0 draws only what's left of the year from today's balance.
       const share = i === 0 ? firstYearGrowthFraction(start, asOfDate) : 1;
       const take = Math.min(Math.max(0, balances[accId]), Math.max(0, withdraw) * share);

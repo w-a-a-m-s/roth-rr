@@ -1,11 +1,16 @@
 import type { Household } from "@/lib/domain/types";
 import { accountGrowthForYear } from "@/lib/engine/marketHistory";
 import {
+  INCOME_TABLE_GROWTH,
+  fixIncomeTableAmounts,
+  incomeTableAccountIds,
+  withdrawalAnnualForYear,
+} from "@/lib/engine/incomeTable";
+import {
   accountGrowsInYear,
   contributionAccounts,
   asOfYear,
   firstYearGrowthFraction,
-  incomeMonthlyForYear,
   isIncomeActive,
 } from "@/lib/domain/household";
 import { allowsRmdYearConversions, personRmdAge } from "@/lib/domain/rmd";
@@ -90,6 +95,8 @@ export function convertibleTotal(
     balances[acc.id] = Math.max(0, openingBalance(acc, start, asOfDate));
   }
 
+  // Table incomes' fixed yearly amounts (see `lib/engine/incomeTable.ts`).
+  const tableIncome: Record<string, number> = {};
   let banked = 0;
   // RMD years in the window (RMD-year conversions on) take the RMD out of
   // the convertible money, figured from the prior December 31 balance.
@@ -100,8 +107,15 @@ export function convertibleTotal(
     const calendarYear = start + i;
 
     // Grow balances. Same order as `projectScenario`, including the
-    // retirement delay (first growth in the owner's retirement year).
+    // retirement delay (first growth in the owner's retirement year) and an
+    // income-table account's 8%.
+    fixIncomeTableAmounts(household, calendarYear, balances, tableIncome);
+    const tableAccounts = incomeTableAccountIds(household, tableIncome);
     for (const acc of retirementAccounts) {
+      if (tableAccounts.has(acc.id)) {
+        balances[acc.id] *= 1 + INCOME_TABLE_GROWTH;
+        continue;
+      }
       if (!accountGrowsInYear(acc, household.people, calendarYear, start)) {
         continue;
       }
@@ -114,7 +128,13 @@ export function convertibleTotal(
       if (!isIncomeActive(income, calendarYear)) continue;
       const accId = income.drawsFromAccountId;
       if (!accId || balances[accId] == null) continue;
-      const withdraw = incomeMonthlyForYear(income, calendarYear, start, asOfYear(asOfDate)) * 12;
+      const withdraw = withdrawalAnnualForYear(
+        income,
+        calendarYear,
+        start,
+        asOfYear(asOfDate),
+        tableIncome,
+      );
       // Year 0 draws only what's left of the year from today's balance.
       const share = i === 0 ? firstYearGrowthFraction(start, asOfDate) : 1;
       const take = Math.min(Math.max(0, balances[accId]), Math.max(0, withdraw) * share);

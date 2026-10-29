@@ -94,8 +94,8 @@ describe("survivorship projection", () => {
 
   it("moves the deceased's IRA to the survivor: its lifetime income goes by the survivor's age and covers the RMD", () => {
     expect(year(plain, 2029).incomeMonthly["rmd:iraA"]).toBeGreaterThan(0);
-    // Sam is 67 in 2029: 6.5% of the IRA on January 1.
-    const income = year(after, 2028).balances.iraA * 0.065;
+    // Sam is 67 in 2029: 6.0% of the IRA on January 1.
+    const income = year(after, 2028).balances.iraA * 0.06;
     expect(year(after, 2029).incomeMonthly["draw:iraA"] * 12).toBeCloseTo(income, 6);
     // At Sam's RMD age (75 in 2037) the income is more than the RMD.
     for (const y of [2029, 2036, 2037]) {

@@ -502,6 +502,13 @@ export function isWithdrawalIncome(kind: IncomeKind): boolean {
   return kind in WITHDRAWAL_SOURCE_KINDS;
 }
 
+/** An account withdrawal whose amount comes from the payout table by age. */
+export function usesIncomeTable(
+  income: Pick<IncomeSource, "kind" | "amountSource">,
+): boolean {
+  return isWithdrawalIncome(income.kind) && income.amountSource === "incomeTable";
+}
+
 /**
  * A US tax return covers at most two adults (taxpayer + spouse). Dependents are
  * not modeled as separate retirement "people", so MFJ plans hold exactly two
