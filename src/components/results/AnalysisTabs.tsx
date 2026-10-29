@@ -37,6 +37,7 @@ import { useScenario } from "@/store/useScenario";
 import { useUI, type AnalysisKind } from "@/store/useUI";
 import { ReturnsArticleLink } from "@/components/plan/ReturnsArticle";
 import { BalancedReturnsLink, Sp500ReturnsLink } from "@/components/plan/MarketHistory";
+import { IncomeTableLink } from "@/components/plan/IncomeTable";
 
 const ANALYSES: { key: AnalysisKind; label: string }[] = [
   { key: "retirement", label: "Retirement" },
@@ -87,6 +88,8 @@ export function AnalysisTabs() {
         <Sp500ReturnsLink />
         <span aria-hidden className="text-muted-3">·</span>
         <BalancedReturnsLink />
+        <span aria-hidden className="text-muted-3">·</span>
+        <IncomeTableLink />
       </div>
     </div>
   );

@@ -78,5 +78,6 @@ card. `migrateHousehold` drops the field from other kinds and bad values.
 
 "See the income table" (`components/plan/IncomeTable.tsx`, rows from
 `incomeTableRows`) opens the whole table by age in a pop-up: under the Amount
-from choice on the Income step and under the Life insurance summary. It
+from choice on the Income step, under the Life insurance summary and on the
+results Articles line. On the Income step and the Life insurance summary it
 highlights the ages the plan uses.
