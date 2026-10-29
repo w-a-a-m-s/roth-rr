@@ -6,6 +6,7 @@ import { primaryPersonId } from "@/lib/engine/project";
 import modernSample from "@/lib/engine/golden/cases/modern-sample.json";
 import {
   buildSnapshotTable,
+  incomeTint,
   scenarioFrom,
   snapshotFromYear,
   snapshotRows,
@@ -303,5 +304,31 @@ describe("after-tax accounts by type", () => {
       ["dpp-1", "dpp"],
       ["dpp-2", "dpp"],
     ]);
+  });
+});
+
+describe("incomeTint", () => {
+  const h = {
+    accounts: [],
+    incomes: [
+      { id: "pen", kind: "pension" },
+      { id: "mil", kind: "militaryPension" },
+      { id: "ss", kind: "socialSecurity" },
+      { id: "draw", kind: "retirementDraw" },
+      { id: "roth", kind: "rothWithdrawal" },
+      { id: "pay", kind: "salary" },
+    ],
+  } as unknown as Household;
+
+  it("shades fixed income, regular withdrawals and an event's extra draws apart", () => {
+    expect(["pen", "mil", "ss"].map((k) => incomeTint(h, k))).toEqual(["fixedIncome", "fixedIncome", "fixedIncome"]);
+    expect(["draw", "roth", "rmd:ira"].map((k) => incomeTint(h, k))).toEqual(["accountDraw", "accountDraw", "accountDraw"]);
+    expect(["draw:ira", "topup:ira"].map((k) => incomeTint(h, k))).toEqual(["eventDraw", "eventDraw"]);
+  });
+
+  it("keeps insurance colors and leaves other income plain", () => {
+    expect(incomeTint(h, "ltci:p1")).toBe("longTermCare");
+    expect(incomeTint(h, "pay")).toBeUndefined();
+    expect(incomeTint(h, "re:house")).toBeUndefined();
   });
 });

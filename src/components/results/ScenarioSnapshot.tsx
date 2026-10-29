@@ -55,7 +55,8 @@ const ALL_ASSETS_ROW = "bg-[#C3D1E4] border-t-[3px] border-t-[#1B365D]";
 /**
  * Lines that read apart from their neighbors: real estate and business
  * equity in their own shades, each kind of insurance in its own color
- * (life a soft teal, disability a peach, long-term care a mauve), and each
+ * (life a soft teal, disability a peach, long-term care a mauve), income by
+ * source (fixed, account withdrawals, an event's extra draws), and each
  * type of after-tax account in a slightly different sand.
  */
 const TINT_ROW: Record<SnapshotTint, string> = {
@@ -64,6 +65,11 @@ const TINT_ROW: Record<SnapshotTint, string> = {
   life: "bg-[#DCEFF2]",
   disability: "bg-[#FBE6D4]",
   longTermCare: "bg-[#F0DDEA]",
+  // Income by source: fixed income a deeper green than the section, regular
+  // account withdrawals the retirement assets' blue, an event's extra draws amber.
+  fixedIncome: "bg-[#D9EDE1]",
+  accountDraw: "bg-[#E3EBF5]",
+  eventDraw: "bg-[#FBEBCF]",
   // After-tax accounts by type: neighboring shades of the regular group's sand.
   brokerage: "bg-[#F6F1E4]",
   annuity: "bg-[#F1E7D1]",

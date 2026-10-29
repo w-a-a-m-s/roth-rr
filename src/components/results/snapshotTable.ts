@@ -1,8 +1,9 @@
 import {
   accountsInDisplayOrder,
   afterTaxAccountsByKind,
+  isWithdrawalIncome,
 } from "@/lib/domain/household";
-import type { AccountKind, Household } from "@/lib/domain/types";
+import type { AccountKind, Household, IncomeKind } from "@/lib/domain/types";
 import { LEFTOVER_ACCOUNT_ID, LEFTOVER_INVESTMENT_LABEL } from "@/lib/config/defaults";
 import { firstRmdYear } from "@/components/results/AgeMarks";
 import type { ProjectionRow, ScenarioResult } from "@/lib/engine/types";
@@ -26,7 +27,18 @@ export type SnapshotTint =
   | "life"
   | "disability"
   | "longTermCare"
+  | IncomeTint
   | AfterTaxTint;
+
+/**
+ * Income lines by where the money comes from: fixed income (pensions and
+ * Social Security), regular withdrawals from accounts (scheduled draws and
+ * RMDs), and the extra money an event takes from the accounts (a long-term
+ * care or survivorship lifetime income, or a top-up for a short year).
+ */
+export type IncomeTint = "fixedIncome" | "accountDraw" | "eventDraw";
+
+const FIXED_INCOME_KINDS: IncomeKind[] = ["pension", "militaryPension", "socialSecurity"];
 
 /** After-tax accounts are grouped by type, each type in its own shade. */
 export type AfterTaxTint = "brokerage" | "annuity" | "cash" | "dpp";
@@ -39,10 +51,20 @@ const AFTER_TAX_TINT: Partial<Record<AccountKind, AfterTaxTint>> = {
   dppMlp: "dpp",
 };
 
-/** Tint for an income key, when it's an insurance benefit. */
-function insuranceTint(key: string): SnapshotTint | undefined {
+/**
+ * Tint for an income key: an insurance benefit's own color, or its
+ * `IncomeTint`. Salary, business, rent and other income keep the section's.
+ */
+export function incomeTint(household: Household, key: string): SnapshotTint | undefined {
   const kind = insuranceKeyKind(key);
-  return kind ?? undefined;
+  if (kind) return kind;
+  if (key.startsWith("draw:") || key.startsWith("topup:")) return "eventDraw";
+  if (key.startsWith("rmd:")) return "accountDraw";
+  const income = household.incomes.find((i) => i.id === key);
+  if (!income) return undefined;
+  if (isWithdrawalIncome(income.kind)) return "accountDraw";
+  if (FIXED_INCOME_KINDS.includes(income.kind)) return "fixedIncome";
+  return undefined;
 }
 
 /** Asset groups in the assets section, each with its own tint and total. */
@@ -343,7 +365,7 @@ export function buildSnapshotTable(
       label: incomeLabel(household, key),
       values: pick((r) => r.incomeMonthly[key] ?? 0),
       tone: "plain",
-      tint: insuranceTint(key),
+      tint: incomeTint(household, key),
     }),
   );
   // Every source added up, so the month's income reads in one number.
