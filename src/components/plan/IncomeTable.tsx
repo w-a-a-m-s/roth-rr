@@ -22,8 +22,8 @@ function IncomeTable({ highlightAges = [] }: { highlightAges?: number[] }) {
         and it keeps paying the same amount. What&apos;s left stays invested
         and grows {formatPercent(LIFE_INSURANCE_PROCEEDS_GROWTH)} a year. It
         pays account withdrawals set to the income table on the Income step,
-        life insurance in Survivorship, and every account&apos;s lifetime
-        income in Survivorship and Long-term care.
+        life insurance in Survivorship, and every account&apos;s Additional
+        survivorship income and Supplemental LTC income.
         {highlightAges.length > 0 ? " Highlighted rows are the ages this plan uses." : ""}
       </p>
       <table className="w-full border-collapse text-[12.5px] tabular-nums">

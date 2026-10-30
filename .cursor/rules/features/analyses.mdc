@@ -149,7 +149,13 @@ income first (step 2b). Guaranteed: past an empty balance it keeps paying,
 taxed like the account's money (tax-deferred ordinary, after-tax as gains
 vs basis, Roth free). The income counts toward the RMD: only an RMD above it
 is added. Income line `draw:<accountId>` (`eventWithdrawalKey`), labelled
-"Lifetime income · <account>", charted as Withdrawals from assets.
+"Supplemental LTC income · <account>" in Long-term care and "Additional
+survivorship income · <account>" in Survivorship (`incomeLabel` with
+`longTermCare`, from `hasCareCosts` on the run's rows), charted as
+Withdrawals from assets. The Articles line's "Generated income definitions"
+pop-up (`components/plan/IncomeDefinitions.tsx`) explains every income the
+plan adds on its own, reading the engine's constants; keep it in step when
+one of these rules changes.
 
 A year still short after that income (step 5c) takes more from the same
 accounts until the surplus is 0 or they're empty: after-tax first, then

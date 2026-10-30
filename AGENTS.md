@@ -526,7 +526,8 @@ user asks for a change:
    inputs, a summary table, a net cost chart and a year-by-year table.
    Under the links, an **Articles** line (user's request) opens "Rate of
    returns for IRAs versus Roth IRAs", "See S&P 500 returns", "See 50/50
-   returns" and "See the income table" in pop-ups.
+   returns", "See the income table" and "Generated income definitions"
+   in pop-ups.
 2. Results tabs: **Main | Summary | Graphic view | Main in detail analysis**.
    Each tab shows only its own sections; Main is the default.
    - **Main**: the Assets, Income & Taxes tables (No conversion, then With
