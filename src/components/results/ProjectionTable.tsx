@@ -16,6 +16,7 @@ import {
 } from "@/components/results/bracketLabels";
 import {
   expenseLabel,
+  hasCareCosts,
   incomeLabel,
   lifeInsuranceBalanceKeys,
   lifeProceedsLabel,
@@ -194,12 +195,13 @@ function buildIncomeChildren(
   unit: "mo" | "yr"
 ): LineDef[] {
   const scale = unit === "yr" ? 12 : 1;
+  const longTermCare = hasCareCosts(scenario.rows);
   return incomeDetailKeys(scenario, household).map((key) => {
     // Same source shades as the Assets, Income & Taxes table.
     const tint = incomeSourceTint(household, key);
     return {
       key: `income-${unit}-${key}`,
-      label: incomeLabel(household, key),
+      label: incomeLabel(household, key, { longTermCare }),
       unit,
       value: (r) => (r.incomeMonthly[key] ?? 0) * scale,
       rowClass: tint ? INCOME_TINT_ROW[tint] : undefined,

@@ -9,6 +9,7 @@ import { firstRmdYear } from "@/components/results/AgeMarks";
 import type { ProjectionRow, ScenarioResult } from "@/lib/engine/types";
 import {
   careMonthly,
+  hasCareCosts,
   incomeLabel,
   lifeInsuranceBalanceKeys,
   lifeProceedsLabel,
@@ -376,10 +377,11 @@ export function buildSnapshotTable(
 
   const assetLines = buildAssetLines(scenario, household, pick);
 
+  const longTermCare = hasCareCosts(scenario.rows);
   const incomeLines: SnapshotLine[] = incomeKeys(scenario, household).map(
     (key) => ({
       key: `inc-${key}`,
-      label: incomeLabel(household, key),
+      label: incomeLabel(household, key, { longTermCare }),
       values: pick((r) => r.incomeMonthly[key] ?? 0),
       tone: "plain",
       tint: incomeTint(household, key),

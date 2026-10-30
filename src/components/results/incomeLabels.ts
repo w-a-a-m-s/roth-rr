@@ -35,12 +35,22 @@ export function insuranceLabel(household: Household, key: string): string {
   return name ? `${base} · ${name}` : base;
 }
 
+/** True when the rows carry long-term care costs (the Long-term care analysis). */
+export function hasCareCosts(rows: { expenseMonthly: Record<string, number> }[]): boolean {
+  return rows.some((r) => careMonthly(r.expenseMonthly) > 0);
+}
+
 /**
  * Display label for an income key in the results: an income id, `rmd:<account>`
- * `re:<property>`, `draw:<account>` (an event's lifetime income), `topup:<account>` (more to cover a short year), or an insurance benefit (`life:`, `di:`, `ltci:`). Social Security also names whose benefit it is, unless
+ * `re:<property>`, `draw:<account>` (an event's lifetime income: "Supplemental
+ * LTC income" in Long-term care, "Additional survivorship income" in Survivorship), `topup:<account>` (more to cover a short year), or an insurance benefit (`life:`, `di:`, `ltci:`). Social Security also names whose benefit it is, unless
  * the label already does.
  */
-export function incomeLabel(household: Household, key: string): string {
+export function incomeLabel(
+  household: Household,
+  key: string,
+  options: { longTermCare?: boolean } = {},
+): string {
   if (key.startsWith("rmd:")) {
     const acc = household.accounts.find((a) => a.id === key.slice(4));
     return acc ? `RMD · ${acc.label}` : "RMD";
@@ -51,7 +61,8 @@ export function incomeLabel(household: Household, key: string): string {
   }
   if (key.startsWith("draw:")) {
     const acc = household.accounts.find((a) => a.id === key.slice(5));
-    return acc?.label?.trim() ? `Lifetime income · ${acc.label.trim()}` : "Lifetime income";
+    const base = options.longTermCare ? "Supplemental LTC income" : "Additional survivorship income";
+    return acc?.label?.trim() ? `${base} · ${acc.label.trim()}` : base;
   }
   if (key === `topup:${LEFTOVER_ACCOUNT_ID}`) {
     const choice = household.assumptions.leftoverInvestment;

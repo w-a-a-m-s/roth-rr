@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Household } from "@/lib/domain/types";
 import modernSample from "@/lib/engine/golden/cases/modern-sample.json";
-import { incomeLabel, lifeProceedsLabel } from "./incomeLabels";
+import { hasCareCosts, incomeLabel, lifeProceedsLabel } from "./incomeLabels";
 
 const base = modernSample.household as unknown as Household;
 const withSs = (label: string): Household => ({
@@ -26,6 +26,20 @@ describe("incomeLabel", () => {
     expect(incomeLabel(h, "pen")).toBe("Pension");
     expect(incomeLabel(h, "rmd:drop-s1")).toBe("RMD · DROP (David)");
     expect(incomeLabel(h, "nope")).toBe("nope");
+  });
+
+  it("names an event's account income by its analysis", () => {
+    const h = withSs("Social Security");
+    expect(incomeLabel(h, "draw:drop-s1")).toBe("Additional survivorship income · DROP (David)");
+    expect(incomeLabel(h, "draw:drop-s1", { longTermCare: true })).toBe(
+      "Supplemental LTC income · DROP (David)",
+    );
+    expect(incomeLabel(h, "draw:gone", { longTermCare: true })).toBe("Supplemental LTC income");
+  });
+
+  it("spots a Long-term care run by its care costs", () => {
+    expect(hasCareCosts([{ expenseMonthly: { e1: 100 } }])).toBe(false);
+    expect(hasCareCosts([{ expenseMonthly: { e1: 100 } }, { expenseMonthly: { "ltc:p1": 5000 } }])).toBe(true);
   });
 
   it("names insurance benefits by kind and policy (or the insured)", () => {
