@@ -28,15 +28,23 @@ export const DEFAULT_BUSINESS_GROWTH = 0.03;
  */
 export const DEFAULT_RENT_GROWTH = 0.02;
 
+/** The default yearly return on tax-deferred (401k, IRA, DROP...) and investment (brokerage) accounts. */
+export const DEFAULT_NON_ROTH_GROWTH = 0.06;
+
+/** The default yearly return on Roth accounts. */
+export const DEFAULT_ROTH_GROWTH = 0.08;
+
 /**
- * Starting annual growth rate used to seed a newly added account of each kind.
- * Each account carries its own required `growthRate`; this is only the initial
- * value the form pre-fills (the user can change it per account).
+ * Starting annual growth rate used to seed a newly added account of each kind,
+ * when the group has no Fixed return set on the Household step. Each account
+ * carries its own required `growthRate`; this is only the initial value the
+ * form pre-fills (the user can change it per account). It's also what the
+ * Fixed return box shows before one is set, when the accounts don't share a rate.
  */
 export const DEFAULT_ACCOUNT_GROWTH: Record<AccountKind, number> = {
-  retirementTaxable: 0,
-  rothTaxFree: 0,
-  investment: 0,
+  retirementTaxable: DEFAULT_NON_ROTH_GROWTH,
+  rothTaxFree: DEFAULT_ROTH_GROWTH,
+  investment: DEFAULT_NON_ROTH_GROWTH,
   annuity: 0,
   cd: 0,
   savings: 0,
@@ -45,11 +53,9 @@ export const DEFAULT_ACCOUNT_GROWTH: Record<AccountKind, number> = {
 
 /**
  * Growth applied to the synthetic Roth account the engine creates when a plan
- * runs conversions but has no Roth yet. Kept separate from
- * `DEFAULT_ACCOUNT_GROWTH` so the form default can stay at 0 without changing
- * conversion projections for plans that omit a Roth account.
+ * runs conversions but has no Roth yet.
  */
-export const IMPLICIT_ROTH_GROWTH = 0.08;
+export const IMPLICIT_ROTH_GROWTH = DEFAULT_ROTH_GROWTH;
 
 /** The engine's account for the plan's saved leftover money. */
 export const LEFTOVER_ACCOUNT_ID = "__leftover__";

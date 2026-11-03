@@ -144,7 +144,10 @@ A group on Fixed return can also set its rate (`retirementFixedRate`,
 `rothFixedRate`, `investmentFixedRate`, the box next to Fixed return): the
 store's `setGroupFixedRate` writes it as the `growthRate` of every account in
 the group and clears their `returnSource`, and new accounts of that kind
-start at it. An account's rate changed after keeps its own. The engine only
+start at it. An account's rate changed after keeps its own.
+With no Fixed return set, new accounts start at `DEFAULT_ACCOUNT_GROWTH`
+(`config/defaults.ts`): 6% for tax-deferred and investment accounts, 8% for
+Roth, 0 for the rest. The engine only
 ever reads each account's `growthRate`.
 
 Each account can override that with `returnSource` ("Returns" on the

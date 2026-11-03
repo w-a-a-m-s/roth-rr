@@ -1301,3 +1301,22 @@ describe("migrateHousehold: fixed return by group", () => {
     expect(out.assumptions).not.toHaveProperty("retirementFixedRate");
   });
 });
+
+describe("migrateHousehold: missing account growth rates", () => {
+  it("defaults tax-deferred and investment to 6%, Roth to 8%, others to 0", () => {
+    const h = household(
+      [
+        account({ id: "ira", kind: "retirementTaxable", growthRate: undefined as never }),
+        account({ id: "brk", kind: "investment", growthRate: undefined as never }),
+        account({ id: "roth", kind: "rothTaxFree", growthRate: undefined as never }),
+        account({ id: "sav", kind: "savings", growthRate: undefined as never }),
+        account({ id: "kept", kind: "retirementTaxable", growthRate: 0.05 }),
+      ],
+      [],
+    );
+    const rates = Object.fromEntries(
+      migrateHousehold(h).accounts.map((a) => [a.id, a.growthRate]),
+    );
+    expect(rates).toEqual({ ira: 0.06, brk: 0.06, roth: 0.08, sav: 0, kept: 0.05 });
+  });
+});
