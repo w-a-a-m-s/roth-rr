@@ -27,6 +27,29 @@ const SCENARIO_LABELS: Record<ScenarioKey, string> = {
 
 const tierLabel = (tier: number) => (tier === 0 ? "Standard" : `IRMAA ${tier}`);
 
+/** What each column of a table means, listed under it. */
+function ColumnGuide({ columns }: { columns: [string, string][] }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="m-0 text-[12px] font-semibold text-foreground">What each column means</p>
+      <dl className="m-0 gap-x-6 text-[12px] sm:columns-2">
+        {columns.map(([name, text]) => (
+          <div key={name} className="mb-1.5 break-inside-avoid">
+            <dt className="inline font-semibold text-foreground">{name}: </dt>
+            <dd className="m-0 inline text-muted">{text}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+/** Average a month over the months someone in the plan is paying Part B. */
+function monthlyAverage(total: number, summary: MedicareSummary): number {
+  const months = summary.years.reduce((sum, y) => sum + (y.enrolled > 0 ? 12 : 0), 0);
+  return months > 0 ? total / months : 0;
+}
+
 /**
  * Medicare analysis: Part B premiums and IRMAA year by year for the plan, with
  * and without conversions, and how much room each year's income leaves before
@@ -108,7 +131,6 @@ function IrmaaTiers({ medicare }: { medicare: MedicarePartBYear }) {
                   <th className={HEAD}>Married filing jointly MAGI</th>
                   <th className={HEAD}>Monthly premium per person</th>
                   <th className={HEAD}>IRMAA per person, monthly</th>
-                  <th className={HEAD}>IRMAA per person, yearly</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,7 +141,6 @@ function IrmaaTiers({ medicare }: { medicare: MedicarePartBYear }) {
                     <td className={CELL}>{joint[i] ? tierRange(joint, i) : "-"}</td>
                     <td className={CELL}>{formatCurrency(tier.monthlyPremium, true)}</td>
                     <td className={CELL}>{formatCurrency(tier.monthlyPremium - standard, true)}</td>
-                    <td className={CELL}>{formatCurrency((tier.monthlyPremium - standard) * 12, true)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -130,6 +151,15 @@ function IrmaaTiers({ medicare }: { medicare: MedicarePartBYear }) {
             {medicare.year - 2} for {medicare.year}). A couple on Medicare each pays the
             premium. The standard premium is {formatCurrency(standard, true)} a month.
           </p>
+          <ColumnGuide
+            columns={[
+              ["Tier", "Standard is the base premium everyone pays. IRMAA 1 to 5 are the income brackets that pay more."],
+              ["Single or head of household MAGI", "The income range for this tier when filing single or head of household."],
+              ["Married filing jointly MAGI", "The income range for this tier for a married couple filing jointly."],
+              ["Monthly premium per person", "What each person on Medicare pays a month in this tier, IRMAA included."],
+              ["IRMAA per person, monthly", "The extra charge above the standard premium, per person a month."],
+            ]}
+          />
         </>
       ) : null}
     </div>
@@ -152,12 +182,14 @@ function SummaryTable({ summaries }: { summaries: Record<ScenarioKey, MedicareSu
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-5 py-4">
       <h3 className="m-0 text-[14.5px] font-bold text-foreground">Lifetime Medicare</h3>
       <DualScroll>
-        <table className="w-full min-w-[560px] border-collapse text-[12.5px]">
+        <table className="w-full min-w-[820px] border-collapse text-[12.5px]">
           <thead>
             <tr>
               <th className={`${HEAD} text-left`}>Scenario</th>
-              <th className={HEAD}>Part B premiums</th>
-              <th className={HEAD}>IRMAA part</th>
+              <th className={HEAD}>Lifetime Part B premiums</th>
+              <th className={PREMIUM_HEAD}>Premiums, average a month</th>
+              <th className={HEAD}>Lifetime IRMAA part</th>
+              <th className={HEAD}>IRMAA, average a month</th>
               <th className={HEAD}>Years with IRMAA</th>
             </tr>
           </thead>
@@ -166,7 +198,13 @@ function SummaryTable({ summaries }: { summaries: Record<ScenarioKey, MedicareSu
               <tr key={key}>
                 <td className={`${CELL} text-left font-semibold`}>{SCENARIO_LABELS[key]}</td>
                 <td className={CELL}>{formatCurrency(summaries[key].totalPremiums)}</td>
+                <td className={`${CELL} ${PREMIUM_CELL}`}>
+                  {formatCurrency(monthlyAverage(summaries[key].totalPremiums, summaries[key]))}
+                </td>
                 <td className={CELL}>{formatCurrency(summaries[key].totalIrmaa)}</td>
+                <td className={CELL}>
+                  {formatCurrency(monthlyAverage(summaries[key].totalIrmaa, summaries[key]))}
+                </td>
                 <td className={CELL}>{summaries[key].irmaaYears}</td>
               </tr>
             ))}
@@ -176,7 +214,19 @@ function SummaryTable({ summaries }: { summaries: Record<ScenarioKey, MedicareSu
                 {diff(baseline.totalPremiums, roth.totalPremiums)}
               </td>
               <td className={`${CELL} font-semibold`}>
+                {diff(
+                  monthlyAverage(baseline.totalPremiums, baseline),
+                  monthlyAverage(roth.totalPremiums, roth),
+                )}
+              </td>
+              <td className={`${CELL} font-semibold`}>
                 {diff(baseline.totalIrmaa, roth.totalIrmaa)}
+              </td>
+              <td className={`${CELL} font-semibold`}>
+                {diff(
+                  monthlyAverage(baseline.totalIrmaa, baseline),
+                  monthlyAverage(roth.totalIrmaa, roth),
+                )}
               </td>
               <td className={`${CELL} font-semibold`}>
                 {roth.irmaaYears - baseline.irmaaYears > 0 ? "+" : ""}
@@ -186,6 +236,16 @@ function SummaryTable({ summaries }: { summaries: Record<ScenarioKey, MedicareSu
           </tbody>
         </table>
       </DualScroll>
+      <ColumnGuide
+        columns={[
+          ["Scenario", "The plan without Roth conversions, with them, and the difference between the two."],
+          ["Lifetime Part B premiums", "Every Part B premium the household pays over the plan, IRMAA included. This is the Medicare number on Summary."],
+          ["Premiums, average a month", "The lifetime premiums spread over the months anyone in the household is on Medicare."],
+          ["Lifetime IRMAA part", "The share of the lifetime premiums that's the income surcharge, above the standard premium."],
+          ["IRMAA, average a month", "The lifetime IRMAA spread over the same months."],
+          ["Years with IRMAA", "How many years at least one person pays more than the standard premium."],
+        ]}
+      />
     </div>
   );
 }
@@ -231,8 +291,8 @@ function YearTable({
               <th className={`${HEAD} text-left`}>Tier</th>
               <th className={PREMIUM_HEAD}>Monthly premium per person</th>
               <th className={HEAD}>On Medicare</th>
-              <th className={HEAD}>Yearly premiums</th>
-              <th className={HEAD}>IRMAA part</th>
+              <th className={HEAD}>Household premiums a month</th>
+              <th className={HEAD}>IRMAA part a month</th>
             </tr>
           </thead>
           <tbody>
@@ -253,7 +313,7 @@ function YearTable({
                     {y.roomToNextTier == null ? "-" : formatCurrency(y.roomToNextTier)}
                   </td>
                   <td className={CELL}>
-                    {y.nextTierCost == null ? "-" : `${formatCurrency(y.nextTierCost)}/yr`}
+                    {y.nextTierCost == null ? "-" : `${formatCurrency(y.nextTierCost / 12, true)}/mo`}
                   </td>
                   <td className={CELL}>
                     {paying ? `${y.lookbackYear}: ${formatCurrency(y.lookbackMagi)}` : "-"}
@@ -263,8 +323,8 @@ function YearTable({
                     {paying ? formatCurrency(y.monthlyPremium, true) : "-"}
                   </td>
                   <td className={CELL}>{y.enrolled}</td>
-                  <td className={CELL}>{paying ? formatCurrency(y.annualPremium) : "-"}</td>
-                  <td className={CELL}>{paying ? formatCurrency(y.irmaaSurcharge) : "-"}</td>
+                  <td className={CELL}>{paying ? formatCurrency(y.annualPremium / 12, true) : "-"}</td>
+                  <td className={CELL}>{paying ? formatCurrency(y.irmaaSurcharge / 12, true) : "-"}</td>
                 </tr>
               );
             })}
@@ -272,10 +332,25 @@ function YearTable({
         </table>
       </DualScroll>
       <p className="m-0 text-[12px] text-muted">
-        Room to next tier is how much more income the year can have before the premium two years
-        later moves up a tier; Next tier costs is what that step adds that year. Under{" "}
-        {formatCurrency(CLOSE_TO_NEXT_TIER)} of room is in red. The monthly premium for each year is highlighted in blue; years paying IRMAA are shaded.
+        Every premium is monthly. The monthly premium for each year is highlighted in blue; years
+        paying IRMAA are shaded, and under {formatCurrency(CLOSE_TO_NEXT_TIER)} of room to the next
+        tier is in red.
       </p>
+      <ColumnGuide
+        columns={[
+          ["Year", "The calendar year."],
+          ["Ages", "Each person's age that year."],
+          ["MAGI", "This year's modified adjusted gross income: taxable income plus capital gains. It sets the premium two years from now."],
+          ["Room to next tier", "How much more income this year can have before the premium two years later moves up a tier."],
+          ["Next tier costs", "What crossing into that next tier would add a month, for everyone on Medicare then."],
+          ["Premium based on", "The year and MAGI this year's premium comes from (two years back)."],
+          ["Tier", "Standard, or the IRMAA tier that MAGI falls in."],
+          ["Monthly premium per person", "What each person on Medicare pays a month this year, IRMAA included."],
+          ["On Medicare", "How many people in the household pay Part B this year."],
+          ["Household premiums a month", "The monthly premium times everyone on Medicare."],
+          ["IRMAA part a month", "The household's monthly surcharge above the standard premium."],
+        ]}
+      />
     </div>
   );
 }

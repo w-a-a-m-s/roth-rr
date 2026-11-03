@@ -65,8 +65,11 @@ conversion schedule always comes from the plan's strategy as-is.
   tables load. `MedicareAnalysis.tsx` shows `medicareYears()`
   (`lib/engine/medicare.ts`) for both scenarios: a Lifetime Medicare table
   (Part B premiums, the IRMAA part, years with IRMAA, and the conversion's
-  impact) and a Medicare by year table for one scenario (With conversion by
-  default). Each year's premium uses the MAGI from two years earlier (the
+  impact, each as a lifetime total and an average a month over the months
+  anyone is on Medicare) and a Medicare by year table for one scenario (With
+  conversion by default). Every premium column there is monthly (user's
+  request), and every table, the IRMAA tables included, has a "What each
+  column means" guide under it (`ColumnGuide`). Each year's premium uses the MAGI from two years earlier (the
   first two years use the first year's); MAGI is `grossTaxableIncome +
   capitalGainsIncome`. Room to next tier is how much more of this year's
   MAGI fits before the premium two years later moves up (under the filing
