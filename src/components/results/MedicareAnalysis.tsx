@@ -13,7 +13,7 @@ import { formatCurrency } from "@/lib/format";
 
 const CELL = "border-b border-border-subtle px-3 py-1.5 text-right tabular-nums";
 const HEAD = "bg-[#1B365D] px-3 py-2 text-right text-[12px] font-bold text-white";
-/** The monthly premium column stands out, so the year's premium is easy to find. */
+/** The monthly premium columns (per person and household) stand out, so they are easy to find. */
 const PREMIUM_HEAD = HEAD.replace("bg-[#1B365D]", "bg-[#2563EB]");
 const PREMIUM_CELL = "bg-[#E8F0FE] font-bold text-[#1B365D]";
 /** Room under this much MAGI before the next tier is flagged as close. */
@@ -291,7 +291,7 @@ function YearTable({
               <th className={`${HEAD} text-left`}>Tier</th>
               <th className={PREMIUM_HEAD}>Monthly premium per person</th>
               <th className={HEAD}>On Medicare</th>
-              <th className={HEAD}>Household premiums a month</th>
+              <th className={PREMIUM_HEAD}>Household premiums a month</th>
               <th className={HEAD}>IRMAA part a month</th>
             </tr>
           </thead>
@@ -323,7 +323,9 @@ function YearTable({
                     {paying ? formatCurrency(y.monthlyPremium, true) : "-"}
                   </td>
                   <td className={CELL}>{y.enrolled}</td>
-                  <td className={CELL}>{paying ? formatCurrency(y.annualPremium / 12, true) : "-"}</td>
+                  <td className={`${CELL} ${PREMIUM_CELL}`}>
+                    {paying ? formatCurrency(y.annualPremium / 12, true) : "-"}
+                  </td>
                   <td className={CELL}>{paying ? formatCurrency(y.irmaaSurcharge / 12, true) : "-"}</td>
                 </tr>
               );
@@ -332,7 +334,7 @@ function YearTable({
         </table>
       </DualScroll>
       <p className="m-0 text-[12px] text-muted">
-        Every premium is monthly. The monthly premium for each year is highlighted in blue; years
+        Every premium is monthly. The monthly premium per person and for the household are highlighted in blue; years
         paying IRMAA are shaded, and under {formatCurrency(CLOSE_TO_NEXT_TIER)} of room to the next
         tier is in red.
       </p>
