@@ -51,6 +51,7 @@ interface NameModalState {
 export type AnalysisKind =
   | "retirement"
   | "spendingCapacity"
+  | "monteCarlo"
   | "survivorship"
   | "disability"
   | "longTermCare"

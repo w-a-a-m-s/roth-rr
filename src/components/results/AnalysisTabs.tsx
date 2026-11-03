@@ -54,6 +54,7 @@ const ANALYSES: { key: AnalysisKind; label: string }[] = [
   { key: "medicare", label: "Medicare analysis" },
   { key: "car", label: "Car analysis" },
   { key: "spendingCapacity", label: "Spending capacity" },
+  { key: "monteCarlo", label: "Monte Carlo" },
 ];
 
 /** Links that switch the results between analyses of the same plan. */

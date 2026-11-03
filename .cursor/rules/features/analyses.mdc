@@ -1,6 +1,6 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Social Security analysis, Medicare analysis, Car analysis, Spending capacity) and the survivorship death model
-globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Social Security analysis, Medicare analysis, Car analysis, Spending capacity, Monte Carlo) and the survivorship death model
+globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MonteCarloAnalysis.tsx,src/lib/engine/monteCarlo.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
 
@@ -91,6 +91,17 @@ conversion schedule always comes from the plan's strategy as-is.
   within $1 a month of first-year spending. A surplus year isn't saved (the
   engine never saves surplus), so the answer leans safe. Retirement runs
   never set either option, so golden cases don't move.
+
+- **Monte Carlo** (user's request): its own projections, skips the results
+  tabs, returned after the tax tables load. `MonteCarloAnalysis.tsx` builds
+  the schedule and the 1,000 market paths once per plan, runs them in
+  slices (`monteCarloRun`, both scenarios on the same path), then
+  `summarizeMonteCarlo`: success rate (every year paid through the final
+  age, short years covered from the accounts), how often converting leaves
+  the bigger inheritance, 10th / median / 90th percentile inheritance and
+  after-tax assets at the RMD age, and accounts left by year for the range
+  chart. The plan on its own returns (`monteCarloPlan`) is shown alongside.
+  Engine rules are in AGENTS.md, "Monte Carlo". No saved fields.
 
 - **Car analysis**: not a projection. `CarAnalysis.tsx` edits
   `household.carDecision` and shows `compareCarOptions()`

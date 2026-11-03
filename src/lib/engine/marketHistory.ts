@@ -9,6 +9,7 @@ import type {
 import {
   SP500_FIRST_YEAR,
   SP500_LAST_YEAR,
+  SP500_MEAN_RETURN,
   balancedReturn,
   sp500Return,
 } from "@/lib/config/marketHistory";
@@ -135,16 +136,46 @@ function fixedRate(account: Account): number {
  * year): that history year's S&P 500 or 50 / 50 return when the account
  * follows one (`accountReturnSource`), else its own fixed rate. Years before
  * the plan starts (a negative index) always use the fixed rate.
+ *
+ * `marketPath` (Monte Carlo) names the history year each plan year draws
+ * instead of the plan's own sequence, and also moves every market account
+ * on a fixed return: its own rate plus that year's S&P 500 return above or
+ * below the S&P 500's average ({@link monteCarloGrowth}).
  */
 export function accountGrowthForYear(
   household: Pick<Household, "assumptions">,
   account: Account,
   planYearIndex: number,
+  marketPath?: readonly number[],
 ): number {
   if (planYearIndex < 0) return fixedRate(account);
+  if (marketPath && marketPath.length > 0) {
+    return monteCarloGrowth(household, account, marketPath[planYearIndex % marketPath.length]);
+  }
   const source = accountReturnSource(household, account);
   if (source === "fixed") return fixedRate(account);
   const year = historyYearFor(household, planYearIndex);
   const historical = source === "balanced" ? balancedReturn(year) : sp500Return(year);
   return historical ?? fixedRate(account);
+}
+
+/**
+ * An account's growth in a Monte Carlo year that draws history year `year`.
+ * An account on S&P 500 or 50 / 50 history gets that year's actual return. A
+ * market account (tax-deferred, Roth, brokerage) on a fixed return gets its
+ * own rate moved by how far that year's S&P 500 was from its average, so it
+ * still averages its own rate but swings like the market. Savings, CDs,
+ * annuities and DPP / MLP on a fixed rate keep it.
+ */
+export function monteCarloGrowth(
+  household: Pick<Household, "assumptions">,
+  account: Account,
+  year: number,
+): number {
+  const source = accountReturnSource(household, account);
+  const stocks = sp500Return(year);
+  if (source === "balanced") return balancedReturn(year) ?? fixedRate(account);
+  if (source === "sp500") return stocks ?? fixedRate(account);
+  if (!returnGroupOf(account.kind) || stocks == null) return fixedRate(account);
+  return fixedRate(account) + (stocks - SP500_MEAN_RETURN);
 }

@@ -26,6 +26,7 @@ import { CarAnalysis } from '@/components/results/CarAnalysis';
 import { MedicareAnalysis } from '@/components/results/MedicareAnalysis';
 import { MortgagePayoffAnalysis } from '@/components/results/MortgagePayoffAnalysis';
 import { SpendingCapacityAnalysis } from '@/components/results/SpendingCapacityAnalysis';
+import { MonteCarloAnalysis } from '@/components/results/MonteCarloAnalysis';
 import { LifeInsuranceSummary } from '@/components/wizard/steps/LifeInsuranceSummary';
 import { LongTermCareImpact } from '@/components/results/LongTermCareImpact';
 import { longTermCareAssetImpact } from '@/lib/engine/longTermCareImpact';
@@ -36,7 +37,7 @@ import { resolveDeath, survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
 
 /** Analyses that aren't a projection run and skip the results tabs. */
-const STANDALONE = new Set(['mortgage', 'mortgagePayoff', 'socialSecurity', 'car', 'spendingCapacity']);
+const STANDALONE = new Set(['mortgage', 'mortgagePayoff', 'socialSecurity', 'car', 'spendingCapacity', 'monteCarlo']);
 
 export function ResultsView() {
 	const household = useHousehold();
@@ -151,6 +152,17 @@ export function ResultsView() {
 			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
 				<AnalysisTabs />
 				<SpendingCapacityAnalysis household={household} refs={refs} />
+			</div>
+		);
+	}
+
+	// Monte Carlo runs the plan in a thousand random markets and skips the
+	// results tabs.
+	if (analysis === 'monteCarlo' && ready) {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<MonteCarloAnalysis household={household} refs={refs} />
 			</div>
 		);
 	}

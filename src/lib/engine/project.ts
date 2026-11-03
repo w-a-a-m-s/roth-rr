@@ -1111,7 +1111,7 @@ export function projectScenario(
         continue;
       }
       // Market accounts follow the S&P 500's year in Market history mode.
-      balances[acc.id] *= Math.pow(1 + accountGrowthForYear(household, acc, i - offset), yearFraction);
+      balances[acc.id] *= Math.pow(1 + accountGrowthForYear(household, acc, i - offset, options.marketPath), yearFraction);
     }
     // Money market interest on the saved leftover money is taxed as it's
     // earned (S&P 500 growth is unrealized, and steps up at death).

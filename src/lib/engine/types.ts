@@ -57,6 +57,12 @@ export interface ProjectionOptions {
    * same way a year after a death or long-term care does.
    */
   coverShortfalls?: boolean;
+  /**
+   * Monte Carlo: the S&P 500 history year each plan year draws (index 0 is
+   * the plan's first year), in place of the plan's own returns. See
+   * `accountGrowthForYear`.
+   */
+  marketPath?: readonly number[];
 }
 
 export interface ProjectionRow {

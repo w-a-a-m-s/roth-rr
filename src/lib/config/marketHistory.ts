@@ -23,6 +23,12 @@ export function sp500Return(year: number): number | undefined {
   return RETURNS[String(year)];
 }
 
+/** The S&P 500's average (arithmetic mean) yearly return across the data. */
+export const SP500_MEAN_RETURN: number = (() => {
+  const values = Object.values(RETURNS);
+  return values.reduce((sum, r) => sum + r, 0) / values.length;
+})();
+
 const TREASURY_RETURNS = treasury.returns as Record<string, number>;
 
 /**

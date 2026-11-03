@@ -190,6 +190,23 @@ gain sold, the same way an event's top-up does (`coverShortYear` in
 `projectScenario`), until it's empty. It counts in `afterTaxTotal`, so in the after-tax
 assets and the inheritance.
 
+## Monte Carlo
+
+`lib/engine/monteCarlo.ts` runs the plan in `MONTE_CARLO_RUNS` (1,000)
+markets. Each market draws a history year per plan year, with replacement,
+from a fixed seed (`MONTE_CARLO_SEED`, so a plan always shows the same
+numbers), and is passed as `ProjectionOptions.marketPath`. Both scenarios in
+a market see the same path; the conversion schedule is built once. In
+`accountGrowthForYear` a path gives accounts on S&P 500 or 50/50 history that
+year's return, and tax-deferred, Roth and brokerage accounts on a fixed
+return their own rate plus that year's S&P 500 return minus its average
+(`SP500_MEAN_RETURN`), so they average their own rate. Savings, CDs,
+annuities and DPP / MLP keep their rates; income-table and event accounts
+keep their 8%. Runs use `coverShortfalls`, and a market succeeds when no
+year is short by $1 a month or more through the final age. The UI runs the
+markets in slices of 50 so the page stays responsive. Retirement runs never
+set `marketPath`, so golden cases don't move.
+
 ## Taxable Social Security (provisional income)
 
 The federal taxable part of Social Security is 0% to 85% of the benefits from
@@ -510,7 +527,7 @@ user asks for a change:
 
 1. Analysis links: **Retirement | Survivorship | Disability | Long-term care |
    Mortgage analysis | Pay off or invest | Social Security analysis |
-   Medicare analysis | Car analysis | Spending capacity**. Survivorship, Disability and Long-term care show their
+   Medicare analysis | Car analysis | Spending capacity | Monte Carlo**. Survivorship, Disability and Long-term care show their
    own settings card under them. Survivorship also shows the Life insurance
    summary table (the one on the Insurance step) under its card, at the
    user's request. Mortgage analysis (added at the user's
@@ -527,6 +544,9 @@ user asks for a change:
    conversion, and a year-by-year table at that spending. Car
    analysis (user's request) skips them as well: lease, cash or finance
    inputs, a summary table, a net cost chart and a year-by-year table.
+   Monte Carlo (user's request) skips them too: success rates for both
+   scenarios, an outcomes table (10th / median / 90th percentile) and an
+   accounts-left range chart across 1,000 random markets.
    Under the links, an **Articles** line (user's request) opens "Taxable
    retirement 6%, Roth 8%", "See S&P 500 returns", "See 50/50
    returns", "See the income table" and "Generated income definitions"
