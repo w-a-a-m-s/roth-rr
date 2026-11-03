@@ -34,9 +34,9 @@ export const DEFAULT_RENT_GROWTH = 0.02;
  * value the form pre-fills (the user can change it per account).
  */
 export const DEFAULT_ACCOUNT_GROWTH: Record<AccountKind, number> = {
-  retirementTaxable: 0,
+  retirementTaxable: 0.06,
   rothTaxFree: 0,
-  investment: 0,
+  investment: 0.06,
   annuity: 0,
   cd: 0,
   savings: 0,
@@ -46,7 +46,7 @@ export const DEFAULT_ACCOUNT_GROWTH: Record<AccountKind, number> = {
 /**
  * Growth applied to the synthetic Roth account the engine creates when a plan
  * runs conversions but has no Roth yet. Kept separate from
- * `DEFAULT_ACCOUNT_GROWTH` so the form default can stay at 0 without changing
+ * `DEFAULT_ACCOUNT_GROWTH` so the Roth form default can stay at 0 without changing
  * conversion projections for plans that omit a Roth account.
  */
 export const IMPLICIT_ROTH_GROWTH = 0.08;
