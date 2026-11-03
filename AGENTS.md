@@ -527,8 +527,8 @@ user asks for a change:
    conversion, and a year-by-year table at that spending. Car
    analysis (user's request) skips them as well: lease, cash or finance
    inputs, a summary table, a net cost chart and a year-by-year table.
-   Under the links, an **Articles** line (user's request) opens "Rate of
-   returns for IRAs versus Roth IRAs", "See S&P 500 returns", "See 50/50
+   Under the links, an **Articles** line (user's request) opens "Taxable
+   retirement 6%, Roth 8%", "See S&P 500 returns", "See 50/50
    returns", "See the income table" and "Generated income definitions"
    in pop-ups.
 2. Results tabs: **Main | Summary | Graphic view | Main in detail analysis**.

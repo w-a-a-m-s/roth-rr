@@ -6,7 +6,7 @@ import { ReturnsArticleLink, RETURNS_ARTICLE_TITLE } from "@/components/plan/Ret
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
-describe("Rate of returns for IRAs versus Roth IRAs", () => {
+describe("Taxable retirement 6%, Roth 8%", () => {
   it("opens the article with its references from the link", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);

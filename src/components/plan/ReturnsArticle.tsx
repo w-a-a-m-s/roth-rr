@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Modal } from "@/components/ui/Modal";
 
-export const RETURNS_ARTICLE_TITLE = "Rate of returns for IRAs versus Roth IRAs";
+export const RETURNS_ARTICLE_TITLE = "Taxable retirement 6%, Roth 8%";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -220,7 +220,7 @@ function ReturnsArticleBody() {
   );
 }
 
-/** "Rate of returns for IRAs versus Roth IRAs" link that opens the article. */
+/** "Taxable retirement 6%, Roth 8%" link that opens the article. */
 export function ReturnsArticleLink({ className = "" }: { className?: string }) {
   const [open, setOpen] = useState(false);
   return (
