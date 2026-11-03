@@ -37,8 +37,12 @@ const CELL = `${CELL_BASE} text-right`;
 const LABEL_CELL = `${CELL_BASE} text-left font-semibold`;
 const HEAD_BASE = "bg-[#1B365D] px-3 py-2 text-[12px] font-bold text-white";
 const HEAD = `${HEAD_BASE} text-right`;
-const BAND_COLOR = "#2563EB";
-const PLAN_COLOR = "#1B365D";
+/** Bad to good markets: a light wash of the typical line's blue. */
+const BAND_COLOR = "#86B6EF";
+/** Typical market: solid dark blue. */
+const TYPICAL_COLOR = "#1C5CAB";
+/** The plan on its own steady returns: dashed orange, so it can't pass for the typical line. */
+const PLAN_COLOR = "#EB6834";
 
 /** Markets run per slice, so the page keeps responding while it works. */
 const CHUNK = 50;
@@ -330,22 +334,27 @@ function RangeChart({
               width={56}
             />
             <Tooltip content={<RangeTooltip />} />
-            <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+            <Legend
+              wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+              formatter={(value: string) => <span className="text-muted-2">{value}</span>}
+            />
             <Area
               type="monotone"
               dataKey="band"
               name="Bad to good markets"
               stroke="none"
               fill={BAND_COLOR}
-              fillOpacity={0.18}
+              fillOpacity={0.35}
+              legendType="square"
               isAnimationActive={false}
             />
             <Line
               type="monotone"
               dataKey="p50"
               name="Typical"
-              stroke={BAND_COLOR}
-              strokeWidth={2}
+              stroke={TYPICAL_COLOR}
+              strokeWidth={2.5}
+              legendType="plainline"
               dot={false}
               isAnimationActive={false}
             />
@@ -354,8 +363,9 @@ function RangeChart({
               dataKey="plan"
               name="Your plan's returns"
               stroke={PLAN_COLOR}
-              strokeWidth={2}
-              strokeDasharray="5 4"
+              strokeWidth={2.5}
+              strokeDasharray="6 4"
+              legendType="plainline"
               dot={false}
               isAnimationActive={false}
             />
@@ -365,9 +375,9 @@ function RangeChart({
       <p className="m-0 text-[12px] text-muted">
         Retirement, Roth and investment accounts at each year end, before tax, from{" "}
         {years[0]} to {years[years.length - 1]}. The shaded range runs from bad markets (10th
-        percentile) to good markets (90th); the solid line is the typical market and the dashed
-        line is the plan on its own steady returns. The typical market usually ends below the
-        dashed line even though returns average the same: a loss takes more than the same gain
+        percentile) to good markets (90th); the solid blue line is the typical market and the
+        dashed orange line is the plan on its own steady returns. The typical market usually ends below the
+        orange line even though returns average the same: a loss takes more than the same gain
         gives back, and money drawn after a bad year can&apos;t recover.
       </p>
     </div>
