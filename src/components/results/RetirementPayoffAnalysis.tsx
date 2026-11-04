@@ -366,10 +366,41 @@ function YearTable({ result }: { result: RetirementPayoffComparison }) {
         </table>
       </DualScroll>
       <p className="m-0 text-[12px] text-muted">
-        Year-end values, before the tax still owed on what&apos;s in the account. Keep it: net is
-        the account less what&apos;s still owed on the mortgage. A negative Pay it off ahead by
-        means keeping it is ahead that year.
+        Every value is at year end, before the tax still owed on what&apos;s in the account.
       </p>
+      <dl className="m-0 flex flex-col gap-1.5 text-[12px] text-muted">
+        {YEAR_COLUMN_DEFINITIONS.map(([term, meaning]) => (
+          <div key={term}>
+            <dt className="inline font-semibold text-foreground">{term}: </dt>
+            <dd className="inline">{meaning}</dd>
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }
+
+/** What each Year by year column means (user's request). */
+const YEAR_COLUMN_DEFINITIONS: [string, string][] = [
+  [
+    "Pay it off: account",
+    "The retirement account at year end if you pay the mortgage off today. The lump sum (the payoff plus its tax) comes out up front, and what's left keeps growing at the account return with no more withdrawals for the mortgage.",
+  ],
+  [
+    "Keep it: account",
+    "The same account at year end if you keep the mortgage. Nothing comes out up front; each month it pays the mortgage payment plus that draw's tax, and the rest keeps growing.",
+  ],
+  [
+    "Keep it: mortgage owed",
+    "The loan balance still owed at year end when you keep it. It reaches $0 in the payoff year, when both choices owe nothing.",
+  ],
+  [
+    "Keep it: net",
+    "Keep it: account less Keep it: mortgage owed. It's the fair number to set against Pay it off: account, since that choice owes nothing on the house.",
+  ],
+  [
+    "Pay it off ahead by",
+    "Pay it off: account less Keep it: net. Positive (blue) means paying it off leaves you better off that year; negative (green) means keeping the mortgage is ahead.",
+  ],
+];
+

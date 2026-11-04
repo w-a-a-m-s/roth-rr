@@ -63,6 +63,11 @@ conversion schedule always comes from the plan's strategy as-is.
   rate both sides: payoff wins when the return is under the loan rate
   compounded monthly. Flags an account short of the lump sum or one that runs
   dry; RMDs, other draws, state tax and the early penalty are left out.
+  Under the Year by year table, a definitions list (user's request,
+  `YEAR_COLUMN_DEFINITIONS`) explains each column: Pay it off: account,
+  Keep it: account, Keep it: mortgage owed, Keep it: net (account less
+  mortgage owed) and Pay it off ahead by (Pay it off: account less Keep it:
+  net, positive means paying it off is ahead).
 
 - **Social Security analysis**: not a projection. `SocialSecurityAnalysis.tsx`
   edits `household.socialSecurityClaims` (person, claiming age, monthly
