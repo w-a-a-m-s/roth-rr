@@ -1,5 +1,5 @@
 import type { Household, MortgagePayoffSettings, MortgageStatement } from "@/lib/domain/types";
-import { amortize } from "@/lib/engine/amortization";
+import { amortize, withoutLumpSum } from "@/lib/engine/amortization";
 
 export const DEFAULT_PAYOFF_RETURN = 0.06;
 export const DEFAULT_PAYOFF_TAX_RATE = 0.15;
@@ -64,7 +64,7 @@ export function compareMortgagePayoff(
   settings: MortgagePayoffSettings,
 ): PayoffComparison | null {
   if (!(statement.principalBalance > 0)) return null;
-  const amort = amortize(statement);
+  const amort = amortize(withoutLumpSum(statement));
   if (amort.rows.length === 0 || amort.negativeAmortization) return null;
 
   const afterTaxReturn = settings.investmentReturn * (1 - settings.taxRate);

@@ -698,6 +698,11 @@ export interface Household {
    */
   carDecision?: CarDecision;
   /**
+   * Car loan analysis: one car loan's statement. Optional; the analysis
+   * falls back to `defaultCarLoan`.
+   */
+  carLoan?: CarLoan;
+  /**
    * Pay off the mortgage or invest: which mortgage and the investment
    * assumptions. Doesn't change the projection. Optional, with defaults.
    */
@@ -727,20 +732,11 @@ export interface Household {
 }
 
 /**
- * What a mortgage statement says, enough to build an amortization table. The
- * balance is the unpaid principal right before the next payment.
+ * What a loan statement says, enough to build an amortization table. The
+ * balance is the unpaid principal right before the next payment. Mortgages
+ * and the car loan both use it.
  */
-export interface MortgageStatement {
-  id: string;
-  label: string;
-  /** The property it's on (`Household.realEstate`), for reference. */
-  propertyId?: string;
-  /**
-   * The property mortgage (`RealEstate.loans`) it was filled in from. A
-   * property mortgage without a statement shows up in Mortgage analysis on
-   * its own; editing it saves a statement with this id.
-   */
-  loanId?: string;
+export interface LoanStatement {
   /** Unpaid principal balance on the statement (not the payoff amount). */
   principalBalance: number;
   /** Yearly interest rate (decimal). */
@@ -760,9 +756,39 @@ export interface MortgageStatement {
   monthlyEscrow?: number;
   /** Extra principal paid every month on top of the payment. */
   extraPrincipal?: number;
+  /**
+   * One extra payment straight to principal, made with the payment due in
+   * `lumpSumMonth` / `lumpSumYear` (missing or earlier: the next payment).
+   * Only the amortization table uses it, never the projection.
+   */
+  lumpSum?: number;
+  lumpSumMonth?: number;
+  lumpSumYear?: number;
+}
+
+/** A mortgage statement, for Mortgage analysis. */
+export interface MortgageStatement extends LoanStatement {
+  id: string;
+  label: string;
+  /** The property it's on (`Household.realEstate`), for reference. */
+  propertyId?: string;
+  /**
+   * The property mortgage (`RealEstate.loans`) it was filled in from. A
+   * property mortgage without a statement shows up in Mortgage analysis on
+   * its own; editing it saves a statement with this id.
+   */
+  loanId?: string;
   /** For reference: the loan as first written. */
   originalAmount?: number;
   originalTermYears?: number;
+}
+
+/**
+ * The Car loan analysis: one car loan's statement, paid down with extra
+ * every month and / or a lump sum. Doesn't change the projection.
+ */
+export interface CarLoan extends LoanStatement {
+  label: string;
 }
 
 /** One person becoming disabled at a given age (from January 1 of that year). */

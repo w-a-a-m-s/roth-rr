@@ -21,6 +21,7 @@ import { ScenarioSnapshot } from '@/components/results/ScenarioSnapshot';
 import { PresentationCharts } from '@/components/results/PresentationCharts';
 import { LabsLoading } from '@/lib/common/client';
 import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
+import { CarLoanAnalysis } from '@/components/results/CarLoanAnalysis';
 import { SocialSecurityAnalysis } from '@/components/results/SocialSecurityAnalysis';
 import { CarAnalysis } from '@/components/results/CarAnalysis';
 import { MedicareAnalysis } from '@/components/results/MedicareAnalysis';
@@ -38,7 +39,7 @@ import { resolveDeath, survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
 
 /** Analyses that aren't a projection run and skip the results tabs. */
-const STANDALONE = new Set(['mortgage', 'mortgagePayoff', 'retirementPayoff', 'socialSecurity', 'car', 'spendingCapacity', 'monteCarlo']);
+const STANDALONE = new Set(['mortgage', 'mortgagePayoff', 'retirementPayoff', 'socialSecurity', 'car', 'carLoan', 'spendingCapacity', 'monteCarlo']);
 
 export function ResultsView() {
 	const household = useHousehold();
@@ -144,6 +145,16 @@ export function ResultsView() {
 			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
 				<AnalysisTabs />
 				<CarAnalysis household={household} />
+			</div>
+		);
+	}
+
+	// Car loan: one loan's amortization, paid down faster. Not a projection.
+	if (analysis === 'carLoan') {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<CarLoanAnalysis household={household} />
 			</div>
 		);
 	}

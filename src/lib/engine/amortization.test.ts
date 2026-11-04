@@ -79,6 +79,45 @@ describe("amortization from a statement", () => {
     expect(extra.maturityGap).toBe(0);
   });
 
+  it("pays a lump sum once, with the payment due in its month", () => {
+    const lump = amortize(loan({ lumpSum: 20_000, lumpSumMonth: 6, lumpSumYear: 2026 }));
+    expect(lump.lumpPaymentNumber).toBe(6);
+    expect(lump.rows[5].lump).toBe(20_000);
+    expect(lump.rows.filter((r) => r.lump > 0)).toHaveLength(1);
+    expect(lump.rows[5].endBalance).toBeCloseTo(lump.rows[5].startBalance - lump.rows[5].principal - 20_000, 2);
+    expect(lump.years[0].lump).toBe(20_000);
+    expect(lump.extraSavings!.interest).toBeGreaterThan(40_000);
+    expect(lump.maturityGap).toBe(0);
+    expect(lump.choices.map((c) => c.key)).toEqual(["none", "lump"]);
+  });
+
+  it("pays a lump sum with no date (or a past one) with the next payment", () => {
+    expect(amortize(loan({ lumpSum: 5_000 })).rows[0].lump).toBe(5_000);
+    expect(amortize(loan({ lumpSum: 5_000, lumpSumMonth: 3, lumpSumYear: 2020 })).rows[0].lump).toBe(5_000);
+  });
+
+  it("caps a lump sum at what's owed", () => {
+    const all = amortize(loan({ lumpSum: 1_000_000 }));
+    expect(all.rows).toHaveLength(1);
+    expect(all.rows[0].lump).toBe(199_800.9);
+    expect(all.payoff).toEqual({ month: 1, year: 2026 });
+  });
+
+  it("compares more every month, a lump sum, and both", () => {
+    const r = amortize(loan({ extraPrincipal: 200, lumpSum: 20_000 }));
+    const by = Object.fromEntries(r.choices.map((c) => [c.key, c]));
+    expect(Object.keys(by)).toEqual(["none", "extra", "lump", "both"]);
+    expect(by.none.months).toBe(360);
+    expect(by.none.interestSaved).toBe(0);
+    expect(by.extra.months).toBe(amortize(loan({ extraPrincipal: 200 })).rows.length);
+    expect(by.lump.months).toBe(amortize(loan({ lumpSum: 20_000 })).rows.length);
+    expect(by.both.months).toBe(r.rows.length);
+    expect(by.both.interestSaved).toBeGreaterThan(by.extra.interestSaved);
+    expect(by.both.interestSaved).toBeGreaterThan(by.lump.interestSaved);
+    // Every choice pays off the same principal: total paid less interest is the balance.
+    for (const c of r.choices) expect(c.totalPaid - c.totalInterest).toBeCloseTo(200_000, 0);
+  });
+
   it("carries escrow on every row without amortizing it", () => {
     const withEscrow = amortize(loan({ monthlyEscrow: 450 }));
     expect(withEscrow.rows[0].escrow).toBe(450);

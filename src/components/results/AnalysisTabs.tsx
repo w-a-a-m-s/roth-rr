@@ -54,6 +54,7 @@ const ANALYSES: { key: AnalysisKind; label: string }[] = [
   { key: "socialSecurity", label: "Social Security analysis" },
   { key: "medicare", label: "Medicare analysis" },
   { key: "car", label: "Car analysis" },
+  { key: "carLoan", label: "Car loan" },
   { key: "spendingCapacity", label: "Spending capacity" },
   { key: "monteCarlo", label: "Monte Carlo" },
 ];

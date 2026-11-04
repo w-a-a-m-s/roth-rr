@@ -1272,6 +1272,32 @@ describe("migrateHousehold: car analysis", () => {
   });
 });
 
+describe("migrateHousehold: car loan and lump sums", () => {
+  it("leaves older plans without a car loan", () => {
+    expect(migrateHousehold(household([], []))).not.toHaveProperty("carLoan");
+  });
+
+  it("heals a saved car loan and drops a broken shape", () => {
+    const h = household([], []);
+    (h as unknown as Record<string, unknown>).carLoan = {
+      principalBalance: 30_000,
+      interestRate: "x",
+      nextPaymentMonth: 2,
+      nextPaymentYear: 2027,
+      lumpSum: 5_000,
+      lumpSumMonth: 13,
+      lumpSumYear: 2027,
+    };
+    const loan = migrateHousehold(h).carLoan!;
+    expect(loan).toMatchObject({ label: "", principalBalance: 30_000, interestRate: 0, lumpSum: 5_000 });
+    expect(loan).not.toHaveProperty("lumpSumMonth");
+    expect(loan).not.toHaveProperty("lumpSumYear");
+    const broken = household([], []);
+    (broken as unknown as Record<string, unknown>).carLoan = "x";
+    expect(migrateHousehold(broken)).not.toHaveProperty("carLoan");
+  });
+});
+
 describe("migrateHousehold: pay off or invest, and spending capacity", () => {
   it("keeps saved inputs and drops a broken shape", () => {
     const h = household([], []);

@@ -80,6 +80,7 @@ const HOUSEHOLD_KEYS = [
   "deletedMortgages",
   "socialSecurityClaims",
   "carDecision",
+  "carLoan",
   "mortgagePayoff",
   "retirementPayoff",
   "spendingCapacity",
@@ -229,6 +230,9 @@ const PROPERTY_LABELS: Record<string, string> = {
   maturityYear: "Maturity year",
   monthlyEscrow: "Monthly escrow",
   extraPrincipal: "Extra principal",
+  lumpSum: "Lump sum",
+  lumpSumMonth: "Lump sum month",
+  lumpSumYear: "Lump sum year",
   originalAmount: "Original loan amount",
   originalTermYears: "Original term (years)",
   price: "Price",
@@ -282,6 +286,7 @@ const MONEY_KEYS = new Set([
   "monthlyPayment",
   "monthlyEscrow",
   "extraPrincipal",
+  "lumpSum",
   "originalAmount",
 ]);
 
@@ -821,6 +826,8 @@ export function formatPlanChangeLabel(field: string): string {
       return "Social Security analysis";
     case "carDecision":
       return "Car analysis";
+    case "carLoan":
+      return "Car loan";
     case "mortgagePayoff":
       return "Pay off or invest";
     case "retirementPayoff":
@@ -1158,7 +1165,7 @@ export function detailPlanSnapshots(
     );
   }
 
-  for (const key of ["mortgagePayoff", "retirementPayoff", "spendingCapacity"] as const) {
+  for (const key of ["carLoan", "mortgagePayoff", "retirementPayoff", "spendingCapacity"] as const) {
     if (!hasOwn(nextHousehold, key) || !next.household[key]) continue;
     const prevValue =
       hasOwn(prevHousehold, key) && prevHousehold[key] != null

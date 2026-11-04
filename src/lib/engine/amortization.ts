@@ -1,4 +1,4 @@
-import type { MortgageStatement } from "@/lib/domain/types";
+import type { LoanStatement } from "@/lib/domain/types";
 
 /** One monthly payment in an amortization table. */
 export interface AmortizationRow {
@@ -14,6 +14,8 @@ export interface AmortizationRow {
   principal: number;
   /** Extra principal paid on top. */
   extra: number;
+  /** The one-time lump sum, in the month it's paid. */
+  lump: number;
   escrow: number;
   endBalance: number;
 }
@@ -24,8 +26,26 @@ export interface AmortizationYear {
   interest: number;
   principal: number;
   extra: number;
+  lump: number;
   escrow: number;
   endBalance: number;
+}
+
+/** Ways to pay the loan down: as scheduled, more every month, a lump sum, or both. */
+export type PrepaymentKey = "none" | "extra" | "lump" | "both";
+
+/** One way of paying the loan down, next to paying it as scheduled. */
+export interface PrepaymentChoice {
+  key: PrepaymentKey;
+  /** Payments left until it's paid off. */
+  months: number;
+  payoff: { month: number; year: number } | null;
+  totalInterest: number;
+  /** Everything paid from here on: payments, extra and lump sum. */
+  totalPaid: number;
+  /** Against paying as scheduled (0 for "none"). */
+  interestSaved: number;
+  monthsSaved: number;
 }
 
 export interface AmortizationResult {
@@ -43,8 +63,19 @@ export interface AmortizationResult {
    * date, without extra principal. Null when there's no maturity to check.
    */
   maturityGap: number | null;
-  /** Interest the extra principal saves, and months it cuts. */
+  /**
+   * Interest the extra principal and lump sum save together, and months
+   * they cut, against paying as scheduled.
+   */
   extraSavings: { interest: number; months: number } | null;
+  /**
+   * Paying as scheduled, then each prepayment entered on its own and both
+   * together (only the ones that apply). Empty with no prepayment, or when
+   * a schedule never pays off.
+   */
+  choices: PrepaymentChoice[];
+  /** Payment number the lump sum lands on, or null without one. */
+  lumpPaymentNumber: number | null;
   /** The payment doesn't cover the first month's interest. */
   negativeAmortization: boolean;
 }
@@ -72,7 +103,7 @@ export function levelPayment(balance: number, annualRate: number, months: number
 
 const cents = (x: number) => Math.round(x * 100) / 100;
 
-function remainingMonths(m: MortgageStatement): number | null {
+function remainingMonths(m: LoanStatement): number | null {
   if (!Number.isFinite(m.maturityMonth) || !Number.isFinite(m.maturityYear)) return null;
   const n = monthsBetween(
     m.nextPaymentMonth,
@@ -83,10 +114,28 @@ function remainingMonths(m: MortgageStatement): number | null {
   return n > 0 ? n : null;
 }
 
+/** Payment number (1 is the next one) the lump sum goes with. */
+function lumpNumber(m: LoanStatement): number {
+  if (!Number.isFinite(m.lumpSumMonth) || !Number.isFinite(m.lumpSumYear)) return 1;
+  const n = monthsBetween(
+    m.nextPaymentMonth,
+    m.nextPaymentYear,
+    m.lumpSumMonth as number,
+    m.lumpSumYear as number,
+  );
+  return Math.max(1, n);
+}
+
+interface Lump {
+  amount: number;
+  number: number;
+}
+
 function schedule(
-  m: MortgageStatement,
+  m: LoanStatement,
   payment: number,
   extraPerMonth: number,
+  lump: Lump | null,
   finalPayment: number | null,
 ): AmortizationRow[] {
   const rows: AmortizationRow[] = [];
@@ -104,7 +153,9 @@ function schedule(
     const principal =
       n === finalPayment ? balance : Math.min(balance, cents(payment - interest));
     const extra = Math.min(balance - principal, extraPerMonth);
-    const endBalance = cents(balance - principal - extra);
+    const lumpPaid =
+      lump && n === lump.number ? Math.min(cents(balance - principal - extra), lump.amount) : 0;
+    const endBalance = cents(balance - principal - extra - lumpPaid);
     rows.push({
       number: n,
       month,
@@ -114,6 +165,7 @@ function schedule(
       interest,
       principal,
       extra,
+      lump: lumpPaid,
       escrow,
       endBalance,
     });
@@ -132,13 +184,14 @@ function byYear(rows: AmortizationRow[]): AmortizationYear[] {
   for (const row of rows) {
     let y = years[years.length - 1];
     if (!y || y.year !== row.year) {
-      y = { year: row.year, payments: 0, interest: 0, principal: 0, extra: 0, escrow: 0, endBalance: 0 };
+      y = { year: row.year, payments: 0, interest: 0, principal: 0, extra: 0, lump: 0, escrow: 0, endBalance: 0 };
       years.push(y);
     }
     y.payments += row.payment;
     y.interest += row.interest;
     y.principal += row.principal;
     y.extra += row.extra;
+    y.lump += row.lump;
     y.escrow += row.escrow;
     y.endBalance = row.endBalance;
   }
@@ -148,20 +201,31 @@ function byYear(rows: AmortizationRow[]): AmortizationYear[] {
     interest: cents(y.interest),
     principal: cents(y.principal),
     extra: cents(y.extra),
+    lump: cents(y.lump),
     escrow: cents(y.escrow),
   }));
 }
 
 const sumInterest = (rows: AmortizationRow[]) => cents(rows.reduce((s, r) => s + r.interest, 0));
+const sumPaid = (rows: AmortizationRow[]) =>
+  cents(rows.reduce((s, r) => s + r.payment + r.extra + r.lump, 0));
+const paysOff = (rows: AmortizationRow[]) =>
+  rows.length > 0 && rows[rows.length - 1].endBalance <= 0.005;
+
+/** The statement without its lump sum: for analyses that only follow the monthly payments. */
+export function withoutLumpSum<T extends LoanStatement>(m: T): T {
+  return { ...m, lumpSum: undefined, lumpSumMonth: undefined, lumpSumYear: undefined };
+}
 
 /**
- * Month-by-month amortization from a mortgage statement: each month's
- * interest is the balance times rate / 12 (rounded to the cent), the rest of
- * the payment (plus any extra principal) pays the balance down. The last
- * payment is trimmed to what's left, and a payment on the maturity date
- * clears the balance (cent rounding leaves a few dollars otherwise).
+ * Month-by-month amortization from a loan statement: each month's interest
+ * is the balance times rate / 12 (rounded to the cent), the rest of the
+ * payment (plus any extra principal, and the lump sum in its month) pays
+ * the balance down. The last payment is trimmed to what's left, and a
+ * payment on the maturity date clears the balance (cent rounding leaves a
+ * few dollars otherwise).
  */
-export function amortize(m: MortgageStatement): AmortizationResult {
+export function amortize(m: LoanStatement): AmortizationResult {
   const months = remainingMonths(m);
   const entered = Math.max(0, m.monthlyPayment ?? 0);
   const paymentDerived = !(entered > 0) && months != null;
@@ -169,21 +233,49 @@ export function amortize(m: MortgageStatement): AmortizationResult {
     ? cents(levelPayment(m.principalBalance, m.interestRate, months as number))
     : entered;
   const extra = Math.max(0, m.extraPrincipal ?? 0);
-  const rows = schedule(m, payment, extra, months);
+  const lumpAmount = Number.isFinite(m.lumpSum) ? Math.max(0, m.lumpSum as number) : 0;
+  const lump = lumpAmount > 0 ? { amount: lumpAmount, number: lumpNumber(m) } : null;
+  const rows = schedule(m, payment, extra, lump, months);
   const firstInterest = Math.max(0, m.principalBalance) * (Math.max(0, m.interestRate) / 12);
   const negativeAmortization = m.principalBalance > 0 && payment + extra <= cents(firstInterest);
-  const paidOff = rows.length > 0 && rows[rows.length - 1].endBalance <= 0.005;
+  const paidOff = paysOff(rows);
   const last = rows[rows.length - 1];
 
-  const plain = extra > 0 ? schedule(m, payment, 0, months) : rows;
-  const plainPaidOff = plain.length > 0 && plain[plain.length - 1].endBalance <= 0.005;
+  const prepaying = extra > 0 || lump != null;
+  const plain = prepaying ? schedule(m, payment, 0, null, months) : rows;
+  const plainPaidOff = paysOff(plain);
   const extraSavings =
-    extra > 0 && paidOff && plainPaidOff
+    prepaying && paidOff && plainPaidOff
       ? {
           interest: cents(sumInterest(plain) - sumInterest(rows)),
           months: plain.length - rows.length,
         }
       : null;
+
+  const choices: PrepaymentChoice[] = [];
+  if (prepaying && plainPaidOff) {
+    const variants: [PrepaymentKey, AmortizationRow[]][] = [["none", plain]];
+    if (extra > 0 && lump) {
+      variants.push(["extra", schedule(m, payment, extra, null, months)]);
+      variants.push(["lump", schedule(m, payment, 0, lump, months)]);
+      variants.push(["both", rows]);
+    } else {
+      variants.push([extra > 0 ? "extra" : "lump", rows]);
+    }
+    for (const [key, r] of variants) {
+      if (!paysOff(r)) continue;
+      const end = r[r.length - 1];
+      choices.push({
+        key,
+        months: r.length,
+        payoff: { month: end.month, year: end.year },
+        totalInterest: sumInterest(r),
+        totalPaid: sumPaid(r),
+        interestSaved: cents(sumInterest(plain) - sumInterest(r)),
+        monthsSaved: plain.length - r.length,
+      });
+    }
+  }
 
   return {
     monthlyPayment: payment,
@@ -194,6 +286,8 @@ export function amortize(m: MortgageStatement): AmortizationResult {
     payoff: paidOff && last ? { month: last.month, year: last.year } : null,
     maturityGap: months != null && plainPaidOff ? plain.length - months : null,
     extraSavings,
+    choices,
+    lumpPaymentNumber: lump ? lump.number : null,
     negativeAmortization,
   };
 }

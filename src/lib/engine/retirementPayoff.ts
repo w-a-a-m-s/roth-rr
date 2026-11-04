@@ -1,5 +1,5 @@
 import type { Account, Household, MortgageStatement, RetirementPayoffSettings } from "@/lib/domain/types";
-import { amortize } from "@/lib/engine/amortization";
+import { amortize, withoutLumpSum } from "@/lib/engine/amortization";
 
 /** The federal brackets the analysis compares (user's request). */
 export const RETIREMENT_PAYOFF_TAX_RATES = [0.12, 0.22, 0.24, 0.32, 0.35] as const;
@@ -97,7 +97,7 @@ export function compareRetirementPayoff(
   settings: RetirementPayoffSettings,
 ): RetirementPayoffComparison | null {
   if (!(statement.principalBalance > 0)) return null;
-  const amort = amortize(statement);
+  const amort = amortize(withoutLumpSum(statement));
   if (amort.rows.length === 0 || amort.negativeAmortization) return null;
 
   const tL = settings.lumpSumTaxRate;

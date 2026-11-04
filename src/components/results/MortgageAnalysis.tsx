@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import type { Household, MortgageStatement } from "@/lib/domain/types";
+import type { Household, LoanStatement, MortgageStatement } from "@/lib/domain/types";
 import { useScenario } from "@/store/useScenario";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
 import { Field } from "@/components/ui/Field";
@@ -16,7 +16,11 @@ import {
 import { AddButton } from "@/components/ui/EntityCard";
 import { RestoreDeleted } from "@/components/ui/RestoreDeleted";
 import { DualScroll } from "@/components/results/DualScroll";
-import { amortize, type AmortizationResult } from "@/lib/engine/amortization";
+import {
+  amortize,
+  type AmortizationResult,
+  type PrepaymentChoice,
+} from "@/lib/engine/amortization";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { propertyLoans, propertyMortgageStatements } from "@/lib/domain/propertyLoans";
@@ -25,7 +29,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const MONTH_OPTIONS = MONTHS.map((label, i) => ({ value: String(i + 1), label }));
 const NO_PROPERTY = "none";
 
-const monthYear = (month: number, year: number) => `${MONTHS[month - 1] ?? "?"} ${year}`;
+export const monthYear = (month: number, year: number) => `${MONTHS[month - 1] ?? "?"} ${year}`;
 
 /** Next month from today: where a fresh statement's next payment usually lands. */
 export function nextMonth(): { month: number; year: number } {
@@ -254,9 +258,7 @@ function MortgageDetail({
           </Field>
         </Group>
         <Group title="Optional">
-          <Field layout="row" label="Extra principal per month" help="Paid on top of the regular payment, straight to principal. The summary shows the interest and time it saves.">
-            <MoneyInput step={50} value={mortgage.extraPrincipal} onChange={(extraPrincipal) => update({ extraPrincipal })} />
-          </Field>
+          <PrepaymentFields loan={mortgage} update={update} />
           <Field layout="row" label="Original loan amount" help="For reference: shows how much of the loan is paid off.">
             <MoneyInput value={mortgage.originalAmount} onChange={(originalAmount) => update({ originalAmount })} />
           </Field>
@@ -281,13 +283,66 @@ function MortgageDetail({
         </Group>
       </div>
 
-      <Summary mortgage={mortgage} result={result} />
+      <Summary
+        loan={mortgage}
+        result={result}
+        original={{ amount: mortgage.originalAmount ?? 0, termYears: mortgage.originalTermYears }}
+      />
       <ScheduleTable result={result} />
     </div>
   );
 }
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * Two ways to pay a loan down faster: more every month, or a lump sum with
+ * one payment. Either or both; the summary compares them.
+ */
+export function PrepaymentFields({
+  loan,
+  update,
+}: {
+  loan: LoanStatement;
+  update: (patch: Partial<LoanStatement>) => void;
+}) {
+  return (
+    <>
+      <Field
+        layout="row"
+        label="Extra principal per month"
+        help="Paid on top of the regular payment every month, straight to principal. The summary shows the interest and time it saves."
+      >
+        <MoneyInput step={50} value={loan.extraPrincipal} onChange={(extraPrincipal) => update({ extraPrincipal })} />
+      </Field>
+      <Field
+        layout="row"
+        label="Lump sum"
+        help="One extra payment straight to principal, made once. The summary compares it with paying more every month, and with both."
+      >
+        <MoneyInput value={loan.lumpSum} onChange={(lumpSum) => update({ lumpSum })} />
+      </Field>
+      <Field
+        layout="row"
+        label="Lump sum paid in"
+        help="Paid with that month's payment. Leave the year empty to pay it with the next payment."
+      >
+        <MonthYear
+          month={loan.lumpSumMonth ?? loan.nextPaymentMonth}
+          year={loan.lumpSumYear}
+          allowEmpty
+          onChange={(lumpSumMonth, lumpSumYear) =>
+            update(
+              lumpSumYear == null
+                ? { lumpSumMonth: undefined, lumpSumYear: undefined }
+                : { lumpSumMonth, lumpSumYear },
+            )
+          }
+        />
+      </Field>
+    </>
+  );
+}
+
+export function Group({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2.5">
       <h3 className="m-0 text-[13.5px] font-bold text-foreground">{title}</h3>
@@ -296,7 +351,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function MonthYear({
+export function MonthYear({
   month,
   year,
   allowEmpty = false,
@@ -334,7 +389,16 @@ function Stat({ label, value, note }: { label: string; value: ReactNode; note?: 
   );
 }
 
-function Summary({ mortgage, result }: { mortgage: MortgageStatement; result: AmortizationResult }) {
+export function Summary({
+  loan: mortgage,
+  result,
+  original: originalLoan,
+}: {
+  loan: LoanStatement;
+  result: AmortizationResult;
+  /** For reference: the loan as first written, when known. */
+  original?: { amount: number; termYears?: number };
+}) {
   if (!(mortgage.principalBalance > 0)) {
     return (
       <p className="m-0 rounded-2xl border border-border bg-white px-5 py-4 text-[13px] text-muted">
@@ -352,7 +416,7 @@ function Summary({ mortgage, result }: { mortgage: MortgageStatement; result: Am
     );
   }
   const escrow = mortgage.monthlyEscrow ?? 0;
-  const original = mortgage.originalAmount ?? 0;
+  const original = originalLoan?.amount ?? 0;
   const gap = result.maturityGap;
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white px-5 py-4">
@@ -374,7 +438,7 @@ function Summary({ mortgage, result }: { mortgage: MortgageStatement; result: Am
         <p className="m-0 text-[13px] text-muted">
           {formatPercent(Math.max(0, 1 - mortgage.principalBalance / original))} of the{" "}
           {formatCurrency(original)} loan is paid off
-          {mortgage.originalTermYears ? ` (${mortgage.originalTermYears}-year term)` : ""}.
+          {originalLoan?.termYears ? ` (${originalLoan.termYears}-year term)` : ""}.
         </p>
       ) : null}
       {gap != null && !result.paymentDerived ? (
@@ -384,17 +448,79 @@ function Summary({ mortgage, result }: { mortgage: MortgageStatement; result: Am
           }`}
         >
           {Math.abs(gap) <= 1
-            ? "Checks out: without extra principal the last payment lands on the maturity date."
-            : `Without extra principal the last payment lands ${Math.abs(gap)} months ${gap > 0 ? "after" : "before"} the maturity date. Check the balance, rate and payment against the statement.`}
+            ? "Checks out: without extra principal or a lump sum the last payment lands on the maturity date."
+            : `Without extra principal or a lump sum the last payment lands ${Math.abs(gap)} months ${gap > 0 ? "after" : "before"} the maturity date. Check the balance, rate and payment against the statement.`}
         </p>
       ) : null}
-      {result.extraSavings ? (
-        <p className="m-0 rounded-lg bg-accent-soft px-3 py-2 text-[13px] text-foreground">
-          <strong>Extra principal:</strong> {formatCurrency(mortgage.extraPrincipal ?? 0)}/mo saves{" "}
-          {formatCurrency(result.extraSavings.interest)} of interest and pays the loan off{" "}
-          {result.extraSavings.months} months sooner.
-        </p>
-      ) : null}
+      {result.choices.length > 1 ? <PrepaymentTable loan={mortgage} result={result} /> : null}
+    </div>
+  );
+}
+
+const sooner = (months: number) => {
+  if (months <= 0) return "-";
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  return [y > 0 ? `${y} yr${y === 1 ? "" : "s"}` : "", m > 0 ? `${m} mo${m === 1 ? "" : "s"}` : ""]
+    .filter(Boolean)
+    .join(" ");
+};
+
+function choiceLabel(choice: PrepaymentChoice, loan: LoanStatement, result: AmortizationResult): string {
+  const lumpWhen =
+    result.lumpPaymentNumber != null ? result.rows[result.lumpPaymentNumber - 1] : undefined;
+  const lump = `${formatCurrency(loan.lumpSum ?? 0)} lump sum${lumpWhen ? ` in ${monthYear(lumpWhen.month, lumpWhen.year)}` : ""}`;
+  const extra = `${formatCurrency(loan.extraPrincipal ?? 0)} more a month`;
+  if (choice.key === "none") return "Pay as scheduled";
+  if (choice.key === "extra") return extra;
+  if (choice.key === "lump") return lump;
+  return `Both: ${extra} and the lump sum`;
+}
+
+/** Paying as scheduled next to more every month, a lump sum, and both. */
+function PrepaymentTable({ loan, result }: { loan: LoanStatement; result: AmortizationResult }) {
+  const prepaid = result.choices.filter((c) => c.key !== "none");
+  const best = prepaid.reduce((a, b) => (b.interestSaved > a.interestSaved ? b : a), prepaid[0]);
+  const th = "px-3 py-2 text-right text-[12px] font-bold text-muted-3";
+  const td = "border-t border-border-subtle px-3 py-1.5 text-right tabular-nums";
+  return (
+    <div className="flex flex-col gap-2">
+      <h4 className="m-0 text-[13.5px] font-bold text-foreground">Paying it down faster</h4>
+      <DualScroll>
+        <table className="w-full min-w-[640px] border-collapse text-[12.5px]">
+          <thead>
+            <tr>
+              <th className={`${th} text-left`}>How you pay</th>
+              <th className={th}>Paid off</th>
+              <th className={th}>Payments left</th>
+              <th className={th}>Interest</th>
+              <th className={th}>Interest saved</th>
+              <th className={th}>Paid off sooner</th>
+              <th className={th}>Total paid</th>
+            </tr>
+          </thead>
+          <tbody>
+            {result.choices.map((c) => (
+              <tr key={c.key} className={c === best && prepaid.length > 1 ? "bg-accent-soft" : undefined}>
+                <td className={`${td} text-left font-semibold`}>{choiceLabel(c, loan, result)}</td>
+                <td className={td}>{c.payoff ? monthYear(c.payoff.month, c.payoff.year) : "-"}</td>
+                <td className={td}>{c.months}</td>
+                <td className={td}>{formatCurrency(c.totalInterest)}</td>
+                <td className={td}>{c.key === "none" ? "-" : formatCurrency(c.interestSaved)}</td>
+                <td className={td}>{c.key === "none" ? "-" : sooner(c.monthsSaved)}</td>
+                <td className={td}>{formatCurrency(c.totalPaid)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </DualScroll>
+      <p className="m-0 text-[12px] leading-relaxed text-muted">
+        Interest saved and paid off sooner are against paying as scheduled. Total paid is every
+        payment from here on, extra and lump sum included (escrow left out).
+        {prepaid.length > 1 && best
+          ? ` "${choiceLabel(best, loan, result)}" saves the most interest.`
+          : ""}
+      </p>
     </div>
   );
 }
@@ -402,10 +528,11 @@ function Summary({ mortgage, result }: { mortgage: MortgageStatement; result: Am
 const CELL = "border-b border-border-subtle px-3 py-1.5 text-right tabular-nums";
 const HEAD = "sticky top-0 z-10 bg-[#1B365D] px-3 py-2 text-right text-[12px] font-bold text-white";
 
-function ScheduleTable({ result }: { result: AmortizationResult }) {
+export function ScheduleTable({ result }: { result: AmortizationResult }) {
   const [view, setView] = useState<"yearly" | "monthly">("yearly");
   if (result.rows.length === 0) return null;
   const hasExtra = result.rows.some((r) => r.extra > 0);
+  const hasLump = result.rows.some((r) => r.lump > 0);
   const hasEscrow = result.rows.some((r) => r.escrow > 0);
   const money = (x: number) => formatCurrency(x, true);
 
@@ -437,6 +564,7 @@ function ScheduleTable({ result }: { result: AmortizationResult }) {
                 <th className={HEAD}>Interest</th>
                 <th className={HEAD}>Principal</th>
                 {hasExtra ? <th className={HEAD}>Extra</th> : null}
+                {hasLump ? <th className={HEAD}>Lump sum</th> : null}
                 {hasEscrow ? <th className={HEAD}>Escrow</th> : null}
                 <th className={HEAD}>Balance</th>
               </tr>
@@ -451,6 +579,7 @@ function ScheduleTable({ result }: { result: AmortizationResult }) {
                       <td className={CELL}>{money(r.interest)}</td>
                       <td className={CELL}>{money(r.principal)}</td>
                       {hasExtra ? <td className={CELL}>{money(r.extra)}</td> : null}
+                      {hasLump ? <td className={CELL}>{money(r.lump)}</td> : null}
                       {hasEscrow ? <td className={CELL}>{money(r.escrow)}</td> : null}
                       <td className={`${CELL} font-semibold`}>{money(r.endBalance)}</td>
                     </tr>
@@ -462,6 +591,7 @@ function ScheduleTable({ result }: { result: AmortizationResult }) {
                       <td className={CELL}>{money(y.interest)}</td>
                       <td className={CELL}>{money(y.principal)}</td>
                       {hasExtra ? <td className={CELL}>{money(y.extra)}</td> : null}
+                      {hasLump ? <td className={CELL}>{money(y.lump)}</td> : null}
                       {hasEscrow ? <td className={CELL}>{money(y.escrow)}</td> : null}
                       <td className={`${CELL} font-semibold`}>{money(y.endBalance)}</td>
                     </tr>

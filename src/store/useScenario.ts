@@ -8,6 +8,8 @@ import type {
   OneTimeDepreciation,
   DeletedItem,
   CarDecision,
+  CarLoan,
+  LoanStatement,
   MortgagePayoffSettings,
   RetirementPayoffSettings,
   SpendingCapacitySettings,
@@ -268,6 +270,11 @@ export function migrateHousehold(household: Household): Household {
   // Car analysis inputs are healed when read; drop only a broken shape.
   if (legacy.carDecision != null && typeof legacy.carDecision !== "object") {
     delete legacy.carDecision;
+  }
+  // Car loan analysis: drop a broken shape, heal the rest like a mortgage.
+  if (legacy.carLoan != null) {
+    if (typeof legacy.carLoan !== "object") delete legacy.carLoan;
+    else healLoanStatement(legacy.carLoan);
   }
   // Pay off the mortgage or invest, and Spending capacity: healed when read;
   // drop only a broken shape.
@@ -581,9 +588,17 @@ function isMortgageShaped(raw: unknown): raw is MortgageStatement {
 
 /** Fill missing or bad mortgage fields; optional ones that aren't numbers go. */
 function healMortgage(m: MortgageStatement) {
-  if (typeof m.label !== "string") m.label = "";
   if (typeof m.propertyId !== "string") delete m.propertyId;
   if (typeof m.loanId !== "string") delete m.loanId;
+  healLoanStatement(m);
+  for (const key of ["originalAmount", "originalTermYears"] as const) {
+    if (m[key] != null && !Number.isFinite(m[key])) delete m[key];
+  }
+}
+
+/** Fill missing or bad statement fields (mortgage or car loan). */
+function healLoanStatement(m: LoanStatement & { label: string }) {
+  if (typeof m.label !== "string") m.label = "";
   if (!Number.isFinite(m.principalBalance)) m.principalBalance = 0;
   if (!Number.isFinite(m.interestRate)) m.interestRate = 0;
   const now = new Date();
@@ -597,13 +612,11 @@ function healMortgage(m: MortgageStatement) {
     delete m.maturityMonth;
     delete m.maturityYear;
   }
-  for (const key of [
-    "monthlyPayment",
-    "monthlyEscrow",
-    "extraPrincipal",
-    "originalAmount",
-    "originalTermYears",
-  ] as const) {
+  if (!validMonth(m.lumpSumMonth) || !Number.isFinite(m.lumpSumYear)) {
+    delete m.lumpSumMonth;
+    delete m.lumpSumYear;
+  }
+  for (const key of ["monthlyPayment", "monthlyEscrow", "extraPrincipal", "lumpSum"] as const) {
     if (m[key] != null && !Number.isFinite(m[key])) delete m[key];
   }
 }
@@ -937,6 +950,8 @@ interface ScenarioState {
   setSocialSecurityClaims: (claims: SocialSecurityClaim[]) => void;
   /** Car analysis: lease, cash or finance inputs. */
   setCarDecision: (decision: CarDecision) => void;
+  /** Car loan analysis statement. */
+  setCarLoan: (loan: CarLoan) => void;
   /** Pay off the mortgage or invest inputs. */
   setMortgagePayoff: (settings: MortgagePayoffSettings) => void;
   setRetirementPayoff: (settings: RetirementPayoffSettings) => void;
@@ -1733,6 +1748,7 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       editActive((h) => ({ ...h, disability: { ...event } })),
     setCarDecision: (decision) =>
       editActive((h) => ({ ...h, carDecision: { ...decision } })),
+    setCarLoan: (loan) => editActive((h) => ({ ...h, carLoan: { ...loan } })),
     setMortgagePayoff: (settings) =>
       editActive((h) => ({ ...h, mortgagePayoff: { ...settings } })),
     setRetirementPayoff: (settings) =>

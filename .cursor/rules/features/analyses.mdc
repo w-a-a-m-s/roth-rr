@@ -1,6 +1,6 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Pay off from retirement, Social Security analysis, Medicare analysis, Car analysis, Spending capacity, Monte Carlo) and the survivorship death model
-globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/RetirementPayoffAnalysis.tsx,src/lib/engine/retirementPayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MonteCarloAnalysis.tsx,src/lib/engine/monteCarlo.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Pay off from retirement, Social Security analysis, Medicare analysis, Car analysis, Car loan, Spending capacity, Monte Carlo) and the survivorship death model
+globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/RetirementPayoffAnalysis.tsx,src/lib/engine/retirementPayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MonteCarloAnalysis.tsx,src/lib/engine/monteCarlo.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/components/results/CarLoanAnalysis.tsx,src/lib/engine/carLoan.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
 
@@ -29,11 +29,27 @@ conversion schedule always comes from the plan's strategy as-is.
   (`lib/engine/amortization.ts`): monthly interest = balance x rate / 12 to
   the cent, payment left at 0 is worked out from the maturity date, a
   payment on the maturity date clears cent rounding, extra principal shows
-  its savings. It never feeds `projectScenario`. Every mortgage entered on a
+  its savings. A lump sum (`lumpSum`, paid with the payment due in
+  `lumpSumMonth` / `lumpSumYear`, missing or past: the next one, capped at
+  what's owed) goes straight to principal once (row `lump`). With either
+  prepayment, `amortize().choices` lists paying as scheduled, then extra
+  monthly, lump sum and both (the ones that apply), and the summary's
+  "Paying it down faster" table compares them. The lump sum is analysis
+  only: Pay off or invest and Pay off from retirement strip it
+  (`withoutLumpSum`), and `loanPaydown` never reads it. It never feeds `projectScenario`. Every mortgage entered on a
   property (`RealEstate.loans`, kind mortgage, balance > 0) with no statement
   linked by `loanId` (saved or deleted) shows up as one
   (`propertyMortgageStatements`); the first edit saves it, Remove saves then
   deletes it so it stays gone. ResultsView returns it before the tax tables load.
+
+- **Car loan** (user's request): not a projection. `CarLoanAnalysis.tsx`
+  edits `household.carLoan` (a `CarLoan`, the same `LoanStatement` fields as
+  a mortgage, no escrow) with `setCarLoan`, and reuses Mortgage analysis's
+  `PrepaymentFields`, `Summary` and `ScheduleTable` over `amortize()`.
+  Missing, `carLoanFor` / `defaultCarLoan` (`lib/engine/carLoan.ts`) start
+  from the Car analysis's finance option: price less down payment, its rate,
+  its term ending the last payment, payment worked out. Healed in
+  `migrateHousehold` like a mortgage.
 
 - **Pay off or invest** (user's request): not a projection.
   `MortgagePayoffAnalysis.tsx` picks one Mortgage analysis entry (saved
