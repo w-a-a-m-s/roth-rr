@@ -1278,13 +1278,17 @@ describe("migrateHousehold: pay off or invest, and spending capacity", () => {
     const raw = h as unknown as Record<string, unknown>;
     raw.mortgagePayoff = { investmentReturn: 0.07, taxRate: 0.15 };
     raw.spendingCapacity = { endReserve: 100_000 };
+    raw.retirementPayoff = { accountReturn: 0.06, lumpSumTaxRate: 0.32, monthlyTaxRate: 0.22 };
     const out = migrateHousehold(h);
+    expect(out.retirementPayoff).toEqual({ accountReturn: 0.06, lumpSumTaxRate: 0.32, monthlyTaxRate: 0.22 });
     expect(out.mortgagePayoff).toEqual({ investmentReturn: 0.07, taxRate: 0.15 });
     expect(out.spendingCapacity).toEqual({ endReserve: 100_000 });
     const broken = household([], []);
     (broken as unknown as Record<string, unknown>).mortgagePayoff = 5;
     (broken as unknown as Record<string, unknown>).spendingCapacity = "x";
+    (broken as unknown as Record<string, unknown>).retirementPayoff = 3;
     const healed = migrateHousehold(broken);
+    expect(healed).not.toHaveProperty("retirementPayoff");
     expect(healed).not.toHaveProperty("mortgagePayoff");
     expect(healed).not.toHaveProperty("spendingCapacity");
   });

@@ -9,6 +9,7 @@ import type {
   DeletedItem,
   CarDecision,
   MortgagePayoffSettings,
+  RetirementPayoffSettings,
   SpendingCapacitySettings,
   DisabilityEvent,
   SocialSecurityClaim,
@@ -272,6 +273,9 @@ export function migrateHousehold(household: Household): Household {
   // drop only a broken shape.
   if (legacy.mortgagePayoff != null && typeof legacy.mortgagePayoff !== "object") {
     delete legacy.mortgagePayoff;
+  }
+  if (legacy.retirementPayoff != null && typeof legacy.retirementPayoff !== "object") {
+    delete legacy.retirementPayoff;
   }
   if (legacy.spendingCapacity != null && typeof legacy.spendingCapacity !== "object") {
     delete legacy.spendingCapacity;
@@ -935,6 +939,7 @@ interface ScenarioState {
   setCarDecision: (decision: CarDecision) => void;
   /** Pay off the mortgage or invest inputs. */
   setMortgagePayoff: (settings: MortgagePayoffSettings) => void;
+  setRetirementPayoff: (settings: RetirementPayoffSettings) => void;
   /** Spending capacity inputs. */
   setSpendingCapacity: (settings: SpendingCapacitySettings) => void;
   addInsurance: (policy: InsurancePolicy) => void;
@@ -1730,6 +1735,8 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       editActive((h) => ({ ...h, carDecision: { ...decision } })),
     setMortgagePayoff: (settings) =>
       editActive((h) => ({ ...h, mortgagePayoff: { ...settings } })),
+    setRetirementPayoff: (settings) =>
+      editActive((h) => ({ ...h, retirementPayoff: { ...settings } })),
     setSpendingCapacity: (settings) =>
       editActive((h) => ({ ...h, spendingCapacity: { ...settings } })),
     setSocialSecurityClaims: (claims) =>

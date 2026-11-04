@@ -526,7 +526,7 @@ The results page layout was signed off by the user. Keep it as is unless the
 user asks for a change:
 
 1. Analysis links: **Retirement | Survivorship | Disability | Long-term care |
-   Mortgage analysis | Pay off or invest | Social Security analysis |
+   Mortgage analysis | Pay off or invest | Pay off from retirement | Social Security analysis |
    Medicare analysis | Car analysis | Spending capacity | Monte Carlo**. Survivorship, Disability and Long-term care show their
    own settings card under them. Survivorship also shows the Life insurance
    summary table (the one on the Insurance step) under its card, at the

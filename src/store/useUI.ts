@@ -57,6 +57,7 @@ export type AnalysisKind =
   | "longTermCare"
   | "mortgage"
   | "mortgagePayoff"
+  | "retirementPayoff"
   | "socialSecurity"
   | "medicare"
   | "car";

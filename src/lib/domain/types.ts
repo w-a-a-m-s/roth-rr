@@ -702,6 +702,12 @@ export interface Household {
    * assumptions. Doesn't change the projection. Optional, with defaults.
    */
   mortgagePayoff?: MortgagePayoffSettings;
+  /**
+   * Pay off from retirement: pay a mortgage off with a lump sum from a
+   * tax-deferred account, or keep paying it monthly from that account.
+   * Doesn't change the projection. Optional, with defaults.
+   */
+  retirementPayoff?: RetirementPayoffSettings;
   /** Spending capacity: what to leave at the end. Optional, with defaults. */
   spendingCapacity?: SpendingCapacitySettings;
   /** Settings for the Disability analysis. Optional, with defaults. */
@@ -888,6 +894,20 @@ export interface MortgagePayoffSettings {
   investmentReturn: number;
   /** Tax on that growth each year. */
   taxRate: number;
+}
+
+/** Pay off from retirement inputs. Rates are decimals. */
+export interface RetirementPayoffSettings {
+  /** The Mortgage analysis entry to compare. Missing means the first one. */
+  mortgageId?: string;
+  /** The tax-deferred account the money comes from. Missing means the largest. */
+  accountId?: string;
+  /** What the account earns a year. */
+  accountReturn: number;
+  /** Tax rate on the lump-sum withdrawal that pays the mortgage off. */
+  lumpSumTaxRate: number;
+  /** Tax rate on the monthly withdrawals that make the payment instead. */
+  monthlyTaxRate: number;
 }
 
 /** Spending capacity inputs. */

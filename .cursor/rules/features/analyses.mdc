@@ -1,6 +1,6 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Social Security analysis, Medicare analysis, Car analysis, Spending capacity, Monte Carlo) and the survivorship death model
-globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MonteCarloAnalysis.tsx,src/lib/engine/monteCarlo.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Pay off from retirement, Social Security analysis, Medicare analysis, Car analysis, Spending capacity, Monte Carlo) and the survivorship death model
+globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/RetirementPayoffAnalysis.tsx,src/lib/engine/retirementPayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MonteCarloAnalysis.tsx,src/lib/engine/monteCarlo.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
 
@@ -47,6 +47,22 @@ conversion schedule always comes from the plan's strategy as-is.
   Compared at the loan's payoff month (from `amortize`). Breakeven return is
   the loan rate compounded monthly, grossed up for the tax. Escrow is left
   out, no interest deduction. Returns null for a loan that never pays off.
+
+- **Pay off from retirement** (user's request): not a projection.
+  `RetirementPayoffAnalysis.tsx` picks a mortgage (same list as Pay off or
+  invest) and a tax-deferred account (`retirementPayoffAccounts`, largest
+  first, starting at its entered balance) and shows `compareRetirementPayoff()`
+  (`lib/engine/retirementPayoff.ts`) with `household.retirementPayoff`
+  (account return, lump-sum and monthly tax rate, picked from
+  `RETIREMENT_PAYOFF_TAX_RATES` 12/22/24/32/35%; defaults 6%, 32%, 22%).
+  Pay it off takes balance / (1 - lump rate) today; Keep it takes each
+  payment / (1 - monthly rate) that month. The account grows monthly at
+  `(1 + return)^(1/12) - 1` either way; compared at the loan's payoff month.
+  The bracket grid uses the closed form: payments carried to the end over
+  (1 - monthly) minus the balance carried to the end over (1 - lump). Same
+  rate both sides: payoff wins when the return is under the loan rate
+  compounded monthly. Flags an account short of the lump sum or one that runs
+  dry; RMDs, other draws, state tax and the early penalty are left out.
 
 - **Social Security analysis**: not a projection. `SocialSecurityAnalysis.tsx`
   edits `household.socialSecurityClaims` (person, claiming age, monthly
