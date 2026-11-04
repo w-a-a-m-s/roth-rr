@@ -6,6 +6,7 @@ import { useScenario } from "@/store/useScenario";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
 import { Field } from "@/components/ui/Field";
 import { PercentInput, Select } from "@/components/ui/inputs";
+import { ColumnDefinitions } from "@/components/results/ColumnDefinitions";
 import { DualScroll } from "@/components/results/DualScroll";
 import { nextMonth } from "@/components/results/MortgageAnalysis";
 import { propertyMortgageStatements } from "@/lib/domain/propertyLoans";
@@ -178,9 +179,38 @@ function SummaryTable({ result }: { result: PayoffComparison }) {
           </tbody>
         </table>
       </DualScroll>
+      <ColumnDefinitions items={SUMMARY_COLUMN_DEFINITIONS} />
     </div>
   );
 }
+
+/** What each Summary column means (user's request). */
+const SUMMARY_COLUMN_DEFINITIONS: [string, string][] = [
+  [
+    "Choice",
+    "The two options. Pay it off: use your cash to pay the whole mortgage today. Keep it and invest: keep the mortgage and invest that cash instead.",
+  ],
+  [
+    "Up front",
+    "What happens to the payoff money today: it goes to the lender, or it goes into your investments.",
+  ],
+  [
+    "Each month",
+    "What happens to the monthly mortgage payment amount: once the loan is paid off it gets invested; if you keep the loan it goes to the lender.",
+  ],
+  [
+    "Investments at the end",
+    "What your investments are worth on the date the mortgage would be fully paid, after the tax on growth.",
+  ],
+  [
+    "Mortgage owed",
+    "What's still owed on the mortgage on that date. It's $0 for both, because the comparison stops when the loan is paid off.",
+  ],
+  [
+    "Net at the end",
+    "Investments at the end minus Mortgage owed. The higher number is the better option.",
+  ],
+];
 
 function YearTable({ result }: { result: PayoffComparison }) {
   return (
@@ -217,10 +247,35 @@ function YearTable({ result }: { result: PayoffComparison }) {
           </tbody>
         </table>
       </DualScroll>
-      <p className="m-0 text-[12px] text-muted">
-        Year-end values. Keep it: net is the investments less what&apos;s still owed on the
-        mortgage. A negative Keep it ahead by means paying it off is ahead that year.
-      </p>
+      <ColumnDefinitions items={YEAR_COLUMN_DEFINITIONS} />
     </div>
   );
 }
+
+/** What each Year by year column means (user's request). */
+const YEAR_COLUMN_DEFINITIONS: [string, string][] = [
+  [
+    "Year",
+    "The calendar year. Every number in the row is the value on December 31 of that year (the last row is the month the loan is paid off).",
+  ],
+  [
+    "Pay it off: investments",
+    "Your investments if you pay the mortgage off today. You start with nothing invested, then invest the payment you no longer owe every month, and it grows at your return after tax.",
+  ],
+  [
+    "Keep it: investments",
+    "Your investments if you keep the mortgage. The payoff money is invested today and grows at your return after tax, while you keep paying the mortgage from your monthly budget.",
+  ],
+  [
+    "Keep it: mortgage owed",
+    "How much you still owe on the mortgage if you keep it. It goes down every year and reaches $0 when the loan is paid off.",
+  ],
+  [
+    "Keep it: net",
+    "Keep it: investments minus Keep it: mortgage owed. This is what keeping the mortgage is really worth that year, after counting the debt. Compare it with Pay it off: investments.",
+  ],
+  [
+    "Keep it ahead by",
+    "Keep it: net minus Pay it off: investments. A positive number (green) means keeping the mortgage and investing leaves you with more that year. A negative number (red) means paying it off leaves you with more.",
+  ],
+];

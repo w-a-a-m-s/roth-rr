@@ -6,6 +6,7 @@ import { useScenario } from "@/store/useScenario";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
 import { Field } from "@/components/ui/Field";
 import { PercentInput, Select } from "@/components/ui/inputs";
+import { ColumnDefinitions } from "@/components/results/ColumnDefinitions";
 import { DualScroll } from "@/components/results/DualScroll";
 import { nextMonth } from "@/components/results/MortgageAnalysis";
 import { propertyMortgageStatements } from "@/lib/domain/propertyLoans";
@@ -265,6 +266,7 @@ function SummaryTable({
         {formatCurrency(result.payoffAmount)} with a {formatCurrency(result.monthlyPayment, true)}{" "}
         monthly payment; both choices owe nothing by {when(result)}.
       </p>
+      <ColumnDefinitions items={SUMMARY_COLUMN_DEFINITIONS} />
     </div>
   );
 }
@@ -366,41 +368,67 @@ function YearTable({ result }: { result: RetirementPayoffComparison }) {
         </table>
       </DualScroll>
       <p className="m-0 text-[12px] text-muted">
-        Every value is at year end, before the tax still owed on what&apos;s in the account.
+        Account balances are shown before the income tax you&apos;d owe when you take that money
+        out later.
       </p>
-      <dl className="m-0 flex flex-col gap-1.5 text-[12px] text-muted">
-        {YEAR_COLUMN_DEFINITIONS.map(([term, meaning]) => (
-          <div key={term}>
-            <dt className="inline font-semibold text-foreground">{term}: </dt>
-            <dd className="inline">{meaning}</dd>
-          </div>
-        ))}
-      </dl>
+      <ColumnDefinitions items={YEAR_COLUMN_DEFINITIONS} />
     </div>
   );
 }
 
+/** What each Summary column means (user's request). */
+const SUMMARY_COLUMN_DEFINITIONS: [string, string][] = [
+  [
+    "Choice",
+    "The two options. Pay it off today: take one big withdrawal from the retirement account now and pay the whole mortgage. Keep it, pay monthly: keep the mortgage and take a withdrawal every month to make the payment.",
+  ],
+  [
+    "Tax rate",
+    "The federal tax bracket used for that option's withdrawals. You pick it above: Lump-sum tax for paying it off, Monthly tax for keeping it.",
+  ],
+  [
+    "Taken from the account",
+    "The total amount withdrawn from the retirement account to pay the mortgage, including the tax on it. For example, a $60,000 payoff at 32% takes $60,000 / 0.68 = $88,235.",
+  ],
+  [
+    "Tax paid",
+    "How much of Taken from the account goes to federal tax instead of the mortgage.",
+  ],
+  [
+    "Mortgage interest",
+    "The interest you pay the lender until the loan is gone. Paying it off today pays no interest.",
+  ],
+  [
+    "Account at the end",
+    "The retirement account balance on the date the mortgage would be fully paid. Both options owe $0 on the house then, so the higher number is the better option.",
+  ],
+];
+
 /** What each Year by year column means (user's request). */
 const YEAR_COLUMN_DEFINITIONS: [string, string][] = [
   [
+    "Year",
+    "The calendar year. Every number in the row is the balance on December 31 of that year (the last row is the month the loan is paid off).",
+  ],
+  [
     "Pay it off: account",
-    "The retirement account at year end if you pay the mortgage off today. The lump sum (the payoff plus its tax) comes out up front, and what's left keeps growing at the account return with no more withdrawals for the mortgage.",
+    "The retirement account balance if you pay the mortgage off today. The payoff and its tax come out once at the start; after that nothing more is taken for the house and the rest keeps growing.",
   ],
   [
     "Keep it: account",
-    "The same account at year end if you keep the mortgage. Nothing comes out up front; each month it pays the mortgage payment plus that draw's tax, and the rest keeps growing.",
+    "The retirement account balance if you keep the mortgage. Each month the payment and its tax come out of the account, and the rest keeps growing.",
   ],
   [
     "Keep it: mortgage owed",
-    "The loan balance still owed at year end when you keep it. It reaches $0 in the payoff year, when both choices owe nothing.",
+    "How much you still owe on the mortgage if you keep it. It goes down every year and reaches $0 when the loan is paid off. (If you pay it off today you owe $0 from the start.)",
   ],
   [
     "Keep it: net",
-    "Keep it: account less Keep it: mortgage owed. It's the fair number to set against Pay it off: account, since that choice owes nothing on the house.",
+    "Keep it: account minus Keep it: mortgage owed. This is what keeping the mortgage is really worth that year, after counting the debt. Compare it with Pay it off: account.",
   ],
   [
     "Pay it off ahead by",
-    "Pay it off: account less Keep it: net. Positive (blue) means paying it off leaves you better off that year; negative (green) means keeping the mortgage is ahead.",
+    "Pay it off: account minus Keep it: net. A positive number (blue) means paying it off leaves you with more that year. A negative number (green) means keeping the mortgage leaves you with more.",
   ],
 ];
 
