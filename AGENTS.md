@@ -527,7 +527,7 @@ user asks for a change:
 
 1. Analysis links: **Retirement | Survivorship | Disability | Long-term care |
    Mortgage analysis | Pay off or invest | Pay off from retirement | Social Security analysis |
-   Medicare analysis | Car analysis | Car loan | Spending capacity | Monte Carlo**. Survivorship, Disability and Long-term care show their
+   Medicare analysis | Lease vs finance | Car loan | Spending capacity | Monte Carlo**. Survivorship, Disability and Long-term care show their
    own settings card under them. Survivorship also shows the Life insurance
    summary table (the one on the Insurance step) under its card, at the
    user's request. Mortgage analysis (added at the user's
@@ -541,8 +541,8 @@ user asks for a change:
    and Spending capacity (user's request) skip them too: one compares paying
    a mortgage off with investing (verdict, summary, year by year), the other
    shows the most the plan can spend so the money lasts, with and without
-   conversion, and a year-by-year table at that spending. Car
-   analysis (user's request) skips them as well: lease, cash or finance
+   conversion, and a year-by-year table at that spending. Lease vs
+   finance (user's request, once named Car analysis) skips them as well: lease, cash or finance
    inputs, a summary table, a net cost chart and a year-by-year table.
    Car loan (user's request) skips them too: one car loan's statement, more
    every month and / or a lump sum, a comparison of the ways to pay it

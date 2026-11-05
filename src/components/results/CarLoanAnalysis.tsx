@@ -39,7 +39,7 @@ export function CarLoanAnalysis({ household }: { household: Household }) {
           Enter what&apos;s on your car loan statement to see every payment until it&apos;s paid
           off. Then try paying it down faster: put more toward it every month, pay a lump sum
           once, or both, and see the interest and time each one saves. Until you fill it in, it
-          starts from the Car analysis&apos;s finance option. This doesn&apos;t change the
+          starts from the Finance option in Lease vs finance. This doesn&apos;t change the
           plan&apos;s projection.
         </p>
       </div>

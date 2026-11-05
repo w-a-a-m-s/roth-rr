@@ -1,5 +1,5 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Pay off from retirement, Social Security analysis, Medicare analysis, Car analysis, Car loan, Spending capacity, Monte Carlo) and the survivorship death model
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Pay off from retirement, Social Security analysis, Medicare analysis, Lease vs finance, Car loan, Spending capacity, Monte Carlo) and the survivorship death model
 globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/RetirementPayoffAnalysis.tsx,src/lib/engine/retirementPayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MonteCarloAnalysis.tsx,src/lib/engine/monteCarlo.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/components/results/CarLoanAnalysis.tsx,src/lib/engine/carLoan.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
@@ -47,7 +47,7 @@ conversion schedule always comes from the plan's strategy as-is.
   a mortgage, no escrow) with `setCarLoan`, and reuses Mortgage analysis's
   `PrepaymentFields`, `Summary` and `ScheduleTable` over `amortize()`.
   Missing, `carLoanFor` / `defaultCarLoan` (`lib/engine/carLoan.ts`) start
-  from the Car analysis's finance option: price less down payment, its rate,
+  from the Finance option in Lease vs finance: price less down payment, its rate,
   its term ending the last payment, payment worked out. Healed in
   `migrateHousehold` like a mortgage.
 
@@ -143,7 +143,7 @@ conversion schedule always comes from the plan's strategy as-is.
   chart. The plan on its own returns (`monteCarloPlan`) is shown alongside.
   Engine rules are in AGENTS.md, "Monte Carlo". No saved fields.
 
-- **Car analysis**: not a projection. `CarAnalysis.tsx` edits
+- **Lease vs finance**: not a projection. `CarAnalysis.tsx` edits
   `household.carDecision` and shows `compareCarOptions()`
   (`lib/engine/carDecision.ts`): pay cash, finance (down payment, APR, term)
   or lease (monthly, term, due at signing, turn-in fee) over `years`. Bought

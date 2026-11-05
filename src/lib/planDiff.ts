@@ -825,7 +825,7 @@ export function formatPlanChangeLabel(field: string): string {
     case "socialSecurityClaims":
       return "Social Security analysis";
     case "carDecision":
-      return "Car analysis";
+      return "Lease vs finance";
     case "carLoan":
       return "Car loan";
     case "mortgagePayoff":

@@ -87,7 +87,7 @@ export function incomeLabel(
 /**
  * Display label for an expense key: an expense id, `ltc:<person>` care,
  * `loan:<property>` loan payments, `premium:<policy>` insurance premiums or
- * the Car analysis.
+ * Lease vs finance.
  */
 export function expenseLabel(household: Household, key: string): string {
   if (key.startsWith("loan:")) {
@@ -105,7 +105,7 @@ export function expenseLabel(household: Household, key: string): string {
     const name = policy?.label?.trim();
     return name ? `Insurance premium · ${name}` : "Insurance premium";
   }
-  if (key === CAR_EXPENSE_KEY) return "Car (from Car analysis)";
+  if (key === CAR_EXPENSE_KEY) return "Car (from Lease vs finance)";
   if (key.startsWith("medicare:")) {
     const name = household.people.find((p) => p.id === key.slice(9))?.name?.trim();
     return name ? `Medicare Part B · ${name}` : "Medicare Part B";

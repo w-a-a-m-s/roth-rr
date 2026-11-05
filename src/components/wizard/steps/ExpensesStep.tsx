@@ -166,7 +166,7 @@ function ExpenseFields({
 
 /**
  * What the "costs from other steps" switch brings in, as of today: life
- * insurance premiums, homestead loan payments, and the Car analysis.
+ * insurance premiums, homestead loan payments, and Lease vs finance.
  */
 function otherCostsToday(household: Household, start: number) {
   const year = new Date().getFullYear();
@@ -199,13 +199,13 @@ function OtherExpensesSwitch() {
     `Life insurance premiums ${formatCurrency(premiums)}/mo`,
     `Home mortgage and line of credit ${formatCurrency(homeLoans)}/mo`,
     car
-      ? `Car: ${CAR_OPTION_LABELS[car.option].toLowerCase()} (the Car analysis's pick) from ${start}`
-      : "Car: none until you fill in the Car analysis",
+      ? `Car: ${CAR_OPTION_LABELS[car.option].toLowerCase()} (Lease vs finance pick) from ${start}`
+      : "Car: none until you fill in Lease vs finance",
   ];
   return (
     <Field
       label="Costs from other steps"
-      help="Counts costs you entered elsewhere as expenses in every analysis: life insurance premiums (term policies through their term, permanent ones for life), payments on your home's mortgage and line of credit, and the Car analysis's recommended option. Turn it off if your expenses above already include them."
+      help="Counts costs you entered elsewhere as expenses in every analysis: life insurance premiums (term policies through their term, permanent ones for life), payments on your home's mortgage and line of credit, and the option Lease vs finance recommends. Turn it off if your expenses above already include them."
     >
       <label className="flex items-center gap-2 text-[13px] text-foreground">
         <input
