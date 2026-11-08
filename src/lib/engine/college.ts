@@ -93,7 +93,12 @@ export interface CollegeYear {
 
 export interface CollegeOptionSummary {
   key: CollegeOptionKey;
+  /** Everything put in: today's savings plus every contribution (the total). */
   contributed: number;
+  /** Today's savings plus the contributions made before college starts. */
+  contributedBeforeCollege: number;
+  /** Contributions made during the college years (0 unless saving continues). */
+  contributedDuringCollege: number;
   /** Account balance on the day college starts, before the first bill. */
   balanceAtStart: number;
   totalCost: number;
@@ -202,7 +207,9 @@ export function compareCollegeOptions(plan: CollegePlan, thisYear: number): Coll
   }
 
   const sum = (f: (y: CollegeYear) => number) => rows.reduce((a, y) => a + f(y), 0);
-  const contributed = plan.currentSavings + sum((y) => y.contributed);
+  const contributedDuringCollege = sum((y) => (y.inCollege ? y.contributed : 0));
+  const contributedBeforeCollege = plan.currentSavings + sum((y) => (y.inCollege ? 0 : y.contributed));
+  const contributed = contributedBeforeCollege + contributedDuringCollege;
   const totalCost = sum((y) => y.cost);
   const stateTaxSaved = sum((y) => y.stateTaxSaved);
   // Rounded to cents: pro-rata basis picks up float noise.
@@ -219,6 +226,8 @@ export function compareCollegeOptions(plan: CollegePlan, thisYear: number): Coll
     return {
       key,
       contributed,
+      contributedBeforeCollege,
+      contributedDuringCollege,
       balanceAtStart: balanceAtStart[key],
       totalCost,
       paidFromAccount: sum((y) => y.paidFromAccount[key]),

@@ -213,7 +213,9 @@ const HEAD = `bg-[#1B365D] ${HEAD_BASE} text-right`;
 const HEAD_LEFT = `bg-[#1B365D] ${HEAD_BASE} text-left`;
 
 const SUMMARY_ROWS: { label: string; value: (o: CollegeComparison["options"][number]) => number; bold?: boolean; minus?: boolean }[] = [
-  { label: "You put in", value: (o) => o.contributed },
+  { label: "You put in before college", value: (o) => o.contributedBeforeCollege },
+  { label: "You put in during college", value: (o) => o.contributedDuringCollege },
+  { label: "You put in, total", value: (o) => o.contributed, bold: true },
   { label: "Balance when college starts", value: (o) => o.balanceAtStart },
   { label: "Growth earned", value: (o) => o.growth },
   { label: "Tax on growth", value: (o) => o.taxOnGrowth },

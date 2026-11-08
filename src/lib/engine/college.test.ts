@@ -85,4 +85,20 @@ describe("college: out of pocket vs 529", () => {
     const r = compareCollegeOptions(plan({ contributeDuringCollege: true }), 2026);
     expect(r.years.filter((y) => y.inCollege).every((y) => y.contributed === 6_000)).toBe(true);
   });
+
+  it("splits what you put in between before and during college", () => {
+    // Aria's plan: born 2019, college 2037 to 2040, $16k saved, $500 a month throughout.
+    const r = compareCollegeOptions(
+      plan({ birthYear: 2019, currentSavings: 16_000, contributeDuringCollege: true }),
+      2026,
+    );
+    for (const o of r.options) {
+      expect(o.contributedBeforeCollege).toBe(16_000 + 11 * 6_000);
+      expect(o.contributedDuringCollege).toBe(4 * 6_000);
+      expect(o.contributed).toBe(106_000);
+    }
+    const stops = compareCollegeOptions(plan({ birthYear: 2019, currentSavings: 16_000 }), 2026);
+    expect(stops.options[0].contributedDuringCollege).toBe(0);
+    expect(stops.options[0].contributed).toBe(stops.options[0].contributedBeforeCollege);
+  });
 });
