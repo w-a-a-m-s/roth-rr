@@ -9,6 +9,7 @@ import type {
   DeletedItem,
   CarDecision,
   CarLoan,
+  CollegePlan,
   LoanStatement,
   MortgagePayoffSettings,
   RetirementPayoffSettings,
@@ -270,6 +271,10 @@ export function migrateHousehold(household: Household): Household {
   // Car analysis inputs are healed when read; drop only a broken shape.
   if (legacy.carDecision != null && typeof legacy.carDecision !== "object") {
     delete legacy.carDecision;
+  }
+  // College analysis inputs are healed when read; drop only a broken shape.
+  if (legacy.college != null && typeof legacy.college !== "object") {
+    delete legacy.college;
   }
   // Car loan analysis: drop a broken shape, heal the rest like a mortgage.
   if (legacy.carLoan != null) {
@@ -952,6 +957,8 @@ interface ScenarioState {
   setCarDecision: (decision: CarDecision) => void;
   /** Car loan analysis statement. */
   setCarLoan: (loan: CarLoan) => void;
+  /** College analysis inputs. */
+  setCollege: (plan: CollegePlan) => void;
   /** Pay off the mortgage or invest inputs. */
   setMortgagePayoff: (settings: MortgagePayoffSettings) => void;
   setRetirementPayoff: (settings: RetirementPayoffSettings) => void;
@@ -1749,6 +1756,7 @@ export const useScenario = create<ScenarioState>()((set, get) => {
     setCarDecision: (decision) =>
       editActive((h) => ({ ...h, carDecision: { ...decision } })),
     setCarLoan: (loan) => editActive((h) => ({ ...h, carLoan: { ...loan } })),
+    setCollege: (plan) => editActive((h) => ({ ...h, college: { ...plan } })),
     setMortgagePayoff: (settings) =>
       editActive((h) => ({ ...h, mortgagePayoff: { ...settings } })),
     setRetirementPayoff: (settings) =>

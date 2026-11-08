@@ -61,7 +61,8 @@ export type AnalysisKind =
   | "socialSecurity"
   | "medicare"
   | "car"
-  | "carLoan";
+  | "carLoan"
+  | "college";
 
 interface UIState {
   analysis: AnalysisKind;

@@ -22,6 +22,7 @@ import { PresentationCharts } from '@/components/results/PresentationCharts';
 import { LabsLoading } from '@/lib/common/client';
 import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
 import { CarLoanAnalysis } from '@/components/results/CarLoanAnalysis';
+import { CollegeAnalysis } from '@/components/results/CollegeAnalysis';
 import { SocialSecurityAnalysis } from '@/components/results/SocialSecurityAnalysis';
 import { CarAnalysis } from '@/components/results/CarAnalysis';
 import { MedicareAnalysis } from '@/components/results/MedicareAnalysis';
@@ -39,7 +40,7 @@ import { resolveDeath, survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
 
 /** Analyses that aren't a projection run and skip the results tabs. */
-const STANDALONE = new Set(['mortgage', 'mortgagePayoff', 'retirementPayoff', 'socialSecurity', 'car', 'carLoan', 'spendingCapacity', 'monteCarlo']);
+const STANDALONE = new Set(['mortgage', 'mortgagePayoff', 'retirementPayoff', 'socialSecurity', 'car', 'carLoan', 'college', 'spendingCapacity', 'monteCarlo']);
 
 export function ResultsView() {
 	const household = useHousehold();
@@ -155,6 +156,16 @@ export function ResultsView() {
 			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
 				<AnalysisTabs />
 				<CarLoanAnalysis household={household} />
+			</div>
+		);
+	}
+
+	// College: save out of pocket or in a 529. Not a projection.
+	if (analysis === 'college') {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<CollegeAnalysis household={household} />
 			</div>
 		);
 	}

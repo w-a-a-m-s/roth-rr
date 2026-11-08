@@ -703,6 +703,12 @@ export interface Household {
    */
   carLoan?: CarLoan;
   /**
+   * College analysis: save in a brokerage account (out of pocket) or a 529
+   * for one student. Doesn't change the projection. Optional; the analysis
+   * falls back to `defaultCollegePlan`.
+   */
+  college?: CollegePlan;
+  /**
    * Pay off the mortgage or invest: which mortgage and the investment
    * assumptions. Doesn't change the projection. Optional, with defaults.
    */
@@ -975,6 +981,35 @@ export interface CarDecision {
   leaseMilesPerYear: number;
   milesDrivenPerYear: number;
   excessMileRate: number;
+}
+
+/**
+ * College analysis inputs, for one student. Rates are decimals. Both options
+ * save the same amount a month; the out of pocket one in a regular brokerage
+ * account, the other in a 529.
+ */
+export interface CollegePlan {
+  studentName: string;
+  birthYear: number;
+  /** Age the student starts college, and how many years it runs. */
+  startAge: number;
+  years: number;
+  /** A year of college (tuition, room and board) in today's dollars. */
+  annualCost: number;
+  /** How fast college costs grow a year. */
+  costGrowth: number;
+  /** Already saved for college today, in either account. */
+  currentSavings: number;
+  monthlyContribution: number;
+  /** Keep saving while the student is in college. */
+  contributeDuringCollege: boolean;
+  investmentReturn: number;
+  /** Tax on the brokerage account's growth each year (dividends, gains). */
+  taxOnGrowth: number;
+  /** State income tax saved per dollar put in the 529 (0 in Florida). */
+  stateDeductionRate: number;
+  /** Income tax rate on 529 earnings left over and taken out in cash. */
+  leftoverTaxRate: number;
 }
 
 /**

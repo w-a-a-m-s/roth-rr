@@ -81,6 +81,7 @@ const HOUSEHOLD_KEYS = [
   "socialSecurityClaims",
   "carDecision",
   "carLoan",
+  "college",
   "mortgagePayoff",
   "retirementPayoff",
   "spendingCapacity",
@@ -828,6 +829,8 @@ export function formatPlanChangeLabel(field: string): string {
       return "Lease vs finance";
     case "carLoan":
       return "Car loan";
+    case "college":
+      return "College";
     case "mortgagePayoff":
       return "Pay off or invest";
     case "retirementPayoff":
@@ -1165,7 +1168,7 @@ export function detailPlanSnapshots(
     );
   }
 
-  for (const key of ["carLoan", "mortgagePayoff", "retirementPayoff", "spendingCapacity"] as const) {
+  for (const key of ["carLoan", "college", "mortgagePayoff", "retirementPayoff", "spendingCapacity"] as const) {
     if (!hasOwn(nextHousehold, key) || !next.household[key]) continue;
     const prevValue =
       hasOwn(prevHousehold, key) && prevHousehold[key] != null

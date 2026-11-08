@@ -1350,3 +1350,15 @@ describe("migrateHousehold: missing account growth rates", () => {
     expect(rates).toEqual({ ira: 0.06, brk: 0.06, roth: 0.08, sav: 0, kept: 0.05 });
   });
 });
+
+describe("migrateHousehold: college analysis", () => {
+  it("keeps saved inputs and drops a broken shape", () => {
+    const h = household([], []);
+    (h as unknown as Record<string, unknown>).college = { annualCost: 40_000 };
+    expect(migrateHousehold(h).college).toEqual({ annualCost: 40_000 });
+    const broken = household([], []);
+    (broken as unknown as Record<string, unknown>).college = "x";
+    expect(migrateHousehold(broken)).not.toHaveProperty("college");
+    expect(migrateHousehold(household([], []))).not.toHaveProperty("college");
+  });
+});

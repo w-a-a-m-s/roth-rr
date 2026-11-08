@@ -1,6 +1,6 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Pay off from retirement, Social Security analysis, Medicare analysis, Lease vs finance, Car loan, Spending capacity, Monte Carlo) and the survivorship death model
-globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/RetirementPayoffAnalysis.tsx,src/lib/engine/retirementPayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MonteCarloAnalysis.tsx,src/lib/engine/monteCarlo.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/components/results/CarLoanAnalysis.tsx,src/lib/engine/carLoan.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Pay off from retirement, Social Security analysis, Medicare analysis, Lease vs finance, Car loan, College, Spending capacity, Monte Carlo) and the survivorship death model
+globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/RetirementPayoffAnalysis.tsx,src/lib/engine/retirementPayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MonteCarloAnalysis.tsx,src/lib/engine/monteCarlo.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/components/results/CarLoanAnalysis.tsx,src/lib/engine/carLoan.ts,src/components/results/CollegeAnalysis.tsx,src/lib/engine/college.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
 
@@ -50,6 +50,20 @@ conversion schedule always comes from the plan's strategy as-is.
   from the Finance option in Lease vs finance: price less down payment, its rate,
   its term ending the last payment, payment worked out. Healed in
   `migrateHousehold` like a mortgage.
+
+- **College** (user's request): not a projection. `CollegeAnalysis.tsx`
+  edits `household.college` (a `CollegePlan`, one student) with
+  `setCollege` and shows `compareCollegeOptions()` (`lib/engine/college.ts`,
+  healed by `collegePlanFor`). Out of pocket saves in a brokerage account
+  and a 529 saves the same: same deposits, same return. Each college year's
+  bill (today's cost grown `costGrowth` a year from this year) is paid on
+  January 1 from the account; what it can't cover is "from pocket". Deposits
+  go in monthly, stop when college starts unless `contributeDuringCollege`.
+  Brokerage growth pays `taxOnGrowth` each year end (so its leftover is tax
+  free); the 529 saves `stateDeductionRate` on each deposit and its leftover
+  earnings (pro-rata basis) owe `leftoverTaxRate` + 10%. Net cost = put in +
+  from pocket - state tax saved - leftover after tax. Colors: out of pocket
+  rust, 529 green.
 
 - **Pay off or invest** (user's request): not a projection.
   `MortgagePayoffAnalysis.tsx` picks one Mortgage analysis entry (saved
