@@ -105,7 +105,12 @@ export interface CollegeOptionSummary {
   paidFromAccount: number;
   /** College bills the account couldn't cover, paid from your pocket. */
   shortfall: number;
+  /** Growth over the whole plan, before tax (the total). */
   growth: number;
+  /** Growth earned before college starts, before tax. */
+  growthBeforeCollege: number;
+  /** Growth earned during the college years, before tax. */
+  growthDuringCollege: number;
   taxOnGrowth: number;
   stateTaxSaved: number;
   /** What's left in the account after the last year of college. */
@@ -233,6 +238,8 @@ export function compareCollegeOptions(plan: CollegePlan, thisYear: number): Coll
       paidFromAccount: sum((y) => y.paidFromAccount[key]),
       shortfall,
       growth: sum((y) => y.growth[key]),
+      growthBeforeCollege: sum((y) => (y.inCollege ? 0 : y.growth[key])),
+      growthDuringCollege: sum((y) => (y.inCollege ? y.growth[key] : 0)),
       taxOnGrowth: sum((y) => y.taxOnGrowth[key]),
       stateTaxSaved: saved,
       leftover,

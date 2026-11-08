@@ -96,7 +96,12 @@ describe("college: out of pocket vs 529", () => {
       expect(o.contributedBeforeCollege).toBe(16_000 + 11 * 6_000);
       expect(o.contributedDuringCollege).toBe(4 * 6_000);
       expect(o.contributed).toBe(106_000);
+      expect(o.growthBeforeCollege + o.growthDuringCollege).toBeCloseTo(o.growth, 6);
+      expect(o.growthDuringCollege).toBeGreaterThan(0);
     }
+    // The 529's growth isn't taxed, so before college it's the start balance less what went in.
+    const p529 = r.options[1];
+    expect(p529.growthBeforeCollege).toBeCloseTo(p529.balanceAtStart - p529.contributedBeforeCollege, 6);
     const stops = compareCollegeOptions(plan({ birthYear: 2019, currentSavings: 16_000 }), 2026);
     expect(stops.options[0].contributedDuringCollege).toBe(0);
     expect(stops.options[0].contributed).toBe(stops.options[0].contributedBeforeCollege);
