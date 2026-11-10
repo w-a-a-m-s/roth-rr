@@ -5,7 +5,7 @@ import type { Comparison, ScenarioResult } from '@/lib/engine/types';
 import { formatCurrency, formatSignedCurrency } from '@/lib/format';
 import { totalImpact as totalImpactOf } from '@/lib/optimizer/score';
 
-type PreTax = { baseline: number; roth: number; delta: number };
+type PreTax = { baseline: number; roth: number };
 
 function Metric({
 	label,
@@ -40,14 +40,6 @@ function Metric({
 				{preTax ? 'after tax, ' : ''}
 				{deltaSuffix ?? (higherIsBetter ? 'vs. no conversion' : 'in taxes')}
 			</div>
-			{preTax ? (
-				<div className="-mt-1 mb-2.5 text-[11.5px] leading-none text-muted-3">
-					<span className={`font-bold tabular-nums ${deltaTone(preTax.delta, higherIsBetter)}`}>
-						{formatSignedCurrency(preTax.delta)}
-					</span>{' '}
-					before tax
-				</div>
-			) : null}
 			{preTax ? (
 				<PreAndAfterTaxGrid baseline={baseline} roth={roth} preTax={preTax} />
 			) : (
@@ -220,8 +212,7 @@ export function ComparisonMetrics({ comparison, rmdAge }: { comparison: Comparis
 					higherIsBetter
 					preTax={{
 						baseline: baseline.totals.preTaxAssetsAtRmd,
-						roth: roth.totals.preTaxAssetsAtRmd,
-						delta: deltas.preTaxAssetsAtRmd
+						roth: roth.totals.preTaxAssetsAtRmd
 					}}
 				/>
 				<Metric
@@ -233,8 +224,7 @@ export function ComparisonMetrics({ comparison, rmdAge }: { comparison: Comparis
 					higherIsBetter
 					preTax={{
 						baseline: baseline.totals.preTaxInheritanceFinal,
-						roth: roth.totals.preTaxInheritanceFinal,
-						delta: deltas.preTaxInheritanceFinal
+						roth: roth.totals.preTaxInheritanceFinal
 					}}
 				/>
 				<Metric
