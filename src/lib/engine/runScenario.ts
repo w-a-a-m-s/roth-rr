@@ -100,6 +100,20 @@ export function afterTaxAssets(
   );
 }
 
+/**
+ * Total assets before tax: every account at its balance (tax-deferred money
+ * not yet taxed) plus real-estate and business equity.
+ */
+export function preTaxAssets(row: ProjectionRow): number {
+  return (
+    row.retirementTotal +
+    row.rothTotal +
+    row.afterTaxTotal +
+    row.realEstateEquity +
+    row.businessEquity
+  );
+}
+
 function inheritanceValue(
   household: Household,
   row: ProjectionRow,
@@ -205,6 +219,8 @@ function computeTotals(
       federal,
       refs.stateIncomeTax,
     ),
+    preTaxAssetsAtRmd: preTaxAssets(rmdRow),
+    preTaxInheritanceFinal: preTaxAssets(finalRow),
   };
 }
 
@@ -360,6 +376,11 @@ export function comparisonFrom(
         roth.totals.afterTaxAssetsAtRmd - baseline.totals.afterTaxAssetsAtRmd,
       inheritanceFinal:
         roth.totals.inheritanceFinal - baseline.totals.inheritanceFinal,
+      preTaxAssetsAtRmd:
+        roth.totals.preTaxAssetsAtRmd - baseline.totals.preTaxAssetsAtRmd,
+      preTaxInheritanceFinal:
+        roth.totals.preTaxInheritanceFinal -
+        baseline.totals.preTaxInheritanceFinal,
     },
   };
 }

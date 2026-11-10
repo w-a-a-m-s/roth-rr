@@ -290,6 +290,11 @@ each tab shows only its own sections:
 - **Summary**: Total impact, the metric cards, and After-tax assets. Taxes
   show as lifetime only; the before and after RMD age split opens from a
   "Show taxes before and after" link under the cards.
+  The "Assets at <RMD age>" and "Inheritance (final year)" cards and the
+  assets table ("Assets after and before tax") show both after tax and before
+  tax (user's request). Before tax is `preTaxAssets` in `runScenario.ts`:
+  every balance plus real-estate and business equity, with no tax on the
+  tax-deferred money (totals `preTaxAssetsAtRmd` / `preTaxInheritanceFinal`).
 - **Graphic view**: `PresentationCharts` plus the Assets / Cash flow charts.
 - **Main in detail analysis**: the Year-by-year table, alone in the scroller
   for pin-to-top.

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { Fragment, useState, type ReactNode } from 'react';
 import type { Comparison, ScenarioResult } from '@/lib/engine/types';
 import { formatCurrency, formatSignedCurrency } from '@/lib/format';
 import { totalImpact as totalImpactOf } from '@/lib/optimizer/score';
+
+type PreTax = { baseline: number; roth: number; delta: number };
 
 function Metric({
 	label,
@@ -12,7 +14,8 @@ function Metric({
 	delta,
 	higherIsBetter,
 	hint,
-	deltaSuffix
+	deltaSuffix,
+	preTax
 }: {
 	label: string;
 	baseline: number;
@@ -21,10 +24,10 @@ function Metric({
 	higherIsBetter: boolean;
 	hint?: string;
 	deltaSuffix?: string;
+	/** Before-tax amounts; the main amounts are then shown as after tax. */
+	preTax?: PreTax;
 }) {
-	const good = higherIsBetter ? delta > 0 : delta < 0;
-	const neutral = Math.abs(delta) < 1;
-	const deltaColor = neutral ? 'text-muted-3' : good ? 'text-success' : 'text-danger';
+	const deltaColor = deltaTone(delta, higherIsBetter);
 
 	return (
 		<div className="rounded-[14px] border border-border bg-white p-[17px]">
@@ -34,18 +37,61 @@ function Metric({
 				{formatSignedCurrency(delta)}
 			</div>
 			<div className="mt-1 mb-2.5 text-[11.5px] leading-none text-muted-3">
+				{preTax ? 'after tax, ' : ''}
 				{deltaSuffix ?? (higherIsBetter ? 'vs. no conversion' : 'in taxes')}
 			</div>
-			<div className="grid grid-cols-2 gap-2 border-t border-border-subtle pt-2.5">
-				<div>
-					<div className="text-[10px] uppercase tracking-[0.03em] text-[#b5b0a6]">No conversion</div>
-					<div className="text-[13px] font-bold tabular-nums text-muted-2">{formatCurrency(baseline)}</div>
+			{preTax ? (
+				<div className="-mt-1 mb-2.5 text-[11.5px] leading-none text-muted-3">
+					<span className={`font-bold tabular-nums ${deltaTone(preTax.delta, higherIsBetter)}`}>
+						{formatSignedCurrency(preTax.delta)}
+					</span>{' '}
+					before tax
 				</div>
-				<div>
-					<div className="text-[10px] uppercase tracking-[0.03em] text-[#b5b0a6]">With conversion</div>
-					<div className="text-[13px] font-bold tabular-nums text-muted-2">{formatCurrency(roth)}</div>
+			) : null}
+			{preTax ? (
+				<PreAndAfterTaxGrid baseline={baseline} roth={roth} preTax={preTax} />
+			) : (
+				<div className="grid grid-cols-2 gap-2 border-t border-border-subtle pt-2.5">
+					<div>
+						<div className={SMALL_HEAD}>No conversion</div>
+						<div className={SMALL_VALUE}>{formatCurrency(baseline)}</div>
+					</div>
+					<div>
+						<div className={SMALL_HEAD}>With conversion</div>
+						<div className={SMALL_VALUE}>{formatCurrency(roth)}</div>
+					</div>
 				</div>
-			</div>
+			)}
+		</div>
+	);
+}
+
+const SMALL_HEAD = 'text-[10px] uppercase tracking-[0.03em] text-[#b5b0a6]';
+const SMALL_VALUE = 'text-[13px] font-bold tabular-nums text-muted-2';
+
+function deltaTone(delta: number, higherIsBetter: boolean): string {
+	if (Math.abs(delta) < 1) return 'text-muted-3';
+	const good = higherIsBetter ? delta > 0 : delta < 0;
+	return good ? 'text-success' : 'text-danger';
+}
+
+function PreAndAfterTaxGrid({ baseline, roth, preTax }: { baseline: number; roth: number; preTax: PreTax }) {
+	const rows = [
+		{ label: 'Before tax', baseline: preTax.baseline, roth: preTax.roth },
+		{ label: 'After tax', baseline, roth },
+	];
+	return (
+		<div className="grid grid-cols-[auto_1fr_1fr] items-baseline gap-x-2 gap-y-1 border-t border-border-subtle pt-2.5">
+			<div />
+			<div className={SMALL_HEAD}>No conversion</div>
+			<div className={SMALL_HEAD}>With conversion</div>
+			{rows.map(row => (
+				<Fragment key={row.label}>
+					<div className={`${SMALL_HEAD} whitespace-nowrap`}>{row.label}</div>
+					<div className={SMALL_VALUE}>{formatCurrency(row.baseline)}</div>
+					<div className={SMALL_VALUE}>{formatCurrency(row.roth)}</div>
+				</Fragment>
+			))}
 		</div>
 	);
 }
@@ -60,10 +106,10 @@ export function ScenarioMetrics({
 }) {
 	const t = scenario.totals;
 	const rmdLabel = rmdAge != null ? String(rmdAge) : 'RMD';
-	const cards: { label: string; hint?: string; value: number }[] = [
+	const cards: { label: string; hint?: string; value: number; preTax?: number }[] = [
 		{ label: 'Lifetime taxes', hint: 'Sum of taxes across the projection', value: t.taxesTotal },
-		{ label: `After-tax assets at ${rmdLabel}`, value: t.afterTaxAssetsAtRmd },
-		{ label: 'Inheritance (final year)', value: t.inheritanceFinal },
+		{ label: `Assets at ${rmdLabel}`, value: t.afterTaxAssetsAtRmd, preTax: t.preTaxAssetsAtRmd },
+		{ label: 'Inheritance (final year)', value: t.inheritanceFinal, preTax: t.preTaxInheritanceFinal },
 		{ label: 'Total Medicare Part B', hint: 'Lifetime premiums incl. income-based IRMAA', value: t.medicareTotal },
 	];
 	const splitCards: { label: string; hint?: string; value: number }[] = [
@@ -88,7 +134,7 @@ export function ScenarioMetrics({
 
 const METRIC_GRID = 'grid w-full grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4';
 
-function ValueCard({ label, hint, value }: { label: string; hint?: string; value: number }) {
+function ValueCard({ label, hint, value, preTax }: { label: string; hint?: string; value: number; preTax?: number }) {
 	return (
 		<div className="rounded-[14px] border border-border bg-white p-[17px]">
 			<div className="text-[15px] font-bold leading-tight text-foreground">{label}</div>
@@ -96,6 +142,15 @@ function ValueCard({ label, hint, value }: { label: string; hint?: string; value
 			<div className="mt-4 text-2xl font-extrabold leading-none tracking-[0.04em] tabular-nums text-foreground">
 				{formatCurrency(value)}
 			</div>
+			{preTax != null ? (
+				<>
+					<div className="mt-1 text-[11.5px] leading-none text-muted-3">after tax</div>
+					<div className="mt-2.5 border-t border-border-subtle pt-2.5">
+						<div className={SMALL_HEAD}>Before tax</div>
+						<div className={SMALL_VALUE}>{formatCurrency(preTax)}</div>
+					</div>
+				</>
+			) : null}
 		</div>
 	);
 }
@@ -157,18 +212,30 @@ export function ComparisonMetrics({ comparison, rmdAge }: { comparison: Comparis
 					higherIsBetter={false}
 				/>
 				<Metric
-					label={`After-tax assets at ${rmdLabel}`}
+					label={`Assets at ${rmdLabel}`}
+					hint="Before and after tax on tax-deferred money"
 					baseline={baseline.totals.afterTaxAssetsAtRmd}
 					roth={roth.totals.afterTaxAssetsAtRmd}
 					delta={deltas.afterTaxAssetsAtRmd}
 					higherIsBetter
+					preTax={{
+						baseline: baseline.totals.preTaxAssetsAtRmd,
+						roth: roth.totals.preTaxAssetsAtRmd,
+						delta: deltas.preTaxAssetsAtRmd
+					}}
 				/>
 				<Metric
 					label="Inheritance (final year)"
+					hint="Before and after tax on tax-deferred money"
 					baseline={baseline.totals.inheritanceFinal}
 					roth={roth.totals.inheritanceFinal}
 					delta={deltas.inheritanceFinal}
 					higherIsBetter
+					preTax={{
+						baseline: baseline.totals.preTaxInheritanceFinal,
+						roth: roth.totals.preTaxInheritanceFinal,
+						delta: deltas.preTaxInheritanceFinal
+					}}
 				/>
 				<Metric
 					label="Total Medicare Part B"

@@ -239,6 +239,10 @@ export interface ScenarioTotals {
   afterTaxAssetsAtRmd: number;
   /** After-tax estate value in the final projection year (inheritance). */
   inheritanceFinal: number;
+  /** Total assets at the RMD age before any tax on tax-deferred money. */
+  preTaxAssetsAtRmd: number;
+  /** Total assets in the final projection year before tax. */
+  preTaxInheritanceFinal: number;
 }
 
 export interface ScenarioResult {
@@ -273,5 +277,7 @@ export interface Comparison {
     medicareTotal: number;
     afterTaxAssetsAtRmd: number;
     inheritanceFinal: number;
+    preTaxAssetsAtRmd: number;
+    preTaxInheritanceFinal: number;
   };
 }

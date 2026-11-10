@@ -17,6 +17,7 @@ import { shiftSchedule } from "@/lib/optimizer/shiftSchedule";
 import type { Deposit, Household } from "@/lib/domain/types";
 import {
   afterTaxAssets,
+  preTaxAssets,
   runRothScenario,
   runScenario,
 } from "@/lib/engine/runScenario";
@@ -1716,6 +1717,30 @@ describe("afterTaxAssets", () => {
     expect(afterTaxAssets(household, finalRow)).toBeCloseTo(
       scenario.totals.inheritanceFinal,
       6,
+    );
+  });
+
+  it("pre-tax totals are every balance and equity, untaxed", () => {
+    const household = SAMPLE_HOUSEHOLD;
+    const scenario = runScenario(
+      household,
+      zeros(projectionYears(household)),
+      "baseline",
+    );
+    const finalRow = scenario.rows[scenario.rows.length - 1];
+    const sum =
+      finalRow.retirementTotal +
+      finalRow.rothTotal +
+      finalRow.afterTaxTotal +
+      finalRow.realEstateEquity +
+      finalRow.businessEquity;
+    expect(preTaxAssets(finalRow)).toBeCloseTo(sum, 6);
+    expect(scenario.totals.preTaxInheritanceFinal).toBeCloseTo(sum, 6);
+    // Tax on the tax-deferred lump makes after-tax smaller.
+    expect(finalRow.retirementTotal).toBeGreaterThan(0);
+    expect(scenario.totals.inheritanceFinal).toBeLessThan(sum);
+    expect(scenario.totals.preTaxAssetsAtRmd).toBeGreaterThan(
+      scenario.totals.afterTaxAssetsAtRmd,
     );
   });
 });

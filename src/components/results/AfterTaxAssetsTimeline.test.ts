@@ -26,6 +26,10 @@ describe("buildAfterTaxAssetsTimelinePoints", () => {
         point.withConversion - point.noConversion,
         6,
       );
+      expect(point.preTaxDelta).toBeCloseTo(
+        point.preTaxWithConversion - point.preTaxNoConversion,
+        6,
+      );
     }
 
     const rmdPoint = points.find((point) => point.isRmd);
@@ -41,6 +45,14 @@ describe("buildAfterTaxAssetsTimelinePoints", () => {
     );
     expect(rmdPoint!.delta).toBeCloseTo(
       comparison.deltas.afterTaxAssetsAtRmd,
+      6,
+    );
+    expect(rmdPoint!.preTaxWithConversion).toBeCloseTo(
+      comparison.roth.totals.preTaxAssetsAtRmd,
+      6,
+    );
+    expect(rmdPoint!.preTaxNoConversion).toBeCloseTo(
+      comparison.baseline.totals.preTaxAssetsAtRmd,
       6,
     );
   });

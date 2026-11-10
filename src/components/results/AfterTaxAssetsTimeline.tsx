@@ -6,7 +6,7 @@ import {
   formatAxisCurrency,
   formatSignedAxisCurrency,
 } from "@/components/results/chartUtils";
-import { afterTaxAssets } from "@/lib/engine/runScenario";
+import { afterTaxAssets, preTaxAssets } from "@/lib/engine/runScenario";
 import type { ProjectionRow } from "@/lib/engine/types";
 import type { ReferenceData } from "@/lib/externalData/types";
 import { formatCurrency, formatSignedCurrency } from "@/lib/format";
@@ -21,6 +21,9 @@ export type AfterTaxAssetsTimelinePoint = {
   withConversion: number;
   noConversion: number;
   delta: number;
+  preTaxWithConversion: number;
+  preTaxNoConversion: number;
+  preTaxDelta: number;
   isRmd: boolean;
 };
 
@@ -40,6 +43,8 @@ export function buildAfterTaxAssetsTimelinePoints(
     if (!baseline) return [];
     const withConversion = afterTaxAssets(household, row, refs);
     const noConversion = afterTaxAssets(household, baseline, refs);
+    const preTaxWithConversion = preTaxAssets(row);
+    const preTaxNoConversion = preTaxAssets(baseline);
     return [
       {
         year: row.calendarYear,
@@ -47,6 +52,9 @@ export function buildAfterTaxAssetsTimelinePoints(
         withConversion,
         noConversion,
         delta: withConversion - noConversion,
+        preTaxWithConversion,
+        preTaxNoConversion,
+        preTaxDelta: preTaxWithConversion - preTaxNoConversion,
         isRmd: rmdAge != null && row.ages[primaryId] === rmdAge,
       },
     ];
@@ -84,7 +92,7 @@ export function AfterTaxAssetsTimeline({
   return (
     <div className="rounded-2xl border border-border bg-white px-5 py-[18px]">
       <h3 className="mb-3 text-[14.5px] font-bold text-foreground">
-        After-tax assets
+        Assets after and before tax
       </h3>
       <DualScroll className="pb-1">
         <table className="border-collapse text-center text-sm">
@@ -122,44 +130,95 @@ export function AfterTaxAssetsTimeline({
                 </td>
               ))}
             </tr>
-            {single ? null : <AmountRow
-              label="With conversion"
+            <AssetRows
+              heading="After tax"
               points={points}
-              value={(point) => point.withConversion}
-              format={formatAxisCurrency}
-              title={(point) =>
-                cellTitle(primaryName, point, "With conversion", point.withConversion)
-              }
-            />}
-            <AmountRow
-              label="No conversion"
-              points={points}
-              value={(point) => point.noConversion}
-              format={formatAxisCurrency}
-              title={(point) =>
-                cellTitle(primaryName, point, "No conversion", point.noConversion)
-              }
+              primaryName={primaryName}
+              single={single}
+              withConversion={(point) => point.withConversion}
+              noConversion={(point) => point.noConversion}
+              delta={(point) => point.delta}
             />
-            {single ? null : <AmountRow
-              label="Impact"
+            <AssetRows
+              heading="Before tax"
               points={points}
-              value={(point) => point.delta}
-              format={formatSignedAxisCurrency}
-              title={(point) =>
-                cellTitle(
-                  primaryName,
-                  point,
-                  "Impact",
-                  point.delta,
-                  formatSignedCurrency,
-                )
-              }
-              colorClass={(point) => deltaColor(point.delta)}
-            />}
+              primaryName={primaryName}
+              single={single}
+              withConversion={(point) => point.preTaxWithConversion}
+              noConversion={(point) => point.preTaxNoConversion}
+              delta={(point) => point.preTaxDelta}
+            />
           </tbody>
         </table>
       </DualScroll>
     </div>
+  );
+}
+
+type PointValue = (point: AfterTaxAssetsTimelinePoint) => number;
+
+/** One block of rows (after or before tax) under its own heading. */
+function AssetRows({
+  heading,
+  points,
+  primaryName,
+  single,
+  withConversion,
+  noConversion,
+  delta,
+}: {
+  heading: string;
+  points: AfterTaxAssetsTimelinePoint[];
+  primaryName: string;
+  single: boolean;
+  withConversion: PointValue;
+  noConversion: PointValue;
+  delta: PointValue;
+}) {
+  const lower = heading.toLowerCase();
+  return (
+    <>
+      <tr>
+        <th
+          className="sticky left-0 z-10 whitespace-nowrap bg-white px-2 pt-3 pb-1 text-left text-[11px] font-extrabold uppercase tracking-[0.04em] text-foreground"
+        >
+          {heading}
+        </th>
+        <td colSpan={points.length} className="border-b border-border-subtle" />
+      </tr>
+      {single ? null : (
+        <AmountRow
+          label="With conversion"
+          points={points}
+          value={withConversion}
+          format={formatAxisCurrency}
+          title={(point) =>
+            cellTitle(primaryName, point, `With conversion, ${lower}`, withConversion(point))
+          }
+        />
+      )}
+      <AmountRow
+        label="No conversion"
+        points={points}
+        value={noConversion}
+        format={formatAxisCurrency}
+        title={(point) =>
+          cellTitle(primaryName, point, `No conversion, ${lower}`, noConversion(point))
+        }
+      />
+      {single ? null : (
+        <AmountRow
+          label="Impact"
+          points={points}
+          value={delta}
+          format={formatSignedAxisCurrency}
+          title={(point) =>
+            cellTitle(primaryName, point, `Impact, ${lower}`, delta(point), formatSignedCurrency)
+          }
+          colorClass={(point) => deltaColor(delta(point))}
+        />
+      )}
+    </>
   );
 }
 
