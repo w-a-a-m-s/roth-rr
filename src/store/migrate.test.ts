@@ -1362,3 +1362,15 @@ describe("migrateHousehold: college analysis", () => {
     expect(migrateHousehold(household([], []))).not.toHaveProperty("college");
   });
 });
+
+describe("migrateHousehold: reverse mortgage analysis", () => {
+  it("keeps saved inputs and drops a broken shape", () => {
+    const h = household([], []);
+    (h as unknown as Record<string, unknown>).reverseMortgage = { noteRate: 0.07 };
+    expect(migrateHousehold(h).reverseMortgage).toEqual({ noteRate: 0.07 });
+    const broken = household([], []);
+    (broken as unknown as Record<string, unknown>).reverseMortgage = 5;
+    expect(migrateHousehold(broken)).not.toHaveProperty("reverseMortgage");
+    expect(migrateHousehold(household([], []))).not.toHaveProperty("reverseMortgage");
+  });
+});

@@ -526,7 +526,7 @@ The results page layout was signed off by the user. Keep it as is unless the
 user asks for a change:
 
 1. Analysis links: **Retirement | Survivorship | Disability | Long-term care |
-   Mortgage analysis | Pay off or invest | Pay off from retirement | Social Security analysis |
+   Mortgage analysis | Pay off or invest | Pay off from retirement | Reverse mortgage | Social Security analysis |
    Medicare analysis | Lease vs finance | Car loan | College | Spending capacity | Monte Carlo**. Survivorship, Disability and Long-term care show their
    own settings card under them. Survivorship also shows the Life insurance
    summary table (the one on the Insurance step) under its card, at the
@@ -544,6 +544,9 @@ user asks for a change:
    conversion, and a year-by-year table at that spending. Lease vs
    finance (user's request, once named Car analysis) skips them as well: lease, cash or finance
    inputs, a summary table, a net cost chart and a year-by-year table.
+   Reverse mortgage (user's request) skips them too: a HECM on the home,
+   what it pays at closing, and net worth year by year against not taking
+   one, with the cash and the freed loan payments invested.
    Car loan (user's request) skips them too: one car loan's statement, more
    every month and / or a lump sum, a comparison of the ways to pay it
    down and the amortization table. College (user's request) skips them

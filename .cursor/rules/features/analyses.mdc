@@ -1,6 +1,6 @@
 ---
-description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Pay off from retirement, Social Security analysis, Medicare analysis, Lease vs finance, Car loan, College, Spending capacity, Monte Carlo) and the survivorship death model
-globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/RetirementPayoffAnalysis.tsx,src/lib/engine/retirementPayoff.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MonteCarloAnalysis.tsx,src/lib/engine/monteCarlo.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/components/results/CarLoanAnalysis.tsx,src/lib/engine/carLoan.ts,src/components/results/CollegeAnalysis.tsx,src/lib/engine/college.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
+description: Analysis tabs (Retirement, Survivorship, Disability, Long-term care, Mortgage analysis, Pay off or invest, Pay off from retirement, Reverse mortgage, Social Security analysis, Medicare analysis, Lease vs finance, Car loan, College, Spending capacity, Monte Carlo) and the survivorship death model
+globs: src/components/results/AnalysisTabs.tsx,src/components/results/MortgagePayoffAnalysis.tsx,src/lib/engine/mortgagePayoff.ts,src/components/results/RetirementPayoffAnalysis.tsx,src/lib/engine/retirementPayoff.ts,src/components/results/ReverseMortgageAnalysis.tsx,src/lib/engine/reverseMortgage.ts,src/components/results/SpendingCapacityAnalysis.tsx,src/lib/engine/spendingCapacity.ts,src/components/results/MonteCarloAnalysis.tsx,src/lib/engine/monteCarlo.ts,src/components/results/MedicareAnalysis.tsx,src/lib/engine/medicare.ts,src/components/results/MortgageAnalysis.tsx,src/lib/engine/amortization.ts,src/components/results/CarLoanAnalysis.tsx,src/lib/engine/carLoan.ts,src/components/results/CollegeAnalysis.tsx,src/lib/engine/college.ts,src/lib/domain/insurance.ts,src/components/results/ResultsView.tsx,src/lib/domain/survivorship.ts,src/lib/engine/survivorship.test.ts,src/store/useUI.ts
 alwaysApply: false
 ---
 
@@ -98,6 +98,26 @@ conversion schedule always comes from the plan's strategy as-is.
   and `YEAR_COLUMN_DEFINITIONS`) says in plain words what every column is
   and how it's figured. Pay off or invest has the same two lists. Keep them
   in step when a column changes.
+
+- **Reverse mortgage** (user's request): not a projection.
+  `ReverseMortgageAnalysis.tsx` edits `household.reverseMortgage` (healed by
+  `reverseMortgageSettingsFor`) and shows `compareReverseMortgage()`
+  (`lib/engine/reverseMortgage.ts`): a HECM on one property (homestead
+  first) closing in January of `startYear` (default: the youngest turns 62;
+  never before the oldest is 62; this year closes next month). Home value
+  and FHA's lending limit (2026: $1,249,125, editable) grow at the
+  property's appreciation to closing; max claim is the lesser. Principal
+  limit = max claim x PLF: the lender's PLF, or `estimatePrincipalLimitFactor`
+  (age of the youngest, expected rate floored at 3%; an estimate, not HUD's
+  table). Costs: HUD's capped origination, 2% upfront MIP, other costs. The
+  home's loans (paid down to closing via `loanTerms` / `balanceAtStart`) are
+  paid off; first-year limit is max(60% of the limit, payoff + costs + 10%).
+  Lump sum (fixed) forfeits the rest; full draw (adjustable) draws the rest
+  12 months later, grown at the loan rate. Both choices spend the same: the
+  old loan payments are invested each month. Loan grows at note rate + 0.5%
+  MIP monthly, equity floors at 0 (non-recourse). Investments grow at
+  `(1 + return x (1 - tax))^(1/12) - 1`. Compared each year end through the
+  youngest's final age; breakeven return by bisection.
 
 - **Social Security analysis**: not a projection. `SocialSecurityAnalysis.tsx`
   edits `household.socialSecurityClaims` (person, claiming age, monthly

@@ -23,6 +23,7 @@ import { LabsLoading } from '@/lib/common/client';
 import { MortgageAnalysis } from '@/components/results/MortgageAnalysis';
 import { CarLoanAnalysis } from '@/components/results/CarLoanAnalysis';
 import { CollegeAnalysis } from '@/components/results/CollegeAnalysis';
+import { ReverseMortgageAnalysis } from '@/components/results/ReverseMortgageAnalysis';
 import { SocialSecurityAnalysis } from '@/components/results/SocialSecurityAnalysis';
 import { CarAnalysis } from '@/components/results/CarAnalysis';
 import { MedicareAnalysis } from '@/components/results/MedicareAnalysis';
@@ -40,7 +41,7 @@ import { resolveDeath, survivorshipEvent } from '@/lib/domain/survivorship';
 import { useUI } from '@/store/useUI';
 
 /** Analyses that aren't a projection run and skip the results tabs. */
-const STANDALONE = new Set(['mortgage', 'mortgagePayoff', 'retirementPayoff', 'socialSecurity', 'car', 'carLoan', 'college', 'spendingCapacity', 'monteCarlo']);
+const STANDALONE = new Set(['mortgage', 'mortgagePayoff', 'retirementPayoff', 'reverseMortgage', 'socialSecurity', 'car', 'carLoan', 'college', 'spendingCapacity', 'monteCarlo']);
 
 export function ResultsView() {
 	const household = useHousehold();
@@ -156,6 +157,16 @@ export function ResultsView() {
 			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
 				<AnalysisTabs />
 				<CarLoanAnalysis household={household} />
+			</div>
+		);
+	}
+
+	// Reverse mortgage: take a HECM and invest the cash, or don't. Not a projection.
+	if (analysis === 'reverseMortgage') {
+		return (
+			<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-4">
+				<AnalysisTabs />
+				<ReverseMortgageAnalysis household={household} />
 			</div>
 		);
 	}

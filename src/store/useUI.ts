@@ -58,6 +58,7 @@ export type AnalysisKind =
   | "mortgage"
   | "mortgagePayoff"
   | "retirementPayoff"
+  | "reverseMortgage"
   | "socialSecurity"
   | "medicare"
   | "car"

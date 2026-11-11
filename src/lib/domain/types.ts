@@ -719,6 +719,12 @@ export interface Household {
    * Doesn't change the projection. Optional, with defaults.
    */
   retirementPayoff?: RetirementPayoffSettings;
+  /**
+   * Reverse mortgage analysis: take a HECM on a home and invest the
+   * proceeds, or don't. Doesn't change the projection. Optional; the
+   * analysis heals it with `reverseMortgageSettingsFor`.
+   */
+  reverseMortgage?: ReverseMortgageSettings;
   /** Spending capacity: what to leave at the end. Optional, with defaults. */
   spendingCapacity?: SpendingCapacitySettings;
   /** Settings for the Disability analysis. Optional, with defaults. */
@@ -923,6 +929,37 @@ export interface MortgagePayoffSettings {
   /** The Mortgage analysis entry to compare. Missing means the first one. */
   mortgageId?: string;
   /** What the money would earn a year if invested. */
+  investmentReturn: number;
+  /** Tax on that growth each year. */
+  taxRate: number;
+}
+
+/** How a reverse mortgage pays out. */
+export type ReverseMortgagePayout = "lumpSum" | "fullDraw";
+
+/** Reverse mortgage (HECM) analysis inputs. Rates are decimals. */
+export interface ReverseMortgageSettings {
+  /** The home. Missing means the first homestead, else the first property. */
+  propertyId?: string;
+  /** Year the loan closes. Missing means the year the youngest turns 62. */
+  startYear?: number;
+  /**
+   * `lumpSum`: fixed rate, one draw at closing capped at the first-year
+   * limit. `fullDraw`: adjustable rate, the first-year limit at closing and
+   * the rest of the principal limit a year later.
+   */
+  payout: ReverseMortgagePayout;
+  /** The loan's interest rate (annual MIP is added on top). */
+  noteRate: number;
+  /** The expected rate HUD uses to set the principal limit factor. */
+  expectedRate: number;
+  /** A lender's principal limit factor. Missing means our estimate. */
+  principalLimitFactor?: number;
+  /** FHA's lending limit today; grows with the home's appreciation. */
+  lendingLimit: number;
+  /** Closing costs besides origination and upfront MIP (appraisal, title...). */
+  otherClosingCosts: number;
+  /** What the invested proceeds earn a year. */
   investmentReturn: number;
   /** Tax on that growth each year. */
   taxRate: number;
