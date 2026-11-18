@@ -59,6 +59,28 @@ export function federalBracketLabel(rows: Row[], index: number): string {
   return `${label} (${ranges.join("; ")})`;
 }
 
+/**
+ * The detail row under a bracket: where that year's bracket ends ("Bracket
+ * up to"), or where it starts for the top bracket ("Bracket from"). Indexed
+ * brackets move every year, so each column shows its own year's limit.
+ */
+export function federalBracketLimit(
+  rows: Row[],
+  index: number,
+): { label: string; value: (row: Row) => number } {
+  const top = rows[0]?.federalTaxByBracket[index]?.ceiling == null;
+  if (top) {
+    return {
+      label: "Bracket from",
+      value: (row) => row.federalTaxByBracket[index]?.floor ?? 0,
+    };
+  }
+  return {
+    label: "Bracket up to",
+    value: (row) => row.federalTaxByBracket[index]?.ceiling ?? 0,
+  };
+}
+
 /** "Federal tax brackets (Single)", or "(Married filing jointly, then Single)". */
 export function federalBracketsTitle(rows: Row[]): string {
   const statuses = statusesInOrder(rows);

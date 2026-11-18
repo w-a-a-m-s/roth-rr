@@ -4,6 +4,7 @@ import { projectScenario, projectionYears } from "@/lib/engine/project";
 import { FALLBACK_REFERENCE_DATA as refs } from "@/lib/externalData/fallback";
 import {
   federalBracketLabel,
+  federalBracketLimit,
   federalBracketsTitle,
 } from "@/components/results/bracketLabels";
 import { indexedFederalTax } from "@/lib/engine/taxIndexing";
@@ -44,6 +45,15 @@ describe("federal bracket labels", () => {
     expect(federalBracketLabel(indexed, i)).toBe(
       "Tax @ 24% ($121,416 to $231,776 in 2033)",
     );
+    // Each year's own limit: the 10% bracket ends higher every year.
+    const tenLimit = federalBracketLimit(indexed, 0);
+    expect(tenLimit.label).toBe("Bracket up to");
+    expect(tenLimit.value(indexed[0])).toBeCloseTo(single[1].floor, 6);
+    const next = indexedFederalTax(refs.federalTax, 2034, 0.02).brackets.single;
+    expect(tenLimit.value(indexed[1])).toBeCloseTo(next[1].floor, 6);
+    const topLimit = federalBracketLimit(indexed, single.length - 1);
+    expect(topLimit.label).toBe("Bracket from");
+    expect(topLimit.value(indexed[0])).toBeCloseTo(single[single.length - 1].floor, 6);
     // The 10% bracket's floor stays $0, but its ceiling still moves.
     expect(federalBracketLabel(indexed, 0)).toBe(
       `Tax @ 10% ($0 to ${formatCurrency(single[1].floor)} in 2033)`,

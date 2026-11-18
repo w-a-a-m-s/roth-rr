@@ -12,6 +12,7 @@ import type { ScenarioResult } from "@/lib/engine/types";
 import { formatCurrency } from "@/lib/format";
 import {
   federalBracketLabel,
+  federalBracketLimit,
   federalBracketsTitle,
 } from "@/components/results/bracketLabels";
 import {
@@ -108,7 +109,7 @@ function usePinToTop() {
 
 type Row = ScenarioResult["rows"][number];
 
-type Unit = "mo" | "yr" | "sum" | "none";
+type Unit = "mo" | "yr" | "sum" | "money" | "none";
 
 interface LineDef {
   key: string;
@@ -135,6 +136,7 @@ const UNIT_LABEL: Record<Unit, string> = {
   mo: "/mo",
   yr: "/yr",
   sum: "balance",
+  money: "",
   none: "",
 };
 
@@ -617,12 +619,24 @@ function buildSections(
     }
   );
 
-  const bracketLines: LineDef[] = usedBrackets.map((i) => ({
-    key: `bracket-${i}`,
-    label: federalBracketLabel(scenario.rows, i),
-    unit: "yr",
-    value: (r) => r.federalTaxByBracket[i]?.tax ?? 0,
-  }));
+  // Each bracket opens to its limit year by year, since indexed brackets move.
+  const bracketLines: LineDef[] = usedBrackets.map((i) => {
+    const limit = federalBracketLimit(scenario.rows, i);
+    return {
+      key: `bracket-${i}`,
+      label: federalBracketLabel(scenario.rows, i),
+      unit: "yr",
+      value: (r) => r.federalTaxByBracket[i]?.tax ?? 0,
+      children: [
+        {
+          key: `bracket-${i}-limit`,
+          label: limit.label,
+          unit: "money",
+          value: limit.value,
+        },
+      ],
+    };
+  });
 
   const ltcgBracketLines: LineDef[] = usedLtcgBrackets.map((i) => ({
     key: `ltcg-bracket-${i}`,
