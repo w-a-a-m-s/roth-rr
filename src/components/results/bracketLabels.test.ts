@@ -44,6 +44,10 @@ describe("federal bracket labels", () => {
     expect(federalBracketLabel(indexed, i)).toBe(
       "Tax @ 24% ($121,416 to $231,776 in 2033)",
     );
+    // The 10% bracket's floor stays $0, but its ceiling still moves.
+    expect(federalBracketLabel(indexed, 0)).toBe(
+      `Tax @ 10% ($0 to ${formatCurrency(single[1].floor)} in 2033)`,
+    );
   });
 
   it("use the joint ranges for a married plan", () => {

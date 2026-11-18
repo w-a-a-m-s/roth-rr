@@ -42,12 +42,14 @@ export function federalBracketLabel(rows: Row[], index: number): string {
     const first = rows.find((r) => r.filingStatus === fs);
     const bracket = first?.federalTaxByBracket[index];
     if (!first || !bracket) return [];
-    // Indexed brackets move every year: name the year this range is for.
+    // Indexed brackets move every year: name the year this range is for. The
+    // 10% bracket always starts at $0, so its ceiling is what moves.
     const moves = rows.some(
       (r) =>
         r.filingStatus === fs &&
         r.federalTaxByBracket[index] != null &&
-        r.federalTaxByBracket[index].floor !== bracket.floor,
+        (r.federalTaxByBracket[index].floor !== bracket.floor ||
+          r.federalTaxByBracket[index].ceiling !== bracket.ceiling),
     );
     const year = moves && first.calendarYear != null ? ` in ${first.calendarYear}` : "";
     const text = `${range(bracket.floor, bracket.ceiling)}${year}`;
