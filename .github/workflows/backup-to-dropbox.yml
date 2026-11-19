@@ -48,9 +48,10 @@ jobs:
 
             - name: Upload to Dropbox
               env:
-                  DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
-                  DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
-                  DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+                  # The second name of each pair is how the secrets were first saved.
+                  DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY || secrets.APP_KEY }}
+                  DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET || secrets.APP_SECRET }}
+                  DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN || secrets.DROPBOX_REFRESH_TOKE }}
                   ZIP_NAME: ${{ steps.zip.outputs.name }}
                   ZIP_PATH: ${{ steps.zip.outputs.path }}
               run: |
