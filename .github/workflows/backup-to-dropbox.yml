@@ -1,0 +1,76 @@
+name: Back up main to Dropbox
+
+# Zips the code on main and uploads the zip to the Dropbox app folder.
+#
+# Two triggers cover every way main changes:
+#  - push to main: someone pushed or merged into main directly.
+#  - workflow_run: the "Auto-merge Claude branches" workflow merged into main.
+#    Its push uses GITHUB_TOKEN, and GitHub never starts a push workflow from
+#    a GITHUB_TOKEN push, so this listens for that workflow finishing instead.
+# workflow_dispatch adds a "Run workflow" button for a manual backup.
+on:
+    push:
+        branches: [main]
+    workflow_run:
+        workflows: ['Auto-merge Claude branches']
+        types: [completed]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+# One backup at a time; a newer one waits instead of cancelling the older.
+concurrency:
+    group: dropbox-backup
+    cancel-in-progress: false
+
+jobs:
+    backup:
+        # On workflow_run, only back up when the merge actually succeeded.
+        if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: main
+
+            - name: Zip the code
+              id: zip
+              run: |
+                  sha=$(git rev-parse --short HEAD)
+                  stamp=$(date -u +%Y-%m-%d_%H-%M-%S)
+                  name="roth-rr_${stamp}_${sha}.zip"
+                  # Tracked files only: no node_modules, .next or local env files.
+                  git archive --format=zip --output="$RUNNER_TEMP/$name" HEAD
+                  echo "name=$name" >> "$GITHUB_OUTPUT"
+                  echo "path=$RUNNER_TEMP/$name" >> "$GITHUB_OUTPUT"
+                  ls -lh "$RUNNER_TEMP/$name"
+
+            - name: Upload to Dropbox
+              env:
+                  DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+                  DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
+                  DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+                  ZIP_NAME: ${{ steps.zip.outputs.name }}
+                  ZIP_PATH: ${{ steps.zip.outputs.path }}
+              run: |
+                  set -euo pipefail
+                  if [ -z "$DROPBOX_APP_KEY" ] || [ -z "$DROPBOX_APP_SECRET" ] || [ -z "$DROPBOX_REFRESH_TOKEN" ]; then
+                    echo "::warning::Dropbox secrets are not set, skipping the backup."
+                    exit 0
+                  fi
+
+                  # Trade the long-lived refresh token for a short-lived access token.
+                  access_token=$(curl -sS --fail-with-body https://api.dropboxapi.com/oauth2/token \
+                    -u "$DROPBOX_APP_KEY:$DROPBOX_APP_SECRET" \
+                    -d grant_type=refresh_token \
+                    -d refresh_token="$DROPBOX_REFRESH_TOKEN" | jq -r .access_token)
+                  echo "::add-mask::$access_token"
+
+                  # The app has App folder access, so "/" is its own folder
+                  # (Apps/<app name>), never the root of the Dropbox account.
+                  curl -sS --fail-with-body -X POST https://content.dropboxapi.com/2/files/upload \
+                    -H "Authorization: Bearer $access_token" \
+                    -H "Content-Type: application/octet-stream" \
+                    -H "Dropbox-API-Arg: {\"path\": \"/$ZIP_NAME\", \"mode\": \"add\", \"autorename\": true}" \
+                    --data-binary @"$ZIP_PATH" | jq '{name, path_display, size}'
