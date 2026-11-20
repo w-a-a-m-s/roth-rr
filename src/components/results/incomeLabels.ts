@@ -1,6 +1,7 @@
 import type { Household, InsuranceKind } from "@/lib/domain/types";
 import { insurancePolicy } from "@/lib/domain/insurance";
 import { propertyLoans } from "@/lib/domain/propertyLoans";
+import { hasCareRider, longTermCareSettings } from "@/lib/domain/longTermCare";
 import { CAR_EXPENSE_KEY } from "@/lib/engine/otherExpenses";
 import { LEFTOVER_ACCOUNT_ID, LEFTOVER_INVESTMENT_LABEL } from "@/lib/config/defaults";
 
@@ -35,6 +36,19 @@ export function insuranceLabel(household: Household, key: string): string {
   return name ? `${base} · ${name}` : base;
 }
 
+/**
+ * True when a `draw:<account>` key is LTC rider income: the Long-term care
+ * analysis with the rider on that account.
+ */
+export function isCareRiderIncome(
+  household: Household,
+  key: string,
+  options: { longTermCare?: boolean } = {},
+): boolean {
+  if (!options.longTermCare || !key.startsWith("draw:")) return false;
+  return hasCareRider(longTermCareSettings(household), key.slice(5));
+}
+
 /** True when the rows carry long-term care costs (the Long-term care analysis). */
 export function hasCareCosts(rows: { expenseMonthly: Record<string, number> }[]): boolean {
   return rows.some((r) => careMonthly(r.expenseMonthly) > 0);
@@ -43,7 +57,7 @@ export function hasCareCosts(rows: { expenseMonthly: Record<string, number> }[])
 /**
  * Display label for an income key in the results: an income id, `rmd:<account>`
  * `re:<property>`, `draw:<account>` (an event's lifetime income: "Supplemental
- * LTC income" in Long-term care, "Additional survivorship income" in Survivorship), `topup:<account>` (more to cover a short year), or an insurance benefit (`life:`, `di:`, `ltci:`). Social Security also names whose benefit it is, unless
+ * LTC income" in Long-term care, "LTC rider income" on a rider account, "Additional survivorship income" in Survivorship), `topup:<account>` (more to cover a short year), or an insurance benefit (`life:`, `di:`, `ltci:`). Social Security also names whose benefit it is, unless
  * the label already does.
  */
 export function incomeLabel(
@@ -61,7 +75,11 @@ export function incomeLabel(
   }
   if (key.startsWith("draw:")) {
     const acc = household.accounts.find((a) => a.id === key.slice(5));
-    const base = options.longTermCare ? "Supplemental LTC income" : "Additional survivorship income";
+    const base = isCareRiderIncome(household, key, options)
+      ? "LTC rider income"
+      : options.longTermCare
+        ? "Supplemental LTC income"
+        : "Additional survivorship income";
     return acc?.label?.trim() ? `${base} · ${acc.label.trim()}` : base;
   }
   if (key === `topup:${LEFTOVER_ACCOUNT_ID}`) {

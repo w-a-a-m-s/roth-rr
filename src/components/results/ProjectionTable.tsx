@@ -200,7 +200,7 @@ function buildIncomeChildren(
   const longTermCare = hasCareCosts(scenario.rows);
   return incomeDetailKeys(scenario, household).map((key) => {
     // Same source shades as the Assets, Income & Taxes table.
-    const tint = incomeSourceTint(household, key);
+    const tint = incomeSourceTint(household, key, { longTermCare });
     return {
       key: `income-${unit}-${key}`,
       label: incomeLabel(household, key, { longTermCare }),

@@ -11,6 +11,7 @@ import {
   careMonthly,
   hasCareCosts,
   incomeLabel,
+  isCareRiderIncome,
   lifeInsuranceBalanceKeys,
   lifeProceedsLabel,
   insuranceKeyKind,
@@ -37,7 +38,7 @@ export type SnapshotTint =
  * RMDs, and the extra money an event takes from the accounts (a long-term
  * care or survivorship lifetime income, or a top-up for a short year).
  */
-export type IncomeTint = "fixedIncome" | "accountDraw" | "rmd" | "eventDraw";
+export type IncomeTint = "fixedIncome" | "accountDraw" | "rmd" | "eventDraw" | "ltcRider";
 
 const FIXED_INCOME_KINDS: IncomeKind[] = ["pension", "militaryPension", "socialSecurity"];
 
@@ -45,13 +46,15 @@ const FIXED_INCOME_KINDS: IncomeKind[] = ["pension", "militaryPension", "socialS
  * Row background per income source, shared by the Assets, Income & Taxes
  * table and the year-by-year table: fixed income a soft sage (apart from the
  * income section's own green), regular account withdrawals the retirement
- * assets' blue, RMDs a lavender, an event's extra draws amber.
+ * assets' blue, RMDs a lavender, an event's extra draws amber, and LTC
+ * rider income teal so it stands apart from the regular LTC income.
  */
 export const INCOME_TINT_ROW: Record<IncomeTint, string> = {
   fixedIncome: "bg-[#E4EFD3]",
   accountDraw: "bg-[#E1EAF6]",
   rmd: "bg-[#ECE6F7]",
   eventDraw: "bg-[#FBEBCF]",
+  ltcRider: "bg-[#C9E8E2]",
 };
 
 /** After-tax accounts are grouped by type, each type in its own shade. */
@@ -69,13 +72,22 @@ const AFTER_TAX_TINT: Partial<Record<AccountKind, AfterTaxTint>> = {
  * Tint for an income key: an insurance benefit's own color, or its
  * `IncomeTint`. Salary, business, rent and other income keep the section's.
  */
-export function incomeTint(household: Household, key: string): SnapshotTint | undefined {
-  return insuranceKeyKind(key) ?? incomeSourceTint(household, key);
+export function incomeTint(
+  household: Household,
+  key: string,
+  options: { longTermCare?: boolean } = {},
+): SnapshotTint | undefined {
+  return insuranceKeyKind(key) ?? incomeSourceTint(household, key, options);
 }
 
 /** Fixed income, a regular account withdrawal, or an event's extra draw. */
-export function incomeSourceTint(household: Household, key: string): IncomeTint | undefined {
+export function incomeSourceTint(
+  household: Household,
+  key: string,
+  options: { longTermCare?: boolean } = {},
+): IncomeTint | undefined {
   if (insuranceKeyKind(key)) return undefined;
+  if (isCareRiderIncome(household, key, options)) return "ltcRider";
   if (key.startsWith("draw:") || key.startsWith("topup:")) return "eventDraw";
   if (key.startsWith("rmd:")) return "rmd";
   const income = household.incomes.find((i) => i.id === key);
@@ -384,7 +396,7 @@ export function buildSnapshotTable(
       label: incomeLabel(household, key, { longTermCare }),
       values: pick((r) => r.incomeMonthly[key] ?? 0),
       tone: "plain",
-      tint: incomeTint(household, key),
+      tint: incomeTint(household, key, { longTermCare }),
     }),
   );
   // Every source added up, so the month's income reads in one number.
