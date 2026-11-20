@@ -66,9 +66,9 @@ and effective date.
 canonical domain `https://thewealthlab.ai` (see `@/lib/common/site`), never a
 `*.vercel.app` host.
 
-**Shipping to main.** Pushes on `claude/**` merge into `main` after 120
+**Shipping to main.** Pushes on `claude/**` merge into `main` after 20
 seconds of quiet. Each new push on that branch cancels the in-progress wait
-and the 120 seconds start over. The workflow then runs tests and merges that
+and the 20 seconds start over. The workflow then runs tests and merges that
 commit into `main` (`.github/workflows/auto-merge-claude.yml`).
 
 **Writing.** UI copy, comments, and docs are friendly and informal: warm,

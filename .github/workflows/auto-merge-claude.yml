@@ -16,7 +16,7 @@ jobs:
     merge:
         runs-on: ubuntu-latest
         steps:
-            - run: sleep 120
+            - run: sleep 20
             - uses: actions/checkout@v4
               with:
                   ref: main
