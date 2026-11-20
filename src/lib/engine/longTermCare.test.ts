@@ -246,11 +246,11 @@ describe("LTC rider", () => {
     const h = withTwoAccounts();
     const off = rows(h, care({}));
     const on = rows(h, care({ rider: true, riderAccountIds: ["ira"] }));
-    // Issued at the plan start (2026, Alex 76), income from 2030: 4 completed
-    // years, row 76 column 4 = 9.40%, doubled in care.
-    expect(levelIncomeRate(76, 4)).toBe(0.094);
+    // Issued when care starts (2030, Alex 80), 0 completed years: row 80
+    // column 0 = 9.65%, doubled in care.
+    expect(levelIncomeRate(80, 0)).toBe(0.0965);
     const jan2030 = at(on, 2029).balances.ira;
-    expect(12 * at(on, 2030).incomeMonthly["draw:ira"]).toBeCloseTo(jan2030 * 0.094 * 2, 4);
+    expect(12 * at(on, 2030).incomeMonthly["draw:ira"]).toBeCloseTo(jan2030 * 0.0965 * 2, 4);
     // The account without the rider is untouched in the first care year.
     expect(at(on, 2030).incomeMonthly["draw:ira2"]).toBeCloseTo(at(off, 2030).incomeMonthly["draw:ira2"], 6);
     // In care the rider account grows 4.875% (the draws come out after growth).
@@ -281,12 +281,30 @@ describe("LTC rider", () => {
 
   it("only doubles while the account's owner is in care", () => {
     // The rider is on Sam's account, but only Alex is in care: Sam's account
-    // pays the table's regular rate (Sam 74 at the plan start, 4 years: 9.00%).
+    // pays the table's regular rate (Sam 78 when care starts: 9.25%).
     const h = withTwoAccounts();
     h.accounts[1].ownerId = "b";
     const on = rows(h, care({ rider: true, riderAccountIds: ["ira2"] }));
     const jan2030 = at(on, 2029).balances.ira2;
-    expect(12 * at(on, 2030).incomeMonthly["draw:ira2"]).toBeCloseTo(jan2030 * 0.09, 4);
+    expect(12 * at(on, 2030).incomeMonthly["draw:ira2"]).toBeCloseTo(jan2030 * 0.0925, 4);
+  });
+
+  it("replaces the account's own withdrawals once care starts", () => {
+    const h = withTwoAccounts();
+    h.incomes.push(
+      { id: "w1", label: "IRA draw", ownerId: "a", kind: "retirementDraw", monthlyAmount: 1000, growthRate: 0, taxability: "full", drawsFromAccountId: "ira" },
+      { id: "w2", label: "IRA 2 draw", ownerId: "a", kind: "retirementDraw", monthlyAmount: 1000, growthRate: 0, taxability: "full", drawsFromAccountId: "ira2" },
+    );
+    const on = rows(h, care({ rider: true, riderAccountIds: ["ira"] }));
+    // Before care both draws run.
+    expect(at(on, 2029).incomeMonthly.w1).toBe(1000);
+    // From 2030 the rider account pays only its rider income; the other keeps its draw.
+    expect(at(on, 2030).incomeMonthly.w1 ?? 0).toBe(0);
+    expect(at(on, 2035).incomeMonthly.w1 ?? 0).toBe(0);
+    expect(at(on, 2030).incomeMonthly.w2).toBe(1000);
+    // Off: both draws keep running beside the lifetime income.
+    const off = rows(h, care({}));
+    expect(at(off, 2030).incomeMonthly.w1).toBe(1000);
   });
 
   it("covers every account when none are picked, and nothing when it's off", () => {

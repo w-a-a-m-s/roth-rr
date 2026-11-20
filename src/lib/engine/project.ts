@@ -945,8 +945,9 @@ export function projectScenario(
   // age of the person it pays. What's left grows 8% a year. The income is
   // guaranteed, so it keeps paying if the balance runs out. In Long-term care,
   // an account with the LTC rider takes its rate from the Level Income table
-  // instead (issued at the plan start: issue age that year, completed years
-  // up to the first income year). In the years its owner is in care (either
+  // instead, issued when care starts (the recipient's age that year, 0
+  // completed years), and from then its own scheduled withdrawals stop: the
+  // rider income replaces them. In the years its owner is in care (either
   // spouse for a joint account) it pays twice that income, for at most
   // `LTC_RIDER_DOUBLED_YEARS`, and grows 4.875%; otherwise the table's
   // regular income and 8%.
@@ -1091,7 +1092,7 @@ export function projectScenario(
         const base = Math.max(0, balances[acc.id]);
         if (!(base > 0)) continue;
         const rate = riderAccounts.has(acc.id)
-          ? levelIncomeRate(incomeRecipientAge(acc, start), calendarYear - start)
+          ? levelIncomeRate(incomeRecipientAge(acc, calendarYear), 0)
           : lifeInsurancePayoutRate(incomeRecipientAge(acc, calendarYear));
         eventIncome[acc.id] = base * rate;
       }
@@ -1107,6 +1108,18 @@ export function projectScenario(
       }
       riderDoubledYears[accId] = doubled + 1;
       yearEventIncome[accId] = income * LTC_RIDER_INCOME_MULTIPLIER;
+    }
+    // From the start of care, a rider account's own scheduled withdrawals
+    // stop: its rider income replaces them.
+    const riderStoppedDraws = new Set<string>();
+    if (careStart != null && calendarYear >= careStart) {
+      for (const income of household.incomes) {
+        if (!isWithdrawalIncome(income.kind)) continue;
+        const accId = income.drawsFromAccountId;
+        if (!accId || !riderAccounts.has(accId) || eventIncome?.[accId] == null) continue;
+        riderStoppedDraws.add(income.id);
+        stoppedIncomes.add(income.id);
+      }
     }
     fixIncomeTableAmounts(household, calendarYear, balances, tableIncome);
     const tableAccounts = incomeTableAccountIds(household, tableIncome);
@@ -1182,6 +1195,7 @@ export function projectScenario(
     for (const income of household.incomes) {
       if (!isWithdrawalIncome(income.kind)) continue;
       if (!isIncomeActive(income, calendarYear)) continue;
+      if (riderStoppedDraws.has(income.id)) continue;
       const accId = income.drawsFromAccountId;
       if (!accId || balances[accId] == null) continue;
       const source = accounts.find((a) => a.id === accId);

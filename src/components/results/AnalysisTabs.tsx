@@ -497,7 +497,7 @@ function CareRiderControls({
         <div className="min-w-0">
           <div className="text-[13px] font-semibold text-foreground">LTC rider</div>
           <div className="mt-0.5 text-[12px] leading-snug text-muted">
-            {`An account with the rider takes its lifetime income from the Level Income table. While the owner is in care it pays ${LTC_RIDER_INCOME_MULTIPLIER}x that income, for up to ${LTC_RIDER_DOUBLED_YEARS} years, and what's left grows ${formatPercentPrecise(LTC_RIDER_GROWTH)} a year instead of 8%. After that, it's the table's regular income and 8%.`}
+            {`Once care starts, an account with the rider stops its own withdrawals and pays a lifetime income from the Level Income table instead (the age care starts, 0 contract years). While the owner is in care it pays ${LTC_RIDER_INCOME_MULTIPLIER}x that income, for up to ${LTC_RIDER_DOUBLED_YEARS} years, and what's left grows ${formatPercentPrecise(LTC_RIDER_GROWTH)} a year instead of 8%. After that, it's the table's regular income and 8%.`}
           </div>
         </div>
         <button

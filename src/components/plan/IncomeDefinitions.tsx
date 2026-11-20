@@ -106,8 +106,8 @@ function IncomeDefinitionsBody() {
               the gain over basis from an after-tax account.
             </>,
             <>
-              LTC rider: the account&apos;s rate comes from the Level Income table instead, by the
-              age at the plan start and the years from then to the first income year. While its
+              LTC rider: once care starts, the account&apos;s own withdrawals stop and its rate comes
+              from the Level Income table instead, by the age care starts with 0 contract years. While its
               owner is in care it pays {LTC_RIDER_INCOME_MULTIPLIER}x that income, for up to{" "}
               {LTC_RIDER_DOUBLED_YEARS} years, and grows {formatPercentPrecise(LTC_RIDER_GROWTH)}.
               After that it&apos;s the table&apos;s regular income and {GROWTH}.

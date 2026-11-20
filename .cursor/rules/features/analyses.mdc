@@ -296,10 +296,11 @@ instead of Total impact. Retirement still compares the two.
   `hasCareRider`. The checkboxes show even while the switch is off. An
   account with the rider takes its lifetime income rate from the user's
   Level Income table (`config/ltcRiderLevelIncome.ts`, `levelIncomeRate`),
-  not the Transamerica one: the contract counts as issued at the plan
-  start, so the row is the recipient's age that year and the column the
-  completed years to the first income year (row and column at or below,
-  nearest rate on an N/A cell). In the years its owner is in care (either
+  not the Transamerica one: the contract counts as issued when care
+  starts, so the row is the recipient's age that year and the column 0
+  completed years (row at or below, nearest rate on an N/A cell). From
+  the start of care the account's own scheduled withdrawals (income table
+  draws and the rest) stop: the rider income replaces them (user's call). In the years its owner is in care (either
   spouse for a joint account) it pays `LTC_RIDER_INCOME_MULTIPLIER` (2x)
   that income, for at most `LTC_RIDER_DOUBLED_YEARS` (5) care years, and
   what's left grows `LTC_RIDER_GROWTH` (4.875%) instead of 8%. Otherwise

@@ -6,9 +6,8 @@
  * long-term care the income is doubled, for at most
  * `LTC_RIDER_DOUBLED_YEARS` years (see `lib/domain/longTermCare.ts`).
  *
- * The contract is taken as issued at the plan start, so the issue age is the
- * income recipient's age that year and the completed years are the years
- * from the plan start to the first income year.
+ * The contract is taken as issued when care starts, so the issue age is the
+ * income recipient's age that year with 0 completed years.
  */
 
 /** Completed contract years each column is for. */
