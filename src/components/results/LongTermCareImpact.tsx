@@ -1,6 +1,6 @@
 'use client';
 
-import type { LongTermCareAssetImpact } from '@/lib/engine/longTermCareImpact';
+import type { CareRiderIncome, LongTermCareAssetImpact } from '@/lib/engine/longTermCareImpact';
 import { formatCurrency } from '@/lib/format';
 
 /**
@@ -8,7 +8,14 @@ import { formatCurrency } from '@/lib/format';
  * much total assets went down over the care years, and how far below the plan
  * without care they end, and whether the income covers the care years.
  */
-export function LongTermCareImpact({ impact }: { impact: LongTermCareAssetImpact }) {
+export function LongTermCareImpact({
+	impact,
+	rider = null,
+}: {
+	impact: LongTermCareAssetImpact;
+	/** What the LTC rider accounts paid during care, with and without the rider. */
+	rider?: CareRiderIncome | null;
+}) {
 	const { firstYear, lastYear, before, after, drop, withoutCare, shortfall, cashFlow } = impact;
 	const years = firstYear === lastYear ? String(firstYear) : `${firstYear} to ${lastYear}`;
 	const fell = drop >= 0;
@@ -26,6 +33,12 @@ export function LongTermCareImpact({ impact }: { impact: LongTermCareAssetImpact
 				<p className="m-0 mt-1.5 text-[12.5px] leading-snug text-muted-3">
 					During long-term care ({years}): from {formatCurrency(before)} going in to {formatCurrency(after)} at the end.
 				</p>
+				{rider ? (
+					<p className="m-0 mt-2 rounded-md bg-[#C9E8E2] px-2 py-1 text-[12.5px] leading-snug text-foreground">
+						The LTC rider paid {formatCurrency(rider.withRider)} from {rider.accountLabels.join(' and ')} during care, against{' '}
+						{formatCurrency(rider.withoutRider)} from the same accounts without it.
+					</p>
+				) : null}
 			</div>
 			<div className="rounded-2xl border border-border bg-white px-5 py-4">
 				<div className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted-3">
@@ -38,10 +51,22 @@ export function LongTermCareImpact({ impact }: { impact: LongTermCareAssetImpact
 					At the end of {lastYear}: {formatCurrency(after)} with care, {formatCurrency(withoutCare)} in the same plan
 					without it (no conversion).
 				</p>
+				{rider ? (
+					<p className="m-0 mt-2 rounded-md bg-[#C9E8E2] px-2 py-1 text-[12.5px] leading-snug text-foreground">
+						{riderDifference(rider)}
+					</p>
+				) : null}
 			</div>
 			<CashFlowCard cashFlow={cashFlow} years={years} />
 		</div>
 	);
+}
+
+/** The rider's income during care against the plan without it, in one line. */
+function riderDifference(rider: CareRiderIncome): string {
+	const diff = rider.withRider - rider.withoutRider;
+	if (Math.abs(diff) < 0.5) return 'The LTC rider paid the same during care as without it.';
+	return `With the LTC rider: ${formatCurrency(Math.abs(diff))} ${diff > 0 ? 'more' : 'less'} income during care than without it.`;
 }
 
 /** Back-to-back years read as a range; with a gap, list them. */

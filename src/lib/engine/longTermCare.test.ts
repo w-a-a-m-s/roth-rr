@@ -13,6 +13,7 @@ import {
   toggleCareRiderAccount,
 } from "@/lib/domain/longTermCare";
 import { levelIncomeRate } from "@/lib/config/ltcRiderLevelIncome";
+import { careRiderIncome, longTermCareAssetImpact } from "@/lib/engine/longTermCareImpact";
 
 // Alex (man, born 1950) and Sam (woman, born 1952). Plan starts in 2026.
 function couple(): Household {
@@ -314,6 +315,28 @@ describe("LTC rider", () => {
     const all = resolveLongTermCare(h, care({ rider: true }))!;
     expect(all.riderAccountIds).toEqual(["ira", "ira2"]);
     expect(resolveLongTermCare(h, care({ rider: false, riderAccountIds: ["ira"] }))!.riderAccountIds).toEqual([]);
+  });
+
+  it("totals what the rider accounts paid during care, with and without the rider", () => {
+    const h = withTwoAccounts();
+    const onSettings = care({ rider: true, riderAccountIds: ["ira"] });
+    const on = rows(h, onSettings);
+    const off = rows(h, care({}));
+    const resolved = resolveLongTermCare(h, onSettings);
+    const impact = longTermCareAssetImpact(on, rows(h), resolved);
+    const rider = careRiderIncome(on, off, h, resolved, impact)!;
+    expect(rider.accountLabels).toEqual(["IRA"]);
+    // Care runs 2030 to 2032: every dollar out of the IRA those years.
+    const paid = (r: typeof on) =>
+      [2030, 2031, 2032].reduce((sum, y) => {
+        const m = at(r, y).incomeMonthly;
+        return sum + 12 * ((m["draw:ira"] ?? 0) + (m["topup:ira"] ?? 0) + (m["rmd:ira"] ?? 0));
+      }, 0);
+    expect(rider.withRider).toBeCloseTo(paid(on), 2);
+    expect(rider.withoutRider).toBeCloseTo(paid(off), 2);
+    expect(rider.withRider).toBeGreaterThan(rider.withoutRider);
+    // No rider account, no line.
+    expect(careRiderIncome(off, off, h, resolveLongTermCare(h, care({})), impact)).toBeNull();
   });
 
   it("ticking a box while the rider is off turns it on for that account", () => {

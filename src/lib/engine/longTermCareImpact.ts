@@ -1,5 +1,6 @@
-import { eventTopUpKey } from "@/lib/domain/household";
+import { eventTopUpKey, eventWithdrawalKey } from "@/lib/domain/household";
 import type { ResolvedCare } from "@/lib/domain/longTermCare";
+import type { Household } from "@/lib/domain/types";
 import type { ProjectionRow } from "@/lib/engine/types";
 
 const TOP_UP_PREFIX = eventTopUpKey("");
@@ -142,4 +143,63 @@ function careCashFlow(
     uncovered += unpaid;
   }
   return { years: rows.length, shortYears, fromAccounts, unpaidYears, uncovered };
+}
+
+/** What the LTC rider accounts paid over the care years, with and without the rider. */
+export interface CareRiderIncome {
+  /** The rider accounts' labels, for the cards. */
+  accountLabels: string[];
+  /** Paid out of those accounts over the care years with the rider. */
+  withRider: number;
+  /** The same accounts in the same plan with the rider off. */
+  withoutRider: number;
+}
+
+/**
+ * Everything the given accounts paid out over `firstYear` to `lastYear`:
+ * their event income (`draw:`), top-ups (`topup:`), RMDs (`rmd:`) and
+ * scheduled withdrawals, a year's monthly amounts times 12.
+ */
+export function accountIncomeOverYears(
+  rows: ProjectionRow[],
+  household: Household,
+  accountIds: string[],
+  firstYear: number,
+  lastYear: number,
+): number {
+  const keys = new Set<string>();
+  for (const id of accountIds) {
+    keys.add(eventWithdrawalKey(id));
+    keys.add(eventTopUpKey(id));
+    keys.add(`rmd:${id}`);
+  }
+  for (const income of household.incomes) {
+    if (income.drawsFromAccountId && accountIds.includes(income.drawsFromAccountId)) keys.add(income.id);
+  }
+  let total = 0;
+  for (const row of rows) {
+    if (row.calendarYear < firstYear || row.calendarYear > lastYear) continue;
+    for (const key of keys) total += (row.incomeMonthly[key] ?? 0) * 12;
+  }
+  return total;
+}
+
+/**
+ * The rider's income over the care years against the same plan with the
+ * rider off. Null without a rider account or care years.
+ */
+export function careRiderIncome(
+  riderRows: ProjectionRow[],
+  noRiderRows: ProjectionRow[],
+  household: Household,
+  care: ResolvedCare | null,
+  impact: LongTermCareAssetImpact | null,
+): CareRiderIncome | null {
+  if (!care || !impact || care.riderAccountIds.length === 0) return null;
+  const ids = care.riderAccountIds;
+  return {
+    accountLabels: ids.map((id) => household.accounts.find((a) => a.id === id)?.label?.trim() || "Account"),
+    withRider: accountIncomeOverYears(riderRows, household, ids, impact.firstYear, impact.lastYear),
+    withoutRider: accountIncomeOverYears(noRiderRows, household, ids, impact.firstYear, impact.lastYear),
+  };
 }
