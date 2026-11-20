@@ -9,6 +9,8 @@ import {
   defaultCareYears,
   longTermCareSettings,
   resolveLongTermCare,
+  setCareRider,
+  toggleCareRiderAccount,
 } from "@/lib/domain/longTermCare";
 import { levelIncomeRate } from "@/lib/config/ltcRiderLevelIncome";
 
@@ -312,6 +314,27 @@ describe("LTC rider", () => {
     const all = resolveLongTermCare(h, care({ rider: true }))!;
     expect(all.riderAccountIds).toEqual(["ira", "ira2"]);
     expect(resolveLongTermCare(h, care({ rider: false, riderAccountIds: ["ira"] }))!.riderAccountIds).toEqual([]);
+  });
+
+  it("ticking a box while the rider is off turns it on for that account", () => {
+    const ids = ["ira", "ira2"];
+    const ticked = toggleCareRiderAccount(care({}), ids, "ira2");
+    expect(ticked.rider).toBe(true);
+    expect(ticked.riderAccountIds).toEqual(["ira2"]);
+    // And it changes the income.
+    const h = withTwoAccounts();
+    expect(at(rows(h, ticked), 2030).incomeMonthly["draw:ira2"]).not.toBeCloseTo(
+      at(rows(h, care({})), 2030).incomeMonthly["draw:ira2"],
+      0,
+    );
+    // Unticking from "every account" keeps the rest; unticking the last turns it off.
+    const both = care({ rider: true });
+    expect(toggleCareRiderAccount(both, ids, "ira").riderAccountIds).toEqual(["ira2"]);
+    expect(toggleCareRiderAccount(ticked, ids, "ira2").rider).toBe(false);
+    // The switch on with none picked covers every account.
+    const none = setCareRider(care({ rider: false, riderAccountIds: [] }), true);
+    expect(none.rider).toBe(true);
+    expect(none.riderAccountIds).toBeUndefined();
   });
 
   it("is healed on read: off by default, unknown accounts dropped", () => {

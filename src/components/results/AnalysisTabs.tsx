@@ -26,6 +26,9 @@ import {
   LTC_RIDER_DOUBLED_YEARS,
   LTC_RIDER_GROWTH,
   LTC_RIDER_INCOME_MULTIPLIER,
+  hasCareRider,
+  setCareRider,
+  toggleCareRiderAccount,
   carePeriodFor,
   peopleInCare,
 } from "@/lib/domain/longTermCare";
@@ -467,9 +470,9 @@ export function LongTermCareControls({
 /**
  * LTC rider: a switch, then one checkbox per account. While its owner is in
  * care, an account with the rider pays twice the lifetime income and grows 4%
- * instead of 8%. The checkboxes always show the saved selection (missing
- * means every account), so the accounts can be picked before the switch is
- * turned on.
+ * instead of 8%. The checkboxes always show, and each one is whether that
+ * account has the rider: ticking one while the switch is off turns the rider
+ * on for it (`toggleCareRiderAccount`).
  */
 function CareRiderControls({
   household,
@@ -481,15 +484,14 @@ function CareRiderControls({
   const setLongTermCare = useScenario((s) => s.setLongTermCare);
   const on = settings.rider === true;
   const accounts = household.accounts;
-  const picked = (accountId: string) =>
-    settings.riderAccountIds == null || settings.riderAccountIds.includes(accountId);
-  const toggleAccount = (accountId: string) => {
-    const current = accounts.filter((a) => picked(a.id)).map((a) => a.id);
-    const next = current.includes(accountId)
-      ? current.filter((id) => id !== accountId)
-      : [...current, accountId];
-    setLongTermCare({ ...settings, riderAccountIds: next });
-  };
+  const toggleAccount = (accountId: string) =>
+    setLongTermCare(
+      toggleCareRiderAccount(
+        settings,
+        accounts.map((a) => a.id),
+        accountId,
+      ),
+    );
 
   return (
     <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-card px-3 py-2.5">
@@ -505,7 +507,7 @@ function CareRiderControls({
           role="switch"
           aria-checked={on}
           aria-label="LTC rider"
-          onClick={() => setLongTermCare({ ...settings, rider: !on })}
+          onClick={() => setLongTermCare(setCareRider(settings, !on))}
           className={`relative h-[22px] w-[40px] shrink-0 cursor-pointer rounded-full border-0 transition-colors ${
             on ? "bg-accent" : "bg-border-2"
           }`}
@@ -518,15 +520,13 @@ function CareRiderControls({
         </button>
       </div>
       {accounts.length > 0 ? (
-        <fieldset
-          className={`m-0 flex flex-wrap gap-x-4 gap-y-1.5 border-0 p-0 ${on ? "" : "opacity-60"}`}
-        >
+        <fieldset className="m-0 flex flex-wrap gap-x-4 gap-y-1.5 border-0 p-0">
           <legend className="mb-1 p-0 text-[12.5px] font-semibold text-muted-2">On these accounts</legend>
           {accounts.map((acc) => (
             <label key={acc.id} className="flex cursor-pointer items-center gap-1.5 text-[13px] text-foreground">
               <input
                 type="checkbox"
-                checked={picked(acc.id)}
+                checked={hasCareRider(settings, acc.id)}
                 onChange={() => toggleAccount(acc.id)}
                 className="h-4 w-4 accent-[var(--accent)]"
               />

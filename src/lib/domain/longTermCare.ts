@@ -114,6 +114,45 @@ export function hasCareRider(settings: LongTermCareSettings | null | undefined, 
   return settings.riderAccountIds == null || settings.riderAccountIds.includes(accountId);
 }
 
+/** The settings with no account list (the rider then covers every account). */
+function withoutRiderAccounts(settings: LongTermCareSettings): LongTermCareSettings {
+  const copy = { ...settings };
+  delete copy.riderAccountIds;
+  return copy;
+}
+
+/**
+ * Tick or untick one account's rider box. A box shows whether that account
+ * has the rider, so ticking one while the rider is off turns it on for just
+ * that account, and unticking the last one turns the rider off.
+ */
+export function toggleCareRiderAccount(
+  settings: LongTermCareSettings,
+  accountIds: string[],
+  accountId: string,
+): LongTermCareSettings {
+  const rest = withoutRiderAccounts(settings);
+  if (!settings.rider) return { ...rest, rider: true, riderAccountIds: [accountId] };
+  const current = accountIds.filter((id) => hasCareRider(settings, id));
+  const next = current.includes(accountId)
+    ? current.filter((id) => id !== accountId)
+    : [...current, accountId];
+  if (next.length === 0) return { ...rest, rider: false };
+  return { ...rest, rider: true, riderAccountIds: next };
+}
+
+/**
+ * The rider switch. Turning it on with no account picked puts it on every
+ * account, so the switch always does something.
+ */
+export function setCareRider(settings: LongTermCareSettings, on: boolean): LongTermCareSettings {
+  if (!on) return { ...settings, rider: false };
+  if (settings.riderAccountIds && settings.riderAccountIds.length === 0) {
+    return { ...withoutRiderAccounts(settings), rider: true };
+  }
+  return { ...settings, rider: true };
+}
+
 /** Start age and years for one person, saved or default. */
 export function carePeriodFor(
   household: Household,

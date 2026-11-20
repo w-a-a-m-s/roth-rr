@@ -293,7 +293,11 @@ instead of Total impact. Retirement still compares the two.
 - LTC rider (user's request): a switch on the tab (`rider`) plus a checkbox
   per account (`riderAccountIds`, missing means every account), healed in
   `longTermCareSettings`, resolved to `ResolvedCare.riderAccountIds` via
-  `hasCareRider`. The checkboxes show even while the switch is off. An
+  `hasCareRider`. The checkboxes show even while the switch is off, and
+  each one shows whether that account has the rider: ticking one while it's
+  off turns the rider on for just that account, unticking the last turns it
+  off (`toggleCareRiderAccount`), and the switch on with none picked means
+  every account (`setCareRider`). An
   account with the rider takes its lifetime income rate from the user's
   Level Income table (`config/ltcRiderLevelIncome.ts`, `levelIncomeRate`),
   not the Transamerica one: the contract counts as issued when care
