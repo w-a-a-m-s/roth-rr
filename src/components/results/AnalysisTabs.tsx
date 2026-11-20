@@ -23,12 +23,13 @@ import {
   INDIVIDUAL_CARE_EXPENSE_SHARES,
   CARE_MONTHLY_COST,
   CARE_TYPE_LABELS,
+  LTC_RIDER_DOUBLED_YEARS,
   LTC_RIDER_GROWTH,
   LTC_RIDER_INCOME_MULTIPLIER,
   carePeriodFor,
   peopleInCare,
 } from "@/lib/domain/longTermCare";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatCurrency, formatPercent, formatPercentPrecise } from "@/lib/format";
 import {
   SURVIVOR_EXPENSE_SHARE,
   resolveDeath,
@@ -496,7 +497,7 @@ function CareRiderControls({
         <div className="min-w-0">
           <div className="text-[13px] font-semibold text-foreground">LTC rider</div>
           <div className="mt-0.5 text-[12px] leading-snug text-muted">
-            {`While the owner is in care, an account with the rider pays ${LTC_RIDER_INCOME_MULTIPLIER}x the lifetime income and what's left grows ${formatPercent(LTC_RIDER_GROWTH)} a year instead of 8%. After care, it's back to the normal income and 8%.`}
+            {`An account with the rider takes its lifetime income from the Level Income table. While the owner is in care it pays ${LTC_RIDER_INCOME_MULTIPLIER}x that income, for up to ${LTC_RIDER_DOUBLED_YEARS} years, and what's left grows ${formatPercentPrecise(LTC_RIDER_GROWTH)} a year instead of 8%. After that, it's the table's regular income and 8%.`}
           </div>
         </div>
         <button

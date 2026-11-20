@@ -19,10 +19,15 @@ export const CARE_TYPE_LABELS: Record<CareType, string> = {
 
 export const DEFAULT_CARE_INFLATION = 0.03;
 
-/** An LTC rider doubles an account's lifetime income while its owner is in care... */
+/**
+ * An LTC rider account's lifetime income comes from the Level Income table
+ * (`config/ltcRiderLevelIncome.ts`). While its owner is in care it's doubled...
+ */
 export const LTC_RIDER_INCOME_MULTIPLIER = 2;
-/** ...and what's left in it grows 4% a year instead of 8%. */
-export const LTC_RIDER_GROWTH = 0.04;
+/** ...for at most this many care years, then it's the table's regular income. */
+export const LTC_RIDER_DOUBLED_YEARS = 5;
+/** What's left in it grows 4.875% a year in the care years instead of 8%. */
+export const LTC_RIDER_GROWTH = 0.04875;
 export const DEFAULT_CARE_START_AGE = 80;
 
 /**

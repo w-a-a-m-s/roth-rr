@@ -293,12 +293,19 @@ instead of Total impact. Retirement still compares the two.
 - LTC rider (user's request): a switch on the tab (`rider`) plus a checkbox
   per account (`riderAccountIds`, missing means every account), healed in
   `longTermCareSettings`, resolved to `ResolvedCare.riderAccountIds` via
-  `hasCareRider`. In the years its owner is in care (either
-  spouse for a joint account), an account with the rider pays
-  `LTC_RIDER_INCOME_MULTIPLIER` (2x) the lifetime income and what's left
-  grows `LTC_RIDER_GROWTH` (4%) instead of 8%. After care it's back to the
-  normal income and 8% (user's call). The doubled amount counts toward the
-  RMD those years. Off by default, so older plans don't change.
+  `hasCareRider`. The checkboxes show even while the switch is off. An
+  account with the rider takes its lifetime income rate from the user's
+  Level Income table (`config/ltcRiderLevelIncome.ts`, `levelIncomeRate`),
+  not the Transamerica one: the contract counts as issued at the plan
+  start, so the row is the recipient's age that year and the column the
+  completed years to the first income year (row and column at or below,
+  nearest rate on an N/A cell). In the years its owner is in care (either
+  spouse for a joint account) it pays `LTC_RIDER_INCOME_MULTIPLIER` (2x)
+  that income, for at most `LTC_RIDER_DOUBLED_YEARS` (5) care years, and
+  what's left grows `LTC_RIDER_GROWTH` (4.875%) instead of 8%. Otherwise
+  it's the table's regular income and 8% (user's call). The doubled amount
+  counts toward the RMD those years. Off by default, so older plans don't
+  change.
 
 ## Results layout (what clients see first)
 

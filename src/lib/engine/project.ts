@@ -28,6 +28,7 @@ import {
   careExpenseKey,
   careForYear,
   resolveLongTermCare,
+  LTC_RIDER_DOUBLED_YEARS,
   LTC_RIDER_GROWTH,
   LTC_RIDER_INCOME_MULTIPLIER,
 } from "@/lib/domain/longTermCare";
@@ -53,6 +54,7 @@ import {
   LIFE_INSURANCE_PROCEEDS_GROWTH,
   lifeInsurancePayoutRate,
 } from "@/lib/config/lifeInsurancePayout";
+import { levelIncomeRate } from "@/lib/config/ltcRiderLevelIncome";
 import {
   allowsRmdYearConversions,
   allowsWorkingYearConversions,
@@ -942,9 +944,12 @@ export function projectScenario(
   // proceeds: its balance that January times the payout table's rate for the
   // age of the person it pays. What's left grows 8% a year. The income is
   // guaranteed, so it keeps paying if the balance runs out. In Long-term care,
-  // an account with the LTC rider pays twice that income and grows 4% in the
-  // years its owner is in care (either spouse for a joint account), then goes
-  // back to the normal income and 8%.
+  // an account with the LTC rider takes its rate from the Level Income table
+  // instead (issued at the plan start: issue age that year, completed years
+  // up to the first income year). In the years its owner is in care (either
+  // spouse for a joint account) it pays twice that income, for at most
+  // `LTC_RIDER_DOUBLED_YEARS`, and grows 4.875%; otherwise the table's
+  // regular income and 8%.
   const careStart =
     care && care.stays.length > 0
       ? Math.min(...care.stays.map((stay) => stay.firstYear))
@@ -954,6 +959,8 @@ export function projectScenario(
   );
   const eventStart = eventYears.length > 0 ? Math.min(...eventYears) : null;
   const riderAccounts = new Set(care?.riderAccountIds ?? []);
+  // Care years each rider account has paid double so far.
+  const riderDoubledYears: Record<string, number> = {};
   const riderActive = (accId: string, calendarYear: number) => {
     if (!riderAccounts.has(accId)) return false;
     const acc = accounts.find((a) => a.id === accId);
@@ -1083,15 +1090,23 @@ export function projectScenario(
       for (const acc of incomeAccounts) {
         const base = Math.max(0, balances[acc.id]);
         if (!(base > 0)) continue;
-        eventIncome[acc.id] = base * lifeInsurancePayoutRate(incomeRecipientAge(acc, calendarYear));
+        const rate = riderAccounts.has(acc.id)
+          ? levelIncomeRate(incomeRecipientAge(acc, start), calendarYear - start)
+          : lifeInsurancePayoutRate(incomeRecipientAge(acc, calendarYear));
+        eventIncome[acc.id] = base * rate;
       }
     }
-    // This year's event income: doubled on a rider account while its owner is in care.
+    // This year's event income: doubled on a rider account while its owner is
+    // in care, for the first `LTC_RIDER_DOUBLED_YEARS` care years.
     const yearEventIncome: Record<string, number> = {};
     for (const [accId, income] of Object.entries(eventIncome ?? {})) {
-      yearEventIncome[accId] = riderActive(accId, calendarYear)
-        ? income * LTC_RIDER_INCOME_MULTIPLIER
-        : income;
+      const doubled = riderDoubledYears[accId] ?? 0;
+      if (!riderActive(accId, calendarYear) || doubled >= LTC_RIDER_DOUBLED_YEARS) {
+        yearEventIncome[accId] = income;
+        continue;
+      }
+      riderDoubledYears[accId] = doubled + 1;
+      yearEventIncome[accId] = income * LTC_RIDER_INCOME_MULTIPLIER;
     }
     fixIncomeTableAmounts(household, calendarYear, balances, tableIncome);
     const tableAccounts = incomeTableAccountIds(household, tableIncome);

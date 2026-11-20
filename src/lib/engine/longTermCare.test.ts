@@ -10,6 +10,7 @@ import {
   longTermCareSettings,
   resolveLongTermCare,
 } from "@/lib/domain/longTermCare";
+import { levelIncomeRate } from "@/lib/config/ltcRiderLevelIncome";
 
 // Alex (man, born 1950) and Sam (woman, born 1952). Plan starts in 2026.
 function couple(): Household {
@@ -237,44 +238,55 @@ describe("LTC rider", () => {
   const care = (patch: Partial<LongTermCareSettings>) =>
     settings({ periods: [{ personId: "a", startAge: 80, years: 3 }], ...patch });
 
-  it("doubles the lifetime income and grows 4% on the accounts it's on", () => {
+  // Taken out in a year besides the event income: RMD above it and top-ups.
+  const extraTaken = (r: ReturnType<typeof at>, id: string) =>
+    12 * ((r.incomeMonthly[`rmd:${id}`] ?? 0) + (r.incomeMonthly[`topup:${id}`] ?? 0));
+
+  it("pays twice the Level Income rate and grows 4.875% on the accounts it's on", () => {
     const h = withTwoAccounts();
     const off = rows(h, care({}));
     const on = rows(h, care({ rider: true, riderAccountIds: ["ira"] }));
-    // Same January balance in the first care year, so the income is exactly 2x.
-    expect(at(on, 2030).incomeMonthly["draw:ira"]).toBeCloseTo(2 * at(off, 2030).incomeMonthly["draw:ira"], 6);
+    // Issued at the plan start (2026, Alex 76), income from 2030: 4 completed
+    // years, row 76 column 4 = 9.40%, doubled in care.
+    expect(levelIncomeRate(76, 4)).toBe(0.094);
+    const jan2030 = at(on, 2029).balances.ira;
+    expect(12 * at(on, 2030).incomeMonthly["draw:ira"]).toBeCloseTo(jan2030 * 0.094 * 2, 4);
     // The account without the rider is untouched in the first care year.
     expect(at(on, 2030).incomeMonthly["draw:ira2"]).toBeCloseTo(at(off, 2030).incomeMonthly["draw:ira2"], 6);
-    // From then on the rider account grows 4%: next January's balance is last
-    // year-end's times 1.04 (the draws come out after growth).
-    const end2030 = at(on, 2030).balances.ira;
-    const takenIn2031 = 12 * at(on, 2031).incomeMonthly["draw:ira"] + 12 * (at(on, 2031).incomeMonthly["rmd:ira"] ?? 0)
-      + 12 * (at(on, 2031).incomeMonthly["topup:ira"] ?? 0);
-    expect(at(on, 2031).balances.ira).toBeCloseTo(Math.max(0, end2030 * 1.04 - takenIn2031), 2);
+    // In care the rider account grows 4.875% (the draws come out after growth).
+    const r = at(on, 2031);
+    const taken = 12 * r.incomeMonthly["draw:ira"] + extraTaken(r, "ira");
+    expect(r.balances.ira).toBeCloseTo(Math.max(0, at(on, 2030).balances.ira * 1.04875 - taken), 2);
   });
 
-  it("goes back to the normal income and 8% once care ends", () => {
+  it("goes back to the table's regular income and 8% once care ends", () => {
     const h = withTwoAccounts();
-    const off = rows(h, care({}));
     const on = rows(h, care({ rider: true, riderAccountIds: ["ira"] }));
-    // Care runs 2030 to 2032. In 2033 the income is the normal (undoubled)
-    // amount: the same fixed figure the plan without the rider pays.
-    expect(at(on, 2032).incomeMonthly["draw:ira"]).toBeCloseTo(2 * at(off, 2032).incomeMonthly["draw:ira"], 6);
-    expect(at(on, 2033).incomeMonthly["draw:ira"]).toBeCloseTo(at(off, 2033).incomeMonthly["draw:ira"], 6);
-    // And the balance grows 8% again.
-    const end2032 = at(on, 2032).balances.ira;
+    // Care runs 2030 to 2032. In 2033 the income is half the care years'.
+    expect(at(on, 2033).incomeMonthly["draw:ira"]).toBeCloseTo(at(on, 2032).incomeMonthly["draw:ira"] / 2, 6);
     const r = at(on, 2033);
-    const taken = 12 * ((r.incomeMonthly["draw:ira"] ?? 0) + (r.incomeMonthly["rmd:ira"] ?? 0) + (r.incomeMonthly["topup:ira"] ?? 0));
-    expect(r.balances.ira).toBeCloseTo(Math.max(0, end2032 * 1.08 - taken), 2);
+    const taken = 12 * r.incomeMonthly["draw:ira"] + extraTaken(r, "ira");
+    expect(r.balances.ira).toBeCloseTo(Math.max(0, at(on, 2032).balances.ira * 1.08 - taken), 2);
+  });
+
+  it("doubles for at most 5 care years", () => {
+    const h = withTwoAccounts();
+    const on = rows(h, care({ rider: true, riderAccountIds: ["ira"], periods: [{ personId: "a", startAge: 80, years: 8 }] }));
+    const doubled = at(on, 2030).incomeMonthly["draw:ira"];
+    expect(at(on, 2034).incomeMonthly["draw:ira"]).toBeCloseTo(doubled, 6);
+    // 2035 is still a care year, but the 5 doubled years are used up.
+    expect(at(on, 2035).incomeMonthly["draw:ira"]).toBeCloseTo(doubled / 2, 6);
+    expect(at(on, 2037).incomeMonthly["draw:ira"]).toBeCloseTo(doubled / 2, 6);
   });
 
   it("only doubles while the account's owner is in care", () => {
-    // The rider is on Sam's account, but only Alex is in care.
+    // The rider is on Sam's account, but only Alex is in care: Sam's account
+    // pays the table's regular rate (Sam 74 at the plan start, 4 years: 9.00%).
     const h = withTwoAccounts();
     h.accounts[1].ownerId = "b";
-    const off = rows(h, care({}));
     const on = rows(h, care({ rider: true, riderAccountIds: ["ira2"] }));
-    expect(at(on, 2030).incomeMonthly["draw:ira2"]).toBeCloseTo(at(off, 2030).incomeMonthly["draw:ira2"], 6);
+    const jan2030 = at(on, 2029).balances.ira2;
+    expect(12 * at(on, 2030).incomeMonthly["draw:ira2"]).toBeCloseTo(jan2030 * 0.09, 4);
   });
 
   it("covers every account when none are picked, and nothing when it's off", () => {
@@ -292,5 +304,21 @@ describe("LTC rider", () => {
     const healed = longTermCareSettings(h)!;
     expect(healed.rider).toBe(true);
     expect(healed.riderAccountIds).toEqual(["ira2"]);
+  });
+});
+
+describe("levelIncomeRate", () => {
+  it("reads the row and column at or below, and the nearest rate on N/A", () => {
+    expect(levelIncomeRate(70, 0)).toBe(0.083);
+    expect(levelIncomeRate(66, 4)).toBe(0.0795);
+    // 12 completed years reads the 10 column; 25 reads 20.
+    expect(levelIncomeRate(60, 12)).toBe(0.079);
+    expect(levelIncomeRate(60, 25)).toBe(0.106);
+    // Ages between listed rows read the row below; past 80 reads 80.
+    expect(levelIncomeRate(47, 5)).toBe(0.0565);
+    expect(levelIncomeRate(85, 0)).toBe(0.0965);
+    // N/A: age 45 can't take income before 5 years; 80 has no 20 column.
+    expect(levelIncomeRate(45, 2)).toBe(0.0565);
+    expect(levelIncomeRate(80, 20)).toBe(0.1305);
   });
 });

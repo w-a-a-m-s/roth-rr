@@ -32,6 +32,16 @@ export function formatPercent(value: number): string {
   return percentFmt.format(value);
 }
 
+const precisePercentFmt = new Intl.NumberFormat("en-US", {
+  style: "percent",
+  maximumFractionDigits: 3,
+});
+
+/** A percent to 3 decimals, for rates like 4.875%. */
+export function formatPercentPrecise(value: number): string {
+  return precisePercentFmt.format(value);
+}
+
 /** Short relative time, e.g. "just now", "3m ago". */
 export function relativeTime(timestamp: number): string {
   if (!timestamp) return "";

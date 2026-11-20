@@ -7,10 +7,14 @@ import {
   LIFE_INSURANCE_PROCEEDS_GROWTH,
   lifeInsurancePayoutRate,
 } from "@/lib/config/lifeInsurancePayout";
-import { LTC_RIDER_GROWTH, LTC_RIDER_INCOME_MULTIPLIER } from "@/lib/domain/longTermCare";
+import {
+  LTC_RIDER_DOUBLED_YEARS,
+  LTC_RIDER_GROWTH,
+  LTC_RIDER_INCOME_MULTIPLIER,
+} from "@/lib/domain/longTermCare";
 import { uniformLifetimeDenominator, uniformLifetimeRate } from "@/lib/config/rmdTable";
 import { LEFTOVER_INVESTMENT_RATE } from "@/lib/config/defaults";
-import { formatPercent } from "@/lib/format";
+import { formatPercent, formatPercentPrecise } from "@/lib/format";
 
 export const INCOME_DEFINITIONS_TITLE = "Generated income definitions";
 
@@ -102,9 +106,11 @@ function IncomeDefinitionsBody() {
               the gain over basis from an after-tax account.
             </>,
             <>
-              LTC rider: while its owner is in care, the account pays {LTC_RIDER_INCOME_MULTIPLIER}x
-              the income and grows {formatPercent(LTC_RIDER_GROWTH)}. After care it&apos;s back to
-              the normal income and {GROWTH}.
+              LTC rider: the account&apos;s rate comes from the Level Income table instead, by the
+              age at the plan start and the years from then to the first income year. While its
+              owner is in care it pays {LTC_RIDER_INCOME_MULTIPLIER}x that income, for up to{" "}
+              {LTC_RIDER_DOUBLED_YEARS} years, and grows {formatPercentPrecise(LTC_RIDER_GROWTH)}.
+              After that it&apos;s the table&apos;s regular income and {GROWTH}.
             </>,
           ]}
         />
