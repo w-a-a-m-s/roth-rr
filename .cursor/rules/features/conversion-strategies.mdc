@@ -77,6 +77,16 @@ inside its strategy's limit. Manual schedules and `allowOverConvertible`
 plans are left as entered. Tests: "typed pre-retirement conversions over the
 convertible total" in `strategies.test.ts`.
 
+Fit to balances: last, `buildConversionSchedule` (`fitToBalances`) runs the
+Roth scenario once and lowers each year to what it actually converted. A
+strategy sets a target per year (fill the bracket, an IRMAA tier, all now)
+and the engine caps a year at the balance left, so without this the years
+after the accounts run dry kept their targets and the Conversion step's
+Scheduled total could read millions on a plan with far less. The
+projection is unchanged. Manual schedules and `allowOverConvertible` plans
+are left as entered. Tests: "buildConversionSchedule fits each year to the
+balance left" in `strategies.test.ts`.
+
 ## Conversions before the plan starts (early conversions)
 
 `optimizer.earlyConversions` (`{ year, amount }[]`, optional, one per year)

@@ -6,6 +6,7 @@ import { FALLBACK_FEDERAL_TAX } from "@/lib/config/federalTax";
 import { FALLBACK_MEDICARE_PART_B } from "@/lib/config/medicare";
 import { forFiling } from "@/lib/config/filingStatus";
 import { projectScenario } from "@/lib/engine/project";
+import { runRothScenario } from "@/lib/engine/runScenario";
 import { evenSchedule } from "@/lib/optimizer/strategies/even";
 import {
   bracketFillCeiling,
@@ -329,11 +330,14 @@ describe("typed pre-retirement conversions over the convertible total", () => {
       if (firstCut >= 0) {
         expect(after.slice(firstCut + 1).every((v) => v === 0)).toBe(true);
       }
-      // Even converts the whole convertible total, so it must be trimmed to
-      // exactly fit.
+      // Even converts everything, so it must be trimmed: it schedules only
+      // what the IRA still holds and empties it.
       if (strategy === "even") {
         expect(firstCut).toBeGreaterThanOrEqual(2);
-        expect(total).toBeCloseTo(convertible, 1);
+        const rows = runRothScenario(withTyped, after, "Roth").rows;
+        const converted = rows.reduce((sum, row) => sum + row.conversion, 0);
+        expect(total).toBeCloseTo(300_000 + converted, 1);
+        expect(rows[rows.length - 1].balances.ira).toBeLessThan(0.01);
       }
     });
   }
@@ -350,5 +354,84 @@ describe("typed pre-retirement conversions over the convertible total", () => {
     };
     const plainOver = buildConversionSchedule({ ...over, optimizer: { strategy: "even", allowOverConvertible: true } });
     expect(buildConversionSchedule(over).slice(2)).toEqual(plainOver.slice(2));
+  });
+});
+
+describe("buildConversionSchedule fits each year to the balance left", () => {
+  // A couple with a pension and Social Security and about $570k to convert:
+  // filling the 22% bracket asks for about $200k a year, so the accounts
+  // run dry in a few years. The later years used to keep their targets and
+  // the scheduled total read about $2.6 million.
+  const couple = {
+    filingStatus: "mfj",
+    residenceState: "FL",
+    people: [
+      { id: "a", name: "A", birthYear: 1964, retirementYear: 2033 },
+      { id: "b", name: "B", birthYear: 1970, retirementYear: 2033 },
+    ],
+    accounts: [
+      {
+        id: "drop",
+        label: "",
+        ownerId: "b",
+        kind: "retirementTaxable",
+        balance: 457_721,
+        growthRate: 0.06,
+        retirementType: "drop",
+        deposits: [],
+      },
+      {
+        id: "403b",
+        label: "403(b)",
+        ownerId: "b",
+        kind: "retirementTaxable",
+        balance: 112_182,
+        growthRate: 0.06,
+        retirementType: "403b",
+        deposits: [
+          { id: "d", label: "", amount: 500, frequency: "monthly", startYear: 2026, endYear: 2033 },
+        ],
+      },
+    ],
+    incomes: [
+      { id: "pen", label: "Pension", ownerId: "b", kind: "pension", monthlyAmount: 4_471, growthRate: 0.02, taxability: "full" },
+      { id: "ssb", label: "SS B", ownerId: "b", kind: "socialSecurity", monthlyAmount: 2_500, growthRate: 0.02, taxability: "full", startYear: 2033 },
+      { id: "ssa", label: "SS A", ownerId: "a", kind: "socialSecurity", monthlyAmount: 2_500, growthRate: 0.02, taxability: "full" },
+    ],
+    realEstate: [],
+    expenses: [{ id: "e", label: "All", amount: 2_500, frequency: "monthly", growthRate: 0.02 }],
+    assumptions: { expenseGrowth: 0.02, finalAge: 90 },
+    optimizer: { strategy: "fillBracket", targetBracketRate: 0.22, allowOverConvertible: false },
+  } as unknown as Household;
+
+  for (const strategy of ["fillBracket", "irmaa", "immediate", "minTax", "even", "depleteByRmd"] as const) {
+    it(`${strategy}: schedules only what the projection converts`, () => {
+      const h: Household = { ...couple, optimizer: { ...couple.optimizer, strategy } };
+      const schedule = buildConversionSchedule(h);
+      const rows = projectScenario(h, schedule);
+      rows.forEach((row, i) => {
+        expect(schedule[i]).toBeCloseTo(row.conversion, 1);
+      });
+      const total = schedule.reduce((sum, v) => sum + v, 0);
+      expect(total).toBeLessThanOrEqual(convertibleTotal(h) + 0.01);
+    });
+  }
+
+  it("fillBracket stops once the accounts are empty", () => {
+    const schedule = buildConversionSchedule(couple);
+    const total = schedule.reduce((sum, v) => sum + v, 0);
+    expect(total).toBeLessThan(800_000);
+    const lastConversion = schedule.findLastIndex((v) => v > 0);
+    expect(schedule.slice(lastConversion + 1).every((v) => v === 0)).toBe(true);
+    expect(lastConversion).toBeLessThan(5);
+  });
+
+  it("leaves an over-convertible plan as the strategy set it", () => {
+    const h: Household = {
+      ...couple,
+      optimizer: { ...couple.optimizer, allowOverConvertible: true },
+    };
+    const total = buildConversionSchedule(h).reduce((sum, v) => sum + v, 0);
+    expect(total).toBeGreaterThan(2_000_000);
   });
 });

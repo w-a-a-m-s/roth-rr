@@ -16,7 +16,10 @@ import {
   strategyStartIndex,
 } from "@/lib/optimizer/util";
 import { projectionStartYear } from "@/lib/engine/project";
-import { typedEarlyConversions } from "@/lib/engine/runScenario";
+import {
+  runRothScenario,
+  typedEarlyConversions,
+} from "@/lib/engine/runScenario";
 
 /**
  * Resolve the household's optimizer config into a concrete per-year conversion
@@ -41,7 +44,37 @@ export function buildConversionSchedule(
     limit == null
       ? schedule
       : capConversionsToShortfall(household, schedule, limit, refs);
-  return fitTypedConversions(household, capped, refs);
+  return fitToBalances(
+    household,
+    fitTypedConversions(household, capped, refs),
+    refs,
+  );
+}
+
+/**
+ * Lower each year to what the accounts can actually give it. A strategy
+ * sets a target per year (fill the bracket, stay under an IRMAA tier,
+ * convert it all now) and the engine caps each year at the balance left,
+ * so once the accounts run dry the later years still showed their targets
+ * and the scheduled total could reach millions on a plan with far less.
+ * The projection is unchanged: it converts exactly these amounts. Manual
+ * schedules and over-convertible plans are left as entered.
+ */
+function fitToBalances(
+  household: Household,
+  schedule: number[],
+  refs: ReferenceData,
+): number[] {
+  if (household.optimizer.strategy === "manual") return schedule;
+  if (household.optimizer.allowOverConvertible === true) return schedule;
+  if (!schedule.some((v) => v > 0)) return schedule;
+  const rows = runRothScenario(household, schedule, "Fit", refs).rows;
+  const start = projectionStartYear(household);
+  return schedule.map((amount, i) => {
+    const row = rows.find((r) => r.calendarYear === start + i);
+    if (!row) return amount;
+    return roundCents(Math.min(amount, Math.max(0, row.conversion)));
+  });
 }
 
 /**
