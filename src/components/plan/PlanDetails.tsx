@@ -3,7 +3,6 @@
 import { Fragment, type ReactNode } from "react";
 import { STEP_INDEX } from "@/components/plan/steps";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
-import { OneTimeDepreciationSection } from "@/components/plan/OneTimeDepreciationSection";
 import { FILING_STATUS_LABELS } from "@/lib/config/defaults";
 import { US_STATE_LABELS } from "@/lib/config/stateTax";
 import {
@@ -433,7 +432,19 @@ export function PlanDetails() {
         />
       </Section>
 
-      <OneTimeDepreciationSection readOnly={readOnly} />
+      <Section title="Depreciation" stepId="depreciation" readOnly={readOnly}>
+        {(household.oneTimeDepreciation ?? []).length === 0 ? (
+          <Empty>No 100% depreciation added</Empty>
+        ) : (
+          (household.oneTimeDepreciation ?? []).map((entry) => (
+            <Row
+              key={entry.id}
+              label={`${entry.label || "Asset"} (${entry.year})${entry.hidden ? " (hidden)" : ""}`}
+              value={formatCurrency(entry.amount)}
+            />
+          ))
+        )}
+      </Section>
 
       <Section title="Insurance" stepId="insurance" readOnly={readOnly}>
         {(household.insurance ?? []).length === 0 ? (

@@ -8,6 +8,7 @@ import { IncomeStep } from "@/components/wizard/steps/IncomeStep";
 import { RealEstateStep } from "@/components/wizard/steps/RealEstateStep";
 import { BusinessStep } from "@/components/wizard/steps/BusinessStep";
 import { ExpensesStep } from "@/components/wizard/steps/ExpensesStep";
+import { DepreciationStep } from "@/components/wizard/steps/DepreciationStep";
 import { InsuranceStep } from "@/components/wizard/steps/InsuranceStep";
 import { ConversionStep } from "@/components/wizard/steps/ConversionStep";
 
@@ -63,6 +64,13 @@ export const PLAN_STEPS: PlanStep[] = [
     title: "Expenses",
     description: "Spending and inflation.",
     Component: ExpensesStep,
+    isComplete: always,
+  },
+  {
+    id: "depreciation",
+    title: "Depreciation",
+    description: "One-time 100% depreciation on assets.",
+    Component: DepreciationStep,
     isComplete: always,
   },
   {
