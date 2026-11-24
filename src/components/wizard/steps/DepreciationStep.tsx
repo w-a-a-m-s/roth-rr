@@ -8,48 +8,8 @@ import { AddButton, EntityCard, ReadStat } from "@/components/ui/EntityCard";
 import { uid } from "@/lib/id";
 import { formatCurrency } from "@/lib/format";
 import type { OneTimeDepreciation } from "@/lib/domain/types";
-
-const SHOW_OPTIONS = [
-  { value: false, label: "Show" },
-  { value: true, label: "Hide" },
-] as const;
-
-/** Show / Hide segmented control: a hidden entry stays saved but isn't counted. */
-function ShowHideToggle({
-  hidden,
-  onChange,
-}: {
-  hidden: boolean;
-  onChange: (hidden: boolean) => void;
-}) {
-  return (
-    <div
-      role="radiogroup"
-      aria-label="In the results"
-      className="flex rounded-[9px] border border-border-2 bg-surface-muted p-0.5"
-    >
-      {SHOW_OPTIONS.map((option) => {
-        const on = option.value === hidden;
-        return (
-          <button
-            key={option.label}
-            type="button"
-            role="radio"
-            aria-checked={on}
-            onClick={() => onChange(option.value)}
-            className={`flex-1 whitespace-nowrap rounded-[7px] px-2 py-1 text-base transition md:text-sm ${
-              on
-                ? "bg-white font-semibold text-foreground shadow-sm"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+import { ShowHideToggle } from "@/components/ui/ShowHideToggle";
+import { DepreciationSwitch } from "@/components/plan/DepreciationSwitch";
 
 function sortByYear(entries: OneTimeDepreciation[]): OneTimeDepreciation[] {
   return [...entries].sort((a, b) => a.year - b.year);
@@ -128,6 +88,7 @@ function DepreciationFields({
           help="Hide keeps the entry in the plan but leaves it out of the taxes and the results."
         >
           <ShowHideToggle
+            label="In the results"
             hidden={entry.hidden === true}
             onChange={(hidden) => onChange({ hidden })}
           />
@@ -193,6 +154,15 @@ export function DepreciationStep() {
           }}
         />
       </div>
+      {entries.length > 0 ? (
+        <Field
+          layout="row"
+          label="All depreciation"
+          help="Hide takes every entry out of the taxes and the results at once, and Show brings them back. Handy for turning it off and on during a presentation. You can also flip it from the plan summary on the left."
+        >
+          <DepreciationSwitch />
+        </Field>
+      ) : null}
       {entries.map((entry) => (
         <DepreciationFields
           key={entry.id}

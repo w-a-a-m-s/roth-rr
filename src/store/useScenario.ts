@@ -454,6 +454,10 @@ export function migrateHousehold(household: Household): Household {
     if (kept.length > 0) legacy.oneTimeDepreciation = kept;
     else delete legacy.oneTimeDepreciation;
   }
+  // The plan-wide depreciation switch is only ever stored as on.
+  if (legacy.assumptions && legacy.assumptions.hideOneTimeDepreciation !== true) {
+    delete legacy.assumptions.hideOneTimeDepreciation;
+  }
   if (!Array.isArray(legacy.businesses)) legacy.businesses = [];
   const healBusiness = (biz: Business) => {
     if (!Number.isFinite(biz.value)) biz.value = 0;

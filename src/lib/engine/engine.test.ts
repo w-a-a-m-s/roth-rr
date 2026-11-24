@@ -2425,6 +2425,20 @@ describe("one-time 100% depreciation", () => {
     };
     expect(calculate(allHidden, refs).roth.totals).toEqual(calculate(base, refs).roth.totals);
   });
+
+  it("leaves every entry out when the plan-wide switch hides depreciation", () => {
+    const switchedOff: Household = {
+      ...withDep,
+      assumptions: { ...withDep.assumptions, hideOneTimeDepreciation: true },
+    };
+    const year = projectScenario(switchedOff, [], refs)[1];
+    expect(year.deductions.oneTimeDepreciation).toBe(0);
+    expect(year.stateDeductions.oneTimeDepreciation).toBe(0);
+    expect(year.oneTimeDepreciationById).toEqual({});
+    expect(calculate(switchedOff, refs).roth.totals).toEqual(calculate(base, refs).roth.totals);
+    // The entries keep their own Show / Hide for when the switch goes back on.
+    expect(switchedOff.oneTimeDepreciation!.every((d) => !d.hidden)).toBe(true);
+  });
 });
 
 describe("taxes until the RMD age count from retirement", () => {

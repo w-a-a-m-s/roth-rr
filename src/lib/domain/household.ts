@@ -10,6 +10,7 @@ import type {
   FilingStatus,
   GrowthStart,
   Household,
+  OneTimeDepreciation,
   IncomeGrowthFrom,
   IncomeKind,
   IncomeSource,
@@ -718,4 +719,15 @@ export function expenseYearsLabel(expense: Expense): string | undefined {
   }
   if (expense.startYear != null) return `${expense.startYear} onward`;
   return `through ${expense.endYear}`;
+}
+
+/**
+ * The one-time 100% depreciation entries that count: not hidden one by one,
+ * and not all switched off with `assumptions.hideOneTimeDepreciation`.
+ */
+export function visibleOneTimeDepreciation(
+  household: Pick<Household, "oneTimeDepreciation" | "assumptions">,
+): OneTimeDepreciation[] {
+  if (household.assumptions?.hideOneTimeDepreciation) return [];
+  return (household.oneTimeDepreciation ?? []).filter((d) => !d.hidden);
 }

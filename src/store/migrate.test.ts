@@ -665,6 +665,15 @@ describe("migrateHousehold: oneTimeDepreciation", () => {
     ]);
   });
 
+  it("keeps the plan-wide hide switch only when it's on", () => {
+    const on = household([], []);
+    (on.assumptions as { hideOneTimeDepreciation?: unknown }).hideOneTimeDepreciation = true;
+    expect(migrateHousehold(on).assumptions.hideOneTimeDepreciation).toBe(true);
+    const broken = household([], []);
+    (broken.assumptions as { hideOneTimeDepreciation?: unknown }).hideOneTimeDepreciation = "yes";
+    expect(migrateHousehold(broken).assumptions).not.toHaveProperty("hideOneTimeDepreciation");
+  });
+
   it("drops the field when nothing valid is left", () => {
     const h = household([], []);
     (h as { oneTimeDepreciation?: unknown }).oneTimeDepreciation = "x";

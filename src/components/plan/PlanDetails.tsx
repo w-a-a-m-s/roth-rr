@@ -2,6 +2,7 @@
 
 import { Fragment, type ReactNode } from "react";
 import { STEP_INDEX } from "@/components/plan/steps";
+import { DepreciationSwitch } from "@/components/plan/DepreciationSwitch";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
 import { FILING_STATUS_LABELS } from "@/lib/config/defaults";
 import { US_STATE_LABELS } from "@/lib/config/stateTax";
@@ -443,6 +444,12 @@ export function PlanDetails() {
               value={formatCurrency(entry.amount)}
             />
           ))
+        )}
+        {readOnly || (household.oneTimeDepreciation ?? []).length === 0 ? null : (
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <span className="text-[12.5px] text-muted">In the results</span>
+            <DepreciationSwitch size="sm" />
+          </div>
         )}
       </Section>
 

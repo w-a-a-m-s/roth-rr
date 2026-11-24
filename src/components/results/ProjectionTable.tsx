@@ -4,6 +4,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import {
   accountsInDisplayOrder,
   afterTaxAccountsByKind,
+  visibleOneTimeDepreciation,
 } from "@/lib/domain/household";
 import { personRmdAge } from "@/lib/domain/rmd";
 import type { Household } from "@/lib/domain/types";
@@ -399,9 +400,7 @@ function buildSections(
   const hasOneTimeDepreciation = scenario.rows.some(
     (r) => r.deductions.oneTimeDepreciation !== 0
   );
-  const depreciationEntries = (household.oneTimeDepreciation ?? []).filter(
-    (d) => !d.hidden
-  );
+  const depreciationEntries = visibleOneTimeDepreciation(household);
   const oneTimeDepreciationLine = (
     key: string,
     value: (r: Row) => number

@@ -2,6 +2,7 @@ import {
   accountsInDisplayOrder,
   afterTaxAccountsByKind,
   isWithdrawalIncome,
+  visibleOneTimeDepreciation,
 } from "@/lib/domain/household";
 import type { AccountKind, Household, IncomeKind } from "@/lib/domain/types";
 import { LEFTOVER_ACCOUNT_ID, LEFTOVER_INVESTMENT_LABEL } from "@/lib/config/defaults";
@@ -489,8 +490,7 @@ export function buildSnapshotTable(
 
   // One-time 100% depreciation: one line per asset in its year, shown only
   // when a year in this window has some.
-  const depreciationLines: SnapshotLine[] = (household.oneTimeDepreciation ?? [])
-    .filter((d) => !d.hidden)
+  const depreciationLines: SnapshotLine[] = visibleOneTimeDepreciation(household)
     .map((d) => ({
       key: `dep-${d.id}`,
       label: `${d.label || "Asset"} (${d.year})`,

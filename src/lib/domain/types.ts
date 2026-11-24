@@ -465,6 +465,12 @@ export interface Assumptions {
    */
   allowEarlyWithdrawals?: boolean;
   /**
+   * Leave every one-time 100% depreciation entry out of the taxes and the
+   * results, without touching each entry's own Show / Hide. A quick switch
+   * for presentations. Missing means depreciation counts.
+   */
+  hideOneTimeDepreciation?: boolean;
+  /**
    * Where each year's leftover money (net income above expenses) is saved:
    * `sp500` (8% a year) or `moneyMarket` (3.3% a year, interest taxed every
    * year). Missing (the default) leaves it uninvested and out of the totals.

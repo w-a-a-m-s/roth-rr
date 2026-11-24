@@ -184,6 +184,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   historyStartYear: "Market history starts",
   leftoverInvestment: "Leftover money",
   allowEarlyWithdrawals: "Withdrawals before 59½",
+  hideOneTimeDepreciation: "Depreciation in the results",
   strategy: "Strategy",
   allowOverConvertible: "Allow over-convertible",
   allowConversionsInRmdYears: "Convert in RMD years",

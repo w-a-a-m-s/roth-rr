@@ -23,6 +23,7 @@ import {
   propertyPurchaseMonth,
   returnsBasisFirst,
   AFTER_TAX_ACCOUNT_KINDS,
+  visibleOneTimeDepreciation,
 } from "@/lib/domain/household";
 import {
   careExpenseKey,
@@ -1535,8 +1536,7 @@ export function projectScenario(
     // excess is not carried forward).
     const oneTimeDepreciationById: Record<string, number> = {};
     let oneTimeDepreciation = 0;
-    for (const entry of household.oneTimeDepreciation ?? []) {
-      if (entry.hidden) continue;
+    for (const entry of visibleOneTimeDepreciation(household)) {
       if (entry.year !== calendarYear) continue;
       const amount = Math.max(0, entry.amount);
       if (!(amount > 0)) continue;

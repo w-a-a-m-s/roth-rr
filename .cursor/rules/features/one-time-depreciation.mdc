@@ -1,6 +1,6 @@
 ---
 description: One-time 100% (bonus) depreciation entries that reduce a year's taxable income
-globs: src/lib/domain/types.ts,src/lib/engine/project.ts,src/components/wizard/steps/DepreciationStep.tsx,src/components/plan/steps.ts,src/components/plan/PlanDetails.tsx,src/components/results/ProjectionTable.tsx,src/components/results/snapshotTable.ts,src/store/useScenario.ts
+globs: src/lib/domain/types.ts,src/lib/engine/project.ts,src/components/wizard/steps/DepreciationStep.tsx,src/components/plan/steps.ts,src/components/plan/DepreciationSwitch.tsx,src/components/plan/PlanDetails.tsx,src/components/results/ProjectionTable.tsx,src/components/results/snapshotTable.ts,src/store/useScenario.ts
 alwaysApply: false
 ---
 
@@ -14,6 +14,13 @@ Depreciation with an Edit link to that step. Several entries are allowed, in the
 different years. Each entry has Show / Hide: a hidden entry (`hidden: true`)
 stays in the plan, tagged Hidden on its card, but the engine skips it and the
 results tables leave it out.
+
+A plan-wide switch, `assumptions.hideOneTimeDepreciation` (stored only as
+`true`), hides every entry at once without touching each entry's own flag,
+for turning depreciation off and on during a presentation. It's
+`DepreciationSwitch`, on the step (All depreciation) and in the plan
+summary (In the results). Everything reads the entries through
+`visibleOneTimeDepreciation` (`lib/domain/household.ts`), which applies both.
 
 ## Engine
 
