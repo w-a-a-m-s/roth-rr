@@ -11,6 +11,7 @@ import { isConversionEmpty } from "@/lib/engine/conversionEmpty";
 import { projectionStartYear, strategyStartYear } from "@/lib/engine/project";
 import { runRothScenario } from "@/lib/engine/runScenario";
 import { buildConversionSchedule } from "@/lib/optimizer";
+import { convertibleLeft } from "@/lib/optimizer/remaining";
 import {
   conversionYears,
   convertibleTotal,
@@ -79,8 +80,12 @@ export function ConversionStep() {
   const typedTotal = earlyYears.reduce((sum, year) => sum + earlyAmount(year), 0);
   const first = Math.min(strategyStartIndex(household), years);
   const scheduledTotal = preStartTotal + schedule.reduce((sum, v) => sum + v, 0);
-  const remaining = convertible - scheduledTotal;
   const overConvertible = scheduledTotal > convertible + 0.5;
+  // What the Roth run leaves unconverted, not the convertible total minus
+  // the schedule: that counts growth on money the schedule already moved.
+  const remaining = overConvertible
+    ? convertible - scheduledTotal
+    : convertibleLeft(household, schedule, scheduledTotal, refs);
 
   /** Edit a year before the strategy starts. The strategy stays as it is. */
   const setEarlyYear = (year: number, value: number) => {
