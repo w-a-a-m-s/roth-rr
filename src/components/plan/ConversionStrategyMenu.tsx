@@ -258,7 +258,6 @@ export function ConversionStrategyMenu({
                       </option>
                     ))}
                   </select>
-                  bracket
                 </div>
               ) : (
                 <button
