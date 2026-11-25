@@ -138,7 +138,7 @@ describe("costs from other steps in the projection", () => {
 });
 
 describe("Medicare Part B premiums as an expense", () => {
-  // Pat and Sam, both born 1958, retired; Part B from 67 (2025), and a $1M
+  // Pat and Sam, both born 1958, retired in 2024; Part B from 2024, and a $1M
   // IRA so a conversion can push them into IRMAA.
   const couple = (on?: boolean): Household => ({
     filingStatus: "mfj",

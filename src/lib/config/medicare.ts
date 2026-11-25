@@ -48,12 +48,12 @@ export const CURRENT_MEDICARE_PART_B = FALLBACK_MEDICARE_PART_B;
  * Age from which the plan counts Part B premiums. Someone still working past
  * it waits until they retire (see `paysMedicarePartB`).
  */
-export const MEDICARE_PREMIUM_START_AGE = 67;
+export const MEDICARE_PREMIUM_START_AGE = 65;
 
 /**
- * Whether a person pays Part B premiums in `calendarYear`: from age 67 or
- * their retirement year, whichever comes later. With no retirement year, from
- * 67.
+ * Whether a person pays Part B premiums in `calendarYear`: from age 65 (when
+ * Medicare starts) or their retirement year, whichever comes later. With no
+ * retirement year, from 65.
  */
 export function paysMedicarePartB(
   person: { birthYear?: number; retirementYear?: number },

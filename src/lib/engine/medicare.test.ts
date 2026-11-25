@@ -4,20 +4,20 @@ import type { ProjectionRow } from "@/lib/engine/types";
 import { FALLBACK_MEDICARE_PART_B } from "@/lib/config/medicare";
 import { medicareYears } from "@/lib/engine/medicare";
 
-// Alex (born 1959) and Sam (born 1961), both retired: Alex pays Part B from
-// 67 (2026), Sam from 2028. 2026 tiers, joint: $218k, $274k, $342k, ...
+// Alex (born 1961) and Sam (born 1963), both retired: Alex pays Part B from
+// 65 (2026), Sam from 2028. 2026 tiers, joint: $218k, $274k, $342k, ...
 const household = {
   filingStatus: "mfj",
   people: [
-    { id: "a", name: "Alex", birthYear: 1959, retirementYear: 2020 },
-    { id: "b", name: "Sam", birthYear: 1961, retirementYear: 2020 },
+    { id: "a", name: "Alex", birthYear: 1961, retirementYear: 2020 },
+    { id: "b", name: "Sam", birthYear: 1963, retirementYear: 2020 },
   ],
 } as unknown as Household;
 
 function row(calendarYear: number, ordinary: number, gains = 0): ProjectionRow {
   return {
     calendarYear,
-    ages: { a: calendarYear - 1959, b: calendarYear - 1961 },
+    ages: { a: calendarYear - 1961, b: calendarYear - 1963 },
     livingIds: ["a", "b"],
     filingStatus: "mfj",
     grossTaxableIncome: ordinary,
