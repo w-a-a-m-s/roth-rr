@@ -3,7 +3,8 @@
 import type { ConversionStrategy, FillBracketRate } from "@/lib/domain/types";
 import { FILL_BRACKET_RATES } from "@/lib/domain/types";
 import { isConversionEmpty } from "@/lib/engine/conversionEmpty";
-import { formatCurrency, formatSignedCurrency } from "@/lib/format";
+import { formatCurrency, formatSignedCompactCurrency } from "@/lib/format";
+import { primaryRmdAge } from "@/lib/domain/rmd";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import {
   STRATEGY_HELP,
@@ -27,12 +28,15 @@ import { useHousehold, useScenario } from "@/store/useScenario";
 import { useExternalData } from "@/store/useExternalData";
 import { useUI } from "@/store/useUI";
 
-function impactColor(impact: number | undefined): string {
-  if (impact == null || !Number.isFinite(impact) || Math.abs(impact) < 1) {
+/** Green when the change helps (lower taxes, more assets), red when it hurts. */
+function deltaColor(delta: number | undefined, higherIsBetter: boolean): string {
+  if (delta == null || !Number.isFinite(delta) || Math.abs(delta) < 1) {
     return "text-muted-3";
   }
-  return impact > 0 ? "text-success" : "text-danger";
+  return delta > 0 === higherIsBetter ? "text-success" : "text-danger";
 }
+
+const DELTA_CELL = "w-[54px] shrink-0 text-right text-[11px] font-bold tabular-nums";
 
 function scoreFor(
   scores: StrategyScore[],
@@ -56,6 +60,8 @@ export function ConversionStrategyMenu({
   const { setOptimizer } = useScenario();
   const refs = useExternalData((s) => s.refs);
   const scores = useStrategyScores();
+  const rmdAge = primaryRmdAge(household);
+  const rmdLabel = rmdAge != null ? String(rmdAge) : "RMD age";
 
   if (isConversionEmpty(household)) return null;
 
@@ -179,6 +185,11 @@ export function ConversionStrategyMenu({
           </button>
         </div>
       </div>
+      <div className="flex items-end gap-1.5 px-3 text-[10.5px] font-semibold leading-tight text-muted-3">
+        <span className="flex-1">vs. no conversion</span>
+        <span className="w-[54px] shrink-0 text-right">Lifetime taxes</span>
+        <span className="w-[54px] shrink-0 text-right">Assets at {rmdLabel}</span>
+      </div>
       <div
         role="radiogroup"
         aria-label="Conversion strategy"
@@ -264,9 +275,16 @@ export function ConversionStrategyMenu({
                 </button>
               )}
               <span
-                className={`shrink-0 text-[12.5px] font-bold tabular-nums ${impactColor(scored?.impact)}`}
+                className={`${DELTA_CELL} ${deltaColor(scored?.taxesTotal, false)}`}
+                title="Lifetime taxes vs. no conversion"
               >
-                {scored ? formatSignedCurrency(scored.impact) : "-"}
+                {scored ? formatSignedCompactCurrency(scored.taxesTotal) : "-"}
+              </span>
+              <span
+                className={`${DELTA_CELL} ${deltaColor(scored?.afterTaxAssetsAtRmd, true)}`}
+                title={`After-tax assets at ${rmdLabel} vs. no conversion`}
+              >
+                {scored ? formatSignedCompactCurrency(scored.afterTaxAssetsAtRmd) : "-"}
               </span>
             </div>
           );

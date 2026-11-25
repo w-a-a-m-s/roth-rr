@@ -5,7 +5,7 @@ export const STRATEGY_PANEL_TOUR_STEPS: TourStepContent[] = [
   {
     id: "strategy-panel",
     title: "Conversion strategy",
-    body: "You can switch strategies here anytime. The number on each row is the total impact versus doing nothing, so you can compare before you pick.",
+    body: "You can switch strategies here anytime. Each row shows how that strategy changes lifetime taxes and your after-tax assets at your RMD age versus doing nothing, so you can compare before you pick.",
     placement: "right-center",
   },
 ];

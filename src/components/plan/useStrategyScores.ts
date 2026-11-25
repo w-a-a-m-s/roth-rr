@@ -7,7 +7,7 @@ import { scoreConversionStrategies } from "@/lib/optimizer/score";
 import { useHousehold } from "@/store/useScenario";
 import { useExternalData } from "@/store/useExternalData";
 
-/** Total impact of each conversion strategy for the active household. */
+/** Each conversion strategy's tax and assets-at-RMD-age changes for the active household. */
 export function useStrategyScores() {
   const household = useHousehold();
   const refs = useExternalData((s) => s.refs);

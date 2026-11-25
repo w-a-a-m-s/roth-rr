@@ -28,6 +28,16 @@ export function formatSignedCurrency(value: number): string {
   return `${sign}${formatCurrency(Math.abs(value))}`;
 }
 
+/** Short signed currency for tight spaces, e.g. "+$439k" / "-$1.2M" / "+$850". */
+export function formatSignedCompactCurrency(value: number): string {
+  if (!Number.isFinite(value)) return "-";
+  const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+  const abs = Math.abs(value);
+  if (abs >= 999_500) return `${sign}$${(abs / 1_000_000).toFixed(abs >= 9_995_000 ? 0 : 1)}M`;
+  if (abs >= 1_000) return `${sign}$${Math.round(abs / 1_000)}k`;
+  return `${sign}$${Math.round(abs)}`;
+}
+
 export function formatPercent(value: number): string {
   return percentFmt.format(value);
 }

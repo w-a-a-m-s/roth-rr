@@ -1,6 +1,5 @@
 import type { ConversionStrategy, FillBracketRate, Household } from "@/lib/domain/types";
 import { FILL_BRACKET_RATES } from "@/lib/domain/types";
-import type { Comparison } from "@/lib/engine/types";
 import { projectionYears } from "@/lib/engine/project";
 import {
   comparisonFrom,
@@ -26,22 +25,10 @@ export interface StrategyScore {
   id: StrategyScoreId;
   strategy: ConversionStrategy;
   targetBracketRate?: FillBracketRate;
-  impact: number;
-}
-
-/**
- * Same combination the results header shows as Total impact: end-of-plan
- * inheritance plus lifetime tax and Medicare Part B savings. After-tax
- * assets at RMD are the same estate snapshot as inheritance, just earlier,
- * so including them would double-count.
- */
-export function totalImpact(
-  deltas: Pick<
-    Comparison["deltas"],
-    "inheritanceFinal" | "taxesTotal" | "medicareTotal"
-  >,
-): number {
-  return deltas.inheritanceFinal - deltas.taxesTotal - deltas.medicareTotal;
+  /** Lifetime taxes with this strategy minus no conversion (negative saves). */
+  taxesTotal: number;
+  /** After-tax assets at the RMD age with this strategy minus no conversion. */
+  afterTaxAssetsAtRmd: number;
 }
 
 function scoreId(
@@ -56,8 +43,11 @@ function scoreId(
 }
 
 /**
- * Total impact of each conversion strategy, sharing one no-conversion
+ * Each conversion strategy's change in lifetime taxes and in after-tax
+ * assets at the RMD age versus no conversion, sharing one no-conversion
  * baseline so the menu can compare options without double-projecting it.
+ * (A single combined score was dropped at the user's request: adding tax
+ * savings to the estate counts them twice when leftover money is saved.)
  */
 export function scoreConversionStrategies(
   household: Household,
@@ -107,7 +97,8 @@ export function scoreConversionStrategies(
       id: scoreId(opt.strategy, opt.targetBracketRate),
       strategy: opt.strategy,
       targetBracketRate: opt.targetBracketRate,
-      impact: totalImpact(comparison.deltas),
+      taxesTotal: comparison.deltas.taxesTotal,
+      afterTaxAssetsAtRmd: comparison.deltas.afterTaxAssetsAtRmd,
     };
   });
 }

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Household } from "@/lib/domain/types";
 import { calculate } from "@/lib/calculate";
+import { formatSignedCompactCurrency } from "@/lib/format";
 import {
   scoreConversionStrategies,
-  totalImpact,
 } from "@/lib/optimizer/score";
 
 function sampleHousehold(): Household {
@@ -49,20 +49,19 @@ function sampleHousehold(): Household {
   };
 }
 
-describe("totalImpact", () => {
-  it("combines inheritance with tax and Medicare savings", () => {
-    expect(
-      totalImpact({
-        inheritanceFinal: 20,
-        taxesTotal: 3,
-        medicareTotal: 4,
-      }),
-    ).toBe(13);
+describe("formatSignedCompactCurrency", () => {
+  it("shortens the menu's changes to k and M", () => {
+    expect(formatSignedCompactCurrency(439_074)).toBe("+$439k");
+    expect(formatSignedCompactCurrency(-429_390)).toBe("-$429k");
+    expect(formatSignedCompactCurrency(1_159_499)).toBe("+$1.2M");
+    expect(formatSignedCompactCurrency(-12_400_000)).toBe("-$12M");
+    expect(formatSignedCompactCurrency(850)).toBe("+$850");
+    expect(formatSignedCompactCurrency(0)).toBe("$0");
   });
 });
 
 describe("scoreConversionStrategies", () => {
-  it("returns a finite impact for each built-in strategy", () => {
+  it("returns finite tax and assets-at-RMD changes for each built-in strategy", () => {
     const scores = scoreConversionStrategies(sampleHousehold());
     const ids = scores.map((s) => s.id);
     expect(ids).toEqual([
@@ -77,7 +76,8 @@ describe("scoreConversionStrategies", () => {
       "minTax",
     ]);
     for (const row of scores) {
-      expect(Number.isFinite(row.impact)).toBe(true);
+      expect(Number.isFinite(row.taxesTotal)).toBe(true);
+      expect(Number.isFinite(row.afterTaxAssetsAtRmd)).toBe(true);
     }
   });
 
@@ -85,6 +85,8 @@ describe("scoreConversionStrategies", () => {
     const h = sampleHousehold();
     const even = scoreConversionStrategies(h).find((s) => s.id === "even");
     expect(even).toBeDefined();
-    expect(even?.impact).toBeCloseTo(totalImpact(calculate(h).deltas), 2);
+    const { deltas } = calculate(h);
+    expect(even?.taxesTotal).toBeCloseTo(deltas.taxesTotal, 2);
+    expect(even?.afterTaxAssetsAtRmd).toBeCloseTo(deltas.afterTaxAssetsAtRmd, 2);
   });
 });

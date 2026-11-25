@@ -1,5 +1,5 @@
 ---
-description: Live Roth conversion strategies and the Total impact menu
+description: Live Roth conversion strategies and the strategy menu
 globs: src/lib/optimizer/**,src/components/plan/ConversionStrategyMenu.tsx,src/components/plan/StrategyPanel.tsx,src/components/plan/useStrategyScores.ts,src/components/wizard/steps/ConversionStep.tsx,src/components/plan/PlanSummary.tsx,src/lib/domain/types.ts,src/lib/calculate.ts
 alwaysApply: false
 ---
@@ -119,11 +119,14 @@ strategy and number as it was, so:
 ## Menu
 
 `ConversionStrategyMenu` sits above the plan Timeline on desktop, and in the
-mobile Plan details modal (not in the Conversion wizard step). Manual is first. Each row shows **Total impact**
-from `scoreConversionStrategies`: one shared no-conversion baseline, then one
-Roth run per option. Formula lives in `totalImpact()` (same as the results
-header): inheritance + tax savings + Medicare Part B. After-tax assets at
-RMD are excluded (same estate snapshot as inheritance, just earlier).
+mobile Plan details modal (not in the Conversion wizard step). Manual is first. Each row shows two
+small changes versus no conversion (user's request): **Lifetime taxes**
+(`deltas.taxesTotal`, green when lower) and **Assets at <RMD age>**
+(`deltas.afterTaxAssetsAtRmd`, green when higher), from
+`scoreConversionStrategies`: one shared no-conversion baseline, then one
+Roth run per option. There's no single combined score: the old Total impact
+(inheritance + tax savings + Medicare) counted tax savings twice once
+leftover money is saved, and the user had it removed.
 Choosing Manual with no saved years copies the current live schedule
 so the year grid has numbers to edit. Each row has a "?" tooltip
 (`STRATEGY_HELP` in `labels.ts`).

@@ -86,7 +86,7 @@ Use this guide for UI, product features, and the index below.
 | Joint after-tax accounts | [features/joint-accounts.mdc](features/joint-accounts.mdc) | Both-owner option on brokerage / savings / CD / annuity; filing-status cleanup |
 | Filing statuses | [features/filing-statuses.mdc](features/filing-statuses.mdc) | Single / MFJ / HOH, `forFiling` resolution, partial state HOH tables |
 | Rental passive loss | [features/rental-passive-loss.mdc](features/rental-passive-loss.mdc) | Per-property PAL, $25k allowance / MAGI phase-out, RE-pro exception, carryforward in the year-by-year table |
-| Conversion strategies | [features/conversion-strategies.mdc](features/conversion-strategies.mdc) | Live even / immediate / fill-bracket / IRMAA / empty-by-RMD schedules and the Total impact menu |
+| Conversion strategies | [features/conversion-strategies.mdc](features/conversion-strategies.mdc) | Live even / immediate / fill-bracket / IRMAA / empty-by-RMD schedules and the strategy menu |
 | Mobile shell | [features/mobile-shell.mdc](features/mobile-shell.mdc) | Compact header, sticky Configure / Details / Actions below `lg` |
 | Analyses | [features/analyses.mdc](features/analyses.mdc) | Retirement / Survivorship / Disability / Long-term care tabs; survivorship death and long-term care models |
 | Insurance | [features/insurance.mdc](features/insurance.mdc) | Life / disability / long-term care policies (wizard step 8) and what each pays in its analysis |
