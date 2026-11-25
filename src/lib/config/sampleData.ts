@@ -1,5 +1,5 @@
 import type { Household } from "@/lib/domain/types";
-import { DEFAULT_ASSUMPTIONS } from "@/lib/config/defaults";
+import { DEFAULT_ASSUMPTIONS, DEFAULT_LEFTOVER_INVESTMENT } from "@/lib/config/defaults";
 import { uid } from "@/lib/id";
 
 /**
@@ -92,7 +92,10 @@ export function createBlankHousehold(): Household {
     deletedIncomes: [],
     deletedRealEstate: [],
     deletedExpenses: [],
-    assumptions: structuredClone(DEFAULT_ASSUMPTIONS),
+    assumptions: {
+      ...structuredClone(DEFAULT_ASSUMPTIONS),
+      leftoverInvestment: DEFAULT_LEFTOVER_INVESTMENT,
+    },
     optimizer: { strategy: "manual" },
   };
 }

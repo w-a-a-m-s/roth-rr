@@ -60,6 +60,9 @@ export const IMPLICIT_ROTH_GROWTH = DEFAULT_ROTH_GROWTH;
 /** The engine's account for the plan's saved leftover money. */
 export const LEFTOVER_ACCOUNT_ID = "__leftover__";
 
+/** Where a brand-new plan saves its leftover money (user's request). */
+export const DEFAULT_LEFTOVER_INVESTMENT: LeftoverInvestment = "moneyMarket";
+
 /** Yearly growth of the saved leftover money, by where it's invested. */
 export const LEFTOVER_INVESTMENT_RATE: Record<LeftoverInvestment, number> = {
   sp500: 0.08,

@@ -185,7 +185,9 @@ balance. Real-estate and business equity count at full value.
 Each year's surplus (net income above expenses and deposits) is dropped
 unless the plan saves it: `assumptions.leftoverInvestment` ("Leftover
 money" on the Main results tab, above Jump to) is `sp500` (8% a year) or
-`moneyMarket` (3.3% a year), missing for not invested. `projectScenario`
+`moneyMarket` (3.3% a year), missing for not invested. A new plan starts
+on `moneyMarket` (`DEFAULT_LEFTOVER_INVESTMENT`, user's request); plans
+saved before keep what they have. `projectScenario`
 adds one after-tax account (`LEFTOVER_ACCOUNT_ID`, a brokerage account for
 the S&P 500 so Market history moves it, savings for the money market) and
 puts each positive surplus in it at year end, as basis. The S&P 500 pays

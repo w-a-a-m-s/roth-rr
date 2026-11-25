@@ -473,7 +473,9 @@ export interface Assumptions {
   /**
    * Where each year's leftover money (net income above expenses) is saved:
    * `sp500` (8% a year) or `moneyMarket` (3.3% a year, interest taxed every
-   * year). Missing (the default) leaves it uninvested and out of the totals.
+   * year). Missing leaves it uninvested and out of the totals. A new plan
+   * starts at `DEFAULT_LEFTOVER_INVESTMENT` (money market); plans saved
+   * before keep what they have.
    */
   leftoverInvestment?: LeftoverInvestment;
 }
