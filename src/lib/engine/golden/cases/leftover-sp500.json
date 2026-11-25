@@ -2,8 +2,8 @@
   "name": "Leftover money saved in the S&P 500 (8%)",
   "strategy": "manual",
   "note": "Retired single 65-year-old (pension, Social Security, DROP draw) with about $70k a year above expenses. Pins the yearly leftover money saved into one after-tax account.",
-  "commit": "284433f",
-  "commitDate": "2026-11-25T03:06:51+00:00",
+  "commit": "aa6905d",
+  "commitDate": "2026-11-25T21:21:41+00:00",
   "household": {
     "filingStatus": "single",
     "residenceState": "FL",
@@ -138,19 +138,19 @@
   "expected": {
     "baseline": {
       "taxesTotal": 1095582.71,
-      "medicareTotal": 159222,
+      "medicareTotal": 168961.2,
       "afterTaxAssetsAtRmd": 2169125.84,
       "inheritanceFinal": 8143237.94
     },
     "roth": {
       "taxesTotal": 1039532.07,
-      "medicareTotal": 181128,
+      "medicareTotal": 196708.8,
       "afterTaxAssetsAtRmd": 2439252.43,
       "inheritanceFinal": 9379482.97
     },
     "deltas": {
       "taxesTotal": -56050.65,
-      "medicareTotal": 21906,
+      "medicareTotal": 27747.6,
       "afterTaxAssetsAtRmd": 270126.59,
       "inheritanceFinal": 1236245.03
     }

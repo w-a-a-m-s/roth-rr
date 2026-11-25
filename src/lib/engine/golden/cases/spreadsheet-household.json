@@ -243,24 +243,24 @@
       ]
     }
   },
-  "commit": "2f76945",
-  "commitDate": "2026-11-24T19:48:37+00:00",
+  "commit": "aa6905d",
+  "commitDate": "2026-11-25T21:21:41+00:00",
   "expected": {
     "baseline": {
       "taxesTotal": 921625.37,
-      "medicareTotal": 157771.2,
+      "medicareTotal": 177249.6,
       "afterTaxAssetsAtRmd": 2692970.35,
       "inheritanceFinal": 3287052.37
     },
     "roth": {
       "taxesTotal": 1014371.45,
-      "medicareTotal": 183091.2,
+      "medicareTotal": 214252.8,
       "afterTaxAssetsAtRmd": 3701068.7,
       "inheritanceFinal": 6612938.55
     },
     "deltas": {
       "taxesTotal": 92746.08,
-      "medicareTotal": 25320,
+      "medicareTotal": 37003.2,
       "afterTaxAssetsAtRmd": 1008098.35,
       "inheritanceFinal": 3325886.19
     }

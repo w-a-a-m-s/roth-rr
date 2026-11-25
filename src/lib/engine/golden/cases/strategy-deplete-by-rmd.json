@@ -53,18 +53,18 @@
       "strategy": "depleteByRmd"
     }
   },
-  "commit": "2f76945",
-  "commitDate": "2026-11-24T19:48:37+00:00",
+  "commit": "aa6905d",
+  "commitDate": "2026-11-25T21:21:41+00:00",
   "expected": {
     "baseline": {
       "taxesTotal": 6671.27,
-      "medicareTotal": 24348,
+      "medicareTotal": 26782.8,
       "afterTaxAssetsAtRmd": 216608.01,
       "inheritanceFinal": 216746.8
     },
     "roth": {
       "taxesTotal": 32023.32,
-      "medicareTotal": 24348,
+      "medicareTotal": 26782.8,
       "afterTaxAssetsAtRmd": 296048.86,
       "inheritanceFinal": 307890.81
     },

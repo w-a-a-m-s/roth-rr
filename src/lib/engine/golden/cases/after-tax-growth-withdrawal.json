@@ -85,18 +85,18 @@
       ]
     }
   },
-  "commit": "d3d9ea9",
-  "commitDate": "2026-10-18T23:21:32+00:00",
+  "commit": "aa6905d",
+  "commitDate": "2026-11-25T21:21:41+00:00",
   "expected": {
     "baseline": {
       "taxesTotal": 306947.48,
-      "medicareTotal": 64774.8,
+      "medicareTotal": 77437.2,
       "afterTaxAssetsAtRmd": 2025646.6,
       "inheritanceFinal": 2025646.6
     },
     "roth": {
       "taxesTotal": 306947.48,
-      "medicareTotal": 64774.8,
+      "medicareTotal": 77437.2,
       "afterTaxAssetsAtRmd": 2025646.6,
       "inheritanceFinal": 2025646.6
     },

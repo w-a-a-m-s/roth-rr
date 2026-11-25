@@ -74,18 +74,18 @@
       "conversionTaxPaidFrom": "assets"
     }
   },
-  "commit": "5e3cfbf",
-  "commitDate": "2026-11-25T04:12:25+00:00",
+  "commit": "aa6905d",
+  "commitDate": "2026-11-25T21:21:41+00:00",
   "expected": {
     "baseline": {
       "taxesTotal": 531113.13,
-      "medicareTotal": 111507.6,
+      "medicareTotal": 116377.2,
       "afterTaxAssetsAtRmd": 1239376.08,
       "inheritanceFinal": 2917771.54
     },
     "roth": {
       "taxesTotal": 365830.06,
-      "medicareTotal": 76455.6,
+      "medicareTotal": 81325.2,
       "afterTaxAssetsAtRmd": 1638994.04,
       "inheritanceFinal": 4681393.14
     },

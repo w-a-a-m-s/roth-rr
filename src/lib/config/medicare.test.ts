@@ -52,3 +52,46 @@ describe("Medicare in the totals", () => {
     expect(calculate(household).baseline.totals.medicareTotal).toBeCloseTo(base * 12 * 7, 6);
   });
 });
+
+describe("IRMAA from conversions before 65", () => {
+  // Born 1965, retired 2028 at 63, converts $250k in 2028 and 2029. Part B
+  // starts at 65 (2030), and 2030 and 2031 look back to those conversion
+  // years, so both pay the first IRMAA tier; 2032 looks back to 2030 and
+  // drops to the standard premium.
+  const household: Household = {
+    filingStatus: "mfj",
+    residenceState: "FL",
+    people: [{ id: "m", name: "Mark", birthYear: 1965, retirementYear: 2028 }],
+    mainPersonId: "m",
+    accounts: [
+      {
+        id: "ira",
+        label: "403(b)",
+        ownerId: "m",
+        kind: "retirementTaxable",
+        balance: 600000,
+        growthRate: 0,
+        retirementType: "403b",
+        deposits: [],
+      },
+    ],
+    incomes: [],
+    realEstate: [],
+    expenses: [],
+    includeMedicarePremiums: true,
+    assumptions: { expenseGrowth: 0, finalAge: 70 },
+    optimizer: { strategy: "manual", manualSchedule: [250000, 250000] },
+  };
+
+  it("charges the higher premium in the two years after the threshold is crossed", () => {
+    const rows = calculate(household).roth.rows;
+    const premium = (year: number) =>
+      rows.find((r) => r.calendarYear === year)?.expenseMonthly["medicare:m"];
+    const base = medicarePartBMonthlyPremium(0, "mfj", FALLBACK_MEDICARE_PART_B);
+    const tier1 = medicarePartBMonthlyPremium(220000, "mfj", FALLBACK_MEDICARE_PART_B);
+    expect(premium(2029)).toBeUndefined(); // 64, not on Medicare yet
+    expect(premium(2030)).toBe(tier1);
+    expect(premium(2031)).toBe(tier1);
+    expect(premium(2032)).toBe(base);
+  });
+});

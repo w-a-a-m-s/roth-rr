@@ -299,24 +299,24 @@
       "excessMileRate": 0.25
     }
   },
-  "commit": "2f76945",
-  "commitDate": "2026-11-24T19:48:37+00:00",
+  "commit": "aa6905d",
+  "commitDate": "2026-11-25T21:21:41+00:00",
   "expected": {
     "baseline": {
       "taxesTotal": 918854.28,
-      "medicareTotal": 160692,
+      "medicareTotal": 180170.4,
       "afterTaxAssetsAtRmd": 4961121.66,
       "inheritanceFinal": 6447683.39
     },
     "roth": {
       "taxesTotal": 1011339.17,
-      "medicareTotal": 183091.2,
+      "medicareTotal": 214252.8,
       "afterTaxAssetsAtRmd": 5968452.4,
       "inheritanceFinal": 9773559.79
     },
     "deltas": {
       "taxesTotal": 92484.89,
-      "medicareTotal": 22399.2,
+      "medicareTotal": 34082.4,
       "afterTaxAssetsAtRmd": 1007330.74,
       "inheritanceFinal": 3325876.4
     }
