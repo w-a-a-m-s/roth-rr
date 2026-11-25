@@ -60,6 +60,19 @@ const KIND_OPTIONS: { value: IncomeKind; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+/**
+ * The Type menu also offers the saved leftover money as its own choice: an
+ * after-tax withdrawal whose source is the leftover account.
+ */
+const LEFTOVER_TYPE = "leftoverWithdrawal";
+type TypeChoice = IncomeKind | typeof LEFTOVER_TYPE;
+const LEFTOVER_TYPE_LABEL = "Withdraw from leftover money";
+const TYPE_OPTIONS: { value: TypeChoice; label: string }[] = KIND_OPTIONS.flatMap((o) =>
+  o.value === "afterTaxWithdrawal"
+    ? [o, { value: LEFTOVER_TYPE, label: LEFTOVER_TYPE_LABEL }]
+    : [o],
+);
+
 const AMOUNT_SOURCE_OPTIONS: { value: IncomeAmountSource; label: string }[] = [
   { value: "entered", label: "Enter an amount" },
   { value: "incomeTable", label: "Income table (by age)" },
@@ -160,10 +173,10 @@ function IncomeFields({
       label: "Leftover money (not saved: pick where it's invested on Main)",
     });
   }
-  const fromLeftover = income.drawsFromAccountId === LEFTOVER_ACCOUNT_ID;
   const ownerName =
     household.people.find((p) => p.id === income.ownerId)?.name || "Person";
-  const kindLabel = KIND_LABEL[income.kind];
+  const fromLeftover = income.drawsFromAccountId === LEFTOVER_ACCOUNT_ID;
+  const kindLabel = fromLeftover ? LEFTOVER_TYPE_LABEL : KIND_LABEL[income.kind];
   const payout = pensionPayout(income);
   const hasSpouse = household.people.some((p) => p.id !== income.ownerId);
   const waitingDays = disabilityWaitingDays(income);
@@ -180,7 +193,15 @@ function IncomeFields({
   // Without this the "From account" select would show the first option while
   // `drawsFromAccountId` stayed empty, so the engine would treat the income as
   // phantom money (taxed/spent but never depleting any account).
-  function handleKindChange(kind: IncomeKind) {
+  function handleTypeChange(choice: TypeChoice) {
+    if (choice === LEFTOVER_TYPE) {
+      handleKindChange("afterTaxWithdrawal", LEFTOVER_ACCOUNT_ID);
+      return;
+    }
+    handleKindChange(choice);
+  }
+
+  function handleKindChange(kind: IncomeKind, source?: string) {
     const patch: Partial<IncomeSource> = { kind };
     // The payout choice only means something on a pension.
     if (!isPensionIncome(kind) && income.pensionPayout) {
@@ -210,7 +231,19 @@ function IncomeFields({
       updateIncome(income.id, patch);
       return;
     }
-    const eligible = withdrawalSources(household, kind);
+    if (source) {
+      patch.drawsFromAccountId = source;
+      // The income table pays from an account's own balance and growth,
+      // which the leftover money doesn't have.
+      if (source === LEFTOVER_ACCOUNT_ID && income.amountSource) patch.amountSource = undefined;
+      updateIncome(income.id, patch);
+      return;
+    }
+    // Picking an account withdrawal type (not the leftover money one) moves
+    // off the leftover money to a real account of that kind.
+    const eligible = withdrawalSources(household, kind).filter(
+      (a) => a.id !== LEFTOVER_ACCOUNT_ID,
+    );
     const stillValid = eligible.some((a) => a.id === income.drawsFromAccountId);
     if (!stillValid) patch.drawsFromAccountId = eligible[0]?.id;
     updateIncome(income.id, patch);
@@ -294,9 +327,9 @@ function IncomeFields({
         </Field>
         <Field label="Type">
           <Select
-            value={income.kind}
-            onChange={handleKindChange}
-            options={KIND_OPTIONS}
+            value={fromLeftover ? LEFTOVER_TYPE : income.kind}
+            onChange={handleTypeChange}
+            options={TYPE_OPTIONS}
           />
         </Field>
         <Field label="Owner">
