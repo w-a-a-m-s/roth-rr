@@ -3,8 +3,12 @@ import { projectScenario } from "@/lib/engine/project";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import type { ReferenceData } from "@/lib/externalData/types";
 
-/** Monthly shortfall the shortfall toggle allows when it's turned on. */
-export const DEFAULT_MAX_MONTHLY_SHORTFALL = 1000;
+/**
+ * Monthly shortfall the shortfall switch allows when it's turned on: none
+ * (user's request). A year that's short at all converts nothing, and a year
+ * with a surplus converts only what keeps it from going short.
+ */
+export const DEFAULT_MAX_MONTHLY_SHORTFALL = 0;
 
 /** Bisection stops once the bounds are this close, in dollars. */
 const PRECISION = 1;

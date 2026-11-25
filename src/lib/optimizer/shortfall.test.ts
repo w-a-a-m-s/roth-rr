@@ -3,7 +3,7 @@ import type { Household } from "@/lib/domain/types";
 import { projectScenario } from "@/lib/engine/project";
 import { FALLBACK_REFERENCE_DATA as refs } from "@/lib/externalData/fallback";
 import { buildConversionSchedule } from "@/lib/optimizer";
-import { capConversionsToShortfall } from "@/lib/optimizer/shortfall";
+import { DEFAULT_MAX_MONTHLY_SHORTFALL, capConversionsToShortfall } from "@/lib/optimizer/shortfall";
 
 // Single FL retiree with a pension and Social Security who spends most of it,
 // so converting the whole 403b evenly leaves several thousand a month short.
@@ -68,5 +68,30 @@ describe("maxMonthlyShortfall", () => {
 
   it("changes nothing when it's off", () => {
     expect(buildConversionSchedule({ ...retiree }, refs)).toEqual(uncapped);
+  });
+});
+
+describe("no shortfall allowed (the switch's limit)", () => {
+  const strict = { ...retiree, optimizer: { ...retiree.optimizer, maxMonthlyShortfall: DEFAULT_MAX_MONTHLY_SHORTFALL } };
+  const schedule = buildConversionSchedule(strict, refs);
+  const rows = projectScenario(retiree, schedule, refs);
+
+  it("allows no shortfall at all", () => {
+    expect(DEFAULT_MAX_MONTHLY_SHORTFALL).toBe(0);
+  });
+
+  it("keeps every conversion year out of a shortfall", () => {
+    expect(schedule.some((amount) => amount > 0)).toBe(true);
+    schedule.forEach((amount, i) => {
+      if (amount <= 0) return;
+      expect(rows[i].surplus).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  it("converts nothing in a year that's short even without a conversion", () => {
+    const short = { ...retiree, expenses: [{ ...retiree.expenses[0], amount: 9500 }] };
+    const uncapped = buildConversionSchedule(retiree, refs);
+    expect(projectScenario(short, uncapped.map(() => 0), refs)[0].surplus).toBeLessThan(0);
+    expect(capConversionsToShortfall(short, uncapped, DEFAULT_MAX_MONTHLY_SHORTFALL, refs)[0]).toBe(0);
   });
 });

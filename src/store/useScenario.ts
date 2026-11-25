@@ -70,6 +70,7 @@ import {
 } from "@/lib/engine/marketHistory";
 import { isPropertyLoanKind } from "@/lib/domain/propertyLoans";
 import { shiftSchedule } from "@/lib/optimizer/shiftSchedule";
+import { DEFAULT_MAX_MONTHLY_SHORTFALL } from "@/lib/optimizer/shortfall";
 import {
   DEFAULT_TERM_YEARS,
   DEFAULT_WAITING_DAYS,
@@ -568,10 +569,14 @@ export function migrateHousehold(household: Household): Household {
         legacy.optimizer.targetBracketRate,
       );
     }
-    // The shortfall cap is optional: anything but a non-negative number is off.
+    // The shortfall switch is optional: anything but a non-negative number is
+    // off. On, it now allows no shortfall (user's request), so a plan saved
+    // with the old $1,000 (or any other) limit moves to it.
     const cap = legacy.optimizer.maxMonthlyShortfall;
     if (cap != null && !(Number.isFinite(cap) && cap >= 0)) {
       delete legacy.optimizer.maxMonthlyShortfall;
+    } else if (cap != null) {
+      legacy.optimizer.maxMonthlyShortfall = DEFAULT_MAX_MONTHLY_SHORTFALL;
     }
     // Conversion tax is paid from income unless the plan says assets.
     const paidFrom = legacy.optimizer.conversionTaxPaidFrom;

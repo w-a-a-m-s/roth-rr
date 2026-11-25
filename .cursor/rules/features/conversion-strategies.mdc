@@ -33,8 +33,11 @@ included. `buildConversionSchedule` runs the strategy, then
 in order and bisects each year's amount down until that year's `surplus`
 (monthly) is at least `-maxMonthlyShortfall`. A year already short by more than
 the limit with no conversion converts nothing. The menu's switch next to the
-Conversion strategy heading sets it to `DEFAULT_MAX_MONTHLY_SHORTFALL` ($1,000)
-or clears it. Strategy scores and Minimum taxes go through the same cap
+Conversion strategy heading, "No shortfall allowed", sets it to
+`DEFAULT_MAX_MONTHLY_SHORTFALL` ($0, user's request; it was $1,000) or clears
+it: a short year converts nothing, and a year with a surplus converts only
+what keeps it from going short. `migrateHousehold` moves any saved limit to
+$0. Strategy scores and Minimum taxes go through the same cap
 (Minimum taxes searches uncapped, then is capped).
 
 ## Conversion tax: paid from income or assets

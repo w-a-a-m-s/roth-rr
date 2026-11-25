@@ -3,7 +3,7 @@
 import type { ConversionStrategy, FillBracketRate } from "@/lib/domain/types";
 import { FILL_BRACKET_RATES } from "@/lib/domain/types";
 import { isConversionEmpty } from "@/lib/engine/conversionEmpty";
-import { formatCurrency, formatSignedCompactCurrency } from "@/lib/format";
+import { formatSignedCompactCurrency } from "@/lib/format";
 import { primaryRmdAge } from "@/lib/domain/rmd";
 import { buildConversionSchedule } from "@/lib/optimizer";
 import {
@@ -68,7 +68,6 @@ export function ConversionStrategyMenu({
   const selected = household.optimizer.strategy;
   const shortfallCap = household.optimizer.maxMonthlyShortfall;
   const capOn = shortfallCap != null;
-  const capLabel = formatCurrency(shortfallCap ?? DEFAULT_MAX_MONTHLY_SHORTFALL);
   const toggleCap = () => {
     if (readOnly) return;
     setOptimizer({
@@ -160,17 +159,17 @@ export function ConversionStrategyMenu({
         <RmdYearConversionsSwitch readOnly={readOnly} />
         <div className="flex items-center gap-1.5">
           <InfoTooltip
-            text={`When on, each year converts only as much as keeps that year's monthly shortfall (a negative Surplus) at ${capLabel} or less. Applies to every strategy.`}
-            label="About the shortfall limit"
+            text="When on, a year that spends more than its income (a negative Surplus) converts nothing, and every other year converts only as much as keeps it from going short. Applies to every strategy."
+            label="About no shortfall allowed"
           />
           <span className="text-[11.5px] font-semibold text-muted-2">
-            Max {capLabel}/mo short
+            No shortfall allowed
           </span>
           <button
             type="button"
             role="switch"
             aria-checked={capOn}
-            aria-label={`Limit the monthly shortfall to ${capLabel}`}
+            aria-label="No shortfall allowed"
             disabled={readOnly}
             onClick={toggleCap}
             className={`relative h-[22px] w-[40px] shrink-0 rounded-full border-0 transition-colors ${

@@ -603,10 +603,12 @@ describe("migrateHousehold: maxMonthlyShortfall", () => {
     expect(out.optimizer).not.toHaveProperty("maxMonthlyShortfall");
   });
 
-  it("keeps a saved cap", () => {
-    const h = household([], []);
-    h.optimizer.maxMonthlyShortfall = 1000;
-    expect(migrateHousehold(h).optimizer.maxMonthlyShortfall).toBe(1000);
+  it("moves a saved cap to no shortfall allowed", () => {
+    for (const saved of [1000, 250, 0]) {
+      const h = household([], []);
+      h.optimizer.maxMonthlyShortfall = saved;
+      expect(migrateHousehold(h).optimizer.maxMonthlyShortfall).toBe(0);
+    }
   });
 
   it("drops a cap that isn't a non-negative number", () => {
