@@ -11,9 +11,11 @@ import {
   isLeftoverInvested,
 } from "@/lib/config/defaults";
 import { firstRmdYear } from "@/components/results/AgeMarks";
+import { countsIrmaaOnly } from "@/lib/engine/otherExpenses";
 import type { ProjectionRow, ScenarioResult } from "@/lib/engine/types";
 import {
   careMonthly,
+  medicareMonthly,
   hasCareCosts,
   incomeLabel,
   isCareRiderIncome,
@@ -437,10 +439,23 @@ export function buildSnapshotTable(
     {
       key: "expenses",
       label: "Monthly expenses",
-      values: pick((r) => r.monthlyExpenses - careMonthly(r.expenseMonthly)),
+      values: pick(
+        (r) =>
+          r.monthlyExpenses - careMonthly(r.expenseMonthly) - medicareMonthly(r.expenseMonthly),
+      ),
       tone: "plain",
     },
   ];
+  // Medicare on its own line (user's request), so a conversion's IRMAA two
+  // years later shows where it lands.
+  if (scenario.rows.some((r) => medicareMonthly(r.expenseMonthly) !== 0)) {
+    cashLines.push({
+      key: "medicare",
+      label: countsIrmaaOnly(household) ? "Medicare IRMAA" : "Medicare Part B",
+      values: pick((r) => medicareMonthly(r.expenseMonthly)),
+      tone: "tax",
+    });
+  }
   if (scenario.rows.some((r) => careMonthly(r.expenseMonthly) !== 0)) {
     cashLines.push({
       key: "care",

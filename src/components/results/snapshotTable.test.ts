@@ -337,3 +337,35 @@ describe("incomeTint", () => {
     expect(incomeSourceTint(h, "ss")).toBe("fixedIncome");
   });
 });
+
+describe("buildSnapshotTable: Medicare IRMAA line", () => {
+  // Born 1965, retired 2028, converts $250k in 2028 and 2029: IRMAA at 65
+  // and 66 (2030, 2031), counted as the IRMAA extra only.
+  const h: Household = {
+    filingStatus: "mfj",
+    residenceState: "FL",
+    people: [{ id: "m", name: "Mark", birthYear: 1965, retirementYear: 2028 }],
+    mainPersonId: "m",
+    accounts: [
+      { id: "ira", label: "403(b)", ownerId: "m", kind: "retirementTaxable", balance: 600000, growthRate: 0 },
+    ],
+    incomes: [],
+    realEstate: [],
+    expenses: [],
+    includeMedicarePremiums: true,
+    medicareExpense: "irmaaOnly",
+    assumptions: { expenseGrowth: 0, finalAge: 70 },
+    optimizer: { strategy: "manual", manualSchedule: [250000, 250000] },
+  };
+  const roth = calculate(h).roth;
+  const cash = buildSnapshotTable(roth, h, "m", 2028).sections.find((s) => s.key === "cashflow")!.lines;
+
+  it("shows the IRMAA on its own line, out of Monthly expenses", () => {
+    const line = cash.find((l) => l.key === "medicare")!;
+    expect(line.label).toBe("Medicare IRMAA");
+    // 2028 through 2033: only 2030 and 2031 pay the surcharge.
+    expect(line.values.map((v) => v > 0)).toEqual([false, false, true, true, false, false]);
+    const expenses = cash.find((l) => l.key === "expenses")!;
+    expect(expenses.values.every((v) => v === 0)).toBe(true);
+  });
+});

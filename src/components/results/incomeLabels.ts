@@ -136,6 +136,15 @@ export function expenseLabel(household: Household, key: string): string {
   return household.expenses.find((e) => e.id === key)?.label ?? key;
 }
 
+/** Monthly Medicare Part B expense in a row (all `medicare:` expense keys). */
+export function medicareMonthly(expenseMonthly: Record<string, number>): number {
+  let total = 0;
+  for (const [key, value] of Object.entries(expenseMonthly)) {
+    if (key.startsWith("medicare:")) total += value;
+  }
+  return total;
+}
+
 /** Monthly long-term care cost in a row (all `ltc:` expense keys). */
 export function careMonthly(expenseMonthly: Record<string, number>): number {
   let total = 0;
