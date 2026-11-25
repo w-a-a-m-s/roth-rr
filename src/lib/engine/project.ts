@@ -1285,6 +1285,10 @@ export function projectScenario(
     }
 
     let converted = 0;
+    // The part converted out of accounts whose owner is still under 59½ (per
+    // account, same exceptions as a withdrawal: 457(b), Rule of 55, ...).
+    // The conversion owes no penalty, but tax withheld from it would.
+    let convertedEarly = 0;
     for (const acc of retirementAccounts) {
       if (toConvert <= 0) break;
       // Missing birth year → still convertible. At or past the RMD age, only
@@ -1298,6 +1302,7 @@ export function projectScenario(
       balances[acc.id] -= take;
       toConvert -= take;
       converted += take;
+      if (isEarly(acc, calendarYear)) convertedEarly += take;
     }
     if (targetRoth) balances[targetRoth.id] += converted;
 
@@ -1766,6 +1771,11 @@ export function projectScenario(
     //     conversion is still taxable (withholding is part of the
     //     distribution), so the year's tax is unchanged. `priceYear` is the
     //     year's tax with `extraOrdinary` / `extraGains` on top.
+    //     Before 59½ the withheld dollars aren't converted: they're an early
+    //     distribution and owe the 10% penalty (IRC 72(t)), pro rata to the
+    //     part converted out of accounts still under it. The penalty is
+    //     withheld too, so it owes the penalty as well: the penalized base is
+    //     s * W / (1 - 10% * s), with s that share and W the conversion's tax.
     const stateTaxesOrdinary = state.hasIncomeTax && !state.capitalGainsOnly;
     const priceYear = (extraOrdinary: number, extraGains: number, extraEarly = 0) => {
       const fed = federalOrdinaryGross + extraOrdinary;
@@ -1782,11 +1792,22 @@ export function projectScenario(
         gains,
         early,
       );
-      const withheld = Math.min(
-        converted,
-        Math.max(0, taxes.annualTax - withoutConversion.annualTax),
+      const conversionTax = Math.max(0, taxes.annualTax - withoutConversion.annualTax);
+      const share = convertedEarly / converted;
+      if (!(share > 0)) {
+        return { taxes, withheld: Math.min(converted, conversionTax) };
+      }
+      const rate = EARLY_WITHDRAWAL_PENALTY_RATE;
+      const earlyWithheld = Math.min(
+        converted * share,
+        (share * conversionTax) / (1 - rate * share),
       );
-      return { taxes, withheld };
+      const penalized = taxForYear(fed, st, gains, early + earlyWithheld);
+      return {
+        taxes: penalized,
+        withheld: Math.min(converted, conversionTax + rate * earlyWithheld),
+        earlyWithheld,
+      };
     };
     let priced = priceYear(0, 0);
 
@@ -1870,6 +1891,8 @@ export function projectScenario(
       annualTax,
     } = priced.taxes;
     const conversionTaxWithheld = priced.withheld;
+    // Withheld conversion tax that counts as an early distribution (10%).
+    const conversionWithheldEarly = priced.earlyWithheld ?? 0;
     if (targetRoth) balances[targetRoth.id] -= conversionTaxWithheld;
 
     const monthlyTax = annualTax / 12;
@@ -1933,7 +1956,7 @@ export function projectScenario(
             federalOrdinaryGross + liquidated,
             stateTaxesOrdinary ? stateOrdinaryGross + liquidated : 0,
             capitalGainsIncome,
-            earlyDistributions,
+            earlyDistributions + conversionWithheldEarly,
           ).annualTax - annualTax
         : 0;
 
@@ -1976,7 +1999,8 @@ export function projectScenario(
       federalCapitalGainsTax,
       netInvestmentIncome,
       netInvestmentIncomeTax: niit,
-      earlyDistributions,
+      earlyDistributions: earlyDistributions + conversionWithheldEarly,
+      conversionWithheldEarly,
       earlyWithdrawalPenalty,
       employmentTax: employment,
       federalAnnualTax,

@@ -295,8 +295,16 @@ projection never takes a penalized draw, so scheduled draws from those
 accounts wait and short years (Spending capacity, event top-ups) skip them.
 On, they're taken and 10% of them (row `earlyDistributions`) is added to
 `federalAnnualTax` as row `earlyWithdrawalPenalty`, inside `taxForYear`, so
-the top-up gross-up pays for it. Conversions never owe it. Tax withheld from
-a conversion before 59½ would, and isn't charged yet.
+the top-up gross-up pays for it. Conversions never owe it, but tax withheld
+from one does: with the conversion tax paid from assets, the withheld
+dollars aren't converted, so the part converted out of accounts still early
+for their owner (same per-account rules: 457(b) never, Rule of 55, ...) is
+an early distribution (row `conversionWithheldEarly`, inside
+`earlyDistributions`) and owes the 10% whatever `allowEarlyWithdrawals`
+says. The penalty is withheld too, so it owes it as well (`priceYear` in
+`projectScenario`). The Retirement results show a red alert
+(`EarlyConversionPenaltyAlert`, user's request) naming the years and the
+penalty paid.
 
 Conversions stop at an owner's RMD age unless the plan turns on
 `optimizer.allowConversionsInRmdYears` ("Convert in RMD years", next to the

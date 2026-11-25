@@ -1,0 +1,99 @@
+{
+  "name": "Conversion tax withheld before 59½ (10% penalty on the withheld tax)",
+  "strategy": "manual",
+  "note": "Single FL retiree born 1970 with an IRA and a 457(b), converting $80k a year from 2026 to 2029 with the tax paid from assets. Conversions come out of the IRA first: its withheld tax before 59½ is an early distribution and owes 10% (the penalty withheld too). From 2030 on, 59½ is past, so no penalty.",
+  "household": {
+    "filingStatus": "single",
+    "residenceState": "FL",
+    "people": [
+      {
+        "id": "p1",
+        "name": "Sam",
+        "birthYear": 1970,
+        "retirementYear": 2026
+      }
+    ],
+    "accounts": [
+      {
+        "id": "ira",
+        "label": "IRA",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 250000,
+        "growthRate": 0.06,
+        "retirementType": "ira",
+        "deposits": []
+      },
+      {
+        "id": "457",
+        "label": "457(b)",
+        "ownerId": "p1",
+        "kind": "retirementTaxable",
+        "balance": 200000,
+        "growthRate": 0.06,
+        "retirementType": "457b",
+        "deposits": []
+      }
+    ],
+    "incomes": [
+      {
+        "id": "pension",
+        "label": "Pension",
+        "ownerId": "p1",
+        "kind": "pension",
+        "monthlyAmount": 4000,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2026
+      }
+    ],
+    "realEstate": [],
+    "expenses": [
+      {
+        "id": "exp",
+        "label": "Living",
+        "amount": 3000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 90,
+      "startYear": 2026,
+      "leftoverInvestment": "moneyMarket"
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        80000,
+        80000,
+        80000,
+        80000
+      ],
+      "conversionTaxPaidFrom": "assets"
+    }
+  },
+  "commit": "5e3cfbf",
+  "commitDate": "2026-11-25T04:12:25+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 531113.13,
+      "medicareTotal": 111507.6,
+      "afterTaxAssetsAtRmd": 1239376.08,
+      "inheritanceFinal": 2917771.54
+    },
+    "roth": {
+      "taxesTotal": 365830.06,
+      "medicareTotal": 76455.6,
+      "afterTaxAssetsAtRmd": 1638994.04,
+      "inheritanceFinal": 4681393.14
+    },
+    "deltas": {
+      "taxesTotal": -165283.08,
+      "medicareTotal": -35052,
+      "afterTaxAssetsAtRmd": 399617.96,
+      "inheritanceFinal": 1763621.6
+    }
+  }
+}

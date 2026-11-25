@@ -171,6 +171,13 @@ export interface ProjectionRow {
    * penalty (only when the plan allows early withdrawals).
    */
   earlyDistributions: number;
+  /**
+   * Conversion tax withheld (paid from assets) out of accounts whose owner
+   * is under 59½: it isn't converted, so it's an early distribution and owes
+   * the 10% penalty. Inside `earlyDistributions`. The results show a red
+   * alert when any year has it.
+   */
+  conversionWithheldEarly: number;
   /** 10% early withdrawal penalty on `earlyDistributions`, in `federalAnnualTax`. */
   earlyWithdrawalPenalty: number;
   /**

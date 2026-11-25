@@ -2113,6 +2113,49 @@ describe("conversion tax paid from assets", () => {
   });
 });
 
+describe("conversion tax withheld before 59½", () => {
+  // Single, 56 in 2026, $500k that doesn't grow, $100k converted in 2026.
+  const plan = (
+    retirementType: "ira" | "457b",
+    paidFrom: "assets" | "income" = "assets",
+    birthYear = 1970,
+  ): Household => ({
+    filingStatus: "single",
+    residenceState: "FL",
+    people: [{ id: "p", name: "P", birthYear, retirementYear: 2026 }],
+    accounts: [
+      { id: "acc", label: "Account", ownerId: "p", kind: "retirementTaxable", balance: 500_000, growthRate: 0, retirementType },
+    ],
+    incomes: [],
+    realEstate: [],
+    expenses: [],
+    assumptions: { expenseGrowth: 0, finalAge: 60, startYear: 2026 },
+    optimizer: { strategy: "manual", manualSchedule: [100_000], conversionTaxPaidFrom: paidFrom },
+  });
+  const run = (h: Household) => projectScenario(h, [100_000, ...zeros(projectionYears(h) - 1)]);
+
+  it("owes 10% on the tax withheld from an IRA, which is withheld too", () => {
+    const [row] = run(plan("ira"));
+    const [atIncome] = run(plan("ira", "income"));
+    const incomeTax = atIncome.annualTax;
+    expect(incomeTax).toBeGreaterThan(0);
+    // Every withheld dollar is early: withheld W = tax + 10% W, so W = tax / 0.9.
+    expect(row.conversionWithheldEarly).toBeCloseTo(incomeTax / 0.9, 6);
+    expect(row.conversionTaxWithheld).toBeCloseTo(incomeTax / 0.9, 6);
+    expect(row.earlyDistributions).toBeCloseTo(row.conversionWithheldEarly, 6);
+    expect(row.earlyWithdrawalPenalty).toBeCloseTo(0.1 * row.conversionWithheldEarly, 6);
+    expect(row.annualTax).toBeCloseTo(incomeTax + row.earlyWithdrawalPenalty, 6);
+  });
+
+  it("owes nothing from a 457(b), when paid from income, or after 59½", () => {
+    for (const h of [plan("457b"), plan("ira", "income"), plan("ira", "assets", 1960)]) {
+      const [row] = run(h);
+      expect(row.conversionWithheldEarly).toBe(0);
+      expect(row.earlyWithdrawalPenalty).toBe(0);
+    }
+  });
+});
+
 describe("chosen projection start year", () => {
   const base = (): Household => ({
     filingStatus: "single",

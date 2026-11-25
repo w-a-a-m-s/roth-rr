@@ -14,6 +14,7 @@ import { DisplayFromToggle } from '@/components/results/DisplayFromToggle';
 import { scenarioFrom, snapshotFromYear, type SnapshotFrom } from '@/components/results/snapshotTable';
 import { ComparisonMetrics, ScenarioMetrics } from '@/components/results/ComparisonSummary';
 import { LeftoverToggle } from '@/components/results/LeftoverToggle';
+import { EarlyConversionPenaltyAlert } from '@/components/results/EarlyConversionPenaltyAlert';
 import { AssetsChart } from '@/components/results/AssetsChart';
 import { AfterTaxAssetsTimeline } from '@/components/results/AfterTaxAssetsTimeline';
 import { CashflowChart } from '@/components/results/CashflowChart';
@@ -281,6 +282,7 @@ export function ResultsView() {
 	return (
 		<div className="mx-auto flex w-full min-w-0 max-w-[1080px] flex-col gap-6">
 			<AnalysisTabs />
+			{single ? null : <EarlyConversionPenaltyAlert rows={comparison.roth.rows} />}
 			{analysis === 'survivorship' && deathEvent ? (
 				<>
 					<SurvivorshipControls household={household} event={deathEvent} />
