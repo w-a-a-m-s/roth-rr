@@ -97,10 +97,10 @@ describe("monteCarlo", () => {
     }).toMatchInlineSnapshot(`
       {
         "baseline": 1,
-        "baselineMedianInheritance": 4501979,
+        "baselineMedianInheritance": 4431517,
         "roth": 1,
         "rothAhead": 1,
-        "rothMedianInheritance": 7074334,
+        "rothMedianInheritance": 7012582,
       }
     `);
   });

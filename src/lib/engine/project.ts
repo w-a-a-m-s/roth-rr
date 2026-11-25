@@ -1898,6 +1898,27 @@ export function projectScenario(
       afterTaxTotal += balances[lifeInsuranceKey(claim.policyId)] ?? 0;
     }
 
+    // 7b) Tax if the tax-deferred money left (and the gain inside annuities,
+    //     which gets no step-up) were cashed out this year: priced on this
+    //     year's own return, on top of everything else on it, with its
+    //     deductions. The after-tax values (`afterTaxAssets`) subtract it, so
+    //     a conversion and the money left behind share one set of brackets.
+    let annuityGain = 0;
+    for (const acc of accounts) {
+      if (acc.kind !== "annuity") continue;
+      annuityGain += Math.max(0, balances[acc.id] - (basisRemaining[acc.id] ?? 0));
+    }
+    const liquidated = Math.max(0, retirementTotal) + annuityGain;
+    const liquidationTax =
+      liquidated > 0
+        ? taxForYear(
+            federalOrdinaryGross + liquidated,
+            stateTaxesOrdinary ? stateOrdinaryGross + liquidated : 0,
+            capitalGainsIncome,
+            earlyDistributions,
+          ).annualTax - annualTax
+        : 0;
+
     rows.push({
       yearIndex: i,
       calendarYear,
@@ -1920,6 +1941,7 @@ export function projectScenario(
       oneTimeDepreciationById,
       conversion: converted,
       conversionTaxWithheld,
+      liquidationTax,
       totalMonthlyIncome,
       incomeMonthly,
       grossTaxableIncome,

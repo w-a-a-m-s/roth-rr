@@ -1,0 +1,176 @@
+{
+  "name": "Conversion year comes out even after tax (two pensions, paid from assets)",
+  "strategy": "manual",
+  "note": "MFJ FL couple, two 403(b)s and a DROP, three pensions and Social Security, converting $175k, $175k, $40k with the tax paid from assets. The tax-deferred money left is priced on each year's own return, on top of the pensions and the conversion, so the conversion and what it leaves behind share one set of brackets.",
+  "household": {
+    "filingStatus": "mfj",
+    "residenceState": "FL",
+    "expenses": [
+      {
+        "id": "exp-b0c2pr8",
+        "label": "All",
+        "amount": 2000,
+        "frequency": "monthly",
+        "growthRate": 0.02
+      }
+    ],
+    "people": [
+      {
+        "id": "p-in6aaup",
+        "name": "Alex",
+        "birthYear": 1965,
+        "retirementYear": 2028
+      },
+      {
+        "id": "p-zlj6g12",
+        "name": "Jordan",
+        "birthYear": 1968,
+        "retirementYear": 2028
+      }
+    ],
+    "accounts": [
+      {
+        "id": "acc-wx89j6n",
+        "label": "DROP Alex",
+        "ownerId": "p-in6aaup",
+        "kind": "retirementTaxable",
+        "balance": 67712,
+        "growthRate": 0.06,
+        "retirementType": "drop",
+        "deposits": []
+      },
+      {
+        "id": "acc-4wkvngd",
+        "label": "403(b) Alex",
+        "ownerId": "p-in6aaup",
+        "kind": "retirementTaxable",
+        "balance": 100000,
+        "growthRate": 0.06,
+        "retirementType": "403b",
+        "deposits": [
+          {
+            "id": "dep-rjais5s",
+            "label": "Contribution",
+            "amount": 1600,
+            "frequency": "monthly",
+            "startYear": 2026,
+            "endYear": 2028
+          }
+        ]
+      },
+      {
+        "id": "acc-ffxx3th",
+        "label": "403(b) Jordan",
+        "ownerId": "p-zlj6g12",
+        "kind": "retirementTaxable",
+        "balance": 100000,
+        "growthRate": 0.06,
+        "retirementType": "403b",
+        "joint": false,
+        "deposits": [
+          {
+            "id": "dep-volyhwq",
+            "label": "Contribution",
+            "amount": 1600,
+            "frequency": "monthly",
+            "startYear": 2026,
+            "endYear": 2028
+          }
+        ]
+      }
+    ],
+    "incomes": [
+      {
+        "id": "inc-sqtvyox",
+        "label": "Pension Alex",
+        "ownerId": "p-in6aaup",
+        "kind": "pension",
+        "monthlyAmount": 2175,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2028
+      },
+      {
+        "id": "inc-2wx89qw",
+        "label": "Pension Jordan",
+        "ownerId": "p-zlj6g12",
+        "kind": "pension",
+        "monthlyAmount": 1400,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2028
+      },
+      {
+        "id": "inc-vvrxov7",
+        "label": "Second Pension Jordan",
+        "ownerId": "p-zlj6g12",
+        "kind": "pension",
+        "monthlyAmount": 1500,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2028
+      },
+      {
+        "id": "inc-bf8z14z",
+        "label": "Social Security Alex",
+        "ownerId": "p-in6aaup",
+        "kind": "socialSecurity",
+        "monthlyAmount": 1702,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2028
+      },
+      {
+        "id": "inc-63w2t6q",
+        "label": "Social Security Jordan",
+        "ownerId": "p-zlj6g12",
+        "kind": "socialSecurity",
+        "monthlyAmount": 1765,
+        "growthRate": 0.02,
+        "taxability": "full",
+        "startYear": 2030
+      }
+    ],
+    "realEstate": [],
+    "realEstateProfessional": false,
+    "assumptions": {
+      "expenseGrowth": 0.02,
+      "finalAge": 90
+    },
+    "optimizer": {
+      "strategy": "manual",
+      "manualSchedule": [
+        175000,
+        175000,
+        40000
+      ],
+      "conversionTaxPaidFrom": "assets"
+    },
+    "mainPersonId": "p-zlj6g12",
+    "insurance": [],
+    "mortgages": [],
+    "businesses": []
+  },
+  "commit": "2f76945",
+  "commitDate": "2026-11-24T19:48:37+00:00",
+  "expected": {
+    "baseline": {
+      "taxesTotal": 349589.99,
+      "medicareTotal": 130021.2,
+      "afterTaxAssetsAtRmd": 571227.5,
+      "inheritanceFinal": 555261.28
+    },
+    "roth": {
+      "taxesTotal": 303904.04,
+      "medicareTotal": 124174.8,
+      "afterTaxAssetsAtRmd": 945038.19,
+      "inheritanceFinal": 2997820.94
+    },
+    "deltas": {
+      "taxesTotal": -45685.95,
+      "medicareTotal": -5846.4,
+      "afterTaxAssetsAtRmd": 373810.69,
+      "inheritanceFinal": 2442559.66
+    }
+  }
+}

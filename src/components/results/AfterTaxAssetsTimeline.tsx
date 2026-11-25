@@ -41,8 +41,8 @@ export function buildAfterTaxAssetsTimelinePoints(
   return rothRows.flatMap((row) => {
     const baseline = baselineByYear.get(row.calendarYear);
     if (!baseline) return [];
-    const withConversion = afterTaxAssets(household, row, refs);
-    const noConversion = afterTaxAssets(household, baseline, refs);
+    const withConversion = afterTaxAssets(row);
+    const noConversion = afterTaxAssets(baseline);
     const preTaxWithConversion = preTaxAssets(row);
     const preTaxNoConversion = preTaxAssets(baseline);
     return [

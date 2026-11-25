@@ -166,12 +166,19 @@ through `accountGrowthForYear`: `project.ts`, `convertible.ts`,
 
 ## Estate value: step-up at death
 
-`inheritanceValue` (`runScenario.ts`, also the after-tax assets at the RMD
-age) counts every after-tax account at full value: its basis steps up at
-death, so the gain is never taxed. Annuities are the exception: their gain
-over the basis left (row `costBasisById`) is ordinary income to the heirs,
-taxed with the tax-deferred balance as one lump. Real-estate and business
-equity count at full value.
+`afterTaxAssets` (`runScenario.ts`: the After tax rows, the after-tax assets
+at the RMD age and the final inheritance) is the year's assets before tax
+minus row `liquidationTax`. That's the tax the year's own return would add
+if the tax-deferred balance left at year end were cashed out that year, on
+top of everything else on the return (pensions, Social Security, that year's
+conversion) and after its deductions (`projectScenario` step 7b, through
+`taxForYear`). One return, one set of brackets: a conversion and the money
+it leaves behind never both start from the bottom bracket, so in a
+conversion year the two scenarios come out even. Every after-tax account
+counts at full value: its basis steps up at death, so the gain is never
+taxed. Annuities are the exception: their gain over the basis left (row
+`costBasisById`) is ordinary income, cashed out with the tax-deferred
+balance. Real-estate and business equity count at full value.
 
 ## Leftover money
 

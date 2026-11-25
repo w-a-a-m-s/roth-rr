@@ -155,26 +155,26 @@
     "mortgages": [],
     "businesses": []
   },
-  "commit": "d417cad",
-  "commitDate": "2026-10-29T21:37:10+00:00",
+  "commit": "2f76945",
+  "commitDate": "2026-11-24T19:48:37+00:00",
   "expected": {
     "baseline": {
       "taxesTotal": 215468.2,
       "medicareTotal": 60872.4,
-      "afterTaxAssetsAtRmd": 2526848.4,
-      "inheritanceFinal": 6826384.28
+      "afterTaxAssetsAtRmd": 2507902.52,
+      "inheritanceFinal": 6797141.9
     },
     "roth": {
       "taxesTotal": 200592.3,
       "medicareTotal": 69148.8,
-      "afterTaxAssetsAtRmd": 2662141.98,
-      "inheritanceFinal": 7552412.32
+      "afterTaxAssetsAtRmd": 2644567.29,
+      "inheritanceFinal": 7532636.78
     },
     "deltas": {
       "taxesTotal": -14875.9,
       "medicareTotal": 8276.4,
-      "afterTaxAssetsAtRmd": 135293.59,
-      "inheritanceFinal": 726028.04
+      "afterTaxAssetsAtRmd": 136664.78,
+      "inheritanceFinal": 735494.87
     }
   }
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import { calculate } from "@/lib/calculate";
+import evenCase from "@/lib/engine/golden/cases/conversion-year-after-tax-even.json";
 import { levelPayment } from "@/lib/engine/amortization";
 import { propertyDepreciation } from "@/lib/engine/project";
 import { indexedFederalTax } from "@/lib/engine/taxIndexing";
@@ -1661,15 +1662,16 @@ describe("deposits into accounts", () => {
   });
 
   it("taxes an annuity's gain to the heirs as ordinary income (no step-up)", () => {
-    // Same $50k growing to $60,500, in an annuity: the $10,500 above basis is
-    // ordinary income, taxed on the final year's (indexed) single brackets.
+    // $500k growing to $605,000, in an annuity: the $105,000 above basis is
+    // ordinary income on the final year's return (indexed single brackets,
+    // after that year's deductions; there's no other income).
     const household = depositHousehold({
       kind: "annuity",
       balance: 0,
       costBasis: 0,
       growthRate: 0.1,
       deposits: [
-        deposit({ frequency: "oneTime", amount: 50_000, startYear: 2030 }),
+        deposit({ frequency: "oneTime", amount: 500_000, startYear: 2030 }),
       ],
     });
     const scenario = runScenario(
@@ -1680,8 +1682,9 @@ describe("deposits into accounts", () => {
     const finalRow = scenario.rows[scenario.rows.length - 1];
     const brackets = indexedFederalTax(FALLBACK_FEDERAL_TAX, finalRow.calendarYear, 0.02)
       .brackets.single;
+    expect(finalRow.annualTax).toBe(0);
     expect(scenario.totals.inheritanceFinal).toBeCloseTo(
-      60_500 - progressiveTax(10_500, brackets),
+      605_000 - progressiveTax(105_000 - finalRow.deductions.total, brackets),
       6,
     );
   });
@@ -1698,6 +1701,20 @@ describe("deposits into accounts", () => {
 });
 
 describe("afterTaxAssets", () => {
+  it("comes out even in a conversion year: one return, one set of brackets", () => {
+    // Converting $175k then cashing out the rest is the same year's income
+    // as cashing out everything, so the after-tax values match. Taxing the
+    // money left behind from $0 used to give the conversion a phantom gain.
+    const household = (
+      evenCase as unknown as { household: Household }
+    ).household;
+    const { baseline, roth } = calculate(household);
+    expect(roth.rows[0].conversion).toBeCloseTo(175_000, 6);
+    expect(roth.rows[0].conversionTaxWithheld).toBeGreaterThan(0);
+    expect(preTaxAssets(roth.rows[0])).toBeLessThan(preTaxAssets(baseline.rows[0]));
+    expect(afterTaxAssets(roth.rows[0])).toBeCloseTo(afterTaxAssets(baseline.rows[0]), 2);
+  });
+
   it("matches scenario totals at the RMD year and final year", () => {
     const household = SAMPLE_HOUSEHOLD;
     const schedule = zeros(projectionYears(household));
@@ -1710,11 +1727,11 @@ describe("afterTaxAssets", () => {
         : undefined) ?? scenario.rows[scenario.rows.length - 1];
     const finalRow = scenario.rows[scenario.rows.length - 1];
 
-    expect(afterTaxAssets(household, rmdRow)).toBeCloseTo(
+    expect(afterTaxAssets(rmdRow)).toBeCloseTo(
       scenario.totals.afterTaxAssetsAtRmd,
       6,
     );
-    expect(afterTaxAssets(household, finalRow)).toBeCloseTo(
+    expect(afterTaxAssets(finalRow)).toBeCloseTo(
       scenario.totals.inheritanceFinal,
       6,
     );
@@ -2541,18 +2558,56 @@ describe("federal brackets and standard deduction indexed for inflation", () => 
     );
   });
 
-  it("taxes the inherited tax-deferred balance on that year's indexed brackets", () => {
-    const h = withIndexing(0.02);
+  it("taxes the tax-deferred balance left on that year's return, on top of its other income", () => {
+    // Single, 60 in 2030, a $40k fully taxable pension and $200k left in an
+    // IRA that doesn't grow. Cashing the IRA out stacks it on the pension,
+    // after the year's deductions, on that year's indexed brackets.
+    const h: Household = {
+      filingStatus: "single",
+      residenceState: "FL",
+      people: [{ id: "p1", name: "Pat", birthYear: 1970, retirementYear: 2030 }],
+      accounts: [
+        {
+          id: "ira",
+          label: "IRA",
+          ownerId: "p1",
+          kind: "retirementTaxable",
+          retirementType: "ira",
+          balance: 200_000,
+          growthRate: 0,
+        },
+      ],
+      incomes: [
+        {
+          id: "pension",
+          label: "Pension",
+          ownerId: "p1",
+          kind: "pension",
+          monthlyAmount: 40_000 / 12,
+          growthRate: 0,
+          taxability: "full",
+          startYear: 2030,
+        },
+      ],
+      realEstate: [],
+      expenses: [],
+      assumptions: { expenseGrowth: 0, finalAge: 62, startYear: 2030, taxIndexing: 0.02 },
+      optimizer: { strategy: "manual", manualSchedule: [] },
+    };
     const rows = run(h);
-    const last = rows[rows.length - 1];
-    const indexed = indexedFederalTax(FALLBACK_FEDERAL_TAX, last.calendarYear, 0.02).brackets.mfj;
-    // Same row, only the indexing differs: the gap is the tax on the balance.
-    const gap = afterTaxAssets(h, last) - afterTaxAssets(withIndexing(0), last);
-    expect(gap).toBeCloseTo(
-      progressiveTax(last.retirementTotal, mfj) - progressiveTax(last.retirementTotal, indexed),
-      4,
-    );
-    expect(gap).toBeGreaterThan(0);
+    for (const row of rows) {
+      const single = indexedFederalTax(FALLBACK_FEDERAL_TAX, row.calendarYear, 0.02).brackets.single;
+      const deduction = row.deductions.total;
+      const stacked =
+        progressiveTax(40_000 + 200_000 - deduction, single) -
+        progressiveTax(40_000 - deduction, single);
+      expect(row.retirementTotal).toBeCloseTo(200_000, 6);
+      expect(row.liquidationTax).toBeCloseTo(stacked, 4);
+      expect(afterTaxAssets(row)).toBeCloseTo(200_000 - stacked, 4);
+      // More than the same $200k taxed alone from $0: the pension already
+      // used the deduction and the low brackets.
+      expect(row.liquidationTax).toBeGreaterThan(progressiveTax(200_000 - deduction, single));
+    }
   });
 });
 
@@ -2722,7 +2777,7 @@ describe("leftover money", () => {
     const plain = projectScenario(saver(), zeros(projectionYears(h)));
     expect(rows[1].federalAnnualTax).toBeCloseTo(plain[1].federalAnnualTax, 2);
     // The estate counts it at full value (step-up at death).
-    expect(afterTaxAssets(h, rows[1]) - afterTaxAssets(saver(), plain[1])).toBeCloseTo(
+    expect(afterTaxAssets(rows[1]) - afterTaxAssets(plain[1])).toBeCloseTo(
       rows[1].balances.__leftover__,
       2,
     );

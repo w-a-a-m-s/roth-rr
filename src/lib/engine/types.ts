@@ -107,6 +107,13 @@ export interface ProjectionRow {
    * includes it, but `netMonthlyIncome` and `surplus` don't pay it.
    */
   conversionTaxWithheld: number;
+  /**
+   * Extra tax this year's return would owe if the tax-deferred balance left
+   * at year end (plus the untaxed gain inside annuities) were cashed out
+   * this year, on top of the year's other income and after its deductions.
+   * After-tax asset values subtract it.
+   */
+  liquidationTax: number;
   /** Gross spendable monthly income (excludes Roth conversions). */
   totalMonthlyIncome: number;
   /**

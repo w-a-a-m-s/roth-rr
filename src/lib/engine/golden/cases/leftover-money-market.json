@@ -2,8 +2,8 @@
   "name": "Leftover money saved in a money market (3.3%, interest taxed yearly)",
   "strategy": "manual",
   "note": "Retired single 65-year-old (pension, Social Security, DROP draw) with about $70k a year above expenses. Pins the yearly leftover money saved into one after-tax account.",
-  "commit": "8c398bd",
-  "commitDate": "2026-10-25T23:24:26+00:00",
+  "commit": "2f76945",
+  "commitDate": "2026-11-24T19:48:37+00:00",
   "household": {
     "filingStatus": "single",
     "residenceState": "FL",
@@ -139,20 +139,20 @@
     "baseline": {
       "taxesTotal": 1229220.08,
       "medicareTotal": 160682.4,
-      "afterTaxAssetsAtRmd": 1909363.66,
-      "inheritanceFinal": 4661325.2
+      "afterTaxAssetsAtRmd": 1873800.29,
+      "inheritanceFinal": 4603801.83
     },
     "roth": {
       "taxesTotal": 1137705.06,
       "medicareTotal": 182588.4,
-      "afterTaxAssetsAtRmd": 2169980.83,
-      "inheritanceFinal": 6257992.68
+      "afterTaxAssetsAtRmd": 2141975.43,
+      "inheritanceFinal": 6217479.64
     },
     "deltas": {
       "taxesTotal": -91515.02,
       "medicareTotal": 21906,
-      "afterTaxAssetsAtRmd": 260617.17,
-      "inheritanceFinal": 1596667.48
+      "afterTaxAssetsAtRmd": 268175.14,
+      "inheritanceFinal": 1613677.8
     }
   }
 }

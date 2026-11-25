@@ -15,89 +15,21 @@ import {
   scenarioStartYear,
   strategyStartYear,
 } from "@/lib/engine/project";
-import { progressiveTax } from "@/lib/engine/tax";
-import { federalTaxForYear } from "@/lib/engine/taxIndexing";
-import type { FederalTaxYear } from "@/lib/config/federalTax";
 import type { MedicarePartBYear } from "@/lib/config/medicare";
 import { medicareYears } from "@/lib/engine/medicare";
-import { getStateTaxTable, type StateIncomeTaxYear } from "@/lib/config/stateTax";
-import { forFiling } from "@/lib/config/filingStatus";
 import { FALLBACK_REFERENCE_DATA } from "@/lib/externalData/fallback";
 import type { ReferenceData } from "@/lib/externalData/types";
 
 /**
- * Gain inside the plan's annuities at year end: balance above the cost basis
- * left. Annuities get no step-up at death, so heirs owe ordinary income tax
- * on it, like a tax-deferred account.
+ * After-tax value of everything the household holds at a year's end: the
+ * tax-deferred money and annuity gains net of `liquidationTax` (the tax that
+ * year's own return would add to cash them out, on top of all its other income
+ * and after its deductions), Roth tax free, and every other after-tax
+ * account at full value (its basis steps up at death, so the gain is never
+ * taxed). Real-estate and business equity count at full value too.
  */
-function annuityGain(household: Household, row: ProjectionRow): number {
-  let gain = 0;
-  for (const acc of household.accounts) {
-    if (acc.kind !== "annuity") continue;
-    const balance = row.balances[acc.id] ?? 0;
-    const basis = row.costBasisById?.[acc.id] ?? 0;
-    gain += Math.max(0, balance - basis);
-  }
-  return gain;
-}
-
-/**
- * After-tax value of a tax-deferred (retirement) balance: taxed as a lump sum
- * of ordinary income through federal and state brackets (no deductions),
- * with the federal brackets indexed to `calendarYear`.
- */
-function estateRetirementValue(
-  household: Household,
-  retirementTotal: number,
-  federal: FederalTaxYear,
-  stateTax: StateIncomeTaxYear,
-  fs: Household["filingStatus"] = household.filingStatus,
-  calendarYear: number = federal.year,
-): number {
-  const federalTax = progressiveTax(
-    retirementTotal,
-    forFiling(
-      federalTaxForYear(household, federal, calendarYear).brackets,
-      fs,
-      "federal brackets",
-    ),
-  );
-  const state = getStateTaxTable(
-    stateTax,
-    household.residenceState ?? "FL",
-  );
-  let stateTaxAmount = 0;
-  if (state.hasIncomeTax && !state.capitalGainsOnly) {
-    const deduction =
-      forFiling(state.standardDeduction, fs, "state standardDeduction") +
-      forFiling(state.personalExemption, fs, "state personalExemption");
-    const taxable = Math.max(0, retirementTotal - deduction);
-    stateTaxAmount = progressiveTax(
-      taxable,
-      forFiling(state.brackets, fs, "state brackets"),
-    );
-  }
-  return retirementTotal - federalTax - stateTaxAmount;
-}
-
-/**
- * After-tax estate value: tax-deferred balances and annuity gains are taxed
- * through federal + state brackets as one lump of ordinary income, Roth
- * passes tax free, and every other after-tax account counts at full value
- * (its basis steps up at death, so the gain is never taxed). Real-estate and
- * business equity count at full value too.
- */
-export function afterTaxAssets(
-  household: Household,
-  row: ProjectionRow,
-  refs: ReferenceData = FALLBACK_REFERENCE_DATA,
-): number {
-  return inheritanceValue(
-    household,
-    row,
-    refs.federalTax,
-    refs.stateIncomeTax,
-  );
+export function afterTaxAssets(row: ProjectionRow): number {
+  return preTaxAssets(row) - row.liquidationTax;
 }
 
 /**
@@ -107,32 +39,6 @@ export function afterTaxAssets(
 export function preTaxAssets(row: ProjectionRow): number {
   return (
     row.retirementTotal +
-    row.rothTotal +
-    row.afterTaxTotal +
-    row.realEstateEquity +
-    row.businessEquity
-  );
-}
-
-function inheritanceValue(
-  household: Household,
-  row: ProjectionRow,
-  federal: FederalTaxYear,
-  stateTax: StateIncomeTaxYear,
-): number {
-  // The annuity gain is taxed with the tax-deferred money; the annuity's
-  // full balance is already in `afterTaxTotal`.
-  const gain = annuityGain(household, row);
-  return (
-    estateRetirementValue(
-      household,
-      row.retirementTotal + gain,
-      federal,
-      stateTax,
-      row.filingStatus,
-      row.calendarYear,
-    ) -
-    gain +
     row.rothTotal +
     row.afterTaxTotal +
     row.realEstateEquity +
@@ -160,8 +66,6 @@ function computeTotals(
 ): ScenarioTotals {
   const rmdAge = primaryRmdAge(household);
   const primaryId = primaryPersonId(household);
-  const federal = refs.federalTax;
-
   const retirement = retirementStartYear(household);
 
   let taxesEarly = 0;
@@ -207,18 +111,8 @@ function computeTotals(
     stateTaxesLate,
     stateTaxesTotal,
     medicareTotal: medicareTotal(household, rows, refs.medicare),
-    afterTaxAssetsAtRmd: inheritanceValue(
-      household,
-      rmdRow,
-      federal,
-      refs.stateIncomeTax,
-    ),
-    inheritanceFinal: inheritanceValue(
-      household,
-      finalRow,
-      federal,
-      refs.stateIncomeTax,
-    ),
+    afterTaxAssetsAtRmd: afterTaxAssets(rmdRow),
+    inheritanceFinal: afterTaxAssets(finalRow),
     preTaxAssetsAtRmd: preTaxAssets(rmdRow),
     preTaxInheritanceFinal: preTaxAssets(finalRow),
   };

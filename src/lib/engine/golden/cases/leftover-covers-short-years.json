@@ -2,8 +2,8 @@
   "name": "Leftover money covers later short years (S&P 500)",
   "strategy": "manual",
   "note": "Saves about $30k a year until care costs start in 2036, then each short year draws the saved S&P 500 money (gain taxed) until it runs out.",
-  "commit": "0cefabe",
-  "commitDate": "2026-10-25T23:32:35+00:00",
+  "commit": "2f76945",
+  "commitDate": "2026-11-24T19:48:37+00:00",
   "household": {
     "filingStatus": "single",
     "residenceState": "FL",
@@ -79,20 +79,20 @@
     "baseline": {
       "taxesTotal": 145787.88,
       "medicareTotal": 57463.2,
-      "afterTaxAssetsAtRmd": 796634.28,
-      "inheritanceFinal": 818486.17
+      "afterTaxAssetsAtRmd": 782483.74,
+      "inheritanceFinal": 799391.6
     },
     "roth": {
       "taxesTotal": 140183.87,
       "medicareTotal": 54540,
-      "afterTaxAssetsAtRmd": 893550.31,
-      "inheritanceFinal": 1207197.82
+      "afterTaxAssetsAtRmd": 887280.24,
+      "inheritanceFinal": 1197836.37
     },
     "deltas": {
       "taxesTotal": -5604.01,
       "medicareTotal": -2923.2,
-      "afterTaxAssetsAtRmd": 96916.03,
-      "inheritanceFinal": 388711.65
+      "afterTaxAssetsAtRmd": 104796.5,
+      "inheritanceFinal": 398444.76
     }
   }
 }
