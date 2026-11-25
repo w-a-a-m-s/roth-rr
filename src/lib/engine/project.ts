@@ -83,7 +83,11 @@ import {
   paysMedicarePartB,
 } from "@/lib/config/medicare";
 import { federalTaxForYear } from "@/lib/engine/taxIndexing";
-import { accountGrowthForYear, usesMarketHistory } from "@/lib/engine/marketHistory";
+import {
+  accountGrowthForYear,
+  groupFixedRate,
+  usesMarketHistory,
+} from "@/lib/engine/marketHistory";
 import {
   INCOME_TABLE_GROWTH,
   fixIncomeTableAmounts,
@@ -838,7 +842,9 @@ export function projectScenario(
           ownerId: primaryPerson(household).id,
           kind: "rothTaxFree",
           balance: 0,
-          growthRate: IMPLICIT_ROTH_GROWTH,
+          // Like any new Roth account, it starts at the Roth group's Fixed
+          // return when the plan set one.
+          growthRate: groupFixedRate(household, "roth") ?? IMPLICIT_ROTH_GROWTH,
         }
       : null;
   // Deposits stop once their owner retires.

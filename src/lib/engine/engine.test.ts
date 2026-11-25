@@ -1700,6 +1700,25 @@ describe("deposits into accounts", () => {
   });
 });
 
+describe("implicit Roth account", () => {
+  const plan = (evenCase as unknown as { household: Household }).household;
+  const rothGrowth = (household: Household) => {
+    const rows = calculate(household).roth.rows;
+    const roth = (i: number) => rows[i].balances.__implicit_roth__;
+    // Year 1 grows first, then takes the year's conversion net of its tax.
+    return (roth(1) - rows[1].conversion + rows[1].conversionTaxWithheld) / roth(0) - 1;
+  };
+
+  it("grows 8% by default", () => {
+    expect(rothGrowth(plan)).toBeCloseTo(0.08, 10);
+  });
+
+  it("follows the Roth group's Fixed return when the plan sets one", () => {
+    const household = { ...plan, assumptions: { ...plan.assumptions, rothFixedRate: 0.12 } };
+    expect(rothGrowth(household)).toBeCloseTo(0.12, 10);
+  });
+});
+
 describe("afterTaxAssets", () => {
   it("comes out even in a conversion year: one return, one set of brackets", () => {
     // Converting $175k then cashing out the rest is the same year's income
