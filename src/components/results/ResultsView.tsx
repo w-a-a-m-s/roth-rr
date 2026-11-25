@@ -13,6 +13,7 @@ import type { Comparison } from '@/lib/engine/types';
 import { DisplayFromToggle } from '@/components/results/DisplayFromToggle';
 import { scenarioFrom, snapshotFromYear, type SnapshotFrom } from '@/components/results/snapshotTable';
 import { ComparisonMetrics, ScenarioMetrics } from '@/components/results/ComparisonSummary';
+import { LeftoverToggle } from '@/components/results/LeftoverToggle';
 import { AssetsChart } from '@/components/results/AssetsChart';
 import { AfterTaxAssetsTimeline } from '@/components/results/AfterTaxAssetsTimeline';
 import { CashflowChart } from '@/components/results/CashflowChart';
@@ -299,6 +300,9 @@ export function ResultsView() {
 
 			{view === 'summary' ? (
 				<section className="flex flex-col gap-4">
+					<div className="flex justify-end">
+						<LeftoverToggle />
+					</div>
 					{single ? (
 						<ScenarioMetrics scenario={comparison.baseline} rmdAge={rmdAge} />
 					) : (
@@ -355,6 +359,7 @@ export function ResultsView() {
 					<div className="flex flex-wrap items-center justify-between gap-4">
 						<h3 className="m-0 text-[14.5px] font-bold text-foreground">Year-by-year</h3>
 						<div className="flex flex-wrap items-center gap-3">
+							<LeftoverToggle />
 							{fromToggle}
 							{single ? null : <ScenarioToggle tab={tab} onChange={setTab} />}
 						</div>

@@ -586,14 +586,15 @@ user asks for a change:
    - **Main**: the Assets, Income & Taxes tables (No conversion, then With
      conversion), with the Leftover money switch above Jump to (user's
      request).
-   - **Summary**: the metric cards (no Total impact card, the user removed
-     it; lifetime taxes only; taxes
+   - **Summary**: the Leftover money switch (user's request), the metric
+     cards (no Total impact card, the user removed it; lifetime taxes only; taxes
      before and after the RMD age sit behind a "Show taxes before and after"
      link), After-tax assets.
    - **Graphic view**: Retirement Objective, Income Sources, Income Applied
      and Analysis Results charts, then the Assets and Cash flow charts.
    - **Main in detail analysis**: the Year-by-year table (alone, for
-     pin-to-top).
+     pin-to-top), with the Leftover money switch in its header (user's
+     request).
 
 Don't move sections between tabs, rename the tabs, or add sections to a tab
 without asking. Details live in the analyses feature guide.

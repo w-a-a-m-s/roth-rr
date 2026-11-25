@@ -319,6 +319,9 @@ Approved by the user: keep it (see AGENTS.md, "Results layout").
 Under the analysis links, four tabs (`ResultsView` state, Main on load);
 each tab shows only its own sections:
 - **Main**: the Assets, Income & Taxes tables.
+- The Leftover money switch (`LeftoverToggle`) shows on Main, Summary (top
+  right) and Main in detail analysis (in the Year-by-year header), at the
+  user's request.
 - **Summary**: the metric cards and After-tax assets (no Total impact
   card: the user removed it, since adding tax savings to the inheritance
   counts taxes paid from assets twice). Taxes
