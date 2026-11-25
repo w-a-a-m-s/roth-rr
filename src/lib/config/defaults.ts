@@ -66,6 +66,14 @@ export const LEFTOVER_INVESTMENT_RATE: Record<LeftoverInvestment, number> = {
   moneyMarket: 0.033,
 };
 
+/**
+ * Dividend yield of the leftover money's S&P 500 account: part of its 8%
+ * total return, paid and reinvested every year. About 2%, roughly the S&P
+ * 500's average yield since 2000 (it has run nearer 1.3% lately). Taxed the
+ * year it's paid as qualified dividends.
+ */
+export const LEFTOVER_SP500_DIVIDEND_YIELD = 0.02;
+
 export const LEFTOVER_INVESTMENT_LABEL: Record<LeftoverInvestment, string> = {
   sp500: "Leftover money (S&P 500)",
   moneyMarket: "Leftover money (money market)",

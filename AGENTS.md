@@ -188,10 +188,14 @@ money" on the Main results tab, above Jump to) is `sp500` (8% a year) or
 `moneyMarket` (3.3% a year), missing for not invested. `projectScenario`
 adds one after-tax account (`LEFTOVER_ACCOUNT_ID`, a brokerage account for
 the S&P 500 so Market history moves it, savings for the money market) and
-puts each positive surplus in it at year end, as basis. S&P 500 growth is
-unrealized (it steps up at death); money market interest is ordinary income
-and investment income the year it's earned, inside `taxForYear`, and becomes
-basis so it isn't taxed again when drawn. A short year (spending above net
+puts each positive surplus in it at year end, as basis. The S&P 500 pays
+`LEFTOVER_SP500_DIVIDEND_YIELD` (2%) of its January balance as dividends,
+part of its 8% and reinvested: qualified dividends (row
+`qualifiedDividends`, inside `capitalGainsIncome`, so taxed at the long-term
+gains rates, investment income for the 3.8% tax, and in MAGI), and basis.
+The rest of its growth is unrealized (it steps up at death). Money market
+interest is ordinary income and investment income the year it's earned,
+inside `taxForYear`, and becomes basis so it isn't taxed again when drawn. A short year (spending above net
 income) draws it to cover the gap, grossed up for the tax on any S&P 500
 gain sold, the same way an event's top-up does (`coverShortYear` in
 `projectScenario`), until it's empty. It counts in `afterTaxTotal`, so in the after-tax

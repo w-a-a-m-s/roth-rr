@@ -130,8 +130,17 @@ export interface ProjectionRow {
    * taxable (0% to 85%, from provisional income). Inside `grossTaxableIncome`.
    */
   socialSecurityTaxable: number;
-  /** Realized capital gains from after-tax withdrawals this year. */
+  /**
+   * Realized capital gains from after-tax withdrawals this year, plus
+   * `qualifiedDividends` (taxed at the same rates).
+   */
   capitalGainsIncome: number;
+  /**
+   * Dividends the leftover money's S&P 500 account paid this year
+   * (`LEFTOVER_SP500_DIVIDEND_YIELD` of its January balance), reinvested.
+   * Inside `capitalGainsIncome`.
+   */
+  qualifiedDividends: number;
   /**
    * DPP / MLP depreciation recaptured this year: gain taxed as ordinary income
    * (already inside `grossTaxableIncome`, not in `capitalGainsIncome`).

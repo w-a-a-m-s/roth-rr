@@ -2777,6 +2777,21 @@ describe("leftover money", () => {
     };
   }
 
+  it("taxes the S&P 500's dividends each year at the qualified rate", () => {
+    // $15,000 a month of pension: the dividends land in the 15% band, under
+    // the 3.8% surtax's $200k.
+    const rich = (choice?: Household["assumptions"]["leftoverInvestment"]): Household => {
+      const h = saver(choice);
+      return { ...h, incomes: [{ ...h.incomes[0], monthlyAmount: 15_000 }] };
+    };
+    const rows = projectScenario(rich("sp500"), zeros(projectionYears(rich())));
+    const plain = projectScenario(rich(), zeros(projectionYears(rich())));
+    const dividends = rows[1].qualifiedDividends;
+    expect(dividends).toBeCloseTo(rows[0].balances.__leftover__ * 0.02, 2);
+    expect(rows[1].netInvestmentIncomeTax).toBe(0);
+    expect(rows[1].federalAnnualTax - plain[1].federalAnnualTax).toBeCloseTo(dividends * 0.15, 2);
+  });
+
   it("is left out of the assets unless the plan invests it", () => {
     const h = saver();
     const rows = projectScenario(h, zeros(projectionYears(h)));
@@ -2792,7 +2807,17 @@ describe("leftover money", () => {
     expect(rows[0].balances.__leftover__).toBeCloseTo(first, 2);
     expect(rows[1].balances.__leftover__).toBeCloseTo(first * 1.08 + rows[1].surplus * 12, 2);
     expect(rows[1].afterTaxTotal).toBeCloseTo(rows[1].balances.__leftover__, 2);
-    // Unrealized growth: year 1's tax matches the plan that doesn't invest.
+    // Part of the 8% is paid as 2% dividends on January's balance, taxed
+    // (here at the 0% qualified rate) and added to basis.
+    expect(rows[0].qualifiedDividends).toBe(0);
+    expect(rows[1].qualifiedDividends).toBeCloseTo(first * 0.02, 2);
+    expect(rows[1].capitalGainsIncome).toBeCloseTo(rows[1].qualifiedDividends, 6);
+    expect(rows[1].costBasisById.__leftover__).toBeCloseTo(
+      first + rows[1].qualifiedDividends + rows[1].surplus * 12,
+      2,
+    );
+    // The rest of the growth is unrealized: at the 0% rate year 1's tax
+    // matches the plan that doesn't invest.
     const plain = projectScenario(saver(), zeros(projectionYears(h)));
     expect(rows[1].federalAnnualTax).toBeCloseTo(plain[1].federalAnnualTax, 2);
     // The estate counts it at full value (step-up at death).

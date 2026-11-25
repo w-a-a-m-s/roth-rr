@@ -129,6 +129,7 @@ import {
   LEFTOVER_ACCOUNT_ID,
   LEFTOVER_INVESTMENT_LABEL,
   LEFTOVER_INVESTMENT_RATE,
+  LEFTOVER_SP500_DIVIDEND_YIELD,
 } from "@/lib/config/defaults";
 import { uniformLifetimeDenominator } from "@/lib/config/rmdTable";
 import {
@@ -1149,12 +1150,20 @@ export function projectScenario(
       balances[acc.id] *= Math.pow(1 + accountGrowthForYear(household, acc, i - offset, options.marketPath), yearFraction);
     }
     // Money market interest on the saved leftover money is taxed as it's
-    // earned (S&P 500 growth is unrealized, and steps up at death).
+    // earned. The S&P 500 pays part of its return as dividends, reinvested
+    // and taxed the year they're paid as qualified dividends; the rest of its
+    // growth is unrealized, and steps up at death.
     const leftoverInterest =
       leftover?.kind === "savings" ? Math.max(0, balances[leftover.id] - leftoverBefore) : 0;
-    // Taxed interest is basis, so drawing it later isn't taxed again.
-    if (leftover && leftoverInterest > 0) {
-      basisRemaining[leftover.id] = (basisRemaining[leftover.id] ?? 0) + leftoverInterest;
+    const qualifiedDividends =
+      leftover && leftover.kind !== "savings"
+        ? Math.max(0, leftoverBefore) * LEFTOVER_SP500_DIVIDEND_YIELD * yearFraction
+        : 0;
+    // Taxed interest and dividends are basis, so drawing them later isn't
+    // taxed again.
+    if (leftover && leftoverInterest + qualifiedDividends > 0) {
+      basisRemaining[leftover.id] =
+        (basisRemaining[leftover.id] ?? 0) + leftoverInterest + qualifiedDividends;
     }
 
     // 2) Account withdrawals reduce their source account and continue for as
@@ -1163,7 +1172,9 @@ export function projectScenario(
     //    After-tax withdrawals also realize proportional capital gains vs basis.
     //    Takes are capped at the available balance so accounts never go negative;
     //    income below uses the same capped amount (no phantom cash / tax).
-    let capitalGainsIncome = 0;
+    // Qualified dividends are taxed at the long-term gains rates, so they ride
+    // with the year's realized gains.
+    let capitalGainsIncome = qualifiedDividends;
     let recaptureIncome = 0;
     // Taxable earnings on life insurance proceeds paid like an annuity
     // (Survivorship), which count as investment income.
@@ -1953,6 +1964,7 @@ export function projectScenario(
       grossTaxableIncome,
       socialSecurityTaxable,
       capitalGainsIncome,
+      qualifiedDividends,
       recaptureIncome,
       deductions,
       taxableIncome,

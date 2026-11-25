@@ -2,8 +2,8 @@
   "name": "Leftover money saved in the S&P 500 (8%)",
   "strategy": "manual",
   "note": "Retired single 65-year-old (pension, Social Security, DROP draw) with about $70k a year above expenses. Pins the yearly leftover money saved into one after-tax account.",
-  "commit": "2f76945",
-  "commitDate": "2026-11-24T19:48:37+00:00",
+  "commit": "284433f",
+  "commitDate": "2026-11-25T03:06:51+00:00",
   "household": {
     "filingStatus": "single",
     "residenceState": "FL",
@@ -137,22 +137,22 @@
   },
   "expected": {
     "baseline": {
-      "taxesTotal": 880804.5,
-      "medicareTotal": 154840.8,
-      "afterTaxAssetsAtRmd": 2192375.3,
-      "inheritanceFinal": 8523492.01
+      "taxesTotal": 1095582.71,
+      "medicareTotal": 159222,
+      "afterTaxAssetsAtRmd": 2169125.84,
+      "inheritanceFinal": 8143237.94
     },
     "roth": {
-      "taxesTotal": 854902.23,
-      "medicareTotal": 160682.4,
-      "afterTaxAssetsAtRmd": 2464055.47,
-      "inheritanceFinal": 9709187.36
+      "taxesTotal": 1039532.07,
+      "medicareTotal": 181128,
+      "afterTaxAssetsAtRmd": 2439252.43,
+      "inheritanceFinal": 9379482.97
     },
     "deltas": {
-      "taxesTotal": -25902.26,
-      "medicareTotal": 5841.6,
-      "afterTaxAssetsAtRmd": 271680.17,
-      "inheritanceFinal": 1185695.36
+      "taxesTotal": -56050.65,
+      "medicareTotal": 21906,
+      "afterTaxAssetsAtRmd": 270126.59,
+      "inheritanceFinal": 1236245.03
     }
   }
 }

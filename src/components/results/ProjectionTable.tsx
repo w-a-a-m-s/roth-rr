@@ -598,7 +598,9 @@ function buildSections(
   if (hasCapitalGains) {
     deductions.push({
       key: "capitalGains",
-      label: "Capital gains (after-tax withdrawals)",
+      label: scenario.rows.some((r) => r.qualifiedDividends > 0)
+        ? "Capital gains and qualified dividends"
+        : "Capital gains (after-tax withdrawals)",
       unit: "yr",
       value: (r) => r.capitalGainsIncome,
     });
