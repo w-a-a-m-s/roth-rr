@@ -6,9 +6,9 @@ import { formatPercent } from "@/lib/format";
 import { usePlanAccess } from "@/components/plan/usePlanAccess";
 import { useHousehold, useScenario } from "@/store/useScenario";
 
-const OPTIONS: { key: LeftoverInvestment | undefined; label: string; help: string }[] = [
+const OPTIONS: { key: LeftoverInvestment | "none"; label: string; help: string }[] = [
   {
-    key: undefined,
+    key: "none",
     label: "Not invested",
     help: "Income left over after expenses isn't saved, so it's not in the assets or the inheritance.",
   },
@@ -26,7 +26,8 @@ const OPTIONS: { key: LeftoverInvestment | undefined; label: string; help: strin
 
 /** Where the plan saves each year's leftover money (income above expenses). */
 export function LeftoverToggle() {
-  const choice = useHousehold().assumptions.leftoverInvestment;
+  // Missing reads as not invested, which is what the engine does with it.
+  const choice = useHousehold().assumptions.leftoverInvestment ?? "none";
   const setAssumptions = useScenario((s) => s.setAssumptions);
   const { readOnly } = usePlanAccess();
   return (
@@ -35,7 +36,7 @@ export function LeftoverToggle() {
       <div role="group" aria-label="Leftover money" className="inline-flex rounded-[9px] bg-segment p-[3px]">
         {OPTIONS.map(({ key, label, help }) => (
           <button
-            key={key ?? "none"}
+            key={key}
             type="button"
             title={help}
             disabled={readOnly}

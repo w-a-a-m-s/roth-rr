@@ -130,6 +130,7 @@ import {
   LEFTOVER_INVESTMENT_LABEL,
   LEFTOVER_INVESTMENT_RATE,
   LEFTOVER_SP500_DIVIDEND_YIELD,
+  isLeftoverInvested,
 } from "@/lib/config/defaults";
 import { uniformLifetimeDenominator } from "@/lib/config/rmdTable";
 import {
@@ -255,7 +256,7 @@ export function strategyStartYear(household: Household): number {
  */
 function leftoverAccount(household: Household): Account | null {
   const choice = household.assumptions.leftoverInvestment;
-  if (choice !== "sp500" && choice !== "moneyMarket") return null;
+  if (!isLeftoverInvested(choice)) return null;
   return {
     id: LEFTOVER_ACCOUNT_ID,
     label: LEFTOVER_INVESTMENT_LABEL[choice],

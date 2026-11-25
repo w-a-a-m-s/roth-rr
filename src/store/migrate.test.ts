@@ -263,14 +263,18 @@ describe("migrateHousehold: 50 / 50 history and account returns", () => {
 });
 
 describe("migrateHousehold: leftover money", () => {
-  it("leaves an old plan uninvested, keeps a real choice, drops anything else", () => {
-    expect(migrateHousehold(household([], [])).assumptions).not.toHaveProperty("leftoverInvestment");
-    const h = household([], []);
-    h.assumptions.leftoverInvestment = "moneyMarket";
-    expect(migrateHousehold(h).assumptions.leftoverInvestment).toBe("moneyMarket");
+  it("puts a plan with no choice in the money market, keeps a real choice", () => {
+    // Money market is the default for every plan (user's request), old ones
+    // included; Not invested stays only when it was picked.
+    expect(migrateHousehold(household([], [])).assumptions.leftoverInvestment).toBe("moneyMarket");
+    for (const choice of ["sp500", "moneyMarket", "none"] as const) {
+      const h = household([], []);
+      h.assumptions.leftoverInvestment = choice;
+      expect(migrateHousehold(h).assumptions.leftoverInvestment).toBe(choice);
+    }
     const bad = household([], []);
     (bad.assumptions as { leftoverInvestment?: unknown }).leftoverInvestment = "bonds";
-    expect(migrateHousehold(bad).assumptions).not.toHaveProperty("leftoverInvestment");
+    expect(migrateHousehold(bad).assumptions.leftoverInvestment).toBe("moneyMarket");
   });
 });
 

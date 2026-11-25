@@ -436,6 +436,7 @@ function formatScalar(
   if (key === "leftoverInvestment") {
     if (value === "sp500") return "S&P 500";
     if (value === "moneyMarket") return "Money market";
+    if (value === "none") return "Not invested";
   }
   if (key === "taxability") {
     if (value === "full") return "Fully taxable";

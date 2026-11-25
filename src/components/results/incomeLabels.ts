@@ -3,7 +3,11 @@ import { insurancePolicy } from "@/lib/domain/insurance";
 import { propertyLoans } from "@/lib/domain/propertyLoans";
 import { hasCareRider, longTermCareSettings } from "@/lib/domain/longTermCare";
 import { CAR_EXPENSE_KEY } from "@/lib/engine/otherExpenses";
-import { LEFTOVER_ACCOUNT_ID, LEFTOVER_INVESTMENT_LABEL } from "@/lib/config/defaults";
+import {
+  LEFTOVER_ACCOUNT_ID,
+  LEFTOVER_INVESTMENT_LABEL,
+  isLeftoverInvested,
+} from "@/lib/config/defaults";
 
 const INSURANCE_INCOME_LABELS: Record<InsuranceKind, string> = {
   life: "Income from life insurance",
@@ -84,7 +88,7 @@ export function incomeLabel(
   }
   if (key === `topup:${LEFTOVER_ACCOUNT_ID}`) {
     const choice = household.assumptions.leftoverInvestment;
-    return `Extra withdrawal · ${choice ? LEFTOVER_INVESTMENT_LABEL[choice] : "Leftover money"}`;
+    return `Extra withdrawal · ${isLeftoverInvested(choice) ? LEFTOVER_INVESTMENT_LABEL[choice] : "Leftover money"}`;
   }
   if (key.startsWith("topup:")) {
     const acc = household.accounts.find((a) => a.id === key.slice(6));

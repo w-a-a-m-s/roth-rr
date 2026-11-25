@@ -60,7 +60,15 @@ export const IMPLICIT_ROTH_GROWTH = DEFAULT_ROTH_GROWTH;
 /** The engine's account for the plan's saved leftover money. */
 export const LEFTOVER_ACCOUNT_ID = "__leftover__";
 
-/** Where a brand-new plan saves its leftover money (user's request). */
+/** Whether a plan's leftover money choice invests it (not `none` or missing). */
+export function isLeftoverInvested(choice: unknown): choice is LeftoverInvestment {
+  return choice === "sp500" || choice === "moneyMarket";
+}
+
+/**
+ * Where a plan saves its leftover money unless it chose otherwise (user's
+ * request): new plans start here and `migrateHousehold` fills it in.
+ */
 export const DEFAULT_LEFTOVER_INVESTMENT: LeftoverInvestment = "moneyMarket";
 
 /** Yearly growth of the saved leftover money, by where it's invested. */

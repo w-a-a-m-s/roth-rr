@@ -39,7 +39,9 @@ import {
   DEFAULT_ACCOUNT_GROWTH,
   DEFAULT_DEPRECIATION_YEARS,
   DEFAULT_EXPENSE_GROWTH,
+  DEFAULT_LEFTOVER_INVESTMENT,
   DEFAULT_REAL_ESTATE_APPRECIATION,
+  isLeftoverInvested,
 } from "@/lib/config/defaults";
 import {
   DEPOSIT_FREQUENCIES,
@@ -511,10 +513,14 @@ export function migrateHousehold(household: Household): Household {
   if (legacy.assumptions?.historyStartYear != null && !Number.isInteger(legacy.assumptions.historyStartYear)) {
     delete legacy.assumptions.historyStartYear;
   }
-  // Leftover money is optional (not invested when missing).
-  const leftover = legacy.assumptions?.leftoverInvestment;
-  if (leftover != null && leftover !== "sp500" && leftover !== "moneyMarket") {
-    delete legacy.assumptions.leftoverInvestment;
+  // Leftover money goes to a money market unless the plan chose otherwise
+  // (user's request): a missing or unknown choice becomes the default. Not
+  // invested is kept only when it was picked (`none`).
+  if (legacy.assumptions) {
+    const leftover = legacy.assumptions.leftoverInvestment;
+    if (leftover !== "none" && !isLeftoverInvested(leftover)) {
+      legacy.assumptions.leftoverInvestment = DEFAULT_LEFTOVER_INVESTMENT;
+    }
   }
   // Tax indexing is optional: missing means the 2% default. Anything that
   // isn't a usable rate is dropped so the default applies.
@@ -1544,7 +1550,7 @@ export const useScenario = create<ScenarioState>()((set, get) => {
     },
     resetActive: () => {
       if (get().revisionPreview) return;
-      editActive(() => clone(SAMPLE_HOUSEHOLD));
+      editActive(() => migrateHousehold(clone(SAMPLE_HOUSEHOLD)));
     },
 
     setResidenceState: (state) =>

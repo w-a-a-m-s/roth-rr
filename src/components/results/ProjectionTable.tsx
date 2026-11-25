@@ -8,7 +8,11 @@ import {
 } from "@/lib/domain/household";
 import { personRmdAge } from "@/lib/domain/rmd";
 import type { Household } from "@/lib/domain/types";
-import { LEFTOVER_ACCOUNT_ID, LEFTOVER_INVESTMENT_LABEL } from "@/lib/config/defaults";
+import {
+  LEFTOVER_ACCOUNT_ID,
+  LEFTOVER_INVESTMENT_LABEL,
+  isLeftoverInvested,
+} from "@/lib/config/defaults";
 import type { ScenarioResult } from "@/lib/engine/types";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -333,7 +337,7 @@ function buildAssetLines(
           ? [
               {
                 key: `acc-${LEFTOVER_ACCOUNT_ID}`,
-                label: household.assumptions.leftoverInvestment
+                label: isLeftoverInvested(household.assumptions.leftoverInvestment)
                   ? LEFTOVER_INVESTMENT_LABEL[household.assumptions.leftoverInvestment]
                   : "Leftover money",
                 unit: "sum" as const,

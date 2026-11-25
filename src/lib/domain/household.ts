@@ -26,6 +26,7 @@ import {
   DEFAULT_PURCHASE_MONTH,
   LEFTOVER_ACCOUNT_ID,
   LEFTOVER_INVESTMENT_LABEL,
+  isLeftoverInvested,
 } from "@/lib/config/defaults";
 
 /** How often a deposit pays into an account. */
@@ -338,7 +339,7 @@ export function withdrawalSources(
     .filter((a) => kinds.includes(a.kind))
     .map((a) => ({ id: a.id, label: a.label || "Account" }));
   const leftover = household.assumptions?.leftoverInvestment;
-  if (kind === "afterTaxWithdrawal" && leftover) {
+  if (kind === "afterTaxWithdrawal" && isLeftoverInvested(leftover)) {
     sources.push({ id: LEFTOVER_ACCOUNT_ID, label: LEFTOVER_INVESTMENT_LABEL[leftover] });
   }
   return sources;

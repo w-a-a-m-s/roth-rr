@@ -473,11 +473,12 @@ export interface Assumptions {
   /**
    * Where each year's leftover money (net income above expenses) is saved:
    * `sp500` (8% a year) or `moneyMarket` (3.3% a year, interest taxed every
-   * year). Missing leaves it uninvested and out of the totals. A new plan
-   * starts at `DEFAULT_LEFTOVER_INVESTMENT` (money market); plans saved
-   * before keep what they have.
+   * year), or `none` (Not invested: left out of the totals). The engine
+   * treats missing as not invested, but every plan the app opens has it:
+   * `migrateHousehold` fills a missing one with `DEFAULT_LEFTOVER_INVESTMENT`
+   * (money market, the user's default), so only an explicit `none` stays out.
    */
-  leftoverInvestment?: LeftoverInvestment;
+  leftoverInvestment?: LeftoverInvestment | "none";
 }
 
 /** Where the plan saves its yearly leftover money (see `Assumptions`). */

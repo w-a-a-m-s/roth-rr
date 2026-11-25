@@ -5,7 +5,11 @@ import {
   visibleOneTimeDepreciation,
 } from "@/lib/domain/household";
 import type { AccountKind, Household, IncomeKind } from "@/lib/domain/types";
-import { LEFTOVER_ACCOUNT_ID, LEFTOVER_INVESTMENT_LABEL } from "@/lib/config/defaults";
+import {
+  LEFTOVER_ACCOUNT_ID,
+  LEFTOVER_INVESTMENT_LABEL,
+  isLeftoverInvested,
+} from "@/lib/config/defaults";
 import { firstRmdYear } from "@/components/results/AgeMarks";
 import type { ProjectionRow, ScenarioResult } from "@/lib/engine/types";
 import {
@@ -257,7 +261,7 @@ function buildAssetLines(
     regular.push({
       key: `acc-${LEFTOVER_ACCOUNT_ID}`,
       tint: AFTER_TAX_TINT[choice === "moneyMarket" ? "savings" : "investment"],
-      label: choice ? LEFTOVER_INVESTMENT_LABEL[choice] : "Leftover money",
+      label: isLeftoverInvested(choice) ? LEFTOVER_INVESTMENT_LABEL[choice] : "Leftover money",
       values: pick((r) => r.balances[LEFTOVER_ACCOUNT_ID] ?? 0),
       tone: "plain",
       group: "regular",

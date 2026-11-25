@@ -2843,6 +2843,8 @@ describe("leftover money", () => {
     expect(rows[0].surplus).toBeGreaterThan(0);
     expect(rows[0].balances).not.toHaveProperty("__leftover__");
     expect(rows.every((r) => r.afterTaxTotal === 0)).toBe(true);
+    // Not invested, picked explicitly, is the same as no choice.
+    expect(projectScenario(saver("none"), zeros(projectionYears(h)))).toEqual(rows);
   });
 
   it("saves each year's surplus in the S&P 500 at 8%, untaxed until death", () => {
