@@ -169,6 +169,7 @@ const PROPERTY_LABELS: Record<string, string> = {
   realEstateProfessional: "Real estate professional",
   includeOtherExpenses: "Count costs from other steps",
   includeMedicarePremiums: "Count Medicare Part B premiums",
+  medicareExpense: "Medicare expense counts",
   amount: "Amount",
   year: "Year",
   frequency: "Frequency",

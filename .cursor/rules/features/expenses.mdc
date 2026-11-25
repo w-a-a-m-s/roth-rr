@@ -58,11 +58,19 @@ them. Homestead interest is still not deducted.
 
 ## Medicare Part B premiums (switch)
 
-`Household.includeMedicarePremiums` (Expenses step, off by default) adds each
+`Household.includeMedicarePremiums` (Expenses step) adds each
 enrolled person's Part B premium as an expense line (`medicare:<person>`),
 computed inside `projectScenario` after the year's tax is priced: the tier
 from MAGI two years earlier (`MEDICARE_IRMAA_LOOKBACK_YEARS`, the first two
 years use the first year's), enrolled from 65 or retirement
 (`paysMedicarePartB`). It must stay equal to `medicareYears` row by row,
 which the test checks. Fixed bills: Spending capacity doesn't scale them.
+
+`Household.medicareExpense` picks what it counts: `full` (missing) is the
+whole premium; `irmaaOnly` ("IRMAA extra only") is only the surcharge above
+the standard premium, for plans whose own expenses hold the standard
+premium, and adds no line in a year on the standard premium. At the user's
+request every plan counts the IRMAA extra: `createBlankHousehold` starts on
+it, and `migrateHousehold` turns it on (IRMAA extra only) for any saved plan
+that never set the switch. A plan that set it on or off keeps its choice.
 

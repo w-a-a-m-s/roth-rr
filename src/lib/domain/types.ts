@@ -509,6 +509,9 @@ export type ConversionStrategy =
 export const FILL_BRACKET_RATES = [0.12, 0.22, 0.24] as const;
 export type FillBracketRate = (typeof FILL_BRACKET_RATES)[number];
 
+/** What the Medicare Part B expense switch counts (`Household.medicareExpense`). */
+export type MedicareExpenseMode = "full" | "irmaaOnly";
+
 export interface OptimizerConfig {
   strategy: ConversionStrategy;
   /** Explicit per-projection-year conversion amounts (`manual` only). */
@@ -671,6 +674,13 @@ export interface Household {
    * Expenses step switch. Missing means off (they only show as a total).
    */
   includeMedicarePremiums?: boolean;
+  /**
+   * What the Medicare switch counts: `full` (the whole Part B premium, IRMAA
+   * included) or `irmaaOnly` (only the IRMAA surcharge above the standard
+   * premium, for expenses that already include the standard premium). Missing
+   * means `full`; new plans start on `irmaaOnly` (user's request).
+   */
+  medicareExpense?: MedicareExpenseMode;
   /**
    * Soft-deleted items kept for quick restore in the plan editor. Not used by
    * the projection engine — only the live lists above are projected. Optional

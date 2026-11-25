@@ -25,6 +25,7 @@ import type {
   Expense,
   FilingStatus,
   Household,
+  MedicareExpenseMode,
   IncomeSource,
   OptimizerConfig,
   Person,
@@ -543,6 +544,17 @@ export function migrateHousehold(household: Household): Household {
   for (const key of ["includeOtherExpenses", "includeMedicarePremiums"] as const) {
     if (legacy[key] != null && typeof legacy[key] !== "boolean") delete legacy[key];
   }
+  // What the Medicare switch counts is optional (the full premium when missing).
+  if (legacy.medicareExpense != null && legacy.medicareExpense !== "full" && legacy.medicareExpense !== "irmaaOnly") {
+    delete legacy.medicareExpense;
+  }
+  // Every plan counts the IRMAA surcharge as an expense (user's request): a
+  // plan that never set the Medicare switch gets it on, IRMAA extra only. A
+  // plan where someone already turned it on or off keeps that choice.
+  if (legacy.includeMedicarePremiums == null) {
+    legacy.includeMedicarePremiums = true;
+    legacy.medicareExpense = "irmaaOnly";
+  }
 
   // Converting in RMD and working years is optional (off when missing).
   for (const key of ["allowConversionsInRmdYears", "allowConversionsInWorkingYears"] as const) {
@@ -905,6 +917,7 @@ interface ScenarioState {
   setRealEstateProfessional: (value: boolean) => void;
   setIncludeOtherExpenses: (value: boolean) => void;
   setIncludeMedicarePremiums: (value: boolean) => void;
+  setMedicareExpense: (mode: MedicareExpenseMode) => void;
   addExpense: (expense: Expense) => void;
   updateExpense: (id: string, patch: Partial<Expense>) => void;
   removeExpense: (id: string) => void;
@@ -1567,6 +1580,8 @@ export const useScenario = create<ScenarioState>()((set, get) => {
       editActive((h) => ({ ...h, includeOtherExpenses: value })),
     setIncludeMedicarePremiums: (value) =>
       editActive((h) => ({ ...h, includeMedicarePremiums: value })),
+    setMedicareExpense: (mode) =>
+      editActive((h) => ({ ...h, medicareExpense: mode })),
 
     setFilingStatus: (status) =>
       editActive((h) => {

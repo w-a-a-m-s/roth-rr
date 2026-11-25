@@ -27,6 +27,16 @@ export function includesMedicarePremiums(
   return household.includeMedicarePremiums === true;
 }
 
+/**
+ * Whether the Medicare expense counts only the IRMAA surcharge above the
+ * standard premium (`Household.medicareExpense`; missing is the full premium).
+ */
+export function countsIrmaaOnly(
+  household: Pick<Household, "medicareExpense">,
+): boolean {
+  return household.medicareExpense === "irmaaOnly";
+}
+
 /** Expense key for a person's Medicare Part B premiums in a projection row. */
 export function medicareExpenseKey(personId: string): string {
   return `medicare:${personId}`;

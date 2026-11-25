@@ -27,6 +27,7 @@ import { projectionStartYear } from "@/lib/engine/project";
 import { loanTerms } from "@/lib/engine/loanPaydown";
 import {
   carCostsByYear,
+  countsIrmaaOnly,
   includesMedicarePremiums,
   includesOtherExpenses,
   lifePremiumsForYear,
@@ -223,22 +224,45 @@ function OtherExpensesSwitch() {
 
 function MedicarePremiumsSwitch() {
   const household = useHousehold();
-  const { setIncludeMedicarePremiums } = useScenario();
+  const { setIncludeMedicarePremiums, setMedicareExpense } = useScenario();
   const standard = useExternalData((s) => s.refs.medicare.standardMonthlyPremium);
+  const on = includesMedicarePremiums(household);
+  const irmaaOnly = countsIrmaaOnly(household);
   return (
     <Field
       label="Medicare Part B premiums"
-      help={`Counts each person's Part B premium as an expense from age ${MEDICARE_PREMIUM_START_AGE} or retirement, whichever is later, the same premiums the Medicare analysis shows. Higher income adds the IRMAA surcharge, set by your income two years earlier, so a big conversion can raise a later year's premium. Turn it off if your expenses above already include Medicare.`}
+      help={`Counts Part B as an expense for each person from age ${MEDICARE_PREMIUM_START_AGE} or retirement, whichever is later, the same premiums the Medicare analysis shows. Higher income adds the IRMAA surcharge, set by your income two years earlier, so a big conversion can raise a later year's premium. Pick IRMAA extra only when your expenses above already include the standard premium.`}
     >
       <label className="flex items-center gap-2 text-[13px] text-foreground">
         <input
           type="checkbox"
-          checked={includesMedicarePremiums(household)}
+          checked={on}
           onChange={(e) => setIncludeMedicarePremiums(e.target.checked)}
           className="h-4 w-4 rounded border border-border"
         />
         Count them as expenses
       </label>
+      {on && (
+        <div role="radiogroup" aria-label="Medicare expense counts" className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 pl-6">
+          {(
+            [
+              ["irmaaOnly", "IRMAA extra only"],
+              ["full", "Whole premium"],
+            ] as const
+          ).map(([mode, label]) => (
+            <label key={mode} className="flex items-center gap-1.5 text-[13px] text-foreground">
+              <input
+                type="radio"
+                name="medicare-expense"
+                checked={(mode === "irmaaOnly") === irmaaOnly}
+                onChange={() => setMedicareExpense(mode)}
+                className="h-3.5 w-3.5"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      )}
       <p className="mt-1.5 mb-0 text-xs text-muted">
         Standard premium today: {formatCurrency(standard)}/mo per person, more with IRMAA.
       </p>

@@ -71,6 +71,7 @@ import { balanceAtStart, loanTerms, type LoanTerms } from "@/lib/engine/loanPayd
 import {
   CAR_EXPENSE_KEY,
   carCostsByYear,
+  countsIrmaaOnly,
   includesMedicarePremiums,
   includesOtherExpenses,
   lifePremiumsForYear,
@@ -901,6 +902,7 @@ export function projectScenario(
   const todayYear = asOfYear(refs.asOfDate);
   const otherExpenses = includesOtherExpenses(household);
   const medicarePremiums = includesMedicarePremiums(household);
+  const medicareIrmaaOnly = countsIrmaaOnly(household);
   const rmdYearConversions = allowsRmdYearConversions(household);
   // Before 59½ a draw from a tax-deferred or Roth account owes a 10%
   // penalty. Unless the plan allows it, those accounts aren't drawn from.
@@ -1820,8 +1822,13 @@ export function projectScenario(
       const magi = lookback
         ? lookback.grossTaxableIncome + lookback.capitalGainsIncome
         : priced.taxes.grossTaxableIncome + capitalGainsIncome;
-      const monthly = medicarePartBMonthlyPremium(magi, fs, refs.medicare);
+      const premium = medicarePartBMonthlyPremium(magi, fs, refs.medicare);
+      // IRMAA extra only: the plan's own expenses hold the standard premium.
+      const monthly = medicareIrmaaOnly
+        ? premium - medicarePartBMonthlyPremium(0, fs, refs.medicare)
+        : premium;
       for (const person of household.people) {
+        if (monthly <= 0) break;
         if (!livingIds.includes(person.id)) continue;
         if (!paysMedicarePartB(person, calendarYear)) continue;
         expenseMonthly[medicareExpenseKey(person.id)] = monthly;

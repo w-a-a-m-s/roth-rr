@@ -196,14 +196,32 @@ describe("migrateHousehold: expense growth start", () => {
 });
 
 describe("migrateHousehold: Medicare premiums switch", () => {
-  it("is off for an older plan, keeps on/off, drops anything else", () => {
-    expect(migrateHousehold(household([], []))).not.toHaveProperty("includeMedicarePremiums");
+  it("turns on the IRMAA extra for a plan that never set it, keeps on/off", () => {
+    const older = migrateHousehold(household([], []));
+    expect(older.includeMedicarePremiums).toBe(true);
+    expect(older.medicareExpense).toBe("irmaaOnly");
     const on = household([], []);
     on.includeMedicarePremiums = true;
-    expect(migrateHousehold(on).includeMedicarePremiums).toBe(true);
+    const keptOn = migrateHousehold(on);
+    expect(keptOn.includeMedicarePremiums).toBe(true);
+    expect(keptOn).not.toHaveProperty("medicareExpense"); // the full premium
+    const off = household([], []);
+    off.includeMedicarePremiums = false;
+    expect(migrateHousehold(off).includeMedicarePremiums).toBe(false);
     const bad = household([], []);
     (bad as { includeMedicarePremiums?: unknown }).includeMedicarePremiums = "on";
-    expect(migrateHousehold(bad)).not.toHaveProperty("includeMedicarePremiums");
+    expect(migrateHousehold(bad).medicareExpense).toBe("irmaaOnly");
+  });
+
+  it("keeps what the switch counts, drops anything else", () => {
+    const full = household([], []);
+    full.includeMedicarePremiums = true;
+    full.medicareExpense = "full";
+    expect(migrateHousehold(full).medicareExpense).toBe("full");
+    const bad = household([], []);
+    bad.includeMedicarePremiums = true;
+    (bad as { medicareExpense?: unknown }).medicareExpense = "some";
+    expect(migrateHousehold(bad)).not.toHaveProperty("medicareExpense");
   });
 });
 

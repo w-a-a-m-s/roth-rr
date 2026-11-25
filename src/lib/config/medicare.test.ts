@@ -94,4 +94,15 @@ describe("IRMAA from conversions before 65", () => {
     expect(premium(2031)).toBe(tier1);
     expect(premium(2032)).toBe(base);
   });
+
+  it("counts only the surcharge when the plan picks IRMAA extra only", () => {
+    const rows = calculate({ ...household, medicareExpense: "irmaaOnly" }).roth.rows;
+    const premium = (year: number) =>
+      rows.find((r) => r.calendarYear === year)?.expenseMonthly["medicare:m"];
+    const base = medicarePartBMonthlyPremium(0, "mfj", FALLBACK_MEDICARE_PART_B);
+    const tier1 = medicarePartBMonthlyPremium(220000, "mfj", FALLBACK_MEDICARE_PART_B);
+    expect(premium(2030)).toBeCloseTo(tier1 - base, 6);
+    expect(premium(2031)).toBeCloseTo(tier1 - base, 6);
+    expect(premium(2032)).toBeUndefined(); // standard premium: nothing extra
+  });
 });

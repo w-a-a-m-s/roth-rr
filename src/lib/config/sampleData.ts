@@ -97,5 +97,11 @@ export function createBlankHousehold(): Household {
       leftoverInvestment: DEFAULT_LEFTOVER_INVESTMENT,
     },
     optimizer: { strategy: "manual" },
+    // New plans count the IRMAA surcharge on Medicare Part B as an expense
+    // (user's request): only the extra above the standard premium, which
+    // the plan's own expenses are taken to include. Saved plans keep their
+    // own switch: missing stays off there.
+    includeMedicarePremiums: true,
+    medicareExpense: "irmaaOnly",
   };
 }

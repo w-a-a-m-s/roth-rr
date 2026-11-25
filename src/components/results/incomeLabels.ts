@@ -2,7 +2,7 @@ import type { Household, InsuranceKind } from "@/lib/domain/types";
 import { insurancePolicy } from "@/lib/domain/insurance";
 import { propertyLoans } from "@/lib/domain/propertyLoans";
 import { hasCareRider, longTermCareSettings } from "@/lib/domain/longTermCare";
-import { CAR_EXPENSE_KEY } from "@/lib/engine/otherExpenses";
+import { CAR_EXPENSE_KEY, countsIrmaaOnly } from "@/lib/engine/otherExpenses";
 import {
   LEFTOVER_ACCOUNT_ID,
   LEFTOVER_INVESTMENT_LABEL,
@@ -130,7 +130,8 @@ export function expenseLabel(household: Household, key: string): string {
   if (key === CAR_EXPENSE_KEY) return "Car (from Lease vs finance)";
   if (key.startsWith("medicare:")) {
     const name = household.people.find((p) => p.id === key.slice(9))?.name?.trim();
-    return name ? `Medicare Part B · ${name}` : "Medicare Part B";
+    const what = countsIrmaaOnly(household) ? "Medicare IRMAA" : "Medicare Part B";
+    return name ? `${what} · ${name}` : what;
   }
   return household.expenses.find((e) => e.id === key)?.label ?? key;
 }
