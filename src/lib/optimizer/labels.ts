@@ -31,7 +31,7 @@ export const STRATEGY_HELP: Record<ConversionStrategy, string> = {
   fillBracket:
     "Each year, convert only enough to fill the selected federal tax bracket. Choose 12%, 22%, or 24%.",
   irmaa:
-    "Each year, convert up to just under the next Medicare IRMAA income cliff so premiums stay in the current tier.",
+    "Each year, convert up to $1,000 under the next Medicare IRMAA income cliff, counting the Social Security a conversion makes taxable, so premiums stay in the current tier.",
   depleteByRmd:
     "Convert a share of what's left each year so tax-deferred accounts are empty by RMD age, or by the plan's last year with RMD years on. This accounts for growth (and each year's RMD) along the way.",
   minTax:

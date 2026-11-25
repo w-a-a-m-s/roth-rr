@@ -14,6 +14,7 @@ import {
 } from "@/lib/optimizer/strategies/fillBracket";
 import { immediateSchedule } from "@/lib/optimizer/strategies/immediate";
 import {
+  IRMAA_SAFETY_MARGIN,
   irmaaHeadroom,
   irmaaSchedule,
 } from "@/lib/optimizer/strategies/irmaa";
@@ -179,11 +180,11 @@ describe("fillBracketSchedule", () => {
 });
 
 describe("irmaaSchedule", () => {
-  it("stays under the next IRMAA MAGI floor", () => {
+  it("lands each year $1,000 under the next IRMAA MAGI floor", () => {
     const h = householdWithConvertible(400_000);
     h.optimizer.strategy = "irmaa";
     const zeros = padToProjection(h, []);
-    const rows = projectScenario(h, zeros);
+    const base = projectScenario(h, zeros);
     const tiers = forFiling(
       FALLBACK_MEDICARE_PART_B.tiers,
       "single",
@@ -191,14 +192,50 @@ describe("irmaaSchedule", () => {
     );
     const years = conversionYears(h);
     const schedule = irmaaSchedule(h);
+    const rows = projectScenario(h, schedule);
     for (let i = 0; i < years; i++) {
+      const baseMagi = base[i].grossTaxableIncome + base[i].capitalGainsIncome;
+      const room = irmaaHeadroom(baseMagi, tiers);
+      if (!Number.isFinite(room)) continue;
+      const ceiling = baseMagi + room - IRMAA_SAFETY_MARGIN;
       const magi = rows[i].grossTaxableIncome + rows[i].capitalGainsIncome;
-      const room = irmaaHeadroom(magi, tiers);
-      const expected = Number.isFinite(room)
-        ? roundCents(Math.max(0, room - 0.01))
-        : convertibleTotal(h);
-      expect(schedule[i]).toBe(expected);
+      expect(magi).toBeLessThanOrEqual(ceiling);
+      // Filled to the ceiling unless the accounts ran dry.
+      if (rows[i].conversion >= schedule[i] - 0.005 && schedule[i] > 0) {
+        expect(magi).toBeGreaterThan(ceiling - 1);
+      }
     }
+  });
+
+  it("counts the Social Security a conversion makes taxable", () => {
+    // Social Security alone: none of it is taxable, so the room with no
+    // conversion is the whole floor. Each converted dollar also makes up to
+    // 85 cents of benefits taxable, so converting that room would overshoot.
+    const h = householdWithConvertible(400_000);
+    h.optimizer.strategy = "irmaa";
+    h.incomes = [
+      {
+        id: "ss",
+        label: "Social Security",
+        ownerId: h.people[0].id,
+        kind: "socialSecurity",
+        monthlyAmount: 3000,
+        growthRate: 0,
+        taxability: "full",
+      },
+    ];
+    const base = projectScenario(h, padToProjection(h, []));
+    const schedule = irmaaSchedule(h);
+    const rows = projectScenario(h, schedule);
+    const tiers = forFiling(FALLBACK_MEDICARE_PART_B.tiers, "single", "medicare IRMAA tiers");
+    const baseMagi = base[0].grossTaxableIncome + base[0].capitalGainsIncome;
+    const ceiling = baseMagi + irmaaHeadroom(baseMagi, tiers) - IRMAA_SAFETY_MARGIN;
+    const magi = rows[0].grossTaxableIncome + rows[0].capitalGainsIncome;
+    expect(rows[0].socialSecurityTaxable).toBeGreaterThan(base[0].socialSecurityTaxable);
+    expect(magi).toBeLessThanOrEqual(ceiling);
+    expect(magi).toBeGreaterThan(ceiling - 1);
+    // Converted less than the room measured with no conversion.
+    expect(schedule[0]).toBeLessThan(ceiling - baseMagi);
   });
 
   it("reports infinite headroom in the top IRMAA tier", () => {

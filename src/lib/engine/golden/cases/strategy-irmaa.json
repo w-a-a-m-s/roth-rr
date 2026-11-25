@@ -53,8 +53,8 @@
       "strategy": "irmaa"
     }
   },
-  "commit": "aa6905d",
-  "commitDate": "2026-11-25T21:21:41+00:00",
+  "commit": "d827aa7",
+  "commitDate": "2026-11-25T21:23:32+00:00",
   "expected": {
     "baseline": {
       "taxesTotal": 6671.27,
@@ -63,13 +63,13 @@
       "inheritanceFinal": 216746.8
     },
     "roth": {
-      "taxesTotal": 38546.28,
+      "taxesTotal": 38574.64,
       "medicareTotal": 26782.8,
       "afterTaxAssetsAtRmd": 296048.86,
       "inheritanceFinal": 307890.81
     },
     "deltas": {
-      "taxesTotal": 31875.01,
+      "taxesTotal": 31903.37,
       "medicareTotal": 0,
       "afterTaxAssetsAtRmd": 79440.85,
       "inheritanceFinal": 91144.01
