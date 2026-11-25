@@ -596,13 +596,31 @@ function buildSections(
     });
   }
   if (hasCapitalGains) {
+    const hasDividends = scenario.rows.some((r) => r.qualifiedDividends > 0);
     deductions.push({
       key: "capitalGains",
-      label: scenario.rows.some((r) => r.qualifiedDividends > 0)
+      label: hasDividends
         ? "Capital gains and qualified dividends"
         : "Capital gains (after-tax withdrawals)",
       unit: "yr",
       value: (r) => r.capitalGainsIncome,
+      // Split out so the S&P 500 leftover money's dividends show on their own.
+      children: hasDividends
+        ? [
+            {
+              key: "qualifiedDividends",
+              label: "Qualified dividends (leftover S&P 500)",
+              unit: "yr",
+              value: (r) => r.qualifiedDividends,
+            },
+            {
+              key: "realizedGains",
+              label: "Capital gains (withdrawals and sales)",
+              unit: "yr",
+              value: (r) => r.capitalGainsIncome - r.qualifiedDividends,
+            },
+          ]
+        : undefined,
     });
   }
   deductions.push(
