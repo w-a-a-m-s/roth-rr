@@ -21,7 +21,12 @@ import type {
   ReturnSource,
 } from "@/lib/domain/types";
 import { uid } from "@/lib/id";
-import { DEFAULT_LAND_SHARE, DEFAULT_PURCHASE_MONTH } from "@/lib/config/defaults";
+import {
+  DEFAULT_LAND_SHARE,
+  DEFAULT_PURCHASE_MONTH,
+  LEFTOVER_ACCOUNT_ID,
+  LEFTOVER_INVESTMENT_LABEL,
+} from "@/lib/config/defaults";
 
 /** How often a deposit pays into an account. */
 export const DEPOSIT_FREQUENCIES: DepositFrequency[] = [
@@ -318,6 +323,27 @@ export const WITHDRAWAL_SOURCE_KINDS: Partial<Record<IncomeKind, AccountKind[]>>
     afterTaxWithdrawal: AFTER_TAX_ACCOUNT_KINDS,
   };
 
+/**
+ * The accounts a withdrawal income can draw from: the plan's accounts of the
+ * kinds it takes, and for an after-tax withdrawal the saved leftover money
+ * too, when the plan saves it (`assumptions.leftoverInvestment`).
+ */
+export function withdrawalSources(
+  household: Pick<Household, "accounts" | "assumptions">,
+  kind: IncomeKind,
+): { id: string; label: string }[] {
+  const kinds = WITHDRAWAL_SOURCE_KINDS[kind];
+  if (!kinds) return [];
+  const sources = household.accounts
+    .filter((a) => kinds.includes(a.kind))
+    .map((a) => ({ id: a.id, label: a.label || "Account" }));
+  const leftover = household.assumptions?.leftoverInvestment;
+  if (kind === "afterTaxWithdrawal" && leftover) {
+    sources.push({ id: LEFTOVER_ACCOUNT_ID, label: LEFTOVER_INVESTMENT_LABEL[leftover] });
+  }
+  return sources;
+}
+
 /** Select / revision-diff sentinel for a jointly owned after-tax account. */
 export const JOINT_OWNER_VALUE = "__joint__";
 
@@ -591,7 +617,8 @@ export function applyFilingStatus(
     if (keepJoint) return [withoutJoint(a, remainingOwnerId)];
     return [];
   });
-  const accountIds = new Set(accounts.map((a) => a.id));
+  // The leftover money's account isn't in `accounts` but stays a valid source.
+  const accountIds = new Set([...accounts.map((a) => a.id), LEFTOVER_ACCOUNT_ID]);
 
   const incomes = household.incomes
     .filter((i) => validIds.has(i.ownerId))

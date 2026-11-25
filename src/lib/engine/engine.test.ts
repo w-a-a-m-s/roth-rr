@@ -15,7 +15,8 @@ import {
   retirementStartYear,
 } from "@/lib/engine/project";
 import { shiftSchedule } from "@/lib/optimizer/shiftSchedule";
-import type { Deposit, Household } from "@/lib/domain/types";
+import type { Deposit, Household, IncomeSource } from "@/lib/domain/types";
+import { withdrawalSources } from "@/lib/domain/household";
 import {
   afterTaxAssets,
   preTaxAssets,
@@ -2790,6 +2791,50 @@ describe("leftover money", () => {
     expect(dividends).toBeCloseTo(rows[0].balances.__leftover__ * 0.02, 2);
     expect(rows[1].netInvestmentIncomeTax).toBe(0);
     expect(rows[1].federalAnnualTax - plain[1].federalAnnualTax).toBeCloseTo(dividends * 0.15, 2);
+  });
+
+  it("pays a withdrawal income out of the leftover money", () => {
+    const drawing = (choice: Household["assumptions"]["leftoverInvestment"]): Household => {
+      const h = saver(choice);
+      return {
+        ...h,
+        incomes: [
+          ...h.incomes,
+          {
+            id: "wd",
+            label: "From savings",
+            ownerId: "p1",
+            kind: "afterTaxWithdrawal",
+            monthlyAmount: 1_000,
+            growthRate: 0,
+            taxability: "full",
+            drawsFromAccountId: "__leftover__",
+          },
+        ],
+      };
+    };
+    const years = zeros(projectionYears(saver()));
+    // Year 0 has nothing saved yet; from year 1 the draw is paid.
+    const mm = projectScenario(drawing("moneyMarket"), years);
+    const mmPlain = projectScenario(saver("moneyMarket"), years);
+    expect(mm[0].incomeMonthly.wd ?? 0).toBe(0);
+    expect(mm[1].incomeMonthly.wd).toBeCloseTo(1_000, 6);
+    // Money market draws are basis (interest was taxed as earned), and what
+    // isn't spent is saved again at year end: same balance, same tax.
+    expect(mm[1].balances.__leftover__).toBeCloseTo(mmPlain[1].balances.__leftover__, 6);
+    expect(mm[1].federalAnnualTax).toBeCloseTo(mmPlain[1].federalAnnualTax, 6);
+    // From the S&P 500 a draw sells shares and realizes part of the gain.
+    const sp = projectScenario(drawing("sp500"), years);
+    expect(sp[1].incomeMonthly.wd).toBeCloseTo(1_000, 6);
+    expect(sp[2].capitalGainsIncome).toBeGreaterThan(sp[2].qualifiedDividends);
+  });
+
+  it("offers the leftover money as an after-tax withdrawal source only when saved", () => {
+    const ids = (h: Household, kind: IncomeSource["kind"]) =>
+      withdrawalSources(h, kind).map((s) => s.id);
+    expect(ids(saver("moneyMarket"), "afterTaxWithdrawal")).toEqual(["__leftover__"]);
+    expect(ids(saver(), "afterTaxWithdrawal")).toEqual([]);
+    expect(ids(saver("sp500"), "retirementDraw")).toEqual([]);
   });
 
   it("is left out of the assets unless the plan invests it", () => {

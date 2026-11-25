@@ -1,4 +1,4 @@
-import { FILING_STATUS_LABELS } from "@/lib/config/defaults";
+import { FILING_STATUS_LABELS, LEFTOVER_ACCOUNT_ID } from "@/lib/config/defaults";
 import { US_STATE_LABELS } from "@/lib/config/stateTax";
 import type {
   Account,
@@ -356,6 +356,7 @@ function accountLabel(
   id: string | undefined,
 ): string | null {
   if (!id || !household) return null;
+  if (id === LEFTOVER_ACCOUNT_ID) return "Leftover money";
   const acc = household.accounts.find((a) => a.id === id);
   if (!acc) return null;
   return acc.label || ACCOUNT_KIND_LABELS[acc.kind] || acc.id;

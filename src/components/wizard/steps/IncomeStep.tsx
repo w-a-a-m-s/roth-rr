@@ -25,6 +25,7 @@ import {
   DISABILITY_COVERAGE_LABELS,
   DISABILITY_WAITING_DAYS,
   WITHDRAWAL_SOURCE_KINDS,
+  withdrawalSources,
   disabilityCoverage,
   disabilityWaitingDays,
   isPensionIncome,
@@ -40,7 +41,7 @@ import { INCOME_TABLE_GROWTH, incomeTableRate } from "@/lib/engine/incomeTable";
 import { GrowthFromToggle } from "@/components/ui/GrowthFromToggle";
 import { IncomeTableLink } from "@/components/plan/IncomeTable";
 import { SOCIAL_SECURITY_MAX_TAXABLE_SHARE } from "@/lib/config/federalTax";
-import { DEFAULT_INCOME_GROWTH } from "@/lib/config/defaults";
+import { DEFAULT_INCOME_GROWTH, LEFTOVER_ACCOUNT_ID } from "@/lib/config/defaults";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { uid } from "@/lib/id";
 import { INCOME_TOUR_STEPS } from "@/lib/onboarding/incomeTour";
@@ -147,9 +148,19 @@ function IncomeFields({
   const { updateIncome, removeIncome } = useScenario();
   const currentYear = new Date().getFullYear();
   const sourceKinds = WITHDRAWAL_SOURCE_KINDS[income.kind];
-  const sourceAccounts = sourceKinds
-    ? household.accounts.filter((a) => sourceKinds.includes(a.kind))
-    : [];
+  const sourceAccounts = withdrawalSources(household, income.kind);
+  // Drawing from the leftover money while the plan doesn't save it: keep the
+  // choice visible so it isn't silently shown as another account.
+  if (
+    income.drawsFromAccountId === LEFTOVER_ACCOUNT_ID &&
+    !sourceAccounts.some((a) => a.id === LEFTOVER_ACCOUNT_ID)
+  ) {
+    sourceAccounts.push({
+      id: LEFTOVER_ACCOUNT_ID,
+      label: "Leftover money (not saved: pick where it's invested on Main)",
+    });
+  }
+  const fromLeftover = income.drawsFromAccountId === LEFTOVER_ACCOUNT_ID;
   const ownerName =
     household.people.find((p) => p.id === income.ownerId)?.name || "Person";
   const kindLabel = KIND_LABEL[income.kind];
@@ -199,7 +210,7 @@ function IncomeFields({
       updateIncome(income.id, patch);
       return;
     }
-    const eligible = household.accounts.filter((a) => nextKinds.includes(a.kind));
+    const eligible = withdrawalSources(household, kind);
     const stillValid = eligible.some((a) => a.id === income.drawsFromAccountId);
     if (!stillValid) patch.drawsFromAccountId = eligible[0]?.id;
     updateIncome(income.id, patch);
@@ -298,7 +309,7 @@ function IncomeFields({
             }))}
           />
         </Field>
-        {sourceKinds ? (
+        {sourceKinds && !fromLeftover ? (
           <Field
             label="Amount from"
             help="Enter an amount, or take it from the income table: the account's balance when the income starts times the payout rate for the owner's age that year, fixed for life. The account then grows 8% a year. It's the Joint Life immediate payout column of Transamerica's income withdrawal table (5% under 59)."
@@ -492,6 +503,11 @@ function IncomeFields({
               onChange={(drawsFromAccountId) =>
                 updateIncome(income.id, {
                   drawsFromAccountId: drawsFromAccountId || undefined,
+                  // The income table pays from an account's own balance and
+                  // growth, which the leftover money doesn't have.
+                  ...(drawsFromAccountId === LEFTOVER_ACCOUNT_ID && income.amountSource
+                    ? { amountSource: undefined }
+                    : {}),
                 })
               }
               options={[

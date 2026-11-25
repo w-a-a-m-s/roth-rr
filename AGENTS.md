@@ -203,6 +203,12 @@ gain sold, the same way an event's top-up does (`coverShortYear` in
 `projectScenario`), until it's empty. It counts in `afterTaxTotal`, so in the after-tax
 assets and the inheritance.
 
+An after-tax withdrawal on the Income step can draw from it
+(`drawsFromAccountId: LEFTOVER_ACCOUNT_ID`, offered by `withdrawalSources`
+when the plan saves its leftover money): the draw is income that year, an
+S&P 500 draw realizes its share of the gain, and whatever the year doesn't
+spend is saved again at year end. The income table doesn't apply to it.
+
 ## Monte Carlo
 
 `lib/engine/monteCarlo.ts` runs the plan in `MONTE_CARLO_RUNS` (1,000)
