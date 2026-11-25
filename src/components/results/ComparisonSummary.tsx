@@ -3,7 +3,6 @@
 import { Fragment, useState, type ReactNode } from 'react';
 import type { Comparison, ScenarioResult } from '@/lib/engine/types';
 import { formatCurrency, formatSignedCurrency } from '@/lib/format';
-import { totalImpact as totalImpactOf } from '@/lib/optimizer/score';
 
 type PreTax = { baseline: number; roth: number };
 
@@ -164,26 +163,6 @@ function TaxSplit({ rmdLabel, children }: { rmdLabel: string; children: ReactNod
 				{open ? `Hide taxes before and after ${rmdLabel}` : `Show taxes before and after ${rmdLabel}`}
 			</button>
 			{open ? <div className="grid w-full grid-cols-1 gap-3.5 sm:grid-cols-2">{children}</div> : null}
-		</div>
-	);
-}
-
-export function TotalImpact({ comparison }: { comparison: Comparison }) {
-	const { deltas } = comparison;
-	const totalImpact = totalImpactOf(deltas);
-	const impactGood = totalImpact > 0;
-	const impactNeutral = Math.abs(totalImpact) < 1;
-	const impactColor = impactNeutral ? 'text-muted-3' : impactGood ? 'text-success' : 'text-danger';
-
-	return (
-		<div className="flex flex-col items-center rounded-2xl border border-border bg-white px-[26px] py-[26px] text-center">
-			<div className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted-3">Total impact</div>
-			<div className={`mt-1 font-serif text-[48px] font-medium leading-none tracking-[-0.02em] ${impactColor}`}>
-				{formatSignedCurrency(totalImpact)}
-			</div>
-			<p className="m-0 mt-0.5 max-w-[460px] text-[12.5px] leading-snug text-muted-3">
-				Lifetime taxes, Medicare, and inheritance combined
-			</p>
 		</div>
 	);
 }

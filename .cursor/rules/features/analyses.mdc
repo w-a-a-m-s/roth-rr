@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Analyses
 
-Links above Total impact switch the results between analyses
+Links above the results tabs switch the results between analyses
 (`useUI().analysis`, transient). Every analysis runs from the same plan; an
 analysis only adds options to `calculate(household, refs, options)`. The
 conversion schedule always comes from the plan's strategy as-is.
@@ -253,7 +253,7 @@ do any of this (yet).
 Survivorship, Disability and Long-term care show only the no-conversion
 scenario (`single` in ResultsView): one snapshot table, no No/With toggles,
 no conversion tax switch, and Summary shows `ScenarioMetrics` (the six totals)
-instead of Total impact. Retirement still compares the two.
+instead of the comparison cards. Retirement still compares the two.
 
 ## Long-term care rules (`domain/longTermCare.ts` + `projectScenario`)
 
@@ -319,7 +319,9 @@ Approved by the user: keep it (see AGENTS.md, "Results layout").
 Under the analysis links, four tabs (`ResultsView` state, Main on load);
 each tab shows only its own sections:
 - **Main**: the Assets, Income & Taxes tables.
-- **Summary**: Total impact, the metric cards, and After-tax assets. Taxes
+- **Summary**: the metric cards and After-tax assets (no Total impact
+  card: the user removed it, since adding tax savings to the inheritance
+  counts taxes paid from assets twice). Taxes
   show as lifetime only; the before and after RMD age split opens from a
   "Show taxes before and after" link under the cards.
   The "Assets at <RMD age>" and "Inheritance (final year)" cards and the

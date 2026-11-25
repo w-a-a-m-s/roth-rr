@@ -12,7 +12,7 @@ import { primaryPersonId, retirementStartYear } from '@/lib/engine/project';
 import type { Comparison } from '@/lib/engine/types';
 import { DisplayFromToggle } from '@/components/results/DisplayFromToggle';
 import { scenarioFrom, snapshotFromYear, type SnapshotFrom } from '@/components/results/snapshotTable';
-import { ComparisonMetrics, ScenarioMetrics, TotalImpact } from '@/components/results/ComparisonSummary';
+import { ComparisonMetrics, ScenarioMetrics } from '@/components/results/ComparisonSummary';
 import { AssetsChart } from '@/components/results/AssetsChart';
 import { AfterTaxAssetsTimeline } from '@/components/results/AfterTaxAssetsTimeline';
 import { CashflowChart } from '@/components/results/CashflowChart';
@@ -302,10 +302,7 @@ export function ResultsView() {
 					{single ? (
 						<ScenarioMetrics scenario={comparison.baseline} rmdAge={rmdAge} />
 					) : (
-						<>
-							<TotalImpact comparison={comparison} />
-							<ComparisonMetrics comparison={comparison} rmdAge={rmdAge} />
-						</>
+						<ComparisonMetrics comparison={comparison} rmdAge={rmdAge} />
 					)}
 					<AfterTaxAssetsTimeline
 						rothRows={comparison.roth.rows}

@@ -571,7 +571,8 @@ user asks for a change:
    - **Main**: the Assets, Income & Taxes tables (No conversion, then With
      conversion), with the Leftover money switch above Jump to (user's
      request).
-   - **Summary**: Total impact, the metric cards (lifetime taxes only; taxes
+   - **Summary**: the metric cards (no Total impact card, the user removed
+     it; lifetime taxes only; taxes
      before and after the RMD age sit behind a "Show taxes before and after"
      link), After-tax assets.
    - **Graphic view**: Retirement Objective, Income Sources, Income Applied
